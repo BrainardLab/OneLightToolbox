@@ -1,0 +1,18 @@
+function setAll(obj, allOn)
+% setAll - Turns the mirrors all on or off.
+%
+% Syntax:
+% obj.setAll(allOn)
+%
+% Description:
+% Turns all the mirrors full on or off.
+%
+% Input:
+% allOn (logical) - True = all on, false = all off.
+
+error(nargchk(2, 2, nargin));
+
+% Validate the input.
+assert(isscalar(allOn), 'OneLight:setAll:InvalidInput', 'Input must be a logical scalar.');
+
+OneLightEngine(OneLightFunctions.SetAll.UInt32, obj.DeviceID, logical(allOn));
