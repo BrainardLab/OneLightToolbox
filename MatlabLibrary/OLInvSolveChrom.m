@@ -1,4 +1,4 @@
-function x = InvSolveChrom(cal, desiredChromaticity);
+function x = OLInvSolveChrom(cal, desiredChromaticity);
 % Program to find background spectrum of a desired chromaticity and
 % luminance.
 %
