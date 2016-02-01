@@ -1,11 +1,11 @@
-function [meas, omniSpectrumSaturated] = OLTakeMeasurement(ol, od, starts, stops, S, meterToggle, prWhichMeter, nAverage)
+function [meas, omniSpectrumSaturated] = OLTakeMeasurement(ol, od, prOBJ, starts, stops, S, meterToggle,  nAverage)
 % OLTakeMeasurement - Takes a spectrum measurement using the PR-6XX and/or the OmniDriver.
 %
 % Syntax:
-% meas = OLTakeMeasurement(ol, od, starts, stops, S);
-% meas = OLTakeMeasurement(ol, od, starts, stops, S, meterToggle);
-% meas = OLTakeMeasurement(ol, od, starts, stops, S, meterToggle, prWhichMeter);
-% meas = OLTakeMeasurement(ol, od, starts, stops, S, meterToggle, prWhichMeter, nAverage);
+% meas = OLTakeMeasurement(ol, od, prOBJ, starts, stops, S);
+% meas = OLTakeMeasurement(ol, od, prOBJ, starts, stops, S, meterToggle);
+% meas = OLTakeMeasurement(ol, od, prOBJ, starts, stops, S, meterToggle);
+% meas = OLTakeMeasurement(ol, od, prOBJ, starts, stops, S, meterToggle, nAverage);
 %
 % Description:
 % Takes a spectrum measurement using the PR-6XX and/or the OmniDriver.
@@ -15,14 +15,13 @@ function [meas, omniSpectrumSaturated] = OLTakeMeasurement(ol, od, starts, stops
 %                      the function doesn't set the mirrors, i.e. starts and stops are
 %                      ignored.
 % od (OmniDriver)    - OmniDriver class object to control the OmniDriver.
+% prOBJ              - PR650/PR670 class object to control the PR650 or PR670
 % starts (1xNumCols) - starts vector as accepted by the setMirrors method of an OL object.
 % stops (1xNumCols)  - stops vector as accepted by the setMirrors method of an OL object.
 % S (1x3)            - Wavelength sampling parameter used by the PR-650 MeasSpd command.
 % meterToggle (1x2)  - Logical array specifying which meter(s) to use.  The
 %                      first element represents the PR-6XX, the second represents the
 %                      OmniDriver.  Defaults to [true, false].
-% prWhichMeter       - specifices what kind of PR-6XX is being used.  Passed on through to MeasSpd.
-%                      Default to 1 -> PR-650.  Use 5 for PR-670.
 % nAverage           - number of PR-6XX measurements to average.  Defaults to 1.
 %
 % Output:
@@ -42,15 +41,13 @@ function [meas, omniSpectrumSaturated] = OLTakeMeasurement(ol, od, starts, stops
 verboseInfo = false;
 
 % Check the number of input arguments.
-error(nargchk(5, 8, nargin));
+error(nargchk(6, 8, nargin));
 
 % Take a measurement with both meters if not specified.
-if (nargin <= 5 | isempty(meterToggle))
+if (nargin <= 6 | isempty(meterToggle))
     meterToggle = [true false];
 end
-if (nargin <= 6 | isempty(prWhichMeter))
-    prWhichMeter = 1;
-end
+
 if (nargin <= 7 | isempty(nAverage))
     nAverage = 1;
 end
@@ -73,8 +70,11 @@ if meterToggle(1)
         if verboseInfo
             fprintf('> [%s] Starting PR-6XX measurement...\n', datestr(now));
         end
-        [radMeas, qual] = MeasSpd(S,prWhichMeter,'off');
-        assert(qual == 0 || qual == -8, 'OLCalibrate:MeasSpd:LightSpectrum', 'Radiometer returned a quality code of %d', qual);
+        
+        % ORIGINAL: [radMeas, qual] = MeasSpd(S,prWhichMeter,'off');
+        radMeas = prOBJ.measure('userS', S);
+
+        assert(prOBJ.measurementQuality == 0 || prOBJ.measurementQuality == -8, 'OLCalibrate:MeasSpd:LightSpectrum', 'Radiometer returned a quality code of %d', prOBJ.measurementQuality);
         if verboseInfo
             fprintf('- [%s] Done with PR-6XX measurement...\n', datestr(now));
         end
