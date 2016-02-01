@@ -32,7 +32,7 @@ function OLCalibrate
 %          dhb  Put in save before init, temporarily, because the init is likely to crash until we fix it for
 %               new cal file.
 % 7/20/14  ms   calID set with OLGetCalID. Save before init taken out.
-
+% 2/01/16  npc  Adapted to use PR650dev/PR670dev objects
 
 try
     % Ask which type of calibration we're doing.

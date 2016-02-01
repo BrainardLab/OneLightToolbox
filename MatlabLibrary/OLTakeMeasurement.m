@@ -15,10 +15,12 @@ function [meas, omniSpectrumSaturated] = OLTakeMeasurement(ol, od, prOBJ, starts
 %                      the function doesn't set the mirrors, i.e. starts and stops are
 %                      ignored.
 % od (OmniDriver)    - OmniDriver class object to control the OmniDriver.
-% prOBJ              - PR650/PR670 class object to control the PR650 or PR670
+% prOBJ              - PR650/PR670 class object to control the PR650 or PR670.
+%                      These objects must be instantiated by the parent
+%                      method (see OOC_PR650_PR670_Usage.m in BrainardLabToolbox for example usage).
 % starts (1xNumCols) - starts vector as accepted by the setMirrors method of an OL object.
 % stops (1xNumCols)  - stops vector as accepted by the setMirrors method of an OL object.
-% S (1x3)            - Wavelength sampling parameter used by the PR-650 MeasSpd command.
+% S (1x3)            - Wavelength sampling parameter used to sample the SPD by the PR-650/PR670dev objects.
 % meterToggle (1x2)  - Logical array specifying which meter(s) to use.  The
 %                      first element represents the PR-6XX, the second represents the
 %                      OmniDriver.  Defaults to [true, false].
@@ -36,6 +38,7 @@ function [meas, omniSpectrumSaturated] = OLTakeMeasurement(ol, od, prOBJ, starts
 % Omni measurements are normalized by integration time.
 %
 % 1/17/14  dhb, ms   Comment tuning.
+% 2/01/16  npc       Adapted to use PR650dev/PR670dev objects
 
 % Print out information aboutt he measurement?
 verboseInfo = false;
