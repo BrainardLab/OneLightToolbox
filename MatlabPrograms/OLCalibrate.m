@@ -601,6 +601,9 @@ try
     %fprintf('\n*** Putting ol into shutdown mode ***\n\n');
     %ol.shutdown;
     
+    % Gracefully shutdown the spectroradiometer
+    spectroRadiometerOBJ.shutDown();
+    
     SendEmail(emailRecipient, 'OneLight Calibration Complete', ...
         'Finished!');
 catch e
