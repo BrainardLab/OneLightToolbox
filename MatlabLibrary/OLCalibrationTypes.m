@@ -99,6 +99,9 @@ classdef OLCalibrationTypes
         BoxCRandomizedLongCableBEyePiece1('OLBoxCRandomizedLongCableBEyePiece1');
         BoxARandomizedLongCableBEyePiece1('OLBoxARandomizedLongCableBEyePiece1');
         BoxCRandomizedLongCableCStubby1_ND05('OLBoxCRandomizedLongCableCStubby1_ND05');
+        BoxCRandomizedLongCableCStubby1_ND10('OLBoxCRandomizedLongCableCStubby1_ND10');
         BoxARandomizedLongCableBEyePiece1_ND10('OLBoxARandomizedLongCableBEyePiece1_ND10');
+        BoxCRandomizedLongCableCStubby1NoLens_ND10('OLBoxCRandomizedLongCableCStubby1NoLens_ND10');
+        BoxCRandomizedLongCableCStubby1NoLens_ND10_ContactLens_0_5mm('OLBoxCRandomizedLongCableCStubby1NoLens_ND10_ContactLens_0_5mm');
     end
 end
