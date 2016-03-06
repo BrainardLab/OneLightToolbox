@@ -75,7 +75,7 @@ try
             cal.describe.useAverageGamma = false;
             % We for BoxB, we set nGammaBands to be nPrimaries, see below.
             %cal.describe.nGammaBands = 20;
-            cal.describe.nShortPrimariesSkip = 5;
+            cal.describe.nShortPrimariesSkip = 7;
             cal.describe.nLongPrimariesSkip = 3;
         case 'BoxB'
             cal.describe.gammaFitType = 'betacdfpiecelin';
