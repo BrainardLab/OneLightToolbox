@@ -35,6 +35,7 @@ function [results, validationDir, validationPath] = OLValidateCacheFile(cacheFil
 %                             'selectedCalType'     'EyeTrackerLongCableEyePiece1'
 %                                                             Calibration
 %                                                             type
+%                             'powerLevels'         scalar    Which power levels
 %
 % Output:
 % results (struct) - Results struct. This is different depending on which
@@ -57,6 +58,7 @@ p.addOptional('NoAdjustment', false, @islogical);
 p.addOptional('REFERENCE_OBSERVER_AGE', 32, @isscalar);
 p.addOptional('selectedCalType', [], @isstr);
 p.addOptional('CALCULATE_SPLATTER', true, @islogical);
+p.addOptional('powerLevels', 32, @isscalar);
 
 p.parse(varargin{:});
 describe = p.Results;
@@ -273,14 +275,7 @@ try
                 end
             else
                 % Take a full set of measurements
-                
-                if strcmp(cacheData.data(32).describe.params.receptorIsolateMode, 'PIPR')
-                    nPowerLevels = 2;
-                    powerLevels = [0 1];
-                else
-                    nPowerLevels = 41;
-                    powerLevels = linspace(-1, 1, nPowerLevels)';
-                end
+                nPowerLevels = length(powerLevels);
             end
             
             % Refactor the cache data spectrum primaries to the power level.
