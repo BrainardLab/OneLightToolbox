@@ -58,10 +58,11 @@ p.addOptional('NoAdjustment', false, @islogical);
 p.addOptional('REFERENCE_OBSERVER_AGE', 32, @isscalar);
 p.addOptional('selectedCalType', [], @isstr);
 p.addOptional('CALCULATE_SPLATTER', true, @islogical);
-p.addOptional('powerLevels', 32, @isscalar);
+p.addOptional('powerLevels', 32, @isnumeric);
 
 p.parse(varargin{:});
 describe = p.Results;
+powerLevels = describe.powerLevels;
 
 % Open up the radiometer if this is the first cache file we validate
 switch (meterType)
@@ -394,12 +395,12 @@ try
     validationPath = fullfile(validationDir, resultsFileName);
     
     % Check if we want to do splatter calculations
-    OLAnalyzeValidationReceptorIsolate(validationPath, 'short');
-    
-    if describe.CALCULATE_SPLATTER
-        OLAnalyzeValidationReceptorIsolate(validationPath, 'full');
-    end
-    
+     OLAnalyzeValidationReceptorIsolate(validationPath, 'short');
+%     
+%     if describe.CALCULATE_SPLATTER
+%         OLAnalyzeValidationReceptorIsolate(validationPath, 'full');
+%     end
+%     
     % Let me know it's done.
     %SendEmail(emailRecipient, ['[OL] ' cacheFileName '/Validation done'], 'Validation successfully');
     toc;
