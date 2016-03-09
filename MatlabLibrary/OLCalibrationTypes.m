@@ -27,5 +27,6 @@ classdef OLCalibrationTypes
         BoxDRandomizedLongCableAEyePiece2_ND10CassetteB('OLBoxDRandomizedLongCableAEyePiece2_ND10CassetteB');
         BoxDRandomizedLongCableAEyePiece2_ND05CassetteB('OLBoxDRandomizedLongCableAEyePiece2_ND05CassetteB');
         BoxDRandomizedLongCableAEyePiece2_ND07CassetteB('OLBoxDRandomizedLongCableAEyePiece2_ND07CassetteB');
+        BoxARandomizedLongCableBEyePiece1_ND06('OLBoxARandomizedLongCableBEyePiece1_ND06');
     end
 end
