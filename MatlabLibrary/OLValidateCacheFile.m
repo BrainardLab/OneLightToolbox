@@ -395,7 +395,7 @@ try
     validationPath = fullfile(validationDir, resultsFileName);
     
     % Check if we want to do splatter calculations
-     OLAnalyzeValidationReceptorIsolate(validationPath, 'short');
+     %OLAnalyzeValidationReceptorIsolate(validationPath, 'short');
 %     
 %     if describe.CALCULATE_SPLATTER
 %         OLAnalyzeValidationReceptorIsolate(validationPath, 'full');
