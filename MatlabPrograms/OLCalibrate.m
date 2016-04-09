@@ -27,17 +27,17 @@ function OLCalibrate
 %          dhb  Started converting to use new OLSettingsToStartStops for all computation of starts/stops.
 %               A side effect of this was to fix a bug where out of band mirrors were not all the way off
 %               for some measurements.
-% 2/17/14  dhb  All measurements get their starts/stops using OLSettingsToStartsStops.
-%          dhb  Set calID to mglGetSecs.
-%          dhb  Put in save before init, temporarily, because the init is likely to crash until we fix it for
-%               new cal file.
+% 2/17/14  dhb  All measurements get their starts/stops using
+% OLSettingsToStartsStops.
+%          dhb  Set calID to mglGetSecs. dhb  Put in save before init,
+%                 temporarily, because the init is likely to crash until we fix it
+%                 for new cal file.
 % 7/20/14  ms   calID set with OLGetCalID. Save before init taken out.
-% 4/9/16   dhb  Added in option to measure around a non-zero background.  
+% 4/9/16   dhb  Added in option to measure around a non-zero background.
 %               Also did a little cleaning, which I hope doesn't break
-%               anything.
-%               Remove blocks of commented out code.
-%               Uncomment debugging save before call to init, because there
-%               will probably be bugs.
+%                 anything.
+%               Remove blocks of commented out code. Uncomment debugging
+%                 save before call to init, because there will probably be bugs.
 
 global g_useIOPort;
 g_useIOPort = 1;
@@ -124,12 +124,13 @@ try
     % Non-zero background for gamma and related measurments
     cal.describe.specifiedBackground = 1;
     
-    % Use Omni?
+    % Don't use omni.
     % First entry is PR-6xx and is always true.
-    % Second entry is omni and can be on or off.
-    cal.describe.useOmni = 0;
+    % Second entry is omni is false.
+    cal.describe.useOmni = false;
     meterToggle = [1 cal.describe.useOmni];
-    
+    od = [];
+ 
     % Enter bulb number.  This is a number that we assign by convention.
     cal.describe.bulbNumber = GetWithDefault('Enter bulb number',5);
     
@@ -158,20 +159,6 @@ try
     
     % Open up the radiometer.
     CMCheckInit(cal.describe.meterTypeNum);
-    
-    % Connect to the OceanOptics spectrometer.
-    if (cal.describe.useOmni)
-        od = OmniDriver;
-        od.Debug = true;
-        % Turn on some averaging and smoothing for the spectrum acquisition.
-        od.ScansToAverage = 10;
-        od.BoxcarWidth = 2;
-        
-        % Make sure electrical dark correction is enabled.
-        od.CorrectForElectricalDark = true;
-    else
-        od = [];
-    end
     
     % Open the OneLight device.
     ol = OneLight;
@@ -237,11 +224,6 @@ try
     
     % Depending on cables and light levels, the args to od.findIntegrationTime may
     % need to be fussed with a little.
-    if (cal.describe.useOmni)
-        od.IntegrationTime = od.findIntegrationTime(100, 2, 1000);
-        od.IntegrationTime = round(0.95*od.IntegrationTime);
-        fprintf('- Using integration time of %d microseconds.\n', od.IntegrationTime);
-    end
     ol.setAll(false);
     
     fprintf('\n*** Initial measurements of spectra of interest ***\n\n');
@@ -382,9 +364,6 @@ try
         error('We did not understand what we thought was an identity when we edited the code');
     end
     cal.raw.lightMeas = zeros(cal.describe.S(3), cal.describe.numWavelengthBands);
-    if (cal.describe.useOmni)
-        cal.raw.omniDriver.lightMeas = zeros(od.NumPixels, cal.describe.numWavelengthBands);
-    end
     cal.raw.cols = zeros(ol.NumCols, cal.describe.numWavelengthBands);
     for i = 1:cal.describe.numWavelengthBands
         if (cal.describe.specifiedBackground)    
@@ -398,10 +377,7 @@ try
         % Store the spectrum for this measurement.
         cal.raw.lightMeas(:,i) = wavelengthBandMeasurements(i).lightSpectrum;
         cal.raw.t.lightMeas(i) = wavelengthBandMeasurements(i).time;
-        if (cal.describe.useOmni)
-            cal.raw.omniDriver.lightMeas(:,i) = wavelengthBandMeasurements(i).lightSpectrumOD;
-        end
-        
+
         % Store which columns were on for this measurement.
         cal.raw.cols(:,i) = zeros(ol.NumCols, 1);
         e = wavelengthBandMeasurements(i).bandRange;
@@ -414,10 +390,6 @@ try
     % Store some measurement parameters.
     cal.describe.durationMinutes = (GetSecs - startCal)/60;
     cal.describe.date = datestr(now);
-    if (cal.describe.useOmni)
-        cal.describe.omniDriver.wavelengths = od.Wavelengths;
-        cal.describe.omniDriver.integrationTime = od.IntegrationTime;
-    end
     
     % Gamma measurements.
     %
@@ -445,11 +417,6 @@ try
         
         % Allocate memory for the recorded spectra.
         cal.raw.gamma.rad(i).meas = zeros(cal.describe.S(3), cal.describe.nGammaLevels);
-        if (cal.describe.useOmni)
-            cal.raw.gamma.omnidriver(i).meas = zeros(od.NumPixels, cal.describe.nGammaLevels);
-        else
-            cal.raw.gamma.omnidriver(i).meas = zeros(1, cal.describe.nGammaLevels);
-        end
         
         % Test each gamma level for this band. If the gamma randomization
         % flag is set, shuffle now. We are still storing the measurements

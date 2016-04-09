@@ -23,7 +23,13 @@ function OLAnalyzeCal
 % 1/19/14 dhb, ms Update cal.power -> cal.gamma.
 % 3/14/14 dhb  Added some gamma debugging plots, optionally.
 % 9/15/15 ms   Updated savefigghost -> FigureSave.
-
+% 4/9/16  dhb  Update for case where calibration is done around a specified
+%                background.
+%              Strip out omni code.
+%              Have inline function returnScaleFactor return 1 if
+%                cal.describe.correctForDrift is false, and then get rid of
+%                all the other conditionals on this variable.
+%              Fixed a figure legend that was generating a warning.
 
 %% Close figs
 close all;
@@ -39,18 +45,17 @@ if (~isfield(cal.describe,'numWavelengthBands'))
     fprintf('This is an old calibration file.  Running OLInit (but not saving)\n');
     cal = OLInitCal(cal);
 end
+if (~isfield(cal.describe,'specifiedBackground'))
+    cal = OLInitCal(cal);
+end
+if (cal.describe.useOmni)
+    error('We do not use the omni for calibration.')
+end
 
 % Find the directory we store our calibration files.
 oneLightCalSubdir = 'OneLight';
 calFolderInfo = what(fullfile(CalDataFolder, oneLightCalSubdir));
 calFolder = calFolderInfo.path;
-
-%% Plot factors
-if (cal.describe.useOmni)
-    figs.SingleBandMeas = figure; clf; hold on
-    plot(cal.computed.commonWls, cal.computed.omniToPr650FactorsCommon0, 'r');
-    plot(cal.computed.commonWls, cal.computed.omniToPr650FactorsCommon, 'g');
-end
 
 %% Title and plot folder stuff
 [calID calIDTitle] = OLGetCalID(cal);
@@ -83,11 +88,6 @@ figs.SingleBandMeas = figure; clf; hold on
 for w = whichIndex;
     plot(cal.computed.pr650Wls, cal.computed.pr650M(:,whichIndex)); hold on;
 end
-if (cal.describe.useOmni)
-    plot(cal.computed.commonWls, cal.computed.pr650MCommon(:,whichIndex), 'b');
-    plot(cal.computed.commonWls, ...
-        cal.computed.omniToPr650FactorsCommon(:,ones(1,length(whichIndex))) .* cal.computed.omniMConvCommon(:,whichIndex),'g');
-end
 legend(strread(num2str(whichIndex),'%s')); legend boxoff;
 pbaspect([1 1 1]); xlim([380 780]);
 xlabel('Wavelength [nm]');
@@ -98,42 +98,30 @@ title({calIDTitle; 'Single band measurements'});
 pr650HalfOnPre = cal.raw.halfOnMeas(:,1) - cal.computed.pr650MeanDark;
 pr650HalfOnPost = cal.raw.halfOnMeas(:,2) - cal.computed.pr650MeanDark;
 pr650HalfOnMean = mean([pr650HalfOnPre pr650HalfOnPost],2);
-if (cal.describe.useOmni)
-    pr650HalfOnCommon = interp1(cal.computed.pr650Wls, pr650HalfOnMean, cal.computed.commonWls);
-    omniHalfOnPre = cal.raw.omniDriver.halfOnMeas(:,1) - cal.computed.omniMeanDark;
-    omniHalfOnPost = cal.raw.omniDriver.halfOnMeas(:,2) - cal.computed.omniMeanDark;
-    omniHalfOnMean = mean([omniHalfOnPre omniHalfOnPost],2);
-    omniHalfOnSpline = interp1(cal.computed.omniWls, omniHalfOnMean, cal.computed.omniSplineWls);
-    omniHalfOnConv = conv(omniHalfOnSpline, cal.computed.gaussConv, 'same');
-    omniHalfOnConvCommon = interp1(cal.computed.omniSplineWls,omniHalfOnConv,cal.computed.commonWls);
-    omniFactor = omniHalfOnConvCommon\pr650HalfOnCommon;
-end
-
 figs.HalfOnMeas = figure; clf; hold on
 plot(cal.computed.pr650Wls,pr650HalfOnMean,'k');
 plot(cal.computed.pr650Wls,pr650HalfOnPre,'-r');
 plot(cal.computed.pr650Wls,pr650HalfOnPost,'-g');
-if (cal.describe.useOmni)
-    plot(cal.computed.omniWls,omniFactor*omniHalfOnMean,'k');
-    plot(cal.computed.omniWls,omniFactor*omniHalfOnPre,'r:');
-    plot(cal.computed.omniWls,omniFactor*omniHalfOnPost,'g:');
-    plot(cal.computed.commonWls,cal.computed.omniToPr650FactorsCommon .* omniHalfOnConvCommon,'k.','MarkerSize',2);
-end
 legend('Half-on (mean)', 'Half-on (pre-cal)', 'Half-on (post-cal)');
 xlabel('Wavelength [nm]');
 ylabel('Power per wavelength band');
 pbaspect([1 1 1]); xlim([380 780]);
 title({calIDTitle; 'Half-on Measurements'});
 
-%% Full on measurements, how repeatable
-if (cal.describe.useOmni)
-    numFullOnTests = size(cal.raw.omniDriver.fullOnMeas,2)/2;
-    figs.FullOnRep = figure; clf; hold on
-    plot(cal.computed.omniWls, cal.raw.omniDriver.fullOnMeas(:,1:numFullOnTests), 'r');
-    plot(cal.computed.omniWls, cal.raw.omniDriver.fullOnMeas(:,numFullOnTests+1:2*numFullOnTests), 'g');
-    xlabel('Wavelength [nm]')
-    ylabel('Omni power');
-    title({'Full on repeatability' ; cal.describe.date});
+%% Specified background figure, how repeatable
+if (cal.describe.specifiedBackground)
+    figs.specifiedBackground = figure; clf; hold on
+    pr650SpecifiedBgPre = cal.raw.specifiedBackgroundMeas(:,1);
+    pr650SpecifiedBgPost = cal.rawspecifiedBackgroundMeas(:,2);
+    pr650SpecifiedBgMean = mean([pr650SpecifiedBgPre pr650SpecifiedBgPost],2);
+    plot(cal.computed.pr650Wls,pr650SpecifiedBgMean,'k');
+    plot(cal.computed.pr650Wls,pr650SpecifiedBgPre,'-r');
+    plot(cal.computed.pr650Wls,pr650SpecifiedBgPost,'-g');
+    legend('SpecifiedBg (mean)', 'SpecifiedBg (pre-cal)', 'SpecifiedBg (post-cal)');
+    xlabel('Wavelength [nm]');
+    ylabel('Power per wavelength band');
+    pbaspect([1 1 1]); xlim([380 780]);
+    title({calIDTitle; 'Specified Background Measurements'});
 end
 
 %% Plot full set of PR-650 calibration data
@@ -167,12 +155,10 @@ if cal.describe.useAverageGamma
     h = plot(cal.computed.gammaInput, cal.computed.gammaTableAvg, '-k', 'LineWidth', 1.5);
     legend(h, 'Median', 'Location', 'SouthEast'); legend boxoff;
 end
-
 xlabel('Input Fraction');
 ylabel('Relative Power');
 pbaspect([1 1 1]); xlim([0 1]); ylim([0 1]); plot([0 1], [0 1], '--k');
 title({calIDTitle; 'Device Gamma'});
-
 
 %% Debugging gamma plots.
 %
@@ -301,20 +287,8 @@ for i = 1:nSpectra
 end
 suptitle([calIDTitle sprintf('\nSpectral Invariance, upper %d of %d spectra\n',size(cal.raw.gamma.rad(i).meas,2)-nSkip,size(cal.raw.gamma.rad(i).meas,2))]);
 
-% Omni gamma data
-if (cal.describe.useOmni)
-    figs.OmniDeviceGamma = figure; clf; hold on
-    for k = 1:length(cal.computed.omniGammaData1)
-        plot(cal.computed.gammaInputRaw, [0 cal.computed.omniGammaData1{k}]', [plotColors(k) 'x']);
-    end
-    plot(cal.computed.gammaInput, cal.computed.omniGammaTable, 'r');
-    plot(cal.computed.gammaInput, cal.computed.gammaTable, 'k');
-    xlabel('Input Fraction');
-    ylabel('Omni Relative Power');
-    title('Omni Device Gamma');
-end
-
 %% Plot linearity check
+%
 % Figure out the scalar to correct for the linear drift
 if cal.describe.correctLinearDrift
     fullOn0 = cal.raw.fullOn(:,1);
@@ -323,15 +297,24 @@ if cal.describe.correctLinearDrift
     t0 = cal.raw.t.fullOn(1);
     t1 = cal.raw.t.fullOn(2);
     returnScaleFactor = @(t) 1./((1-(1-s)*((t-t0)./(t1-t0))));
+else
+    returnScaleFactor = @(t) 1;
 end
 
 figs.AdditivityCheck = figure; clf; hold on;
 nIndMeas = size(cal.raw.independence.meas,2);
 pred = 0;
-for i = 1:nIndMeas
-    pred = pred + cal.raw.independence.meas(:,i)*returnScaleFactor(cal.raw.t.independence.meas(i))-cal.computed.pr650MeanDark;
+if (cal.describe.specifiedBackground)
+    for i = 1:nIndMeas
+        pred = pred + cal.raw.independence.meas(:,i)*returnScaleFactor(cal.raw.t.independence.meas(i))-cal.computed.pr650MeanSpecifiedBackground;
+    end
+    actual = cal.raw.independence.measAll*returnScaleFactor(cal.raw.t.independence.measAll)-cal.computed.pr650MeanSpecifiedBackground;
+else
+    for i = 1:nIndMeas
+        pred = pred + cal.raw.independence.meas(:,i)*returnScaleFactor(cal.raw.t.independence.meas(i))-cal.computed.pr650MeanDark;
+    end
+    actual = cal.raw.independence.measAll*returnScaleFactor(cal.raw.t.independence.measAll)-cal.computed.pr650MeanDark;
 end
-actual = cal.raw.independence.measAll*returnScaleFactor(cal.raw.t.independence.measAll)-cal.computed.pr650MeanDark;
 plot(cal.computed.pr650Wls, pred, 'r');
 plot(cal.computed.pr650Wls, actual, 'g');
 legend('Predicted', 'Actual'); legend boxoff;
@@ -439,7 +422,8 @@ end
 pbaspect([1 1 1]);
 
 
-%% Look at the half-on spectrum in device settings space.
+%% Look at the measured half-on spectra compared to what we predict
+% from the calibration file.
 halfOnSpd1 = cal.raw.halfOnMeas(:, 1);
 halfOnSpd2 = cal.raw.halfOnMeas(:, 2);
 halfOnSettings = 0.5*ones(cal.describe.numWavelengthBands,1);
@@ -454,7 +438,7 @@ pbaspect([1 1 1]); xlabel('Wavelength [nm]'); ylabel('Power [W/sr/m2/nm]');
 box off;
 set(gca, 'TickDir', 'out');
 legend('Predicted half-on', 'Measured half-on [1]', 'Measured half-on [2]'); legend boxoff;
-title({calIDTitle 'Half-on'});
+title({calIDTitle 'Half-on, comparison to calibration prediction',});
 
 figs.HalfOnCheckDiff = figure;
 plot(wls, predictedSpd-halfOnSpd1, '-r'); hold on;
@@ -462,13 +446,13 @@ plot(wls, predictedSpd-halfOnSpd2, '-b');
 pbaspect([1 1 1]); xlabel('Wavelength [nm]'); ylabel('Diff power [W/sr/m2/nm]');
 box off;
 set(gca, 'TickDir', 'out');
-legend('Predicted half-on', 'Measured half-on [1]', 'Measured half-on [2]'); legend boxoff;
-title({calIDTitle 'Half-on'});
+legend('Diff half-on [1]', 'Diff half-on [2]'); legend boxoff;
+title({calIDTitle 'Half-on, difference with calibration prediction'});
 
 %% Look at the wiggly spectrum
 wigglySpd1 = cal.raw.wigglyMeas.measSpd(:, 1);
 wigglySpd2 = cal.raw.wigglyMeas.measSpd(:, 2);
-wigglySettings = cal.raw.wigglyMeas.settings(:, 1)
+wigglySettings = cal.raw.wigglyMeas.settings(:, 1);
 wigglyPrimaries = OLSettingsToPrimary(cal, wigglySettings);
 predictedSpd = OLPrimaryToSpd(cal, wigglyPrimaries);
 
@@ -493,11 +477,7 @@ plot(cal.raw.diagnostics.additivity.midPrimary.flankersSep0On(1, 1).predictedSpd
 commandwindow;
 CHECKCALSTABILITY = GetWithDefault('Compare with a previous calibration?',0);
 if (CHECKCALSTABILITY)
-    if (cal.describe.useOmni)
-        nSubs = 4;
-    else
-        nSubs = 3;
-    end
+    nSubs = 3;
     oneLightCal1 = cal;
     oneLightCal2 = OLGetCalibrationStructure;
     fieldName = sprintf('Compare_%s_%s_%s_with_%s_%s_%s',...
@@ -533,16 +513,6 @@ if (CHECKCALSTABILITY)
     ylabel('Power')
     title({calIDTitle ; 'Half on now (red), then (grn), scaled then to now (blk)'});
     axis('square');
-    
-    if (cal.describe.useOmni)
-        subplot(1,nSubs,4); hold on;
-        plot(oneLightCal1.raw.omniDriver.lightMeas(:), oneLightCal2.raw.omniDriver.lightMeas(:),'ko','MarkerSize',2,'MarkerFaceColor','k');
-        plot([0 0.6],[0 0.6],'r');
-        axis([0 0.6 0 0.6]);
-        axis('square');
-        xlabel(oneLightCal1.describe.date); ylabel(oneLightCal2.describe.date);
-        title({'Omni' ; cal.describe.date});
-    end
     
     % Print out numeric comparisons
     dark1XYZ = mean(T_xyz*oneLightCal1.raw.darkMeas,2);
