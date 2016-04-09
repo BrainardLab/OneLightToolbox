@@ -559,10 +559,10 @@ try
         fprintf('- Measuring specified background...');
         [starts,stops] = OLSettingsToStartsStops(cal,cal.describe.specifiedBackgroundSettings);
         measTemp = OLTakeMeasurement(ol, od, starts, stops, cal.describe.S, meterToggle, cal.describe.meterTypeNum, nAverage);
-        cal.raw.specifiedBackgroundMeas(:,1) = measTemp.pr650.spectrum;
-        cal.raw.t.specifiedBackgroundMeas(:,1) = measTemp.pr650.time(1);
+        cal.raw.specifiedBackgroundMeas(:,2) = measTemp.pr650.spectrum;
+        cal.raw.t.specifiedBackgroundMeas(:,2) = measTemp.pr650.time(1);
         if (meterToggle(2))
-            cal.raw.omniDriver.specifiedBackgroundMeas(:,1) = measTemp.omni.spectrum;
+            cal.raw.omniDriver.specifiedBackgroundMeas(:,2) = measTemp.omni.spectrum;
         end
         fprintf('Done\n');
     end
