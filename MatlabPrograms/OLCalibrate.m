@@ -79,31 +79,27 @@ try
         case 'BoxA'
             cal.describe.gammaFitType = 'betacdfpiecelin';
             cal.describe.useAverageGamma = false;
-            % We for BoxB, we set nGammaBands to be nPrimaries, see below.
-            %cal.describe.nGammaBands = 20;
             cal.describe.nShortPrimariesSkip = 7;
             cal.describe.nLongPrimariesSkip = 3;
+             cal.describe.nGammaBands = 16;
         case 'BoxB'
             cal.describe.gammaFitType = 'betacdfpiecelin';
             cal.describe.useAverageGamma = false;
-            % We for BoxB, we set nGammaBands to be nPrimaries, see below.
-            %cal.describe.nGammaBands = 20;
             cal.describe.nShortPrimariesSkip = 5;
             cal.describe.nLongPrimariesSkip = 3;
+             cal.describe.nGammaBands = 4;
         case 'BoxC'
             cal.describe.gammaFitType = 'betacdfpiecelin';
             cal.describe.useAverageGamma = false;
-            % We for BoxB, we set nGammaBands to be nPrimaries, see below.
-            cal.describe.nGammaBands = 20;
             cal.describe.nShortPrimariesSkip = 8;
             cal.describe.nLongPrimariesSkip = 8;
+             cal.describe.nGammaBands = 16;
         case 'BoxD'
             cal.describe.gammaFitType = 'betacdfpiecelin';
             cal.describe.useAverageGamma = false;
-            % We for BoxB, we set nGammaBands to be nPrimaries, see below.
-            %cal.describe.nGammaBands = 20;
             cal.describe.nShortPrimariesSkip = 8;
             cal.describe.nLongPrimariesSkip = 2;
+             cal.describe.nGammaBands = 16;
         otherwise
             error('Unknown OneLight box');
     end
@@ -187,22 +183,6 @@ try
     cal.describe.primaryStopCols = cal.describe.primaryStartCols + cal.describe.bandWidth-1;
     cal.describe.numWavelengthBands = length(cal.describe.primaryStartCols);
     nPrimaries = cal.describe.numWavelengthBands;
-    
-    % For BoxB, we want to measure the gamma function for each primary.
-    switch (whichBox)
-        case 'BoxA'
-            %cal.describe.nGammaBands = nPrimaries;
-            cal.describe.nGammaBands = 16;
-        case 'BoxB'
-            %cal.describe.nGammaBands = nPrimaries;
-            cal.describe.nGammaBands = 16;
-        case 'BoxC'
-            %cal.describe.nGammaBands = nPrimaries;
-            cal.describe.nGammaBands = 16;
-        case 'BoxD'
-            %cal.describe.nGammaBands = nPrimaries;
-            cal.describe.nGammaBands = 16;
-    end
     
     % Specify specified background, if desired.  This could be customized
     % for the box or experiment, if it seems promising to do so.
