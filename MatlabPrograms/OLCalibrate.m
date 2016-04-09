@@ -32,6 +32,12 @@ function OLCalibrate
 %          dhb  Put in save before init, temporarily, because the init is likely to crash until we fix it for
 %               new cal file.
 % 7/20/14  ms   calID set with OLGetCalID. Save before init taken out.
+% 4/9/16   dhb  Added in option to measure around a non-zero background.  
+%               Also did a little cleaning, which I hope doesn't break
+%               anything.
+%               Remove blocks of commented out code.
+%               Uncomment debugging save before call to init, because there
+%               will probably be bugs.
 
 global g_useIOPort;
 g_useIOPort = 1;
@@ -115,6 +121,9 @@ try
     % time of measurement.
     cal.describe.correctLinearDrift = 1;
     
+    % Non-zero background for gamma and related measurments
+    cal.describe.specifiedBackground = 1;
+    
     % Use Omni?
     % First entry is PR-6xx and is always true.
     % Second entry is omni and can be on or off.
@@ -185,8 +194,8 @@ try
         error('We want nGammaLevels to divide number of rows exactly');
     end
     
-    % Calculate the start columns for each effective primary.
-    % These are indexed MATLAB style, 1:numCols.
+    % Calculate the start columns for each effective primary. These are
+    % indexed MATLAB style, 1:numCols.
     cal.describe.primaryStartCols = 1 + (cal.describe.nShortPrimariesSkip*cal.describe.bandWidth:cal.describe.bandWidth:(ol.NumCols - (cal.describe.nLongPrimariesSkip+1)*cal.describe.bandWidth));
     cal.describe.primaryStopCols = cal.describe.primaryStartCols + cal.describe.bandWidth-1;
     cal.describe.numWavelengthBands = length(cal.describe.primaryStartCols);
@@ -208,8 +217,14 @@ try
             cal.describe.nGammaBands = 16;
     end
     
-    
-    
+    % Specify specified background, if desired.  This could be customized
+    % for the box or experiment, if it seems promising to do so.
+    %
+    % At present, this uses a half on background in settings space.
+    if (cal.describe.specifiedBackground)
+        cal.describe.specifiedBackgroundSettings = 0.5*ones(nPrimaries,1);
+    end
+ 
     % Find and set the optimal integration time.  Subtract off a couple
     % thousand microseconds just to give it a conservative value.
     ol.setAll(true);
@@ -269,8 +284,9 @@ try
     end
     fprintf('Done\n');
     
-    % Take a dark measurement.
-    fprintf('- Measuring background...');
+    % Take a dark measurement.  Use special case provided by OLSettingsToStartsStops
+    % that turns all mirrors off.
+    fprintf('- Measuring dark background...');
     theSettings = 0*ones(nPrimaries,1);
     [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
     measTemp = OLTakeMeasurement(ol, od, starts, stops, cal.describe.S, meterToggle, cal.describe.meterTypeNum, nAverage);
@@ -283,12 +299,34 @@ try
     
     % Take a check dark measurement.  Use setAll(false) instead of our
     % starts/stops code.
-    fprintf('- Measuring background again ...');
+    fprintf('- Measuring dark background again...');
     ol.setAll(false);
     cal.raw.darkMeasCheck(:,1) = MeasSpd(cal.describe.S,cal.describe.meterTypeNum,'off');
     cal.raw.t.darkMeasCheck(:,1) = mglGetSecs;
     fprintf('Done\n');
     
+    % Take a spcecified background measurement, if desired
+    if (cal.describe.specifiedBackground)
+        fprintf('- Measuring specified background...');        
+        theSettings = cal.describe.specifiedBackgroundSettings;
+        [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
+        measTemp = OLTakeMeasurement(ol, od, starts, stops, cal.describe.S, meterToggle, cal.describe.meterTypeNum, nAverage);
+        cal.raw.specifiedBackgroundMeas(:,1) = measTemp.pr650.spectrum;
+        cal.raw.t.specifiedBackgroundMeas(:,1) = measTemp.pr650.time(1);
+        if (meterToggle(2))
+            cal.raw.omniDriver.specifiedBackgroundMeas(:,1) = measTemp.omni.spectrum;
+        end
+        fprintf('Done\n');
+    end
+
+    % Primary measurements.
+    %
+    % it is not clear to me (DHB, 4/9/16) why these are first stored in a
+    % structure indexed by primary and then popped into matrix form in the
+    % calibration structure.  As far as I can tell, the structure is never
+    % used except to put the data in to the matrix.  This may be a vestigal
+    % feature, but I am not going to change it right now.
+    %
     % If needed, shuffle the primary measurements.
     if cal.describe.randomizePrimaryMeas
         primaryMeasIter = Shuffle(1:length(cal.describe.primaryStartCols));
@@ -296,17 +334,39 @@ try
         primaryMeasIter = 1:length(cal.describe.primaryStartCols);
     end
     for i = primaryMeasIter
-        fprintf('- Measurement %d of %d...', i, length(cal.describe.primaryStartCols));
-        
-        % Set the starts/stops
-        theSettings = zeros(nPrimaries,1);
-        theSettings(i) = 1;
-        [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
-        
+                
         % Record the band start and end.
         wavelengthBandMeasurements(i).bandRange = [cal.describe.primaryStartCols(i), cal.describe.primaryStopCols(i)]; %#ok<*AGROW>
         
-        % Take a measurement.
+        % If we are using a specified background, we need to measure for all
+        % primaries except the one being characterized at the specified
+        % level. (If not, we just use the dark measurement for this
+        % purpose.  Which is used to produce the actual calibration data is
+        % handled when we post-process the measurements.)
+        if (cal.describe.specifiedBackground)
+            fprintf('- Measuring effective background for effective primary %d...',i);
+            theSettings = cal.described.specifiedBackgroundSettings;
+            theSettings(i) = 0;
+            [starts,stops] = OLSettingsToStartsStops(cal,cal.describe.specifiedBackgroundSettings);
+            measTemp = OLTakeMeasurement(ol, od, starts, stops, cal.describe.S, meterToggle, cal.describe.meterTypeNum, nAverage);
+            wavelengthBandMeasurements(i).effectiveBackgroundSpectrum = measTemp.pr650.spectrum;
+            wavelengthBandMeasurements(i).effectiveBackgroundTime = measTemp.pr650.time(1);
+            if (meterToggle(2))
+                wavelengthBandMeasurements(i).effectiveBackgroundSpectrumOD = measTemp.omni.spectrum;
+            end
+            fprintf('Done\n');
+        end
+        
+        % Set the starts/stops for this effective primary, relative to the
+        % measurement background, and take the measurement.
+        fprintf('- Measurement for effective primary %d of %d...', i, length(cal.describe.primaryStartCols));
+        if (cal.describe.specifiedBackground)
+            theSettings = cal.described.specifiedBackgroundSettings;
+        else
+            theSettings = zeros(nPrimaries,1);
+        end
+        theSettings(i) = 1;
+        [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
         measTemp = OLTakeMeasurement(ol, od, starts, stops, cal.describe.S, meterToggle, cal.describe.meterTypeNum, nAverage);
         wavelengthBandMeasurements(i).lightSpectrum = measTemp.pr650.spectrum;
         wavelengthBandMeasurements(i).time = measTemp.pr650.time(1);
@@ -314,7 +374,6 @@ try
             wavelengthBandMeasurements(i).lightSpectrumOD = measTemp.omni.spectrum;
         end
         fprintf('Done\n');
-        
     end
     
     % Refactor the measurements into separate matrices for further calculations.
@@ -327,9 +386,17 @@ try
     end
     cal.raw.cols = zeros(ol.NumCols, cal.describe.numWavelengthBands);
     for i = 1:cal.describe.numWavelengthBands
+        if (cal.describe.specifiedBackground)    
+            cal.raw.effectiveBgMeas(:,i) = wavelengthBandMeasurements(i).effectiveBackgroundSpectrum;
+            cal.raw.t.effectiveBgMeas(i) = wavelengthBandMeasurements(i).effectiveBackgroundTime;
+            if (meterToggle(2))   
+                cal.raw.omniDriver.effectiveBgMeas(:,i) = wavelengthBandMeasurements(i).effectiveBackgroundSpectrumOD;
+            end
+        end
+
         % Store the spectrum for this measurement.
         cal.raw.lightMeas(:,i) = wavelengthBandMeasurements(i).lightSpectrum;
-        cal.raw.t.lightMeas(:,i) = wavelengthBandMeasurements(i).time;
+        cal.raw.t.lightMeas(i) = wavelengthBandMeasurements(i).time;
         if (cal.describe.useOmni)
             cal.raw.omniDriver.lightMeas(:,i) = wavelengthBandMeasurements(i).lightSpectrumOD;
         end
@@ -358,22 +425,6 @@ try
     cal.describe.gamma.gammaBands = round(linspace(1,cal.describe.numWavelengthBands,cal.describe.nGammaBands));
     cal.describe.gamma.gammaLevels = linspace(1/cal.describe.nGammaLevels,1,cal.describe.nGammaLevels);
     
-    % OLD STUFF
-    % Compute gamma settings stepSize for updating stops as we chunk through gamma levels
-    % gammaStepSize = ol.NumRows/cal.describe.nGammaLevels;
-    %
-    % The mirror stop rows for each gamma measurement level
-    % cal.raw.gamma.stops = (gammaStepSize:gammaStepSize:ol.NumRows) - 1;
-    %
-    %
-    % if (cal.describe.nGammaLevels ~= length(cal.raw.gamma.stops))
-    %     error('Failed to compute number of gamma levels to the same value in two places');
-    % end
-    %
-    % Store some measurement parameters.
-    % cal.describe.gamma.numRowsPerTest = cal.describe.nGammaLevels;
-    % cal.describe.gamma.rowStepSize = gammaStepSize;
-    
     % Allocate some memory.
     cal.raw.gamma.cols = zeros(ol.NumCols, cal.describe.nGammaBands);
     
@@ -385,9 +436,6 @@ try
     end
     for i = gammaMeasIter
         fprintf('\n*** Gamma measurements on gamma band set %d of %d ***\n\n', i, cal.describe.nGammaBands);
-        
-        %SendEmail(emailRecipient, ['OneLight Calibration: Gamma meas ' num2str(i)], ...
-        %    'Starting...');
         
         % Store the columns used for this set.
         cal.raw.gamma.cols(:,i) = cal.raw.cols(:,cal.describe.gamma.gammaBands(i));
@@ -408,33 +456,46 @@ try
         else
             gammaLevelsIter = 1:cal.describe.nGammaLevels;
         end
+        
+        % If we're specifying the background, we need a measurement of that
+        % background but with the settings for the specified gamma band set
+        % to zero.  This is then used to subtract off the background from
+        % the series of gamma measurements, rather than using the omnibus
+        % dark level measurement.
+        if (cal.describe.specifiedBackground)
+            fprintf('- Measuring effective background for gamma band %d...',i);
+            theSettings = cal.described.specifiedBackgroundSettings;
+            theSettings(cal.describe.gamma.gammaBands(i)) = 0;
+            [starts,stops] = OLSettingsToStartsStops(cal,cal.describe.specifiedBackgroundSettings);
+            measTemp = OLTakeMeasurement(ol, od, starts, stops, cal.describe.S, meterToggle, cal.describe.meterTypeNum, nAverage);
+            cal.raw.gamma.rad(i).effectiveBgMeas = measTemp.pr650.spectrum;
+            cal.raw.t.rad(i).effectiveBgMeas(i) = measTemp.pr650.time(1);
+            if (meterToggle(2))
+                cal.raw.gamma.omniDriver(i).effectiveBgMeas = measTemp.omni.spectrum;
+            end
+            fprintf('Done\n');
+        end
+        
         for rowTest = gammaLevelsIter;
-            fprintf('- Taking measurement %d of %d...', rowTest, cal.describe.nGammaLevels);
-            
-            % OLD STUFF
-            % Get the stop row we are interested in.
-            % rowVal = cal.raw.gamma.stops(rowTest);
-            % starts = zeros(1, ol.NumCols);
-            % stops = cal.raw.gamma.cols(:,i)' * rowVal;
+            fprintf('- Taking measurement %d of %d for gamma band %d...', rowTest, cal.describe.nGammaLevels,i);
             
             % Set the starts/stops, measure, and store
-            theSettings = zeros(nPrimaries,1);
+            if (cal.describe.specifiedBackground)
+                theSettings = cal.described.specifiedBackgroundSettings;
+            else
+                theSettings = zeros(nPrimaries,1);
+            end
             theSettings(cal.describe.gamma.gammaBands(i)) = cal.describe.gamma.gammaLevels(rowTest);
             [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
             measTemp = OLTakeMeasurement(ol, od, starts, stops, cal.describe.S, meterToggle, cal.describe.meterTypeNum, nAverage);
             cal.raw.gamma.rad(i).meas(:,rowTest) = measTemp.pr650.spectrum;
-            cal.raw.t.gamma.rad(i).meas(:,rowTest) = measTemp.pr650.time(1);
+            cal.raw.t.gamma.rad(i).meas(rowTest) = measTemp.pr650.time(1);
             if (meterToggle(2))
                 cal.raw.gamma.omnidriver(i).meas(:,rowTest) = measTemp.omni.spectrum;
             end
             fprintf('Done\n');
         end
-        
-        %SendEmail(emailRecipient, ['OneLight Calibration: Gamma meas ' num2str(i)], ...
-        %'Finished!');
     end
-    
-    
     
     % Now we'll do an independence test on the same column sets from the
     % gamma measurements.
@@ -444,18 +505,23 @@ try
     cal.describe.independence.gammaBands = cal.describe.gamma.gammaBands;
     cal.describe.independence.nGammaBands = cal.describe.nGammaBands;
     cal.raw.independence.cols = zeros(ol.NumCols, cal.describe.nGammaBands);
+        
     fprintf('- Testing column sets individually...');
     for i = 1:cal.describe.independence.nGammaBands
         % Store column set used for this measurement.
         cal.raw.independence.cols(:,i) = cal.raw.cols(:,cal.describe.independence.gammaBands(i));
         
         % Take a measurement.
-        theSettings = zeros(nPrimaries,1);
+        if (cal.describe.specifiedBackground)
+            theSettings = cal.described.specifiedBackgroundSettings;
+        else
+        	theSettings = zeros(nPrimaries,1);
+        end
         theSettings(cal.describe.independence.gammaBands(i)) = 1;
         [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
         measTemp = OLTakeMeasurement(ol, od, starts, stops, cal.describe.S, meterToggle, cal.describe.meterTypeNum, nAverage);
         cal.raw.independence.meas(:,i) = measTemp.pr650.spectrum;
-        cal.raw.t.independence.meas(:,i) = measTemp.pr650.time(1);
+        cal.raw.t.independence.meas(i) = measTemp.pr650.time(1);
         if (meterToggle(2))
             cal.raw.independence.measOD(:,i) = measTemp.omni.spectrum;
         end
@@ -465,7 +531,11 @@ try
     % Now take a cumulative measurement.
     fprintf('- Testing column sets cumulatively...');
     cal.raw.independence.colsAll = sum(cal.raw.independence.cols, 2);
-    theSettings = zeros(nPrimaries,1);
+    if (cal.describe.specifiedBackground)
+        theSettings = cal.described.specifiedBackgroundSettings;
+    else
+        theSettings = zeros(nPrimaries,1);
+    end
     for i = 1:cal.describe.independence.nGammaBands
         theSettings(cal.describe.independence.gammaBands(i)) = 1;
     end
@@ -478,7 +548,23 @@ try
     end
     fprintf('Done\n');
     
-    % Take a dark measurement at the end.  Use special case of starts/stops
+    % Take a spcecified background measurement at the end, if desired
+    %
+    % This uses the same settings as for the specified background
+    % measurement above.
+    if (cal.describe.specifiedBackground)
+        fprintf('- Measuring specified background...');
+        [starts,stops] = OLSettingsToStartsStops(cal,cal.describe.specifiedBackgroundSettings);
+        measTemp = OLTakeMeasurement(ol, od, starts, stops, cal.describe.S, meterToggle, cal.describe.meterTypeNum, nAverage);
+        cal.raw.specifiedBackgroundMeas(:,1) = measTemp.pr650.spectrum;
+        cal.raw.t.specifiedBackgroundMeas(:,1) = measTemp.pr650.time(1);
+        if (meterToggle(2))
+            cal.raw.omniDriver.specifiedBackgroundMeas(:,1) = measTemp.omni.spectrum;
+        end
+        fprintf('Done\n');
+    end
+    
+    % Take a dark measurement at the end.  Use special case provided by OLSettingsToStartsStops
     % that turns all mirrors off.
     fprintf('- Measuring background...');
     theSettings = 0*ones(nPrimaries,1);
@@ -503,7 +589,6 @@ try
     if (meterToggle(2))
         cal.raw.omniDriver.wigglyMeas(:,2) = measTemp.omni.spectrum;
     end
-    
     fprintf('Done\n');
     
     % Take a half on on measurement.
@@ -541,7 +626,7 @@ try
     % the data.  But now that things are stable, we have
     % commented out this initial save so that we don't get the
     % annoying double saves in the calibration files.
-    % SaveCalFile(cal, selectedCalType.CalFileName);
+    SaveCalFile(cal, selectedCalType.CalFileName);
     
     % Run the calibration file through the initialization process.  This
     % loads up the data with a bunch of computed information found in the
@@ -571,9 +656,6 @@ try
     SaveCalFile(cal, fullfile(oneLightCalSubdir,selectedCalType.CalFileName));
     
     fprintf('\n*** Calibration Complete ***\n\n');
-    
-    %fprintf('\n*** Putting ol into shutdown mode ***\n\n');
-    %ol.shutdown;
     
     SendEmail(emailRecipient, 'OneLight Calibration Complete', ...
         'Finished!');
