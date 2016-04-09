@@ -439,7 +439,7 @@ try
             [starts,stops] = OLSettingsToStartsStops(cal,cal.describe.specifiedBackgroundSettings);
             measTemp = OLTakeMeasurement(ol, od, starts, stops, cal.describe.S, meterToggle, cal.describe.meterTypeNum, nAverage);
             cal.raw.gamma.rad(i).effectiveBgMeas = measTemp.pr650.spectrum;
-            cal.raw.t.rad(i).effectiveBgMeas(i) = measTemp.pr650.time(1);
+            cal.raw.t.gamma.rad(i).effectiveBgMeas(i) = measTemp.pr650.time(1);
             if (meterToggle(2))
                 cal.raw.gamma.omniDriver(i).effectiveBgMeas = measTemp.omni.spectrum;
             end
@@ -596,7 +596,8 @@ try
     % the data.  But now that things are stable, we have
     % commented out this initial save so that we don't get the
     % annoying double saves in the calibration files.
-    SaveCalFile(cal, selectedCalType.CalFileName);
+    oneLightCalSubdir = 'OneLight';
+    SaveCalFile(cal, fullfile(oneLightCalSubdir,selectedCalType.CalFileName));
     
     % Run the calibration file through the initialization process.  This
     % loads up the data with a bunch of computed information found in the
@@ -621,7 +622,7 @@ try
     cal.raw.diagnostics.additivity.offGammaPrimary.flankersSep3Off = OLPrimaryGammaAndAdditivityTest(cal, whichPrimaryToTest, 3, {[0 0.25 0], [0 0.5 0], [0 1 0]});
     cal.raw.diagnostics.additivity.offGammaPrimary.flankersSep3On = OLPrimaryGammaAndAdditivityTest(cal, whichPrimaryToTest, 3, {[1 0.25 1], [1 0.5 1], [1 1 1]});
     
-    % Savout the calibration
+    % Save out the calibration
     oneLightCalSubdir = 'OneLight';
     SaveCalFile(cal, fullfile(oneLightCalSubdir,selectedCalType.CalFileName));
     
