@@ -85,7 +85,7 @@ try
             cal.describe.nLongPrimariesSkip = 3;
         case 'BoxB'
             cal.describe.gammaFitType = 'betacdfpiecelin';
-            cal.describe.useAverageGamma = true;
+            cal.describe.useAverageGamma = false;
             % We for BoxB, we set nGammaBands to be nPrimaries, see below.
             %cal.describe.nGammaBands = 20;
             cal.describe.nShortPrimariesSkip = 5;
@@ -328,7 +328,7 @@ try
         % handled when we post-process the measurements.)
         if (cal.describe.specifiedBackground)
             fprintf('- Measuring effective background for effective primary %d...',i);
-            theSettings = cal.described.specifiedBackgroundSettings;
+            theSettings = cal.describe.specifiedBackgroundSettings;
             theSettings(i) = 0;
             [starts,stops] = OLSettingsToStartsStops(cal,cal.describe.specifiedBackgroundSettings);
             measTemp = OLTakeMeasurement(ol, od, starts, stops, cal.describe.S, meterToggle, cal.describe.meterTypeNum, nAverage);
@@ -344,7 +344,7 @@ try
         % measurement background, and take the measurement.
         fprintf('- Measurement for effective primary %d of %d...', i, length(cal.describe.primaryStartCols));
         if (cal.describe.specifiedBackground)
-            theSettings = cal.described.specifiedBackgroundSettings;
+            theSettings = cal.describe.specifiedBackgroundSettings;
         else
             theSettings = zeros(nPrimaries,1);
         end
@@ -434,7 +434,7 @@ try
         % dark level measurement.
         if (cal.describe.specifiedBackground)
             fprintf('- Measuring effective background for gamma band %d...',i);
-            theSettings = cal.described.specifiedBackgroundSettings;
+            theSettings = cal.describe.specifiedBackgroundSettings;
             theSettings(cal.describe.gamma.gammaBands(i)) = 0;
             [starts,stops] = OLSettingsToStartsStops(cal,cal.describe.specifiedBackgroundSettings);
             measTemp = OLTakeMeasurement(ol, od, starts, stops, cal.describe.S, meterToggle, cal.describe.meterTypeNum, nAverage);
@@ -451,7 +451,7 @@ try
             
             % Set the starts/stops, measure, and store
             if (cal.describe.specifiedBackground)
-                theSettings = cal.described.specifiedBackgroundSettings;
+                theSettings = cal.describe.specifiedBackgroundSettings;
             else
                 theSettings = zeros(nPrimaries,1);
             end
@@ -483,7 +483,7 @@ try
         
         % Take a measurement.
         if (cal.describe.specifiedBackground)
-            theSettings = cal.described.specifiedBackgroundSettings;
+            theSettings = cal.describe.specifiedBackgroundSettings;
         else
         	theSettings = zeros(nPrimaries,1);
         end
@@ -502,7 +502,7 @@ try
     fprintf('- Testing column sets cumulatively...');
     cal.raw.independence.colsAll = sum(cal.raw.independence.cols, 2);
     if (cal.describe.specifiedBackground)
-        theSettings = cal.described.specifiedBackgroundSettings;
+        theSettings = cal.describe.specifiedBackgroundSettings;
     else
         theSettings = zeros(nPrimaries,1);
     end
