@@ -135,7 +135,7 @@ end
 cal.computed.pr650MeanDark = mean(cal.computed.pr650Md,2);
 cal.computed.pr650MeanDark(cal.computed.pr650MeanDark < 0) = 0;
 if (cal.describe.specifiedBackground)
-    cal.comptude.pr650M = cal.computed.pr650M-cal.computed.pr650MEffectiveBg;
+    cal.computed.pr650M = cal.computed.pr650M-cal.computed.pr650MEffectiveBg;
     cal.computed.pr650M(cal.computed.pr650M < 0) = 0;
 else
     cal.computed.pr650M = cal.computed.pr650M - ...

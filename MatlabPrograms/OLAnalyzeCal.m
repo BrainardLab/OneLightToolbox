@@ -112,7 +112,7 @@ title({calIDTitle; 'Half-on Measurements'});
 if (cal.describe.specifiedBackground)
     figs.specifiedBackground = figure; clf; hold on
     pr650SpecifiedBgPre = cal.raw.specifiedBackgroundMeas(:,1);
-    pr650SpecifiedBgPost = cal.rawspecifiedBackgroundMeas(:,2);
+    pr650SpecifiedBgPost = cal.raw.specifiedBackgroundMeas(:,2);
     pr650SpecifiedBgMean = mean([pr650SpecifiedBgPre pr650SpecifiedBgPost],2);
     plot(cal.computed.pr650Wls,pr650SpecifiedBgMean,'k');
     plot(cal.computed.pr650Wls,pr650SpecifiedBgPre,'-r');

@@ -87,7 +87,7 @@ try
             cal.describe.useAverageGamma = false;
             cal.describe.nShortPrimariesSkip = 5;
             cal.describe.nLongPrimariesSkip = 3;
-             cal.describe.nGammaBands = 4;
+            cal.describe.nGammaBands = 16;
         case 'BoxC'
             cal.describe.gammaFitType = 'betacdfpiecelin';
             cal.describe.useAverageGamma = false;
@@ -590,18 +590,18 @@ try
     % in the presence or absence of flanking primaries on either side at
     % 0.25, 0.5 and 1 of the max. We do this here because we need the gamma
     % function to run this successfully.
-    whichPrimaryToTest = cal.describe.gamma.gammaBands(ceil(end/2));
-    cal.raw.diagnostics.additivity.midPrimary.flankersSep0Off = OLPrimaryGammaAndAdditivityTest(cal, whichPrimaryToTest, 1, {[0 0.25 0], [0 0.5 0], [0 1 0]});
-    cal.raw.diagnostics.additivity.midPrimary.flankersSep0On = OLPrimaryGammaAndAdditivityTest(cal, whichPrimaryToTest, 1, {[1 0.25 1], [1 0.5 1], [1 1 1]});
-    cal.raw.diagnostics.additivity.midPrimary.flankersSep3Off = OLPrimaryGammaAndAdditivityTest(cal, whichPrimaryToTest, 3, {[0 0.25 0], [0 0.5 0], [0 1 0]});
-    cal.raw.diagnostics.additivity.midPrimary.flankersSep3On = OLPrimaryGammaAndAdditivityTest(cal, whichPrimaryToTest, 3, {[1 0.25 1], [1 0.5 1], [1 1 1]});
-    
-    whichPrimaryToTest = round((cal.describe.gamma.gammaBands(ceil(end/2)+1) + cal.describe.gamma.gammaBands(ceil(end/2)))/2);
-    cal.raw.diagnostics.additivity.offGammaPrimary.flankersSep0Off = OLPrimaryGammaAndAdditivityTest(cal, whichPrimaryToTest, 1, {[0 0.25 0], [0 0.5 0], [0 1 0]});
-    cal.raw.diagnostics.additivity.offGammaPrimary.flankersSep0On = OLPrimaryGammaAndAdditivityTest(cal, whichPrimaryToTest, 1, {[1 0.25 1], [1 0.5 1], [1 1 1]});
-    cal.raw.diagnostics.additivity.offGammaPrimary.flankersSep3Off = OLPrimaryGammaAndAdditivityTest(cal, whichPrimaryToTest, 3, {[0 0.25 0], [0 0.5 0], [0 1 0]});
-    cal.raw.diagnostics.additivity.offGammaPrimary.flankersSep3On = OLPrimaryGammaAndAdditivityTest(cal, whichPrimaryToTest, 3, {[1 0.25 1], [1 0.5 1], [1 1 1]});
-    
+%     whichPrimaryToTest = cal.describe.gamma.gammaBands(ceil(end/2));
+%     cal.raw.diagnostics.additivity.midPrimary.flankersSep0Off = OLPrimaryGammaAndAdditivityTest(cal, whichPrimaryToTest, 1, {[0 0.25 0], [0 0.5 0], [0 1 0]});
+%     cal.raw.diagnostics.additivity.midPrimary.flankersSep0On = OLPrimaryGammaAndAdditivityTest(cal, whichPrimaryToTest, 1, {[1 0.25 1], [1 0.5 1], [1 1 1]});
+%     cal.raw.diagnostics.additivity.midPrimary.flankersSep3Off = OLPrimaryGammaAndAdditivityTest(cal, whichPrimaryToTest, 3, {[0 0.25 0], [0 0.5 0], [0 1 0]});
+%     cal.raw.diagnostics.additivity.midPrimary.flankersSep3On = OLPrimaryGammaAndAdditivityTest(cal, whichPrimaryToTest, 3, {[1 0.25 1], [1 0.5 1], [1 1 1]});
+%     
+%     whichPrimaryToTest = round((cal.describe.gamma.gammaBands(ceil(end/2)+1) + cal.describe.gamma.gammaBands(ceil(end/2)))/2);
+%     cal.raw.diagnostics.additivity.offGammaPrimary.flankersSep0Off = OLPrimaryGammaAndAdditivityTest(cal, whichPrimaryToTest, 1, {[0 0.25 0], [0 0.5 0], [0 1 0]});
+%     cal.raw.diagnostics.additivity.offGammaPrimary.flankersSep0On = OLPrimaryGammaAndAdditivityTest(cal, whichPrimaryToTest, 1, {[1 0.25 1], [1 0.5 1], [1 1 1]});
+%     cal.raw.diagnostics.additivity.offGammaPrimary.flankersSep3Off = OLPrimaryGammaAndAdditivityTest(cal, whichPrimaryToTest, 3, {[0 0.25 0], [0 0.5 0], [0 1 0]});
+%     cal.raw.diagnostics.additivity.offGammaPrimary.flankersSep3On = OLPrimaryGammaAndAdditivityTest(cal, whichPrimaryToTest, 3, {[1 0.25 1], [1 0.5 1], [1 1 1]});
+%     
     % Save out the calibration
     oneLightCalSubdir = 'OneLight';
     SaveCalFile(cal, fullfile(oneLightCalSubdir,selectedCalType.CalFileName));
