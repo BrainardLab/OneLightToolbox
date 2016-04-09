@@ -42,6 +42,12 @@ function cal = OLInitCal(calFileName, varargin)
 %              Generalize gamma/independence measurements to arbitrary number of bands.
 % 1/31/14 ms   Added scaling measurements.
 % 3/19/14 dhb  Parse options added.  Remove hard coded setting of correctLinearDrift field.
+% 4/9/16  dhb  Put in code for handling calibrations around a background.  
+%              Throw an error if cal.describe.useOmni is true.  That code
+%              is not updated.
+%              Comment out most instances of conditionals for the useOmni
+%              option.  I think we should move towards gutting these both
+%              here and in the calibration code.
 
 % Check for the number of arguments.
 error(nargchk(1, Inf, nargin));
@@ -89,6 +95,7 @@ cal = OLCalBackwardsCompatibility(cal);
 cal.computed.pr650S = cal.describe.S;
 cal.computed.pr650Wls = SToWls(cal.computed.pr650S);
 if (cal.describe.useOmni)
+    error('The omni driver code is obsolete and needs to be updated or given up on');
     cal.computed.omniWls = cal.describe.omniDriver.wavelengths;
     cal.computed.omniSplineWls = linspace(cal.computed.omniWls(1), ...
         cal.computed.omniWls(end),length(cal.computed.omniWls))';
@@ -126,13 +133,13 @@ else
         cal.computed.pr650MEffectiveBg = cal.raw.effectiveBgMeas;
     end
 end
-if (cal.describe.useOmni)
-    cal.computed.omniM = cal.raw.omniDriver.lightMeas;
-    cal.computed.omniMd = cal.raw.omniDriver.darkMeas;
-    if (cal.describe.specifiedBackground)
-        cal.computed.omniMEffectiveBg = cal.raw.omniDriver.EffectiveBgMeas;
-    end
-end
+% if (cal.describe.useOmni)
+%     cal.computed.omniM = cal.raw.omniDriver.lightMeas;
+%     cal.computed.omniMd = cal.raw.omniDriver.darkMeas;
+%     if (cal.describe.specifiedBackground)
+%         cal.computed.omniMEffectiveBg = cal.raw.omniDriver.EffectiveBgMeas;
+%     end
+% end
 
 % Subtract appropriate measurement to get the incremental spectrum for each
 % primary.  We have two options for this.  In the standard option, only the
@@ -146,23 +153,23 @@ end
 if (cal.describe.specifiedBackground)
     cal.comptude.pr650M = cal.computed.pr650M-cal.computed.pr650MEffectiveBg;
     cal.computed.pr650M(cal.computed.pr650M < 0) = 0;
-    if (cal.describe.useOmni)
-        cal.computed.omniM = cal.computed.omniM - cal.computed.omniMEffectiveBg;
-        cal.computed.omniM(cal.computed.omniM < 0) = 0;
-    end
+    % if (cal.describe.useOmni)
+    %     cal.computed.omniM = cal.computed.omniM - cal.computed.omniMEffectiveBg;
+    %     cal.computed.omniM(cal.computed.omniM < 0) = 0;
+    % end
 else
     cal.computed.pr650MeanDark = mean(cal.computed.pr650Md,2);
     cal.computed.pr650MeanDark(cal.computed.pr650MeanDark < 0) = 0;
     cal.computed.pr650M = cal.computed.pr650M - ...
         cal.computed.pr650MeanDark(:,ones(1,size(cal.computed.pr650M,2)));
     cal.computed.pr650M(cal.computed.pr650M < 0) = 0;
-    if (cal.describe.useOmni)
-        cal.computed.omniMeanDark = mean(cal.computed.omniMd,2);
-        cal.computed.omniMeanDark(cal.computed.omniMeanDark < 0) = 0;
-        cal.computed.omniM = cal.computed.omniM - ...
-            cal.computed.omniMeanDark(:,ones(1,size(cal.computed.omniM,2)));
-        cal.computed.omniM(cal.computed.omniM < 0) = 0;
-    end
+    % if (cal.describe.useOmni)
+    %     cal.computed.omniMeanDark = mean(cal.computed.omniMd,2);
+    %     cal.computed.omniMeanDark(cal.computed.omniMeanDark < 0) = 0;
+    %     cal.computed.omniM = cal.computed.omniM - ...
+    %         cal.computed.omniMeanDark(:,ones(1,size(cal.computed.omniM,2)));
+    %     cal.computed.omniM(cal.computed.omniM < 0) = 0;
+    % end
 end
 
 % Infer meter type for backwards compatibility
@@ -183,96 +190,96 @@ end
 % [DHB, 4/9/16] It is possible we should strip the omni stuff out of the whole
 % suite of calibration code because we never really got it to work well and
 % we never use it.  Getting rid of it would simplify reading and modifying the code.
-if (cal.describe.useOmni)
-    % Set up convolution filter for simulating PR-650
-    % The PR-650 is specified to have an 8 nm full-width
-    % at half-max.
-    switch (cal.describe.meterType)
-        case 1
-            cal.computed.pr650fwhm = 8;
-        case 5
-            cal.computed.pr650fwhm = 5;
-        otherwise
-            error('Unexpected meter type');
-    end
-    cal.computed.gaussWls = (0:cal.computed.omniSplineWls(2) - cal.computed.omniSplineWls(1):30)';
-    cal.computed.sigma = cal.computed.pr650fwhm/(2*sqrt(2*log(2)));
-    cal.computed.gaussConv = normpdf(cal.computed.gaussWls, 15, cal.computed.sigma);
-    cal.computed.gaussConv = cal.computed.gaussConv/sum(cal.computed.gaussConv(:));
-    
-    % Get PR-650 and omni measurements on common wavelength scale,
-    % and simulate PR-650 fwhm via omni measurements.
-    for i = 1:size(cal.computed.omniM, 2)
-        cal.computed.pr650MCommon(:,i) = ...
-            interp1(cal.computed.pr650Wls,cal.computed.pr650M(:,i),cal.computed.commonWls);
-        cal.computed.omniMSpline(:,i) = ...
-            interp1(cal.computed.omniWls,cal.computed.omniM(:,i),cal.computed.omniSplineWls);
-        cal.computed.omniMConv(:,i) = conv(cal.computed.omniMSpline(:,i),cal.computed.gaussConv,'same');
-        cal.computed.omniMConvCommon = ...
-            interp1(cal.computed.omniSplineWls,cal.computed.omniMConv,cal.computed.commonWls);
-        [~, tempIndex] = max(cal.computed.omniMConvCommon(:,i));
-        cal.computed.omniMPeakWls(i) = cal.computed.commonWls(tempIndex(1));
-    end
-    
-    % Find factor at each common wl to bring omni measurement into
-    % alignment with pr650 measurement.
-    switch cal.computed.FactorsMethod
-        case 1
-            for i = 1:size(cal.computed.omniM, 2)
-                cal.computed.omniToPr650FactorsRaw(i) = ...
-                    cal.computed.omniMConvCommon(:,i)\cal.computed.pr650MCommon(:,i);
-            end
-            cal.computed.omniToPr650FactorsCommon = ...
-                interp1(cal.computed.omniMPeakWls, cal.computed.omniToPr650FactorsRaw, ...
-                cal.computed.commonWls,'linear','extrap');
-            
-        case {0, 2}
-            cal.computed.usePowerFraction = 0.2;
-            numRows = 0;
-            for j = 1:length(cal.computed.commonWls)
-                maxPow = max(cal.computed.pr650MCommon(j,:));
-                useIndex = find(cal.computed.pr650MCommon(j,:) >= cal.computed.usePowerFraction*maxPow);
-                cal.computed.omniToPr650FactorsCommon(j) = ...
-                    cal.computed.omniMConvCommon(j,useIndex)'\cal.computed.pr650MCommon(j,useIndex)';
-                numRows = numRows + length(useIndex);
-            end
-            cal.computed.omniToPr650FactorsCommon = cal.computed.omniToPr650FactorsCommon';
-            C1 = zeros(numRows,length(cal.computed.commonWls));
-            d1 = zeros(numRows,1);
-            
-            if cal.computed.FactorsMethod == 2
-                % Enforce constraints.
-                outIndex = 1;
-                for j = 1:length(cal.computed.commonWls)
-                    maxPow = max(cal.computed.pr650MCommon(j,:));
-                    useIndex = find(cal.computed.pr650MCommon(j,:) >= cal.computed.usePowerFraction*maxPow);
-                    for k = 1:length(useIndex)
-                        C1(outIndex,j) = cal.computed.omniMConvCommon(j,useIndex(k));
-                        d1(outIndex) = cal.computed.pr650MCommon(j,useIndex(k));
-                        outIndex = outIndex + 1;
-                    end
-                end
-                lambda1 = 1;
-                C2 = zeros(length(cal.computed.commonWls) - 1, length(cal.computed.commonWls));
-                for i = 1:length(cal.computed.commonWls) - 1
-                    C2(i,i) = lambda1;
-                    C2(i,i+1) = -lambda1;
-                end
-                d2 = zeros(length(cal.computed.commonWls) - 1, 1);
-                C = [C1 ; C2];
-                d = [d1 ; d2];
-                
-                % Commented out code uses lsqlin, but actually I realized this can just be done
-                % with simple regression, because the constraint itself is expressed as a
-                % squared-error function of the solution.
-                %options = optimset('lsqlin');
-                %options = optimset(options,'Diagnostics','off','Display','off','LargeScale','off');
-                %oneLightCal.computed.omniToPr650FactorsCommon = lsqlin(C,oneLightCal.computed.D,[],[],[],[],zeros(size(oneLightCal.computed.omniToPr650FactorsCommon)),[],oneLightCal.computed.omniToPr650FactorsCommon0,options);
-                cal.computed.omniToPr650FactorsCommon0 = cal.computed.omniToPr650FactorsCommon;
-                cal.computed.omniToPr650FactorsCommon = sparse(C)\d;
-            end
-    end
-end
+% if (cal.describe.useOmni)
+%     % Set up convolution filter for simulating PR-650
+%     % The PR-650 is specified to have an 8 nm full-width
+%     % at half-max.
+%     switch (cal.describe.meterType)
+%         case 1
+%             cal.computed.pr650fwhm = 8;
+%         case 5
+%             cal.computed.pr650fwhm = 5;
+%         otherwise
+%             error('Unexpected meter type');
+%     end
+%     cal.computed.gaussWls = (0:cal.computed.omniSplineWls(2) - cal.computed.omniSplineWls(1):30)';
+%     cal.computed.sigma = cal.computed.pr650fwhm/(2*sqrt(2*log(2)));
+%     cal.computed.gaussConv = normpdf(cal.computed.gaussWls, 15, cal.computed.sigma);
+%     cal.computed.gaussConv = cal.computed.gaussConv/sum(cal.computed.gaussConv(:));
+%     
+%     % Get PR-650 and omni measurements on common wavelength scale,
+%     % and simulate PR-650 fwhm via omni measurements.
+%     for i = 1:size(cal.computed.omniM, 2)
+%         cal.computed.pr650MCommon(:,i) = ...
+%             interp1(cal.computed.pr650Wls,cal.computed.pr650M(:,i),cal.computed.commonWls);
+%         cal.computed.omniMSpline(:,i) = ...
+%             interp1(cal.computed.omniWls,cal.computed.omniM(:,i),cal.computed.omniSplineWls);
+%         cal.computed.omniMConv(:,i) = conv(cal.computed.omniMSpline(:,i),cal.computed.gaussConv,'same');
+%         cal.computed.omniMConvCommon = ...
+%             interp1(cal.computed.omniSplineWls,cal.computed.omniMConv,cal.computed.commonWls);
+%         [~, tempIndex] = max(cal.computed.omniMConvCommon(:,i));
+%         cal.computed.omniMPeakWls(i) = cal.computed.commonWls(tempIndex(1));
+%     end
+%     
+%     % Find factor at each common wl to bring omni measurement into
+%     % alignment with pr650 measurement.
+%     switch cal.computed.FactorsMethod
+%         case 1
+%             for i = 1:size(cal.computed.omniM, 2)
+%                 cal.computed.omniToPr650FactorsRaw(i) = ...
+%                     cal.computed.omniMConvCommon(:,i)\cal.computed.pr650MCommon(:,i);
+%             end
+%             cal.computed.omniToPr650FactorsCommon = ...
+%                 interp1(cal.computed.omniMPeakWls, cal.computed.omniToPr650FactorsRaw, ...
+%                 cal.computed.commonWls,'linear','extrap');
+%             
+%         case {0, 2}
+%             cal.computed.usePowerFraction = 0.2;
+%             numRows = 0;
+%             for j = 1:length(cal.computed.commonWls)
+%                 maxPow = max(cal.computed.pr650MCommon(j,:));
+%                 useIndex = find(cal.computed.pr650MCommon(j,:) >= cal.computed.usePowerFraction*maxPow);
+%                 cal.computed.omniToPr650FactorsCommon(j) = ...
+%                     cal.computed.omniMConvCommon(j,useIndex)'\cal.computed.pr650MCommon(j,useIndex)';
+%                 numRows = numRows + length(useIndex);
+%             end
+%             cal.computed.omniToPr650FactorsCommon = cal.computed.omniToPr650FactorsCommon';
+%             C1 = zeros(numRows,length(cal.computed.commonWls));
+%             d1 = zeros(numRows,1);
+%             
+%             if cal.computed.FactorsMethod == 2
+%                 % Enforce constraints.
+%                 outIndex = 1;
+%                 for j = 1:length(cal.computed.commonWls)
+%                     maxPow = max(cal.computed.pr650MCommon(j,:));
+%                     useIndex = find(cal.computed.pr650MCommon(j,:) >= cal.computed.usePowerFraction*maxPow);
+%                     for k = 1:length(useIndex)
+%                         C1(outIndex,j) = cal.computed.omniMConvCommon(j,useIndex(k));
+%                         d1(outIndex) = cal.computed.pr650MCommon(j,useIndex(k));
+%                         outIndex = outIndex + 1;
+%                     end
+%                 end
+%                 lambda1 = 1;
+%                 C2 = zeros(length(cal.computed.commonWls) - 1, length(cal.computed.commonWls));
+%                 for i = 1:length(cal.computed.commonWls) - 1
+%                     C2(i,i) = lambda1;
+%                     C2(i,i+1) = -lambda1;
+%                 end
+%                 d2 = zeros(length(cal.computed.commonWls) - 1, 1);
+%                 C = [C1 ; C2];
+%                 d = [d1 ; d2];
+%                 
+%                 % Commented out code uses lsqlin, but actually I realized this can just be done
+%                 % with simple regression, because the constraint itself is expressed as a
+%                 % squared-error function of the solution.
+%                 %options = optimset('lsqlin');
+%                 %options = optimset(options,'Diagnostics','off','Display','off','LargeScale','off');
+%                 %oneLightCal.computed.omniToPr650FactorsCommon = lsqlin(C,oneLightCal.computed.D,[],[],[],[],zeros(size(oneLightCal.computed.omniToPr650FactorsCommon)),[],oneLightCal.computed.omniToPr650FactorsCommon0,options);
+%                 cal.computed.omniToPr650FactorsCommon0 = cal.computed.omniToPr650FactorsCommon;
+%                 cal.computed.omniToPr650FactorsCommon = sparse(C)\d;
+%             end
+%     end
+% end
 
 % Use the stops information to get the fraction of max power for each gamma measurement, in range [0,1].
 cal.computed.gammaInputRaw = [0 ; cal.describe.gamma.gammaLevels'];
@@ -297,16 +304,23 @@ for k = 1:cal.describe.nGammaBands
     % calibrated around dark or around a specified background.  The end
     % result of this makes the two sets of measurements equivalent going
     % onwards.
-    if (cal.describe.specifiedBackground)
-        
+    if (cal.describe.correctLinearDrift)
+        gammaTemp = bsxfun(@times, cal.raw.gamma.rad(k).meas, returnScaleFactor(cal.raw.t.gamma.rad(k).meas));
+        if (cal.describe.specifiedBackground)
+            gammaEffectiveBgTemp = ...
+                bsxfun(@times, cal.raw.gamma.rad(k).effectiveBgMeas, returnScaleFactor(cal.raw.t.gamma.rad(k).effectiveBgMeas));
+        end
     else
-        if cal.describe.correctLinearDrift
-            gammaMeas{k} = bsxfun(@times, cal.raw.gamma.rad(k).meas, returnScaleFactor(cal.raw.t.gamma.rad(k).meas)) - cal.computed.pr650MeanDark(:,ones(1,size(cal.raw.gamma.rad(k).meas,2)));
-        else
-            gammaMeas{k} = cal.raw.gamma.rad(k).meas - cal.computed.pr650MeanDark(:,ones(1,size(cal.raw.gamma.rad(k).meas,2)));
+        gammaTemp = cal.raw.gamma.rad(k).meas;
+        if (cal.describe.specifiedBackground)
+            gammaEffectiveBgTemp = cal.raw.gamma.rad(k).effectiveBgMeas;
         end
     end
-    
+    if (cal.describe.specifiedBackground)
+        gammaMeas{k} = gammaTemp - gammaEffectiveBgTemp(:,ones(1,size(gammaTemp,2)));
+    else
+        gammaMeas{k} = gammaTemp - cal.computed.pr650MeanDark(:,ones(1,size(cal.raw.gamma.rad(k).meas,2)));
+    end 
     [~,peakWlIndices{k}] = max(gammaMeas{k}(:,end));
     
     % Get wavelength indices around peak to use.
@@ -330,8 +344,8 @@ for k = 1:cal.describe.nGammaBands
     end
 end
 
-% Fit each indivdually measured gamma function to
-% finely spaced real valued primary levels.
+% Fit each indivdually measured gamma function to finely spaced real valued
+% primary levels.
 cal.computed.gammaInput = linspace(0,1,cal.describe.nGammaFitLevels)';
 for k = 1:cal.describe.nGammaBands
     cal.computed.gammaTableMeasuredBands(:,k) = [0 ; cal.computed.gammaData1{k}'];
@@ -352,20 +366,20 @@ cal.computed.gammaTableAvg = median(cal.computed.gammaTableMeasuredBandsFit,2);
 % Extract the gamma data for the OmniDriver.
 %
 % The odds that this still works are very very low.
-if (cal.describe.useOmni)
-    error('The omni code is way out of date and will need to be carefully thought about and updated');
-    for k = 1:size(cal.raw.gamma.omnidriver,2)
-        omniGammaMeas{k} = cal.raw.gamma.omnidriver(k).meas - cal.computed.omniMeanDark(:,ones(1,size(cal.raw.gamma.omnidriver(k).meas,2)));
-        for i = 1:size(cal.raw.gamma.omnidriver(1).meas,2)
-            cal.computed.omniGammaData1{k}(i) = omniGammaMeas{k}(:,end)\omniGammaMeas{k}(:,i); %#ok<*AGROW>
-        end
-    end
-    cal.computed.omniGammaData = 0;
-    for k = 1:size(cal.raw.gamma.rad,2);
-        cal.computed.omniGammaData = cal.computed.omniGammaData + cal.computed.omniGammaData1{k}';
-    end
-    cal.computed.omniGammaData = cal.computed.omniGammaData/size(cal.raw.gamma.omnidriver,2);
-    cal.computed.omniGammaInput = linspace(0,1,1024)';
-    cal.computed.omniGammaTable = FitGamma(cal.computed.gammaInputRaw, [0 ; cal.computed.omniGammaData],cal.computed.gammaInput,6);
-    cal.computed.omniGammaTable = MakeMonotonic(cal.computed.omniGammaTable);
-end
+% if (cal.describe.useOmni)
+%     error('The omni code is way out of date and will need to be carefully thought about and updated');
+%     for k = 1:size(cal.raw.gamma.omnidriver,2)
+%         omniGammaMeas{k} = cal.raw.gamma.omnidriver(k).meas - cal.computed.omniMeanDark(:,ones(1,size(cal.raw.gamma.omnidriver(k).meas,2)));
+%         for i = 1:size(cal.raw.gamma.omnidriver(1).meas,2)
+%             cal.computed.omniGammaData1{k}(i) = omniGammaMeas{k}(:,end)\omniGammaMeas{k}(:,i); %#ok<*AGROW>
+%         end
+%     end
+%     cal.computed.omniGammaData = 0;
+%     for k = 1:size(cal.raw.gamma.rad,2);
+%         cal.computed.omniGammaData = cal.computed.omniGammaData + cal.computed.omniGammaData1{k}';
+%     end
+%     cal.computed.omniGammaData = cal.computed.omniGammaData/size(cal.raw.gamma.omnidriver,2);
+%     cal.computed.omniGammaInput = linspace(0,1,1024)';
+%     cal.computed.omniGammaTable = FitGamma(cal.computed.gammaInputRaw, [0 ; cal.computed.omniGammaData],cal.computed.gammaInput,6);
+%     cal.computed.omniGammaTable = MakeMonotonic(cal.computed.omniGammaTable);
+% end
