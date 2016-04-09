@@ -244,7 +244,7 @@ try
     end
     ol.setAll(false);
     
-    fprintf('\n*** Wavelength Calibration ***\n\n');
+    fprintf('\n*** Initial measurements of spectra of interest ***\n\n');
     
     % Take a full on measurement.
     fprintf('- Taking full on measurement...');
@@ -318,7 +318,7 @@ try
         end
         fprintf('Done\n');
     end
-
+        
     % Primary measurements.
     %
     % it is not clear to me (DHB, 4/9/16) why these are first stored in a
@@ -326,7 +326,8 @@ try
     % calibration structure.  As far as I can tell, the structure is never
     % used except to put the data in to the matrix.  This may be a vestigal
     % feature, but I am not going to change it right now.
-    %
+    fprintf('\n*** Measure spectra of effective primaries ***\n\n');
+
     % If needed, shuffle the primary measurements.
     if cal.describe.randomizePrimaryMeas
         primaryMeasIter = Shuffle(1:length(cal.describe.primaryStartCols));
@@ -422,6 +423,8 @@ try
     %
     % We do this for cal.describe.nGammaBands of the bands, at
     % cal.describe.nGammaLevels for each band.
+    fprintf('\n*** Gamma measurements ***\n\n');
+    
     cal.describe.gamma.gammaBands = round(linspace(1,cal.describe.numWavelengthBands,cal.describe.nGammaBands));
     cal.describe.gamma.gammaLevels = linspace(1/cal.describe.nGammaLevels,1,cal.describe.nGammaLevels);
     

@@ -11,6 +11,7 @@ function cal = OLCalBackwardsCompatibility(cal)
 % forwards compatible fashion.
 %
 % 1/20/14  dhb, ms  Wrote it.
+% 4/9/16   dhb      Handle specified background field.
 
 %% Add new fields
 if (~isfield(cal.describe,'numWavelengthBands'))
@@ -37,6 +38,9 @@ if (~isfield(cal.describe,'correctLinearDrift'))
 end
 if (~isfield(cal.computed,'describe'))
     cal.computed.describe = [];
+end
+if (~isfield(cal.describe,'specifiedBackground'))
+    cal.describe.specifiedBackground = false;
 end
 
 

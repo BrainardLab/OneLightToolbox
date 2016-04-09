@@ -116,27 +116,53 @@ cal.computed.D = cal.raw.cols;
 if cal.describe.correctLinearDrift
     cal.computed.pr650M = bsxfun(@times, cal.raw.lightMeas, returnScaleFactor(cal.raw.t.lightMeas));
     cal.computed.pr650Md = bsxfun(@times, cal.raw.darkMeas, returnScaleFactor(cal.raw.t.darkMeas));
+    if (cal.describe.specifiedBackground)
+        cal.computed.pr650MEffectiveBg = bsxfun(@times, cal.raw.effectiveBgMeas, returnScaleFactor(cal.raw.t.cal.raw.effectiveBgMeas));
+    end
 else
     cal.computed.pr650M = cal.raw.lightMeas;
-    cal.computed.pr650Md = cal.raw.darkMeas;
+    cal.computed.pr650Md = cal.raw.darkMeas;]
+    if (cal.describe.specifiedBackground)
+        cal.computed.pr650MEffectiveBg = cal.raw.effectiveBgMeas;
+    end
 end
 if (cal.describe.useOmni)
     cal.computed.omniM = cal.raw.omniDriver.lightMeas;
     cal.computed.omniMd = cal.raw.omniDriver.darkMeas;
+    if (cal.describe.specifiedBackground)
+        cal.computed.omniMEffectiveBg = cal.raw.omniDriver.EffectiveBgMeas;
+    end
 end
 
-% Get mean dark measurement and subtract
-cal.computed.pr650MeanDark = mean(cal.computed.pr650Md,2);
-cal.computed.pr650MeanDark(cal.computed.pr650MeanDark < 0) = 0;
-cal.computed.pr650M = cal.computed.pr650M - ...
-    cal.computed.pr650MeanDark(:,ones(1,size(cal.computed.pr650M,2)));
-cal.computed.pr650M(cal.computed.pr650M < 0) = 0;
-if (cal.describe.useOmni)  
-    cal.computed.omniMeanDark = mean(cal.computed.omniMd,2);
-    cal.computed.omniMeanDark(cal.computed.omniMeanDark < 0) = 0;
-    cal.computed.omniM = cal.computed.omniM - ...
-        cal.computed.omniMeanDark(:,ones(1,size(cal.computed.omniM,2)));
-    cal.computed.omniM(cal.computed.omniM < 0) = 0;
+% Subtract appropriate measurement to get the incremental spectrum for each
+% primary.  We have two options for this.  In the standard option, only the
+% mirrors for the primary were one when the primary was measured, and so we
+% just need to subtract the dark spectrum.  If we measured the primary
+% around a custom specified background, however, we need to subtract an
+% individualized measurement from each spectrum.  Because spectra are the
+% incremental effect either way (that is, the effect of taking a primary's
+% mirrors from all off to all on), we still handle computing what we want
+% to do from spectra in the same manner in either case.
+if (cal.describe.specifiedBackground)
+    cal.comptude.pr650M = cal.computed.pr650M-cal.computed.pr650MEffectiveBg;
+    cal.computed.pr650M(cal.computed.pr650M < 0) = 0;
+    if (cal.describe.useOmni)
+        cal.computed.omniM = cal.computed.omniM - cal.computed.omniMEffectiveBg;
+        cal.computed.omniM(cal.computed.omniM < 0) = 0;
+    end
+else
+    cal.computed.pr650MeanDark = mean(cal.computed.pr650Md,2);
+    cal.computed.pr650MeanDark(cal.computed.pr650MeanDark < 0) = 0;
+    cal.computed.pr650M = cal.computed.pr650M - ...
+        cal.computed.pr650MeanDark(:,ones(1,size(cal.computed.pr650M,2)));
+    cal.computed.pr650M(cal.computed.pr650M < 0) = 0;
+    if (cal.describe.useOmni)
+        cal.computed.omniMeanDark = mean(cal.computed.omniMd,2);
+        cal.computed.omniMeanDark(cal.computed.omniMeanDark < 0) = 0;
+        cal.computed.omniM = cal.computed.omniM - ...
+            cal.computed.omniMeanDark(:,ones(1,size(cal.computed.omniM,2)));
+        cal.computed.omniM(cal.computed.omniM < 0) = 0;
+    end
 end
 
 % Infer meter type for backwards compatibility
@@ -153,6 +179,10 @@ end
 
 %% This code is set up to bring PR-6xx and omni into register.
 % Don't do it if no omni measurements.
+% 
+% [DHB, 4/9/16] It is possible we should strip the omni stuff out of the whole
+% suite of calibration code because we never really got it to work well and
+% we never use it.  Getting rid of it would simplify reading and modifying the code.
 if (cal.describe.useOmni)
     % Set up convolution filter for simulating PR-650
     % The PR-650 is specified to have an 8 nm full-width
@@ -245,7 +275,6 @@ if (cal.describe.useOmni)
 end
 
 % Use the stops information to get the fraction of max power for each gamma measurement, in range [0,1].
-%cal.computed.gammaInputRaw = [0 ((cal.raw.gamma.stops+1)/(cal.raw.gamma.stops(end)+1))]';
 cal.computed.gammaInputRaw = [0 ; cal.describe.gamma.gammaLevels'];
 
 % Extract the gamma data for the PR-6XX.
@@ -263,11 +292,19 @@ if (size(cal.raw.gamma.rad,2) ~= cal.describe.nGammaBands)
     error('Mismatch between specified number of gamma bands and size of measurement struct array');
 end
 for k = 1:cal.describe.nGammaBands
-    % Dark subtract
-    if cal.describe.correctLinearDrift
-        gammaMeas{k} = bsxfun(@times, cal.raw.gamma.rad(k).meas, returnScaleFactor(cal.raw.t.gamma.rad(k).meas)) - cal.computed.pr650MeanDark(:,ones(1,size(cal.raw.gamma.rad(k).meas,2)));
+    % Dark subtract with time correction.  As with primary spectra above,
+    % there are two distinct ways we can do this, depending on whether we
+    % calibrated around dark or around a specified background.  The end
+    % result of this makes the two sets of measurements equivalent going
+    % onwards.
+    if (cal.describe.specifiedBackground)
+        
     else
-        gammaMeas{k} = cal.raw.gamma.rad(k).meas - cal.computed.pr650MeanDark(:,ones(1,size(cal.raw.gamma.rad(k).meas,2)));
+        if cal.describe.correctLinearDrift
+            gammaMeas{k} = bsxfun(@times, cal.raw.gamma.rad(k).meas, returnScaleFactor(cal.raw.t.gamma.rad(k).meas)) - cal.computed.pr650MeanDark(:,ones(1,size(cal.raw.gamma.rad(k).meas,2)));
+        else
+            gammaMeas{k} = cal.raw.gamma.rad(k).meas - cal.computed.pr650MeanDark(:,ones(1,size(cal.raw.gamma.rad(k).meas,2)));
+        end
     end
     
     [~,peakWlIndices{k}] = max(gammaMeas{k}(:,end));
