@@ -120,7 +120,7 @@ cal.computed.pr650Md = bsxfun(@times, cal.raw.darkMeas, returnScaleFactor(cal.ra
 if (cal.describe.specifiedBackground)
     cal.computed.pr650MSpecifiedBg = bsxfun(@times, cal.raw.specifiedBackgroundMeas, returnScaleFactor(cal.raw.t.specifiedBackgroundMeas));
     cal.computed.pr650MeanSpecifiedBackground = mean(cal.computed.pr650MSpecifiedBg,2);
-    cal.computed.pr650MEffectiveBg = bsxfun(@times, cal.raw.effectiveBgMeas, returnScaleFactor(cal.raw.t.cal.raw.effectiveBgMeas));
+    cal.computed.pr650MEffectiveBg = bsxfun(@times, cal.raw.effectiveBgMeas, returnScaleFactor(cal.raw.t.effectiveBgMeas));
 end
 
 % Subtract appropriate measurement to get the incremental spectrum for each
