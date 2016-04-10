@@ -85,9 +85,7 @@ fprintf('Half on luminance: %0.1f cd/m2, dark luminance: %0.1f cd/m2\n',halfOnXY
 %% Plot sample spectral measurements
 whichIndex = round(linspace(1,cal.describe.numWavelengthBands,nBandsToPlot));
 figs.SingleBandMeas = figure; clf; hold on
-for w = whichIndex;
-    plot(cal.computed.pr650Wls, cal.computed.pr650M(:,whichIndex)); hold on;
-end
+plot(cal.computed.pr650Wls, cal.computed.pr650M(:,whichIndex)); hold on;
 legend(strread(num2str(whichIndex),'%s')); legend boxoff;
 pbaspect([1 1 1]); xlim([380 780]);
 xlabel('Wavelength [nm]');
@@ -138,7 +136,6 @@ fprintf('Calibration primary column width: %d, calibration primary column step: 
 %% Plot the gamma data
 plotColors = ['r' 'g' 'b' 'k' 'c' 'm'];
 figs.DeviceGamma = figure; clf; hold on
-
 plotColorIndex = 1;
 for k = 1:length(cal.computed.gammaData1)
     plot(cal.computed.gammaInputRaw, cal.computed.gammaTableMeasuredBands(:,k),[plotColors(plotColorIndex) 'o']);

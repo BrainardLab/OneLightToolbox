@@ -118,7 +118,7 @@ try
     cal.describe.correctLinearDrift = 1;
     
     % Non-zero background for gamma and related measurments
-    cal.describe.specifiedBackground = 1;
+    cal.describe.specifiedBackground = 0;
     
     % Don't use omni.
     % First entry is PR-6xx and is always true.
@@ -308,8 +308,7 @@ try
         % handled when we post-process the measurements.)
         if (cal.describe.specifiedBackground)
             fprintf('- Measuring effective background for effective primary %d...',i);
-            theSettings = cal.describe.specifiedBackgroundSettings;
-            theSettings(i) = 0;
+            theSettings = GetEffectiveBackgroundSettingsForPrimary(i,cal.describe.specifiedBackgroundSettings);
             [starts,stops] = OLSettingsToStartsStops(cal,cal.describe.specifiedBackgroundSettings);
             measTemp = OLTakeMeasurement(ol, od, starts, stops, cal.describe.S, meterToggle, cal.describe.meterTypeNum, nAverage);
             wavelengthBandMeasurements(i).effectiveBackgroundSpectrum = measTemp.pr650.spectrum;
@@ -324,7 +323,7 @@ try
         % measurement background, and take the measurement.
         fprintf('- Measurement for effective primary %d of %d...', i, length(cal.describe.primaryStartCols));
         if (cal.describe.specifiedBackground)
-            theSettings = cal.describe.specifiedBackgroundSettings;
+            theSettings = GetEffectiveBackgroundSettingsForPrimary(i,cal.describe.specifiedBackgroundSettings);
         else
             theSettings = zeros(nPrimaries,1);
         end
@@ -414,8 +413,7 @@ try
         % dark level measurement.
         if (cal.describe.specifiedBackground)
             fprintf('- Measuring effective background for gamma band %d...',i);
-            theSettings = cal.describe.specifiedBackgroundSettings;
-            theSettings(cal.describe.gamma.gammaBands(i)) = 0;
+            theSettings = GetEffectiveBackgroundSettingsForPrimary(cal.describe.gamma.gammaBands(i),cal.describe.specifiedBackgroundSettings);
             [starts,stops] = OLSettingsToStartsStops(cal,cal.describe.specifiedBackgroundSettings);
             measTemp = OLTakeMeasurement(ol, od, starts, stops, cal.describe.S, meterToggle, cal.describe.meterTypeNum, nAverage);
             cal.raw.gamma.rad(i).effectiveBgMeas = measTemp.pr650.spectrum;
@@ -431,7 +429,7 @@ try
             
             % Set the starts/stops, measure, and store
             if (cal.describe.specifiedBackground)
-                theSettings = cal.describe.specifiedBackgroundSettings;
+                theSettings = GetEffectiveBackgroundSettingsForPrimary(cal.describe.gamma.gammaBands(i),cal.describe.specifiedBackgroundSettings);
             else
                 theSettings = zeros(nPrimaries,1);
             end
@@ -448,7 +446,9 @@ try
     end
     
     % Now we'll do an independence test on the same column sets from the
-    % gamma measurements.
+    % gamma measurements.  Even when we use an effective background for
+    % calibration, we do this test around a dark background.  This could
+    % be modified with a little thought.
     fprintf('\n*** Independence Test ***\n\n');
     
     % Store some measurement data regarding the independence test.
@@ -463,7 +463,7 @@ try
         
         % Take a measurement.
         if (cal.describe.specifiedBackground)
-            theSettings = cal.describe.specifiedBackgroundSettings;
+            theSettings = zeros(nPrimaries,1);
         else
         	theSettings = zeros(nPrimaries,1);
         end
@@ -482,7 +482,7 @@ try
     fprintf('- Testing column sets cumulatively...');
     cal.raw.independence.colsAll = sum(cal.raw.independence.cols, 2);
     if (cal.describe.specifiedBackground)
-        theSettings = cal.describe.specifiedBackgroundSettings;
+        theSettings = zeros(nPrimaries,1);
     else
         theSettings = zeros(nPrimaries,1);
     end
@@ -618,4 +618,17 @@ catch e
     keyboard
 end
 
+end
+
+function theSettings = GetEffectiveBackgroundSettingsForPrimary(whichPrimary,specifiedBackgroundSettings)
+
+    nPrimaries = length(specifiedBackgroundSettings);
+    theSettings = zeros(size(specifiedBackgroundSettings));
+    if (whichPrimary > 1)
+        theSettings(whichPrimary-1) = specifiedBackgroundSettigns(whichPrimary-1);
+    end
+    if (whichPrimary < nPrimaries)
+        theSettings(whichPrimary+1) = specifiedBackgroundSettigns(whichPrimary+1);
+    end
+end
 

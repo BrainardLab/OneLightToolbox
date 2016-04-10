@@ -71,6 +71,11 @@ if (nPrimaries ~= cal.describe.numWavelengthBands)
 end
 nSpectra = size(settings,2);
 
+% Map [0,1] input settings into the range of mirrors on we actually want to
+% use.
+maxUseFraction = 0.5;
+settings = settings*maxUseFraction;
+
 % Sanity check
 if (any(settings < 0) | (any(settings > 1)))
     error('Passed settings values not in range 0 to 1 inclusive');
