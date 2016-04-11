@@ -202,12 +202,7 @@ try
     if (cal.describe.specifiedBackground)
         cal.describe.specifiedBackgroundSettings = 0.5*ones(nPrimaries,1);
     end
-    
-            % Define some parameters up here
-        cal.describe.gamma.gammaBands = round(linspace(1,cal.describe.numWavelengthBands,cal.describe.nGammaBands));
-        cal.describe.gamma.gammaLevels = linspace(1/cal.describe.nGammaLevels,1,cal.describe.nGammaLevels);
-        
-    
+
     % Find and set the optimal integration time.  Subtract off a couple
     % thousand microseconds just to give it a conservative value.
     ol.setAll(true);
@@ -467,6 +462,34 @@ try
     % calibration, we do this test around a dark background.  This could
     % be modified with a little thought.
     if (cal.describe.doIndependence)
+        % Set some parameters which we don't have if we just do the
+        % independence measurements
+        if ~(cal.describe.doGamma)
+            cal.describe.gamma.gammaBands = round(linspace(1,cal.describe.numWavelengthBands,cal.describe.nGammaBands));
+            cal.describe.gamma.gammaLevels = linspace(1/cal.describe.nGammaLevels,1,cal.describe.nGammaLevels);
+        end
+        
+        if ~(cal.describe.doPrimaries)
+            % If needed, shuffle the primary measurements.
+            if cal.describe.randomizePrimaryMeas
+                primaryMeasIter = Shuffle(1:length(cal.describe.primaryStartCols));
+            else
+                primaryMeasIter = 1:length(cal.describe.primaryStartCols);
+            end
+            for i = primaryMeasIter
+                
+                % Record the band start and end.
+                wavelengthBandMeasurements(i).bandRange = [cal.describe.primaryStartCols(i), cal.describe.primaryStopCols(i)]; %#ok<*AGROW>
+            end
+            for i = 1:cal.describe.numWavelengthBands
+                
+                % Store which columns were on for this measurement.
+                cal.raw.cols(:,i) = zeros(ol.NumCols, 1);
+                e = wavelengthBandMeasurements(i).bandRange;
+                cal.raw.cols(e(1):e(2),i) = 1;
+            end
+        end
+
         fprintf('\n*** Independence Test ***\n\n');
         
         % Store some measurement data regarding the independence test.
