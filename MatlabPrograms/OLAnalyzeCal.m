@@ -463,9 +463,6 @@ set(gca, 'TickDir', 'out');
 legend('Predicted wiggly', 'Measured wiggly [1]', 'Measured wiggly [2]'); legend boxoff;
 title({calIDTitle 'Half-on'});
 
-%% Look at the diagnostic additivity/gamma tests
-plot(cal.raw.diagnostics.additivity.midPrimary.flankersSep0On(1, 1).predictedSpd)
-
 %% Look at nth and n-1th calibrations.
 % This is quick and dirty.  Assumes that
 % the calibration parameters match, and has

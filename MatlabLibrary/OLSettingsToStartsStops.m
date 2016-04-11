@@ -73,7 +73,7 @@ nSpectra = size(settings,2);
 
 % Map [0,1] input settings into the range of mirrors on we actually want to
 % use.
-maxUseFraction = 0.5;
+maxUseFraction = 1;
 settings = settings*maxUseFraction;
 
 % Sanity check
