@@ -468,7 +468,7 @@ title({calIDTitle 'Half-on'});
 %% Look at the wiggly spectrum
 wigglySpd1 = cal.raw.wigglyMeas.measSpd(:, 1);
 wigglySpd2 = cal.raw.wigglyMeas.measSpd(:, 2);
-wigglySettings = cal.raw.wigglyMeas.settings(:, 1)
+wigglySettings = cal.raw.wigglyMeas.settings(:, 1);
 wigglyPrimaries = OLSettingsToPrimary(cal, wigglySettings);
 predictedSpd = OLPrimaryToSpd(cal, wigglyPrimaries);
 
