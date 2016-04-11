@@ -83,7 +83,7 @@ try
             % We for BoxB, we set nGammaBands to be nPrimaries, see below.
             %cal.describe.nGammaBands = 20;
             cal.describe.nShortPrimariesSkip = 5;
-            cal.describe.nLongPrimariesSkip = 3;
+            cal.describe.nLongPrimariesSkip = 8;
         case 'BoxC'
             cal.describe.gammaFitType = 'betacdfpiecelin';
             cal.describe.useAverageGamma = false;
@@ -97,7 +97,7 @@ try
             % We for BoxB, we set nGammaBands to be nPrimaries, see below.
             %cal.describe.nGammaBands = 20;
             cal.describe.nShortPrimariesSkip = 8;
-            cal.describe.nLongPrimariesSkip = 2;
+            cal.describe.nLongPrimariesSkip = 6;
         otherwise
             error('Unknown OneLight box');
     end
@@ -273,7 +273,7 @@ try
     fprintf('- Measuring background...');
     theSettings = 0*ones(nPrimaries,1);
     [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
-    measTemp = OLTakeMeasurement(ol, od, starts, stops, cal.describe.S, meterToggle, cal.describe.meterTypeNum, nAverage);
+    measTemp = OLTakeMeasurement(ol, od, starts, stops, cal.describe.S, meterToggle, cal.describe.meterTypeNum, 5);
     cal.raw.darkMeas(:,1) = measTemp.pr650.spectrum;
     cal.raw.t.darkMeas(:,1) = measTemp.pr650.time(1);
     if (meterToggle(2))
@@ -483,7 +483,7 @@ try
     fprintf('- Measuring background...');
     theSettings = 0*ones(nPrimaries,1);
     [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
-    measTemp = OLTakeMeasurement(ol, od, starts, stops, cal.describe.S, meterToggle, cal.describe.meterTypeNum, nAverage);
+    measTemp = OLTakeMeasurement(ol, od, starts, stops, cal.describe.S, meterToggle, cal.describe.meterTypeNum, 5);
     cal.raw.darkMeas(:,2) = measTemp.pr650.spectrum;
     cal.raw.t.darkMeas(:,2) = measTemp.pr650.time(1);
     if (meterToggle(2))

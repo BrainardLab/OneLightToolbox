@@ -468,7 +468,7 @@ title({calIDTitle 'Half-on'});
 %% Look at the wiggly spectrum
 wigglySpd1 = cal.raw.wigglyMeas.measSpd(:, 1);
 wigglySpd2 = cal.raw.wigglyMeas.measSpd(:, 2);
-wigglySettings = cal.raw.wigglyMeas.settings(:, 1)
+wigglySettings = cal.raw.wigglyMeas.settings(:, 1);
 wigglyPrimaries = OLSettingsToPrimary(cal, wigglySettings);
 predictedSpd = OLPrimaryToSpd(cal, wigglyPrimaries);
 
@@ -481,9 +481,6 @@ box off;
 set(gca, 'TickDir', 'out');
 legend('Predicted wiggly', 'Measured wiggly [1]', 'Measured wiggly [2]'); legend boxoff;
 title({calIDTitle 'Half-on'});
-
-%% Look at the diagnostic additivity/gamma tests
-plot(cal.raw.diagnostics.additivity.midPrimary.flankersSep0On(1, 1).predictedSpd)
 
 %% Look at nth and n-1th calibrations.
 % This is quick and dirty.  Assumes that
