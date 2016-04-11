@@ -95,7 +95,7 @@ classdef OLCalibrationTypes
 %         BoxDShortCableBEyePiece2('OLBoxDShortCableBEyePiece2');
 %         BoxDShortCableBEyePiece2_ND15('OLBoxDShortCableBEyePiece2_ND15');
 %         BoxDShortCableBEyePiece2_ND10('OLBoxDShortCableBEyePiece2_ND10');
-%         BoxDRandomizedLongCableAEyePiece2('OLBoxDRandomizedLongCableAEyePiece2');
+         BoxDRandomizedLongCableAEyePiece2('OLBoxDRandomizedLongCableAEyePiece2');
 %         BoxDRandomizedLongCableAEyePiece2_ND10('OLBoxDRandomizedLongCableAEyePiece2_ND10');
         %BoxCRandomizedLongCableBEyePiece1BeamSplitterOff('OLBoxCRandomizedLongCableBEyePiece1BeamSplitterOff');
         BoxCRandomizedLongCableBEyePiece1('OLBoxCRandomizedLongCableBEyePiece1');
@@ -111,6 +111,7 @@ classdef OLCalibrationTypes
         BoxARandomizedLongCableCStubby1_ND00('OLBoxARandomizedLongCableCStubby1_ND00');
         BoxBRandomizedLongCableBEyePiece1_ND00('OLBoxBRandomizedLongCableBEyePiece1_ND00');
         BoxDRandomizedLongCableAEyePiece2_ND07CassetteB('OLBoxDRandomizedLongCableAEyePiece2_ND07CassetteB');
+        BoxDRandomizedLongCableAEyePiece2_ND06('OLBoxDRandomizedLongCableAEyePiece2_ND06');
         BoxDRandomizedLongCableAEyePiece2_ND05('OLBoxDRandomizedLongCableAEyePiece2_ND05');
     end
 end
