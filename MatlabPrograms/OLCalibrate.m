@@ -203,9 +203,10 @@ try
         cal.describe.specifiedBackgroundSettings = 0.5*ones(nPrimaries,1);
     end
     
-    % Define the gamma up here.
-    cal.describe.gamma.gammaBands = round(linspace(1,cal.describe.numWavelengthBands,cal.describe.nGammaBands));
-    cal.describe.gamma.gammaLevels = linspace(1/cal.describe.nGammaLevels,1,cal.describe.nGammaLevels);
+            % Define some parameters up here
+        cal.describe.gamma.gammaBands = round(linspace(1,cal.describe.numWavelengthBands,cal.describe.nGammaBands));
+        cal.describe.gamma.gammaLevels = linspace(1/cal.describe.nGammaLevels,1,cal.describe.nGammaLevels);
+        
     
     % Find and set the optimal integration time.  Subtract off a couple
     % thousand microseconds just to give it a conservative value.
@@ -393,7 +394,7 @@ try
     % cal.describe.nGammaLevels for each band.
     if (cal.describe.doGamma)
         fprintf('\n*** Gamma measurements ***\n\n');
-        
+
         % Allocate some memory.
         cal.raw.gamma.cols = zeros(ol.NumCols, cal.describe.nGammaBands);
         
