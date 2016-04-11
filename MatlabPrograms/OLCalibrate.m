@@ -203,6 +203,10 @@ try
         cal.describe.specifiedBackgroundSettings = 0.5*ones(nPrimaries,1);
     end
     
+    % Define the gamma up here.
+    cal.describe.gamma.gammaBands = round(linspace(1,cal.describe.numWavelengthBands,cal.describe.nGammaBands));
+    cal.describe.gamma.gammaLevels = linspace(1/cal.describe.nGammaLevels,1,cal.describe.nGammaLevels);
+    
     % Find and set the optimal integration time.  Subtract off a couple
     % thousand microseconds just to give it a conservative value.
     ol.setAll(true);
@@ -389,9 +393,6 @@ try
     % cal.describe.nGammaLevels for each band.
     if (cal.describe.doGamma)
         fprintf('\n*** Gamma measurements ***\n\n');
-        
-        cal.describe.gamma.gammaBands = round(linspace(1,cal.describe.numWavelengthBands,cal.describe.nGammaBands));
-        cal.describe.gamma.gammaLevels = linspace(1/cal.describe.nGammaLevels,1,cal.describe.nGammaLevels);
         
         % Allocate some memory.
         cal.raw.gamma.cols = zeros(ol.NumCols, cal.describe.nGammaBands);
@@ -634,7 +635,6 @@ if (whichPrimary < nPrimaries)
     theSettings(whichPrimary+1) = specifiedBackgroundSettigns(whichPrimary+1);
 end
 end
-
 
 %% Run primary gamma and additivity test
 % THIS IS CODE WE MIGHT WANT TO INSERT, BUT IT IS NOT DONE YET.
