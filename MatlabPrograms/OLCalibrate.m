@@ -72,11 +72,11 @@ try
     switch (whichBox)
         case 'BoxA'
             cal.describe.gammaFitType = 'betacdfpiecelin';
-            cal.describe.useAverageGamma = false;
+            cal.describe.useAverageGamma = true;
             % We for BoxB, we set nGammaBands to be nPrimaries, see below.
             %cal.describe.nGammaBands = 20;
-            cal.describe.nShortPrimariesSkip = 7;
-            cal.describe.nLongPrimariesSkip = 3;
+            cal.describe.nShortPrimariesSkip = 8;
+            cal.describe.nLongPrimariesSkip = 4;
         case 'BoxB'
             cal.describe.gammaFitType = 'betacdfpiecelin';
             cal.describe.useAverageGamma = true;
