@@ -255,7 +255,7 @@ try
     fprintf('- Taking half on measurement...');
     theSettings = 0.5*ones(nPrimaries,1);
     [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
-    measTemp = OLTakeMeasurement(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
+    measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
     cal.raw.halfOnMeas(:,1) = measTemp.pr650.spectrum;
     cal.raw.t.halfOnMeas(:,1) = measTemp.pr650.time(1);
     if (meterToggle(2))
@@ -268,7 +268,7 @@ try
     theSettings = 0.1*ones(nPrimaries,1);
     theSettings(2:8:end) = 0.8;
     [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
-    measTemp = OLTakeMeasurement(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
+    measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
     cal.raw.wigglyMeas.settings(:,1) = theSettings;
     cal.raw.wigglyMeas.measSpd(:,1) = measTemp.pr650.spectrum;
     cal.raw.t.wigglyMeas.t(:,1) = measTemp.pr650.time(1);
@@ -282,7 +282,7 @@ try
     fprintf('- Measuring dark background...');
     theSettings = 0*ones(nPrimaries,1);
     [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
-    measTemp = OLTakeMeasurement(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
+    measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
     cal.raw.darkMeas(:,1) = measTemp.pr650.spectrum;
     cal.raw.t.darkMeas(:,1) = measTemp.pr650.time(1);
     if (meterToggle(2))
@@ -303,7 +303,7 @@ try
         fprintf('- Measuring specified background...');
         theSettings = cal.describe.specifiedBackgroundSettings;
         [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
-        measTemp = OLTakeMeasurement(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
+        measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
         cal.raw.specifiedBackgroundMeas(:,1) = measTemp.pr650.spectrum;
         cal.raw.t.specifiedBackgroundMeas(:,1) = measTemp.pr650.time(1);
         if (meterToggle(2))
@@ -342,7 +342,7 @@ try
                 fprintf('- Measuring effective background for effective primary %d...',i);
                 theSettings = GetEffectiveBackgroundSettingsForPrimary(i,cal.describe.specifiedBackgroundSettings);
                 [starts,stops] = OLSettingsToStartsStops(cal,cal.describe.specifiedBackgroundSettings);
-                measTemp = OLTakeMeasurement(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
+                measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
                 wavelengthBandMeasurements(i).effectiveBackgroundSpectrum = measTemp.pr650.spectrum;
                 wavelengthBandMeasurements(i).effectiveBackgroundTime = measTemp.pr650.time(1);
                 if (meterToggle(2))
@@ -361,7 +361,7 @@ try
             end
             theSettings(i) = 1;
             [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
-            measTemp = OLTakeMeasurement(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
+            measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
             wavelengthBandMeasurements(i).lightSpectrum = measTemp.pr650.spectrum;
             wavelengthBandMeasurements(i).time = measTemp.pr650.time(1);
             if (meterToggle(2))
@@ -446,7 +446,7 @@ try
                 fprintf('- Measuring effective background for gamma band %d...',i);
                 theSettings = GetEffectiveBackgroundSettingsForPrimary(cal.describe.gamma.gammaBands(i),cal.describe.specifiedBackgroundSettings);
                 [starts,stops] = OLSettingsToStartsStops(cal,cal.describe.specifiedBackgroundSettings);
-                measTemp = OLTakeMeasurement(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
+                measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
                 cal.raw.gamma.rad(i).effectiveBgMeas = measTemp.pr650.spectrum;
                 cal.raw.t.gamma.rad(i).effectiveBgMeas(i) = measTemp.pr650.time(1);
                 if (meterToggle(2))
@@ -466,7 +466,7 @@ try
                 end
                 theSettings(cal.describe.gamma.gammaBands(i)) = cal.describe.gamma.gammaLevels(rowTest);
                 [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
-                measTemp = OLTakeMeasurement(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
+                measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
                 cal.raw.gamma.rad(i).meas(:,rowTest) = measTemp.pr650.spectrum;
                 cal.raw.t.gamma.rad(i).meas(rowTest) = measTemp.pr650.time(1);
                 if (meterToggle(2))
@@ -530,7 +530,7 @@ try
             end
             theSettings(cal.describe.independence.gammaBands(i)) = 1;
             [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
-            measTemp = OLTakeMeasurement(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
+            measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
             cal.raw.independence.meas(:,i) = measTemp.pr650.spectrum;
             cal.raw.t.independence.meas(i) = measTemp.pr650.time(1);
             if (meterToggle(2))
@@ -551,7 +551,7 @@ try
             theSettings(cal.describe.independence.gammaBands(i)) = 1;
         end
         [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
-        measTemp = OLTakeMeasurement(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
+        measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
         cal.raw.independence.measAll = measTemp.pr650.spectrum;
         cal.raw.t.independence.measAll = measTemp.pr650.time(1);
         if (meterToggle(2))
@@ -567,7 +567,7 @@ try
     if (cal.describe.specifiedBackground)
         fprintf('- Measuring specified background...');
         [starts,stops] = OLSettingsToStartsStops(cal,cal.describe.specifiedBackgroundSettings);
-        measTemp = OLTakeMeasurement(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
+        measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
         cal.raw.specifiedBackgroundMeas(:,2) = measTemp.pr650.spectrum;
         cal.raw.t.specifiedBackgroundMeas(:,2) = measTemp.pr650.time(1);
         if (meterToggle(2))
@@ -581,7 +581,7 @@ try
     fprintf('- Measuring background...');
     theSettings = 0*ones(nPrimaries,1);
     [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
-    measTemp = OLTakeMeasurement(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
+    measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
     cal.raw.darkMeas(:,2) = measTemp.pr650.spectrum;
     cal.raw.t.darkMeas(:,2) = measTemp.pr650.time(1);
     if (meterToggle(2))
@@ -594,7 +594,7 @@ try
     theSettings = 0.1*ones(nPrimaries,1);
     theSettings(2:8:end) = 0.8;
     [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
-    measTemp = OLTakeMeasurement(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
+    measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
     cal.raw.wigglyMeas.settings(:,2) = theSettings;
     cal.raw.wigglyMeas.measSpd(:,2) = measTemp.pr650.spectrum;
     cal.raw.t.wigglyMeas.t(:,2) = measTemp.pr650.time(1);
@@ -607,7 +607,7 @@ try
     fprintf('- Taking half on measurement...');
     theSettings = 0.5*ones(nPrimaries,1);
     [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
-    measTemp = OLTakeMeasurement(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
+    measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
     cal.raw.halfOnMeas(:,2) = measTemp.pr650.spectrum;
     cal.raw.t.halfOnMeas(:,2) = measTemp.pr650.time(1);
     if (meterToggle(2))
@@ -619,7 +619,7 @@ try
     fprintf('- Taking full on measurement...');
     theSettings = ones(nPrimaries,1);
     [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
-    measTemp = OLTakeMeasurement(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
+    measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
     cal.raw.fullOn(:,2) = measTemp.pr650.spectrum;
     cal.raw.t.fullOn(:,2) = measTemp.pr650.time(1);
     if (meterToggle(2))
