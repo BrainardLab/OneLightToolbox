@@ -122,8 +122,8 @@ try
     % be set to true.  If any are false, OLInitCal is not run.  You'll want
     % cal.describe.extraSave set to true when you have any of these set to
     % false.
-    cal.describe.doPrimaries = false;
-    cal.describe.doGamma = false;
+    cal.describe.doPrimaries = true;
+    cal.describe.doGamma = true;
     cal.describe.doIndependence = true;
     
     % Call save
@@ -140,7 +140,7 @@ try
     cal.describe.bulbNumber = GetWithDefault('Enter bulb number',5);
     
     % Ask for email recipient
-    emailRecipient = GetWithDefault('Send status email to','mspits@sas.upenn.edu');
+    emailRecipient = GetWithDefault('Send status email to','cottaris@psych.upenn.edu');
     
     % Ask which PR-6xx radiometer to use
     % Some parameters are radiometer dependent.
@@ -177,9 +177,9 @@ try
                 'verbosity',        1, ...
                 'syncMode',         'OFF', ...      % choose from 'OFF', 'AUTO', [20 400];        
                 'cyclesToAverage',  1, ...          % choose any integer in range [1 99]
-                'sensitivityMode',  'STANDARD', ... % choose between 'STANDARD' and 'EXTENDED'.  'STANDARD': (exposure range: 6 - 6,000 msec, 'EXTENDED': exposure range: 6 - 30,000 msec
+                'sensitivityMode',  'EXTENDED', ... % choose between 'STANDARD' and 'EXTENDED'.  'STANDARD': (exposure range: 6 - 6,000 msec, 'EXTENDED': exposure range: 6 - 30,000 msec
                 'exposureTime',     'ADAPTIVE', ... % choose between 'ADAPTIVE' (for adaptive exposure), or a value in the range [6 6000] for 'STANDARD' sensitivity mode, or a value in the range [6 30000] for the 'EXTENDED' sensitivity mode
-                'apertureSize',     '1/2 DEG' ...   % choose between '1 DEG', '1/2 DEG', '1/4 DEG', '1/8 DEG'
+                'apertureSize',     '1 DEG' ...   % choose between '1 DEG', '1/2 DEG', '1/4 DEG', '1/8 DEG'
             );
 
         otherwise,
@@ -242,6 +242,8 @@ try
     fprintf('- Taking full on measurement...');
     theSettings = ones(nPrimaries,1);
     [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
+    numel(starts)
+    numel(stops)
     measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
     
     cal.raw.fullOn(:,1) = measTemp.pr650.spectrum;
@@ -255,6 +257,8 @@ try
     fprintf('- Taking half on measurement...');
     theSettings = 0.5*ones(nPrimaries,1);
     [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
+    numel(starts)
+    numel(stops)
     measTemp = OLTakeMeasurement(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
     cal.raw.halfOnMeas(:,1) = measTemp.pr650.spectrum;
     cal.raw.t.halfOnMeas(:,1) = measTemp.pr650.time(1);
@@ -660,6 +664,7 @@ try
     SendEmail(emailRecipient, 'OneLight Calibration Complete', ...
         'Finished!');
 catch e
+    e.message
     SendEmail(emailRecipient, 'OneLight Calibration Failed', ...
         ['Calibration failed with the following error' 10 e.message]);
     keyboard;
