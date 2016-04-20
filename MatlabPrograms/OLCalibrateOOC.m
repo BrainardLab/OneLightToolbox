@@ -410,8 +410,12 @@ try
     %
     % We do this for cal.describe.nGammaBands of the bands, at
     % cal.describe.nGammaLevels for each band.
+   
     if (cal.describe.doGamma)
         fprintf('\n*** Gamma measurements ***\n\n');
+
+        cal.describe.gamma.gammaBands = round(linspace(1,cal.describe.numWavelengthBands,cal.describe.nGammaBands));
+        cal.describe.gamma.gammaLevels = linspace(1/cal.describe.nGammaLevels,1,cal.describe.nGammaLevels);
 
         % Allocate some memory.
         cal.raw.gamma.cols = zeros(ol.NumCols, cal.describe.nGammaBands);
@@ -422,8 +426,7 @@ try
         else
             gammaMeasIter = 1:cal.describe.nGammaBands;
         end
-        cal.describe.gamma
-        cal.raw
+
         for i = gammaMeasIter
             fprintf('\n*** Gamma measurements on gamma band set %d of %d ***\n\n', i, cal.describe.nGammaBands);
             
@@ -665,11 +668,10 @@ try
     SendEmail(emailRecipient, 'OneLight Calibration Complete', ...
         'Finished!');
 catch e
-    fprintf('Failed with message: ''%s''. Please wait for the PR670OBJ to shut down .... ', e.message);
+    fprintf('Failed with message: ''%s''.\nPlease wait for the PR670OBJ to shut down .... ', e.message);
     if (~isempty(spectroRadiometerOBJ))
         spectroRadiometerOBJ.shutDown();
     end
-    fprintf('Done. \n');
     SendEmail(emailRecipient, 'OneLight Calibration Failed', ...
         ['Calibration failed with the following error' 10 e.message]);
     keyboard;

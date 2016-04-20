@@ -51,7 +51,7 @@ classdef OLCalibrationTypes
         %BoxALongCableCEyePiece1('OLBoxALongCableCEyePiece1');
         %BoxALongCableCEyePiece2('OLBoxALongCableCEyePiece2');
         %BoxALongCableCEyePiece1BeamsplitterProjectorOn ('OLBoxALongCableCEyePiece1BeamsplitterProjectorOn');
-        BoxBLongCableCEyePiece2('OLBoxBLongCableCEyePiece2');
+%        BoxBLongCableCEyePiece2('OLBoxBLongCableCEyePiece2');
         %BoxBShortCableDEyePiece1('OLBoxBShortCableDEyePiece1'); Note this
         %cal is for the AO Smilow setup. 
         %BoxALongCableCEyePiece2('OLBoxALongCableCEyePiece2');
@@ -98,20 +98,21 @@ classdef OLCalibrationTypes
 %         BoxDRandomizedLongCableAEyePiece2('OLBoxDRandomizedLongCableAEyePiece2');
 %         BoxDRandomizedLongCableAEyePiece2_ND10('OLBoxDRandomizedLongCableAEyePiece2_ND10');
         %BoxCRandomizedLongCableBEyePiece1BeamSplitterOff('OLBoxCRandomizedLongCableBEyePiece1BeamSplitterOff');
-        BoxCRandomizedLongCableBEyePiece1('OLBoxCRandomizedLongCableBEyePiece1');
-        BoxARandomizedLongCableBEyePiece1('OLBoxARandomizedLongCableBEyePiece1');
-        BoxCRandomizedLongCableCStubby1_ND05('OLBoxCRandomizedLongCableCStubby1_ND05');
-        BoxCRandomizedLongCableCStubby1_ND10('OLBoxCRandomizedLongCableCStubby1_ND10');
-        BoxARandomizedLongCableBEyePiece1_ND10('OLBoxARandomizedLongCableBEyePiece1_ND10');
-        BoxCRandomizedLongCableCStubby1NoLens_ND10('OLBoxCRandomizedLongCableCStubby1NoLens_ND10');
-        BoxCRandomizedLongCableCStubby1NoLens_ND10_ContactLens_0_5mm('OLBoxCRandomizedLongCableCStubby1NoLens_ND10_ContactLens_0_5mm');
-        BoxDRandomizedLongCableAEyePiece2_ND10CassetteB('OLBoxDRandomizedLongCableAEyePiece2_ND10CassetteB');
-        BoxDRandomizedLongCableAEyePiece2_ND05CassetteB('OLBoxDRandomizedLongCableAEyePiece2_ND05CassetteB');
-        BoxBShortCableDEyePiece3_ND00('OLBoxBShortCableDEyePiece3_ND00');
-        BoxARandomizedLongCableCStubby1_ND00('OLBoxARandomizedLongCableCStubby1_ND00');
-        BoxBRandomizedLongCableBEyePiece1_ND00('OLBoxBRandomizedLongCableBEyePiece1_ND00');
-        BoxBRandomizedLongCableBStubbyEyePiece1_ND00('OLBoxBRandomizedLongCableBStubbyEyePiece1_ND00');
-        BoxDRandomizedLongCableAEyePiece2_ND07CassetteB('OLBoxDRandomizedLongCableAEyePiece2_ND07CassetteB');
-        BoxDRandomizedLongCableAEyePiece2_ND05('OLBoxDRandomizedLongCableAEyePiece2_ND05');
+%         BoxCRandomizedLongCableBEyePiece1('OLBoxCRandomizedLongCableBEyePiece1');
+%         BoxARandomizedLongCableBEyePiece1('OLBoxARandomizedLongCableBEyePiece1');
+%         BoxCRandomizedLongCableCStubby1_ND05('OLBoxCRandomizedLongCableCStubby1_ND05');
+%         BoxCRandomizedLongCableCStubby1_ND10('OLBoxCRandomizedLongCableCStubby1_ND10');
+%         BoxARandomizedLongCableBEyePiece1_ND10('OLBoxARandomizedLongCableBEyePiece1_ND10');
+%         BoxCRandomizedLongCableCStubby1NoLens_ND10('OLBoxCRandomizedLongCableCStubby1NoLens_ND10');
+%         BoxCRandomizedLongCableCStubby1NoLens_ND10_ContactLens_0_5mm('OLBoxCRandomizedLongCableCStubby1NoLens_ND10_ContactLens_0_5mm');
+%         BoxDRandomizedLongCableAEyePiece2_ND10CassetteB('OLBoxDRandomizedLongCableAEyePiece2_ND10CassetteB');
+%         BoxDRandomizedLongCableAEyePiece2_ND05CassetteB('OLBoxDRandomizedLongCableAEyePiece2_ND05CassetteB');
+%         BoxBShortCableDEyePiece3_ND00('OLBoxBShortCableDEyePiece3_ND00');
+%         BoxARandomizedLongCableCStubby1_ND00('OLBoxARandomizedLongCableCStubby1_ND00');
+%         BoxBRandomizedLongCableBEyePiece1_ND00('OLBoxBRandomizedLongCableBEyePiece1_ND00');
+%         BoxBRandomizedLongCableBStubbyEyePiece1_ND00('OLBoxBRandomizedLongCableBStubbyEyePiece1_ND00');
+%         BoxDRandomizedLongCableAEyePiece2_ND07CassetteB('OLBoxDRandomizedLongCableAEyePiece2_ND07CassetteB');
+%        BoxDRandomizedLongCableAEyePiece2_ND05('OLBoxDRandomizedLongCableAEyePiece2_ND05');
+        BoxDTestOOCalibration('OLBoxDTestOOCalibration');
     end
 end
