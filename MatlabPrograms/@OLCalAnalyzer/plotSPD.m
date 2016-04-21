@@ -51,24 +51,25 @@ function plotSPD(obj,varargin)
     set(hFig, 'Color', [1 1 1], 'Position', [10 1000 530 520]);
     subplot('Position', [0.08 0.08 0.91 0.91]);
     
-    switch spdName
-        
-        case 'darkMeas'  
-            preLum = obj.summaryData.darkLumPre;
-            postLum  = obj.summaryData.darkLumPost;
-            
-        case 'halfOnMeas'
-            preLum = obj.summaryData.halfOnLumPre;
-            postLum  = obj.summaryData.halfOnLumPost;
-            
-        case 'fullOn'
-            preLum = obj.summaryData.fullOnLumPre;
-            postLum  = obj.summaryData.fullOnLumPost;
-            
-        otherwise
-            fprintf('Unknown raw spd name: %s', spdName);
-    end
+    if strcmp(spdType, 'raw')
+        switch spdName 
+            case 'darkMeas'  
+                preLum = obj.summaryData.darkLumPre;
+                postLum  = obj.summaryData.darkLumPost;
 
+            case 'halfOnMeas'
+                preLum = obj.summaryData.halfOnLumPre;
+                postLum  = obj.summaryData.halfOnLumPost;
+
+            case 'fullOn'
+                preLum = obj.summaryData.fullOnLumPre;
+                postLum  = obj.summaryData.fullOnLumPost;
+
+            otherwise
+                fprintf('Unknown raw spd name: %s', spdName);
+        end
+    end
+    
     % Plot
     if strcmp(spdType, 'raw')
         plot(obj.waveAxis, spd(:,1), 'r-', 'LineWidth', 2.0);
