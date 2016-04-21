@@ -1,0 +1,18 @@
+classdef OLCalAnalyzer
+    %UNTITLED2 Summary of this class goes here
+    %   Detailed explanation goes here
+    
+    properties (SetAccess = private)
+        inputCal
+    end
+    
+    % Public methods
+    methods
+        % Constructor
+        function obj = OLCalAnalyzer()
+            obj.inputCal = 
+        end
+    end
+    
+end
+

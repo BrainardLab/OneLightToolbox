@@ -1,0 +1,22 @@
+function exportFigs(obj)
+    fnames = fieldnames(obj.figsList)
+    
+    for i = 1:length(fnames)
+        if (~strncmp(fnames{i},'Compare',7))
+            figName = [fnames{i} '_' obj.inputCalID];
+        else
+            figName = fnames{i};
+        end
+        figName = strrep(figName, ' ', '_');
+        figName = strrep(figName, '-', '_');
+        figName = strrep(figName, ':', '.');
+        figHandle = obj.figsList.(fnames{i});
+        imageFileName = fullfile(obj.figuresDir,figName);
+        %FigureSave(imageFileName, figHandle, 'png');
+        
+        fprintf('file saved in %s', imageFileName);
+    end
+    warning(warnState.state,warnState.identifier);
+    
+end
+
