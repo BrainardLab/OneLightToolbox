@@ -15,10 +15,10 @@ classdef OLCalAnalyzer < handle
     
     properties (SetAccess = private)
         % the imported cal struct imported
-        inputCal
+        cal
         
         % the imported cal ID
-        inputCalID
+        calID
         
         % the directory where figures will be exported
         figuresDir
@@ -53,8 +53,14 @@ classdef OLCalAnalyzer < handle
             obj.updateSummaryTable();
         end
         
-        % Method to plot raw SPDs
+        % Method to plot various SPDs
         plotSPD(obj,varargin);
+        
+        % Method to plot the gamma SPD measurements
+        plotGammaSPD(obj, varargin);
+        
+        % Method to plot the gamma measurements
+        plotGamma(obj, varargin);
         
         % Method to export all the generated figs
         exportFigs(obj, varargin);

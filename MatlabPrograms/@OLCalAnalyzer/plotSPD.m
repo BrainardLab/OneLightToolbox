@@ -13,90 +13,88 @@ function plotSPD(obj,varargin)
     p = parser.Results;
     
     % Get spd type and name
-    spdType = p.spdType; 
-    validatestring(spdType, {'raw', 'computed'});
+    spdType = p.spdType;
     spdName = p.spdName;
+    
+    % Validate spdType
+    validatestring(spdType, {'raw', 'computed'});
     
     % Get band indices to plot 
     bandIndicesToPlot = p.bandIndicesToPlot;
     
     % Validate that the queried field exists
     if strcmp(spdType, 'raw')
-        if (~isfield(obj.inputCal.raw, spdName))
-            fprintf(2, 'Did not find field ''obj.inputCal.raw.%s''. Nothing plotted for this query.', spdName);
-            return;
+        if (~isfield(obj.cal.raw, spdName))
+            error('\nDid not find field ''cal.raw.%s''. Nothing plotted for this query.\n', spdName);
         else
             % Extract the desired spd data
-            spd = eval(sprintf('obj.inputCal.raw.%s', spdName));
+            spd = eval(sprintf('obj.cal.raw.%s', spdName));
         end
     elseif strcmp(spdType, 'computed')
-        if (~isfield(obj.inputCal.computed, spdName))
-            fprintf(2, 'Did not find field ''obj.inputCal.computed.%s''. Nothing plotted for this query.', spdName);
-            return;
+        if (~isfield(obj.cal.computed, spdName))
+            error('\nDid not find field ''cal.computed.%s''. Nothing plotted for this query.\n', spdName);
         else
             % Extract the desired spd data
-            spd = eval(sprintf('obj.inputCal.computed.%s', spdName));
-            size(spd)
-            if (~isempty(bandIndicesToPlot))
-                spd = spd(:, bandIndicesToPlot);
-            end
-            size(spd)
+            spd = eval(sprintf('obj.cal.computed.%s', spdName));
         end
     end
     
-    
+    % If bandIndicedToPlot is non-empty, plot only those indices
+    if (~isempty(bandIndicesToPlot))
+       spd = spd(:, bandIndicesToPlot);
+    end
+            
     % Set up figure
-    hFig = figure; clf; 
-    obj.figsList.(spdName) = hFig;
-    set(hFig, 'Color', [1 1 1], 'Position', [10 1000 530 520]);
+    hFig = figure; clf;
+    if (isempty(bandIndicesToPlot))
+        figurePrefix = sprintf('%s_%s', spdType, spdName);
+    else
+        figurePrefix = sprintf('%s_%s_select_bands', spdType, spdName);
+    end
+    obj.figsList.(figurePrefix) = hFig;
+    set(hFig, 'Name', figurePrefix, 'Color', [1 1 1], 'Position', [10 1000 530 520]);
     subplot('Position', [0.08 0.08 0.91 0.91]);
-    
-    if strcmp(spdType, 'raw')
+
+    % Plot
+    if ( (strcmp(spdName, 'darkMeas')) || (strcmp(spdName, 'halfOnMeas')) || (strcmp(spdName, 'fullOn')) )
         switch spdName 
             case 'darkMeas'  
                 preLum = obj.summaryData.darkLumPre;
                 postLum  = obj.summaryData.darkLumPost;
-
             case 'halfOnMeas'
                 preLum = obj.summaryData.halfOnLumPre;
                 postLum  = obj.summaryData.halfOnLumPost;
-
             case 'fullOn'
                 preLum = obj.summaryData.fullOnLumPre;
                 postLum  = obj.summaryData.fullOnLumPost;
-
-            otherwise
-                fprintf('Unknown raw spd name: %s', spdName);
         end
-    end
-    
-    % Plot
-    if strcmp(spdType, 'raw')
+        
         plot(obj.waveAxis, spd(:,1), 'r-', 'LineWidth', 2.0);
         hold on;
         plot(obj.waveAxis, spd(:,2), 'b-', 'LineWidth', 2.0);
-    else
-        colors = jet(size(spd,2));
-        hold on;
-        for bandIndex = 1:size(spd,2)
-            plot(obj.waveAxis, spd(:,bandIndex), '-', 'Color', colors(bandIndex,:), 'LineWidth', 2.0);
-        end
-    end
-    
-    
-    if strcmp(spdType, 'raw')
+        
         % legend
         hL = legend(...
             sprintf('%s pre-calibration  (lum: %2.2f cd/m2)',spdName, preLum), ...
             sprintf('%s post-calibration (lum: %2.2f cd/m2)',spdName, postLum), ...
             'Location', 'NorthOutside');
     else
+        colors = jet(size(spd,2));
+        hold on;
+        for bandIndex = 1:size(spd,2)
+            if (~isempty(bandIndicesToPlot))
+                lineLegend = sprintf('band %02d (%s)',bandIndicesToPlot(bandIndex), spdType);
+            else
+                lineLegend = '';
+            end
+            plot(obj.waveAxis, spd(:,bandIndex), '-', 'Color', colors(bandIndex,:), 'LineWidth', 2.0, 'DisplayName', lineLegend);
+        end
+        
         if (~isempty(bandIndicesToPlot))
-            hL = legend(sprintf('%d\n', bandIndicesToPlot), 'Location', 'NorthOutside');
+            hL = legend('Location', 'NorthOutside');
         end
     end
     
-     
     % Finish plot
     box off
     pbaspect([1 1 1])

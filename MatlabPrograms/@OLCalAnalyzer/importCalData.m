@@ -38,7 +38,7 @@ function importCalData(obj)
         assert(status, 'OLAnalyzeCal:mkdir', statMessage);
     end
     
-    obj.inputCal = cal;
-    obj.inputCalID = calID;
+    obj.cal = cal;
+    obj.calID = calID;
     obj.figuresDir = plotFolder;
 end

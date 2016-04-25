@@ -16,7 +16,7 @@ function exportFigs(obj, varargin)
     % Go through each one and export the data
     for i = 1:length(fnames)
         if (~strncmp(fnames{i},'Compare',7))
-            figName = [fnames{i} '_' obj.inputCalID];
+            figName = [fnames{i} '_' obj.calID];
         else
             figName = fnames{i};
         end
