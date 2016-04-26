@@ -72,7 +72,7 @@ function plotPredictions(obj, varargin)
     hold on;
     plot(obj.waveAxis, predictedSPD-measuredSPDpostCalibration, 'b-', 'LineWidth', 3.0, 'Color', [0.4 0.4 1.0 0.5], 'DisplayName', 'predicted-postCalibration');
     hold off;
-    set(gca, 'YLim', 1e-4*[-8 13]);
+    set(gca, 'YLim', 1e-4*[-15 25]);
     
     rmsPre = sqrt(mean((predictedSPD-measuredSPDpreCalibration).^2))
     rmsPost = sqrt(mean((predictedSPD-measuredSPDpostCalibration).^2))

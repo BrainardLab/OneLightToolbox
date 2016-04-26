@@ -1,11 +1,11 @@
 function OLAnalyzeCalOOC
 
-    calAnalyzer = OLCalAnalyzer('refitGammaTablesUsingLinearInterpolation', true);
+    calAnalyzer = OLCalAnalyzer('refitGammaTablesUsingLinearInterpolation', false);
    
-    plotCompositeMeasurents = false;
-    plotSampledSpectra = false;
-    plotFullSpectra = false;
-    plotGammaSPDs = false;
+    plotCompositeMeasurents = ~false;
+    plotSampledSpectra = ~false;
+    plotFullSpectra = ~false;
+    plotGammaSPDs = ~false;
     plotGammaTables = true;
     plotPredictions = true;
     
@@ -65,6 +65,9 @@ function OLAnalyzeCalOOC
         spdType = 'raw';
         halfOnSettings = 0.5*ones(calAnalyzer.cal.describe.numWavelengthBands,1);
         calAnalyzer.plotPredictions(spdType, 'halfOnMeas', halfOnSettings);
+        
+        fullOnSettings = 1.0*ones(calAnalyzer.cal.describe.numWavelengthBands,1);
+        calAnalyzer.plotPredictions(spdType, 'fullOn', fullOnSettings);
         
         wigglySettings = calAnalyzer.cal.raw.wigglyMeas.settings(:, 1);
         calAnalyzer.plotPredictions(spdType, 'wigglyMeas', wigglySettings);
