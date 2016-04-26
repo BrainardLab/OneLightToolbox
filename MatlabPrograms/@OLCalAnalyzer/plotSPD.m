@@ -6,7 +6,6 @@ function plotSPD(obj,varargin)
     parser.addRequired('spdType', @ischar);
     parser.addRequired('spdName', @ischar);
     parser.addParameter('bandIndicesToPlot', defaultBandIndices, @isnumeric);
-    
     % Execute the parser
     parser.parse(varargin{:});
     % Create a standard Matlab structure from the parser results.

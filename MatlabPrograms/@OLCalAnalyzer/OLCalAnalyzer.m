@@ -62,6 +62,9 @@ classdef OLCalAnalyzer < handle
         % Method to plot the gamma measurements
         plotGamma(obj, varargin);
         
+        % Method to plot the various measured and predicted SPDs
+        plotPredictions(obj, varargin);
+        
         % Method to export all the generated figs
         exportFigs(obj, varargin);
     end

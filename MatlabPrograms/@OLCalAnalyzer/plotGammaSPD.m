@@ -25,7 +25,7 @@ function plotGammaSPD(obj, varargin)
             hFig = figure; clf;
             figurePrefix = sprintf('%s_%s_GammaSPD', gammaSPDType, gammaSPDName);
             obj.figsList.(figurePrefix) = hFig;
-            set(hFig, 'Position', [10 1000 2550 1300], 'Name', figurePrefix);
+            set(hFig, 'Position', [10 1000 2550 1300], 'Name', figurePrefix,  'Color', [1 1 1]);
             
             % Indices of bands for which we measured gamma data
             gammaBandIndices = obj.cal.describe.gamma.gammaBands;

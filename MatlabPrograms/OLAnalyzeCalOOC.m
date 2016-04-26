@@ -3,54 +3,73 @@ function OLAnalyzeCalOOC
     calAnalyzer = OLCalAnalyzer();
     calAnalyzer.verbosity = 'normal';
    
-    if (1==2)
-    % Generate figures
-    % (1) Dark, half-on, and full-on raw measurements
-    spdType = 'raw';
-    calAnalyzer.plotSPD(spdType, 'darkMeas'); 
-    calAnalyzer.plotSPD(spdType, 'halfOnMeas');
-    calAnalyzer.plotSPD(spdType, 'fullOn');
+    plotCompositeMeasurents = false;
+    plotSampledSpectra = false;
+    plotFullSpectra = false;
+    plotGammaSPDs = false;
+    plotGammaTables = false;
+    plotPredictions = true;
     
-    % (2) Sample spectral measurements
-    nBandsToPlot = 6;
-    whichBandIndicesToPlot = round(linspace(1,calAnalyzer.cal.describe.numWavelengthBands, nBandsToPlot));
-    spdType = 'computed';
-    calAnalyzer.plotSPD(spdType, 'pr650M', 'bandIndicesToPlot', whichBandIndicesToPlot);
     
-    % Computed spectra
-    spdType = 'computed';
-    calAnalyzer.plotSPD(spdType, 'pr650M', 'bandIndicesToPlot', whichBandIndicesToPlot);
-    
-    % Raw spectra
-    spdType = 'raw';
-    calAnalyzer.plotSPD(spdType, 'lightMeas', 'bandIndicesToPlot', whichBandIndicesToPlot);
-    if (calAnalyzer.cal.describe.specifiedBackground)
-        calAnalyzer.plotSPD(spdType, 'effectiveBgMeas', 'bandIndicesToPlot', whichBandIndicesToPlot);
+    if (plotCompositeMeasurents)
+        % Plot dark, half-on, and full-on raw measurements
+        spdType = 'raw';
+        calAnalyzer.plotSPD(spdType, 'darkMeas'); 
+        calAnalyzer.plotSPD(spdType, 'halfOnMeas');
+        calAnalyzer.plotSPD(spdType, 'fullOn');
     end
     
-    % (3) Full set of spectral measurements
-    for bandIndex = 1:calAnalyzer.cal.describe.numWavelengthBands
-        startCol = calAnalyzer.cal.describe.primaryStartCols(bandIndex);
-        stopCol  = calAnalyzer.cal.describe.primaryStopCols(bandIndex);
-        fprintf('band:%2d, mirror cols:%d-%d (total mirror cols: %d)\n', bandIndex, startCol, stopCol, calAnalyzer.cal.describe.numColMirrors);
-    end
-    spdType = 'computed';
-    calAnalyzer.plotSPD(spdType, 'pr650M', 'bandIndicesToPlot', []);
-    spdType = 'raw';
-    calAnalyzer.plotSPD(spdType, 'lightMeas', 'bandIndicesToPlot', []);
-    
-    
+    if (plotSampledSpectra)
+        % Bands for which to plot spectral measurements
+        nBandsToPlot = 6;
+        whichBandIndicesToPlot = round(linspace(1,calAnalyzer.cal.describe.numWavelengthBands, nBandsToPlot));
+        
+        spdType = 'computed';
+        calAnalyzer.plotSPD(spdType, 'pr650M', 'bandIndicesToPlot', whichBandIndicesToPlot);
 
-    % (4) SPDs at different gamma values
-    gammaSPDType = 'raw';
-    calAnalyzer.plotGammaSPD(gammaSPDType, 'rad');
-    
+        % Computed spectra
+        spdType = 'computed';
+        calAnalyzer.plotSPD(spdType, 'pr650M', 'bandIndicesToPlot', whichBandIndicesToPlot);
+
+        % Raw spectra
+        spdType = 'raw';
+        calAnalyzer.plotSPD(spdType, 'lightMeas', 'bandIndicesToPlot', whichBandIndicesToPlot);
+        if (calAnalyzer.cal.describe.specifiedBackground)
+            calAnalyzer.plotSPD(spdType, 'effectiveBgMeas', 'bandIndicesToPlot', whichBandIndicesToPlot);
+        end
     end
     
+    if (plotFullSpectra)
+        % Full set of spectral measurements
+        for bandIndex = 1:calAnalyzer.cal.describe.numWavelengthBands
+            startCol = calAnalyzer.cal.describe.primaryStartCols(bandIndex);
+            stopCol  = calAnalyzer.cal.describe.primaryStopCols(bandIndex);
+            fprintf('band:%2d, mirror cols:%d-%d (total mirror cols: %d)\n', bandIndex, startCol, stopCol, calAnalyzer.cal.describe.numColMirrors);
+        end
+        
+        spdType = 'computed';
+        calAnalyzer.plotSPD(spdType, 'pr650M', 'bandIndicesToPlot', []);
+        spdType = 'raw';
+        calAnalyzer.plotSPD(spdType, 'lightMeas', 'bandIndicesToPlot', []);
+    end
     
-    % (5) The gamma data
-    gammaType = 'computed';
-    calAnalyzer.plotGamma(gammaType);
+    if (plotGammaSPDs)
+        % SPDs at different gamma values
+        gammaSPDType = 'raw';
+        calAnalyzer.plotGammaSPD(gammaSPDType, 'rad');
+    end
+    
+    if (plotGammaTables)
+        % Two views of the measured and fitted gamma tables
+        gammaType = 'computed';
+        calAnalyzer.plotGamma(gammaType);
+    end
+    
+    if (plotPredictions)
+        spdType = 'raw';
+        halfOnSettings = 0.5*ones(calAnalyzer.cal.describe.numWavelengthBands,1);
+        calAnalyzer.plotPredictions(spdType, 'halfOnMeas', halfOnSettings);
+    end
     
     
     if (calAnalyzer.cal.describe.specifiedBackground)
