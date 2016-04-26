@@ -21,7 +21,11 @@ function plotPredictions(obj, varargin)
         error('\nDid not find field ''cal.raw.%s''. Nothing plotted for this query.\n', spdName);
     else
         % Extract the desired spd data
-        measuredSPD = eval(sprintf('obj.cal.raw.%s', spdName));
+        if (strcmp(spdName, 'wigglyMeas'))
+            measuredSPD = eval(sprintf('obj.cal.raw.%s.measSpd', spdName));
+        else
+            measuredSPD = eval(sprintf('obj.cal.raw.%s', spdName));
+        end
         measuredSPDpreCalibration = measuredSPD(:, 1);
         measuredSPDpostCalibration = measuredSPD(:, 2);
         % Compute predicted SPD
@@ -53,7 +57,7 @@ function plotPredictions(obj, varargin)
     plot(obj.waveAxis, predictedSPD, 'k-', 'LineWidth', 1.0, 'DisplayName', 'predicted');
     
     % Finish plot  
-    hL = legend('Location', 'North', 'Orientation', 'horizontal');
+    hL = legend('Location', 'NorthWest');
     hL.FontSize = 16;
     hL.FontName = 'Menlo';  
                 
@@ -68,6 +72,10 @@ function plotPredictions(obj, varargin)
     hold on;
     plot(obj.waveAxis, predictedSPD-measuredSPDpostCalibration, 'b-', 'LineWidth', 3.0, 'Color', [0.4 0.4 1.0 0.5], 'DisplayName', 'predicted-postCalibration');
     hold off;
+    set(gca, 'YLim', 1e-4*[-8 13]);
+    
+    rmsPre = sqrt(mean((predictedSPD-measuredSPDpreCalibration).^2))
+    rmsPost = sqrt(mean((predictedSPD-measuredSPDpostCalibration).^2))
     
      % Finish plot  
     hL = legend('Location', 'North', 'Orientation', 'horizontal');
@@ -76,6 +84,7 @@ function plotPredictions(obj, varargin)
     
     pbaspect([1 1 1]); 
     box off
+    grid on
     set(gca, 'FontSize', 16);
     xlabel('wavelength (nm)', 'FontSize', 20); 
     ylabel('diff power (W/sr/m2/nm)', 'FontSize', 20);

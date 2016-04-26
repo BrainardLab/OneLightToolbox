@@ -10,7 +10,7 @@ classdef OLCalAnalyzer < handle
 %
 
     properties
-        verbosity;
+        
     end
     
     properties (SetAccess = private)
@@ -23,8 +23,11 @@ classdef OLCalAnalyzer < handle
         % the directory where figures will be exported
         figuresDir
         
-        % Smmary data
+        % Summary data
         summaryData
+        
+        % Initializer options
+        refitGammaTablesUsingLinearInterpolation
     end
     
     properties (Access = private)
@@ -46,9 +49,27 @@ classdef OLCalAnalyzer < handle
     % Public methods
     methods
         % Constructor
-        function obj = OLCalAnalyzer()
-            obj.importCalData();
+        function obj = OLCalAnalyzer(varargin)
+            
+            defaultRefitGammaTablesUsingLinearInterpolation = false;
+            
+            % Parse optional arguments
+            parser = inputParser;
+            parser.addParameter('refitGammaTablesUsingLinearInterpolation', defaultRefitGammaTablesUsingLinearInterpolation, @islogical);
+            %Execute the parser
+            parser.parse(varargin{:});
+            % Create a standard Matlab structure from the parser results.
+            p = parser.Results;
+            optionNames = fieldnames(p);
+            for k = 1:numel(optionNames)
+                obj.(optionNames{k}) = p.(optionNames{k})
+            end
+            
             obj.init();
+            
+            obj.importCalData();
+            obj.importResources();
+            
             obj.initSummaryTable();
             obj.updateSummaryTable();
         end

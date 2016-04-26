@@ -8,6 +8,11 @@ function importCalData(obj)
         cal = OLInitCal(cal);
     end
     
+    if (obj.refitGammaTablesUsingLinearInterpolation)
+        cal.describe.gammaFitType = 'linearinterpolation';
+        cal = OLInitCal(cal);
+    end
+    
     if (~isfield(cal.describe,'specifiedBackground'))
         cal = OLInitCal(cal);
     end

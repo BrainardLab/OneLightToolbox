@@ -1,13 +1,12 @@
 function OLAnalyzeCalOOC
 
-    calAnalyzer = OLCalAnalyzer();
-    calAnalyzer.verbosity = 'normal';
+    calAnalyzer = OLCalAnalyzer('refitGammaTablesUsingLinearInterpolation', true);
    
     plotCompositeMeasurents = false;
     plotSampledSpectra = false;
     plotFullSpectra = false;
     plotGammaSPDs = false;
-    plotGammaTables = false;
+    plotGammaTables = true;
     plotPredictions = true;
     
     
@@ -23,9 +22,6 @@ function OLAnalyzeCalOOC
         % Bands for which to plot spectral measurements
         nBandsToPlot = 6;
         whichBandIndicesToPlot = round(linspace(1,calAnalyzer.cal.describe.numWavelengthBands, nBandsToPlot));
-        
-        spdType = 'computed';
-        calAnalyzer.plotSPD(spdType, 'pr650M', 'bandIndicesToPlot', whichBandIndicesToPlot);
 
         % Computed spectra
         spdType = 'computed';
@@ -69,6 +65,9 @@ function OLAnalyzeCalOOC
         spdType = 'raw';
         halfOnSettings = 0.5*ones(calAnalyzer.cal.describe.numWavelengthBands,1);
         calAnalyzer.plotPredictions(spdType, 'halfOnMeas', halfOnSettings);
+        
+        wigglySettings = calAnalyzer.cal.raw.wigglyMeas.settings(:, 1);
+        calAnalyzer.plotPredictions(spdType, 'wigglyMeas', wigglySettings);
     end
     
     
