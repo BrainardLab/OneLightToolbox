@@ -223,8 +223,10 @@ end
 for l = 1:cal.describe.nGammaFitLevels
     cal.computed.gammaTable(l,:) = interp1(cal.describe.gamma.gammaBands',cal.computed.gammaTableMeasuredBandsFit(l,:)',(1:cal.describe.numWavelengthBands)','linear','extrap')';   
 end
+
+% Make each band's gamma curve monotonic
 for b = 1:cal.describe.numWavelengthBands
-    cal.computed.gammaTable(b,:) = MakeMonotonic(cal.computed.gammaTable(b,:));
+    cal.computed.gammaTable(:,b) = MakeMonotonic(cal.computed.gammaTable(:,b));
 end
 
 % Average gamma measurements over bands
