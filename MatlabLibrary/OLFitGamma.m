@@ -17,7 +17,7 @@ function [fit_out,x,fitComment] = OLFitGamma(values_in,measurements,values_out,f
 %         with control points (0,0), (1,), and and fit parameters (x,y).       
 %
 % 3/14/14  dhb, ms  Cobbled together.
-
+% 
 if (size(measurements,2) > 1)
     error('Only know how to deal with one band at a time.  Sorry.');
 end
@@ -52,6 +52,10 @@ if (ischar(fitType))
             x = fmincon(@(x)BetaCdfFun(x,fitType,values_in,mGammaMassaged),x0,[],[],[],[],vlb,vub,[],options);
             fit_out = ComputeBetaCdf(x,fitType,values_out);
             fitComment = sprintf('% option of OLFitGamma',fitType);
+            
+        case 'linearinterpolation'
+            [fit_out,x,fitComment] = FitGamma(values_in,measurements,values_out,6);
+            
         otherwise
             error('Unknown gamma fit type passed');
     end
