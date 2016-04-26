@@ -39,15 +39,18 @@ function OLAnalyzeCalOOC
     spdType = 'raw';
     calAnalyzer.plotSPD(spdType, 'lightMeas', 'bandIndicesToPlot', []);
     
-    end
+    
 
     % (4) SPDs at different gamma values
     gammaSPDType = 'raw';
     calAnalyzer.plotGammaSPD(gammaSPDType, 'rad');
     
+    end
     
-    % (4) The gamma data
-    %calAnalyzer.plotGamma
+    
+    % (5) The gamma data
+    gammaType = 'computed';
+    calAnalyzer.plotGamma(gammaType);
     
     
     if (calAnalyzer.cal.describe.specifiedBackground)

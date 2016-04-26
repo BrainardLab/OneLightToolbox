@@ -23,7 +23,9 @@ function plotGammaSPD(obj, varargin)
         else
             % Set up figure
             hFig = figure; clf;
-            set(hFig, 'Position', [10 1000 2550 1300]);
+            figurePrefix = sprintf('%s_%s_GammaSPD', gammaSPDType, gammaSPDName);
+            obj.figsList.(figurePrefix) = hFig;
+            set(hFig, 'Position', [10 1000 2550 1300], 'Name', figurePrefix);
             
             % Indices of bands for which we measured gamma data
             gammaBandIndices = obj.cal.describe.gamma.gammaBands;
@@ -70,7 +72,7 @@ function plotGammaSPD(obj, varargin)
                 maxForThisBand = max(max(gammaSPD(bandIter,:,:)));
                 
                 % Add legend
-                %hL = legend('Location', 'WestOutside');  
+                % hL = legend('Location', 'WestOutside');  
                 
                 % Finish plot
                 box off
@@ -79,7 +81,7 @@ function plotGammaSPD(obj, varargin)
                 hL.FontName = 'Menlo';       
                 set(gca, 'XLim', [obj.waveAxis(1)-5 obj.waveAxis(end)+5], 'YLim', [-0.2 5]/1000); % maxForThisBand*[-0.05 1.05]);
                 set(gca, 'FontSize', 12);
-                xlabel('wavelength (nm)', 'FontSize', 14, 'FontWeight', 'bold');
+                %xlabel('wavelength (nm)', 'FontSize', 14, 'FontWeight', 'bold');
                 if (bandIter == 1)
                     ylabel('power', 'FontSize', 14, 'FontWeight', 'bold');
                 else

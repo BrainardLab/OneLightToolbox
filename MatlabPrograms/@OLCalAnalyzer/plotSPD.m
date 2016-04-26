@@ -81,13 +81,13 @@ function plotSPD(obj,varargin)
     else
         colors = jet(size(spd,2));
         hold on;
-        for bandIndex = 1:size(spd,2)
+        for bandIter = 1:size(spd,2)
             if (~isempty(bandIndicesToPlot))
-                lineLegend = sprintf('band %02d (%s)',bandIndicesToPlot(bandIndex), spdType);
+                lineLegend = sprintf('band %02d (%s)',bandIndicesToPlot(bandIter), spdType);
             else
                 lineLegend = '';
             end
-            plot(obj.waveAxis, spd(:,bandIndex), '-', 'Color', colors(bandIndex,:), 'LineWidth', 2.0, 'DisplayName', lineLegend);
+            plot(obj.waveAxis, spd(:,bandIter), '-', 'Color', colors(bandIter,:), 'LineWidth', 2.0, 'DisplayName', lineLegend);
         end
         
         if (~isempty(bandIndicesToPlot))
