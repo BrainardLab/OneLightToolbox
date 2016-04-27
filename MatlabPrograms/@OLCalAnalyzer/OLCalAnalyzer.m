@@ -31,7 +31,6 @@ classdef OLCalAnalyzer < handle
     end
     
     properties (Access = private)
-        
         % The CIE1931 CMFs (interpolated according the S-vector found in the inputCal
         T_xyz
         

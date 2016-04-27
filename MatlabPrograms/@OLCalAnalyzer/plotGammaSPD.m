@@ -25,7 +25,7 @@ function plotGammaSPD(obj, varargin)
             hFig = figure; clf;
             figurePrefix = sprintf('%s_%s_GammaSPD', gammaSPDType, gammaSPDName);
             obj.figsList.(figurePrefix) = hFig;
-            set(hFig, 'Position', [10 1000 2550 1300], 'Name', figurePrefix,  'Color', [1 1 1]);
+            set(hFig, 'Position', [10 1000 1990 1060], 'Name', figurePrefix,  'Color', [1 1 1]);
             
             % Indices of bands for which we measured gamma data
             gammaBandIndices = obj.cal.describe.gamma.gammaBands;
@@ -42,9 +42,9 @@ function plotGammaSPD(obj, varargin)
                'colsNum', round(0.5*numel(gammaBandIndices)), ...
                'heightMargin',   0.02, ...
                'widthMargin',    0.01, ...
-               'leftMargin',     0.02, ...
-               'rightMargin',    0.01, ...
-               'bottomMargin',   0.03, ...
+               'leftMargin',     0.03, ...
+               'rightMargin',    0.00, ...
+               'bottomMargin',   0.01, ...
                'topMargin',      0.000);
             
             for bandIter = 1:numel(gammaBandIndices)
@@ -58,6 +58,7 @@ function plotGammaSPD(obj, varargin)
                 end
                 gammaSPD(bandIter,:,:) = tmp';
                 
+                gain = 1000;
                 % Unscaled data
                 row = 1 + 2*floor((bandIter-1)/size(subplotPosVectors,2));
                 col = 1 + mod((bandIter-1),size(subplotPosVectors,2));
@@ -66,7 +67,7 @@ function plotGammaSPD(obj, varargin)
                 for gammaIter = 1:numel(gammaLevels)
                     lineLegend = sprintf('gamma = %2.2f', gammaLevels(gammaIter));
                     rawSpd = squeeze(gammaSPD(bandIter,gammaIter,:));
-                    plot(obj.waveAxis, rawSpd - meanDarkSPD, 'Color', colors(gammaIter,:), 'LineWidth', 1.0, 'DisplayName', lineLegend);
+                    plot(obj.waveAxis, gain*(rawSpd - meanDarkSPD), 'Color', colors(gammaIter,:), 'LineWidth', 1.0, 'DisplayName', lineLegend);
                 end % gammaIter
                 
                 maxForThisBand = max(max(gammaSPD(bandIter,:,:)));
@@ -78,14 +79,17 @@ function plotGammaSPD(obj, varargin)
                 box off
                 pbaspect([1 1 1])
                 hL.FontSize = 12;
-                hL.FontName = 'Menlo';       
-                set(gca, 'XLim', [obj.waveAxis(1)-5 obj.waveAxis(end)+5], 'YLim', [-0.2 5]/1000); % maxForThisBand*[-0.05 1.05]);
+                hL.FontName = 'Menlo'; 
+                yTicks = [0:10];
+                set(gca, 'YTick', yTicks, 'YTickLabel', sprintf('%2.1f\n', yTicks));
+                set(gca, 'XLim', [obj.waveAxis(1)-5 obj.waveAxis(end)+5], 'YLim', [-0.2 4]); % maxForThisBand*[-0.05 1.05]);
                 set(gca, 'FontSize', 12);
                 %xlabel('wavelength (nm)', 'FontSize', 14, 'FontWeight', 'bold');
                 if (bandIter == 1)
-                    ylabel('power', 'FontSize', 14, 'FontWeight', 'bold');
+                    ylabel('power (mW/sr/m2/nm)', 'FontSize', 14, 'FontWeight', 'bold');
                 else
                     set(gca, 'XTick', []);
+                    set(gca, 'YTick', []);
                 end
                 title(sprintf('unscaled SPD (band: %d)', gammaBandIndices(bandIter)));
                 
@@ -98,7 +102,7 @@ function plotGammaSPD(obj, varargin)
                 for gammaIter = 1:numel(gammaLevels)
                     lineLegend = sprintf('gamma = %2.2f', gammaLevels(gammaIter));
                     scaledSPD = (squeeze(gammaSPD(bandIter, gammaIter,:)) - meanDarkSPD) / obj.cal.computed.gammaData1{bandIter}(gammaIter);
-                    plot(obj.waveAxis, scaledSPD, 'Color', colors(gammaIter,:), 'LineWidth', 1.0, 'DisplayName', lineLegend);
+                    plot(obj.waveAxis, gain*scaledSPD, 'Color', colors(gammaIter,:), 'LineWidth', 1.0, 'DisplayName', lineLegend);
                 end % gammaIter
                 
                 %hL = legend('Location', 'WestOutside');  
@@ -107,12 +111,14 @@ function plotGammaSPD(obj, varargin)
                 pbaspect([1 1 1])
                 hL.FontSize = 12;
                 hL.FontName = 'Menlo';       
-                set(gca, 'XLim', [obj.waveAxis(1)-5 obj.waveAxis(end)+5], 'YLim', [-0.2 5]/1000); % maxForThisBand*[-0.05 1.05]);
+                set(gca, 'XLim', [obj.waveAxis(1)-5 obj.waveAxis(end)+5], 'YLim', [-0.2 4]); % maxForThisBand*[-0.05 1.05]);
                 set(gca, 'FontSize', 12);
+                set(gca, 'YTick', yTicks, 'YTickLabel', sprintf('%2.1f\n', yTicks));
                 if (bandIter == 1)
-                    ylabel('power', 'FontSize', 14, 'FontWeight', 'bold');
+                    ylabel('power (mW/sr/m2/nm)', 'FontSize', 14, 'FontWeight', 'bold');
                 else
                     set(gca, 'XTick', []);
+                    set(gca, 'YTick', []);
                 end
                 title(sprintf('scaled SPD (band: %d)', gammaBandIndices(bandIter)));
                 

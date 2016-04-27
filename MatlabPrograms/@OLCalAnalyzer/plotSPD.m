@@ -86,7 +86,7 @@ function plotSPD(obj,varargin)
             else
                 lineLegend = '';
             end
-            plot(obj.waveAxis, spd(:,bandIter), '-', 'Color', colors(bandIter,:), 'LineWidth', 2.0, 'DisplayName', lineLegend);
+            plot(obj.waveAxis, spd(:,bandIter), '-', 'Color', colors(bandIter,:), 'LineWidth', 1.0, 'DisplayName', lineLegend);
         end
         
         if (~isempty(bandIndicesToPlot))

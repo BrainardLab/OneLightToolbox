@@ -1,11 +1,11 @@
 function OLAnalyzeCalOOC
 
-    calAnalyzer = OLCalAnalyzer('refitGammaTablesUsingLinearInterpolation', false);
+    calAnalyzer = OLCalAnalyzer('refitGammaTablesUsingLinearInterpolation', true);
    
-    plotCompositeMeasurents = ~false;
-    plotSampledSpectra = ~false;
-    plotFullSpectra = ~false;
-    plotGammaSPDs = ~false;
+    plotCompositeMeasurents = true;
+    plotSampledSpectra = true;
+    plotFullSpectra = true;
+    plotGammaSPDs = true;
     plotGammaTables = true;
     plotPredictions = true;
     
