@@ -61,7 +61,7 @@ classdef OLCalAnalyzer < handle
             p = parser.Results;
             optionNames = fieldnames(p);
             for k = 1:numel(optionNames)
-                obj.(optionNames{k}) = p.(optionNames{k})
+                obj.(optionNames{k}) = p.(optionNames{k});
             end
             
             obj.init();

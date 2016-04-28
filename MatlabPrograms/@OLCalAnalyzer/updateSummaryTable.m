@@ -14,7 +14,18 @@ function updateSummaryTable(obj)
         obj.summaryData.fullOnLumPre obj.summaryData.fullOnLumPost ...
         ];
     
+    
+    obj.summaryData.nGammaLevels = obj.cal.describe.nGammaLevels;
+    obj.summaryData.numRowMirrors = obj.cal.describe.numRowMirrors;
+    obj.summaryData.numColMirrors = obj.cal.describe.numColMirrors;
+    
+    obj.summaryData.primaryStartCols = obj.cal.describe.primaryStartCols;
+    obj.summaryData.primaryStopCols = obj.cal.describe.primaryStopCols;
 
+    s = obj.summaryData;
+    s.primaryStartCols(1)
+    s.primaryStopCols(end)
+    pause
     
 end
 

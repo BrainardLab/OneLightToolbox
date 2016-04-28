@@ -85,10 +85,9 @@ function plotGammaSPD(obj, varargin)
                 set(gca, 'XLim', [obj.waveAxis(1)-5 obj.waveAxis(end)+5], 'YLim', [-0.2 4]); % maxForThisBand*[-0.05 1.05]);
                 set(gca, 'FontSize', 12);
                 %xlabel('wavelength (nm)', 'FontSize', 14, 'FontWeight', 'bold');
-                if (bandIter == 1)
+                if (col == 1)
                     ylabel('power (mW/sr/m2/nm)', 'FontSize', 14, 'FontWeight', 'bold');
                 else
-                    set(gca, 'XTick', []);
                     set(gca, 'YTick', []);
                 end
                 title(sprintf('unscaled SPD (band: %d)', gammaBandIndices(bandIter)));
@@ -114,10 +113,9 @@ function plotGammaSPD(obj, varargin)
                 set(gca, 'XLim', [obj.waveAxis(1)-5 obj.waveAxis(end)+5], 'YLim', [-0.2 4]); % maxForThisBand*[-0.05 1.05]);
                 set(gca, 'FontSize', 12);
                 set(gca, 'YTick', yTicks, 'YTickLabel', sprintf('%2.1f\n', yTicks));
-                if (bandIter == 1)
+                if (col == 1)
                     ylabel('power (mW/sr/m2/nm)', 'FontSize', 14, 'FontWeight', 'bold');
                 else
-                    set(gca, 'XTick', []);
                     set(gca, 'YTick', []);
                 end
                 title(sprintf('scaled SPD (band: %d)', gammaBandIndices(bandIter)));
