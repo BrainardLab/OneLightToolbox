@@ -49,7 +49,9 @@ function plotGammaSPD(obj, varargin)
             
             for bandIter = 1:numel(gammaBandIndices)
                 
-                colsForGammaBand = find(squeeze(obj.cal.raw.gamma.cols(:, bandIter)) == 1);
+                %colsForGammaBand = find(squeeze(obj.cal.raw.gamma.cols(:, bandIter)) == 1);
+                %fprintf('Mirror columns activated for gammaBand #%2d: %s\n', gammaBandIndices(bandIter), sprintf('%d ', colsForGammaBand));
+               
                 % Extract the desired spd data
                 tmp = eval(sprintf('obj.cal.raw.gamma.%s(bandIter).meas', gammaSPDName));
                 if (bandIter == 1)
@@ -123,8 +125,6 @@ function plotGammaSPD(obj, varargin)
         end % isfield
     else
         error('Not implemented gammaSPDType: %s\n', gammaSPDType)
-    end
-    
-        
+    end   
 end
 
