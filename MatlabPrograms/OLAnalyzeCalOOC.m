@@ -37,11 +37,11 @@ function OLAnalyzeCalOOC
     
     if (plotFullSpectra)
         % Full set of spectral measurements
-        for bandIndex = 1:calAnalyzer.cal.describe.numWavelengthBands
-            startCol = calAnalyzer.cal.describe.primaryStartCols(bandIndex);
-            stopCol  = calAnalyzer.cal.describe.primaryStopCols(bandIndex);
-            fprintf('band:%2d, mirror cols:%d-%d (total mirror cols: %d)\n', bandIndex, startCol, stopCol, calAnalyzer.cal.describe.numColMirrors);
-        end
+%         for bandIndex = 1:calAnalyzer.cal.describe.numWavelengthBands
+%             startCol = calAnalyzer.cal.describe.primaryStartCols(bandIndex);
+%             stopCol  = calAnalyzer.cal.describe.primaryStopCols(bandIndex);
+%             fprintf('band:%2d, mirror cols:%d-%d (total mirror cols: %d)\n', bandIndex, startCol, stopCol, calAnalyzer.cal.describe.numColMirrors);
+%         end
         
         spdType = 'computed';
         calAnalyzer.plotSPD(spdType, 'pr650M', 'bandIndicesToPlot', []);
