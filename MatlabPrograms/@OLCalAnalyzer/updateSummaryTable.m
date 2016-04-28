@@ -23,9 +23,7 @@ function updateSummaryTable(obj)
     obj.summaryData.primaryStopCols = obj.cal.describe.primaryStopCols;
 
     s = obj.summaryData;
-    s.primaryStartCols(1)
-    s.primaryStopCols(end)
-    pause
+
     
 end
 
