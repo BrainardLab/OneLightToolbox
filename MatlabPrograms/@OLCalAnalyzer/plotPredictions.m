@@ -3,7 +3,7 @@ function plotPredictions(obj, varargin)
     parser = inputParser;
     parser.addRequired('spdType', @ischar);
     parser.addRequired('spdName', @ischar);
-    parser.addRequired('predictionSettings', @isnumeric);
+ 
     % Execute the parser
     parser.parse(varargin{:});
     % Create a standard Matlab structure from the parser results.
@@ -12,7 +12,6 @@ function plotPredictions(obj, varargin)
     % Get spd type and name
     spdType = p.spdType;
     spdName = p.spdName;
-    predictionSettings = p.predictionSettings;
     
     % Validate spdType
     validatestring(spdType, {'raw'});
@@ -34,6 +33,9 @@ function plotPredictions(obj, varargin)
         elseif (strcmp(spdName, 'halfOnMeas'))
             settingsUsedPreCalibration  = 0.5*ones(obj.cal.describe.numWavelengthBands,1);
             settingsUsedPostCalibration = settingsUsedPreCalibration;
+        elseif (strcmp(spdName, 'darkMeas'))
+            settingsUsedPreCalibration  = 0.0*ones(obj.cal.describe.numWavelengthBands,1);
+            settingsUsedPostCalibration = settingsUsedPreCalibration;
         else
            error('Unknown settings for spd named: ''%s''\n.', spdName)
         end
@@ -43,8 +45,9 @@ function plotPredictions(obj, varargin)
     % Retrieve measured data
     measuredSPDpreCalibration  = measuredSPD(:, 1);
     measuredSPDpostCalibration = measuredSPD(:, 2);
+    
     % Compute predicted SPD
-    primaries    = OLSettingsToPrimary(obj.cal, predictionSettings);
+    primaries    = OLSettingsToPrimary(obj.cal, settingsUsedPreCalibration);
     predictedSPD = OLPrimaryToSpd(obj.cal, primaries);
 
     
@@ -53,10 +56,11 @@ function plotPredictions(obj, varargin)
     designMatrix = obj.cal.computed.pr650M;
     %designMatrix = bsxfun(@minus,designMatrix, mean(designMatrix,1));
 
-    measuredDarkSPDpreCalibration  = obj.cal.raw.darkMeas(:,1);
-    measuredDarkSPDpostCalibration = obj.cal.raw.darkMeas(:,2);
-    reconstructedPrimaryActivationsPreCalibration  = pinv(designMatrix) * (measuredSPDpreCalibration  - measuredDarkSPDpreCalibration);
-    reconstructedPrimaryActivationsPostCalibration = pinv(designMatrix) * (measuredSPDpostCalibration - measuredDarkSPDpostCalibration);
+    %measuredDarkSPDpreCalibration  = obj.cal.raw.darkMeas(:,1);
+    %measuredDarkSPDpostCalibration = obj.cal.raw.darkMeas(:,2);
+    
+    reconstructedPrimaryActivationsPreCalibration  = pinv(designMatrix) * (measuredSPDpreCalibration  - obj.cal.computed.pr650MeanDark);
+    reconstructedPrimaryActivationsPostCalibration = pinv(designMatrix) * (measuredSPDpostCalibration - obj.cal.computed.pr650MeanDark);
     reconstructedSettingsPreCalibration  = OLPrimaryToSettings(obj.cal, reconstructedPrimaryActivationsPreCalibration);
     reconstructedSettingsPostCalibration = OLPrimaryToSettings(obj.cal, reconstructedPrimaryActivationsPostCalibration);
         
@@ -114,15 +118,17 @@ function plotPredictions(obj, varargin)
     pbaspect([1 1 1]); 
     box off
     set(gca, 'FontSize', 16);
-    xlabel('wavelength (nm)', 'FontSize', 20); 
-    ylabel('power (W/sr/m2/nm)', 'FontSize', 20);
+    xlabel('wavelength (nm)', 'FontSize', 20, 'FontWeight', 'bold'); 
+    ylabel('power (W/sr/m2/nm)', 'FontSize', 20, 'FontWeight', 'bold');
+    title(sprintf('SPD: ''%s''', spdName));
+    
     
     subplot('position', subplotPosVectors(1,2).v);
     plot(obj.waveAxis, predictedSPD-measuredSPDpreCalibration, 'r-', 'LineWidth', 2.0, 'Color', [1.0 0.4 0.4 0.5], 'DisplayName', 'predicted-preCalibration');
     hold on;
     plot(obj.waveAxis, predictedSPD-measuredSPDpostCalibration, 'b-', 'LineWidth', 3.0, 'Color', [0.4 0.4 1.0 0.5], 'DisplayName', 'predicted-postCalibration');
     hold off;
-    set(gca, 'YLim', 1e-4*[-15 25]);
+    set(gca, 'YLim', 1e-4*[-25 25]);
     
     % Finish plot  
     hL = legend('Location', 'North', 'Orientation', 'horizontal');
@@ -133,8 +139,9 @@ function plotPredictions(obj, varargin)
     box off
     grid on
     set(gca, 'FontSize', 16);
-    xlabel('wavelength (nm)', 'FontSize', 20); 
-    ylabel('diff power (W/sr/m2/nm)', 'FontSize', 20);
+    xlabel('wavelength (nm)', 'FontSize', 20, 'FontWeight', 'bold'); 
+    ylabel('diff power (W/sr/m2/nm)', 'FontSize', 20, 'FontWeight', 'bold');
+    title(sprintf('SPD: ''%s''', spdName));
     drawnow;
     
 end
@@ -163,10 +170,10 @@ function makeSettingsSubFigure(obj, settingsUsed, reconstructedSettings, subplot
     set(gca, 'XLim', [0 numel(bandIndices)+1], 'XTick', gammaBandIndices, 'XTickLabel', gammaBandIndices, 'YLim', [-0.25 0.25], 'YTick', yTicks, 'YTickLabel', sprintf('%-2.2f\n', yTicks));
     set(gca, 'FontSize', 14);
     grid on
-    xlabel('band no', 'FontSize', 16);
-    ylabel('reconstructed settings - settings', 'FontSize', 16);
+    xlabel('band no', 'FontSize', 16, 'FontWeight', 'bold');
+    ylabel('settings diff (reconstructed - employed)', 'FontSize', 16, 'FontWeight', 'bold');
     legend({'measured band gamma   ', 'interpolated band gamma'}, 'FontSize', 16, 'FontName','Menlo', 'Location', 'NorthWest'); 
-    title(sprintf('%s (%s)', subplotTitle, spdName), 'FontSize', 18);
+    title(sprintf('%s (SPD: ''%s'')', subplotTitle, spdName), 'FontSize', 18);
     drawnow;
 end
 
