@@ -13,6 +13,7 @@ function OLCharacterizeBandInteractions
     
     % Import a calibration 
     cal = OLGetCalibrationStructure;
+    
     nPrimariesNum = cal.describe.numWavelengthBands;
     
     % Measure at these levels
@@ -24,8 +25,8 @@ function OLCharacterizeBandInteractions
     % Activate (one at a time) bands +/- 5  around reference band
     interactingBands = [(-5:-1) (1:5)];
     
-    nSpectaMeasured = numel(referenceBands) * numel(interactingBands) * numel(primaryLevels) * numel(primaryLevels);
-    primaryValues = zeros(nPrimariesNum, nSpectaMeasured); 
+    nSpectraMeasured = numel(referenceBands) * numel(interactingBands) * numel(primaryLevels) * numel(primaryLevels);
+    primaryValues = zeros(nPrimariesNum, nSpectraMeasured); 
     
     spectrumIndex = 0;
     for referenceBandIndex = 1:numel(referenceBands)
@@ -55,7 +56,7 @@ function OLCharacterizeBandInteractions
     figure(1);
     clf;
     subplot('Position', [0.04 0.04 0.95 0.95]);
-    pcolor(1:nPrimariesNum, 1:nSpectaMeasured, primaryValues');
+    pcolor(1:nPrimariesNum, 1:nSpectraMeasured, primaryValues');
     xlabel('primary no');
     ylabel('spectrum no');
     set(gca, 'CLim', [0 1]);
@@ -66,7 +67,7 @@ function OLCharacterizeBandInteractions
     figure(2);
     clf;
     subplot('Position', [0.04 0.04 0.95 0.95]);
-    pcolor(1:nPrimariesNum, 1:nSpectaMeasured, settingsValues');
+    pcolor(1:nPrimariesNum, 1:nSpectraMeasured, settingsValues');
     xlabel('primary no');
     ylabel('spectrum no');
     set(gca, 'CLim', [0 1]);
@@ -79,7 +80,8 @@ function OLCharacterizeBandInteractions
     
     
     spectroRadiometerOBJ = [];
-
+    ol = [];
+    
     try
         Svector = [380 2 201];
         meterToggle = [1 0];
@@ -108,7 +110,7 @@ function OLCharacterizeBandInteractions
 
         % Do all the measurements
         for repeatIndex = 1:nRepeats
-            for spectumIndex = 1:nSpectaMeasured
+            for spectumIndex = 1:nSpectraMeasured
                 starts = squeeze(startsArray(spectumIndex,:));
                 stops = squeeze(stopsArray(spectrumIndex,:));
                 measurement = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, Svector, meterToggle, nAverage);
@@ -118,29 +120,35 @@ function OLCharacterizeBandInteractions
         end
         
         % Save data
-        filename = 'BandInteractions.mat';
+        filename = sprintf('BandInteractions_%s_%s.mat', cal.describe.calType, datestr(now, 'dd-mmm-yyyy_HH_MM_SS'));
         save(filename, 'data', 'cal', '-v7.3');
         fprintf('Data saved in ''%s''. \n', filename); 
         SendEmail(emailRecipient, 'OneLight Calibration Complete', 'Finished!');
         
+        % Shutdown spectroradiometer
+        spectroRadiometerOBJ.shutDown();
+        
+        % Shutdown OneLight
         ol.shutdown();
         
     catch err
-        fprintf('Failed with message: ''%s''.\nPlease wait for the PR670OBJ to shut down .... ', e.message);
+        fprintf('Failed with message: ''%s''... ', e.message);
         if (~isempty(spectroRadiometerOBJ))
+            % Shutdown spectroradiometer
             spectroRadiometerOBJ.shutDown();
         end
         
         SendEmail(emailRecipient, 'OneLight Calibration Failed', ...
             ['Calibration failed with the following error' 10 e.message]);
         
-        ol.shutdown();
+        if (~isempty(ol))
+            % Shutdown OneLight
+            ol.shutdown();
+        end
         
         keyboard;
         rethrow(e);
     end
-    
-    
-        
+ 
 end
 
