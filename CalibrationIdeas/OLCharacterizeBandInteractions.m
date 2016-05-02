@@ -41,7 +41,7 @@ function OLCharacterizeBandInteractions
                     activation(interactingBand) = interactingBandPrimaryLevel;
                     spectrumIndex = spectrumIndex + 1;
                     primaryValues(:,spectrumIndex) = activation;
-                    data(spectrumIndex).params = struct(...
+                    data(spectrumIndex).activation = struct(...
                         'referenceBand', referenceBand, ...
                         'interactingBand', interactingBand', ...
                         'referenceBandPrimaryLevel', referenceBandPrimaryLevel, ...
@@ -85,6 +85,7 @@ function OLCharacterizeBandInteractions
         meterToggle = [1 0];
         od = [];
         nAverage = 1;
+        nRepeats = 1;
         
         % Instantiate a PR670 object
         spectroRadiometerOBJ  = PR670dev(...
@@ -106,15 +107,19 @@ function OLCharacterizeBandInteractions
         ol = OneLight;
 
         % Do all the measurements
-        for spectumIndex = 1:nSpectaMeasured
-            starts = squeeze(startsArray(spectumIndex,:));
-            stops = squeeze(stopsArray(spectrumIndex,:));
-            data(spectrumIndex).spd = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, Svector, meterToggle, nAverage);
+        for repeatIndex = 1:nRepeats
+            for spectumIndex = 1:nSpectaMeasured
+                starts = squeeze(startsArray(spectumIndex,:));
+                stops = squeeze(stopsArray(spectrumIndex,:));
+                measurement = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, Svector, meterToggle, nAverage);
+                data(spectrumIndex).measurement(:, repeatIndex)       = measurement.pr650.spectrum;
+                data(spectrumIndex).timeOfMeasurement(:, repeatIndex) = measurement.pr650.time(1);
+            end
         end
         
         % Save data
         filename = 'BandInteractions.mat';
-        save(filename, 'data', '-v7.3');
+        save(filename, 'data', 'cal', '-v7.3');
         fprintf('Data saved in ''%s''. \n', filename); 
         SendEmail(emailRecipient, 'OneLight Calibration Complete', 'Finished!');
         
