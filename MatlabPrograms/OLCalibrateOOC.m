@@ -416,10 +416,10 @@ try
 
         cal.describe.gamma.gammaBands = round(linspace(1,cal.describe.numWavelengthBands,cal.describe.nGammaBands));
         cal.describe.gamma.gammaLevels = linspace(1/cal.describe.nGammaLevels,1,cal.describe.nGammaLevels);
-        fprintf('here\n');
+        
         % Allocate some memory.
         cal.raw.gamma.cols = zeros(ol.NumCols, cal.describe.nGammaBands);
-        fprintf('here\n');
+       
         % Make gand amma measurements for each band
         if cal.describe.randomizeGammaMeas
             gammaMeasIter = Shuffle(1:cal.describe.nGammaBands);
@@ -430,12 +430,8 @@ try
         for i = gammaMeasIter
             fprintf('\n*** Gamma measurements on gamma band set %d of %d ***\n\n', i, cal.describe.nGammaBands);
             
-             fprintf('here2 \n');
-             cal.raw
-             cal.raw.gamma
             % Store the columns used for this set.
             cal.raw.gamma.cols(:,i) = cal.raw.cols(:,cal.describe.gamma.gammaBands(i));
-            fprintf('and here2 \n');
             % Allocate memory for the recorded spectra.
             cal.raw.gamma.rad(i).meas = zeros(cal.describe.S(3), cal.describe.nGammaLevels);
             
