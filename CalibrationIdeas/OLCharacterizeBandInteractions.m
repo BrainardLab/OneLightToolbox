@@ -17,13 +17,14 @@ function OLCharacterizeBandInteractions
     nPrimariesNum = cal.describe.numWavelengthBands;
     
     % Measure at these levels
-    primaryLevels = 0.0:0.25:1.0;
+    primaryLevels = 0.0:0.33:1.0;
     
     referenceBands = round(nPrimariesNum/2); % For now fix the reference band to the center band. 
     % referenceBands = 6:10:nPrimariesNum-6;
     
     % Activate (one at a time) bands +/- 5  around reference band
-    interactingBands = [(-5:-1) (1:5)];
+    range = 10;
+    interactingBands = [(-range:-1) (1:range)];
     
     nSpectraMeasured = numel(referenceBands) * numel(interactingBands) * numel(primaryLevels) * numel(primaryLevels);
     primaryValues = zeros(nPrimariesNum, nSpectraMeasured); 
@@ -46,7 +47,8 @@ function OLCharacterizeBandInteractions
                         'referenceBand', referenceBand, ...
                         'interactingBand', interactingBand', ...
                         'referenceBandPrimaryLevel', referenceBandPrimaryLevel, ...
-                        'interactingBandPrimaryLevel', interactingBandPrimaryLevel ...
+                        'interactingBandPrimaryLevel', interactingBandPrimaryLevel, ...
+                        'primaries', activation ...
                         );
                 end % interactingBandPrimaryLevelIndex
             end % referenceBandPrimaryLevelIndex
@@ -110,12 +112,23 @@ function OLCharacterizeBandInteractions
 
         % Do all the measurements
         for repeatIndex = 1:nRepeats
-            for spectumIndex = 1:nSpectraMeasured
-                starts = squeeze(startsArray(spectumIndex,:));
-                stops = squeeze(stopsArray(spectrumIndex,:));
+            for spectrumIndex = 1:nSpectraMeasured
+                fprintf('Measuring spectrum %d of %d (repeat: %d/%d)\n', spectrumIndex, nSpectraMeasured, repeatIndex, nRepeats);
+                pause(0.1);
+                primaryValues = data(spectrumIndex).activation.primaries;
+                settingsValues = OLPrimaryToSettings(cal, primaryValues);
+                [starts,stops] = OLSettingsToStartsStops(cal,settingsValues);
                 measurement = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, Svector, meterToggle, nAverage);
                 data(spectrumIndex).measurement(:, repeatIndex)       = measurement.pr650.spectrum;
                 data(spectrumIndex).timeOfMeasurement(:, repeatIndex) = measurement.pr650.time(1);
+                figure(3);
+                clf;
+                subplot(2,1,1);
+                bar(primaryValues);
+                set(gca, 'YLim', [0 1], 'XLim', [0 nPrimariesNum+1]);
+                subplot(2,1,2);
+                plot(SToWls(Svector), measurement.pr650.spectrum, 'k-');
+                drawnow;
             end
         end
         
@@ -132,14 +145,14 @@ function OLCharacterizeBandInteractions
         ol.shutdown();
         
     catch err
-        fprintf('Failed with message: ''%s''... ', e.message);
+        fprintf('Failed with message: ''%s''... ', err.message);
         if (~isempty(spectroRadiometerOBJ))
             % Shutdown spectroradiometer
             spectroRadiometerOBJ.shutDown();
         end
         
         SendEmail(emailRecipient, 'OneLight Calibration Failed', ...
-            ['Calibration failed with the following error' 10 e.message]);
+            ['Calibration failed with the following error' err.message]);
         
         if (~isempty(ol))
             % Shutdown OneLight
