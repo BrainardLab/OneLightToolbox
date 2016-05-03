@@ -7,9 +7,177 @@ function OLCharacterizeBandInteractions
 % 5/2/16  npc  Wrote it.
 %
 
+    [rootDir,~] = fileparts(which(mfilename()));
+    cd(rootDir);
+    
+    Svector = [380 2 201];
+    
+    choice = input('Measure data(0), or analyze data(1) : ', 's');
+    if (str2double(choice) == 0)
+        measureData(rootDir, Svector);
+    else
+        analyzeData(rootDir, Svector);
+    end
+end
+
+function analyzeData(rootDir, Svector)
+    [fileName, pathName] = uigetfile('*.mat', 'Select a file to analyze', rootDir);
+    whos('-file', fileName);
+    load(fileName, 'cal', 'data');
+    
+    nSpectraMeasured = numel(data);
+    d = data(1).measurement;
+    nRepeats = size(d,2);
+    primaryValues = data(1).activation.primaries;
+    nPrimariesNum = numel(primaryValues);
+    
+    
+    maxSPD = 0;
+    nullReferenceSPD = [];
+    for spectrumIndex = 1:nSpectraMeasured 
+        referenceBand   = data(spectrumIndex).activation.referenceBand;
+        interactingBand = data(spectrumIndex).activation.interactingBand;
+        referenceBandPrimaryLevel = data(spectrumIndex).activation.referenceBandPrimaryLevel;
+        interactingBandPrimaryLevel = data(spectrumIndex).activation.interactingBandPrimaryLevel;
+         
+        
+        d = data(spectrumIndex).measurement;
+        for repeatIndex = 1:nRepeats
+            if (repeatIndex == 1)
+                data(spectrumIndex).meanSPD = squeeze(d(:, repeatIndex));
+            else
+                data(spectrumIndex).meanSPD = data(spectrumIndex).meanSPD + squeeze(d(:, repeatIndex));
+            end
+        end
+        data(spectrumIndex).meanSPD = data(spectrumIndex).meanSPD / nRepeats;
+        
+        if (interactingBandPrimaryLevel == 0)
+            referenceBandActivationLevelIndex = round(referenceBandPrimaryLevel*100);
+            if (referenceBandActivationLevelIndex==0)
+                if (isempty(nullReferenceSPD))
+                    nullReferenceSPD(1,:) =  data(spectrumIndex).meanSPD;
+                else
+                    nullReferenceSPD(size(nullReferenceSPD,1)+1,:) = data(spectrumIndex).meanSPD;
+                end
+            else
+                singletonReferenceSPD(referenceBand, referenceBandActivationLevelIndex,:) = data(spectrumIndex).meanSPD;
+            end
+        end
+        
+        if (referenceBandPrimaryLevel == 0)
+            interactingBandActivationLevelIndex = round(interactingBandPrimaryLevel*100);
+            if (interactingBandActivationLevelIndex == 0)
+                if (isempty(nullReferenceSPD))
+                    nullReferenceSPD(1,:) =  data(spectrumIndex).meanSPD;
+                else
+                    nullReferenceSPD(size(nullReferenceSPD,1)+1,:) = data(spectrumIndex).meanSPD;
+                end
+            else
+                singletonInteractingSPD(interactingBand, interactingBandActivationLevelIndex,:) = data(spectrumIndex).meanSPD;
+            end
+        end
+        
+        
+        if (max(data(spectrumIndex).meanSPD) > maxSPD)
+            maxSPD = max(data(spectrumIndex).meanSPD);
+        end
+    end
+    
+    nullReferenceSPD = mean(nullReferenceSPD, 1);
+    
+    
+    for spectrumIndex = 1:nSpectraMeasured 
+        primaryValues = data(spectrumIndex).activation.primaries;
+        
+        referenceBand   = data(spectrumIndex).activation.referenceBand;
+        interactingBand = data(spectrumIndex).activation.interactingBand;
+        referenceBandPrimaryLevel = data(spectrumIndex).activation.referenceBandPrimaryLevel;
+        interactingBandPrimaryLevel = data(spectrumIndex).activation.interactingBandPrimaryLevel;
+        
+        referenceBandActivationLevelIndex = round(referenceBandPrimaryLevel*100);
+        if (referenceBandActivationLevelIndex == 0)
+            referenceSPD = nullReferenceSPD-nullReferenceSPD;
+        else
+            referenceSPD = squeeze(singletonReferenceSPD(referenceBand,referenceBandActivationLevelIndex,:))-nullReferenceSPD(:);
+        end
+        
+        interactingBandPrimaryLevelIndex = round(interactingBandPrimaryLevel*100);
+        if (interactingBandPrimaryLevelIndex == 0)
+            interactingSPD = nullReferenceSPD-nullReferenceSPD;
+        else
+            interactingSPD = squeeze(singletonInteractingSPD(interactingBand,interactingBandPrimaryLevelIndex,:))-nullReferenceSPD(:);
+        end
+        
+        predictedSPD = nullReferenceSPD(:) + squeeze(referenceSPD(:) + interactingSPD(:));
+        
+        hFig = figure(3);
+        clf;
+        set(hFig, 'Position', [10 10 1150 1350], 'Color', [1 1 1], 'MenuBar', 'none');
+
+        wavelengthAxis = SToWls(Svector);
+        
+        subplot('Position', [0.05 0.29 0.44 0.70]);
+        plot(wavelengthAxis, data(spectrumIndex).meanSPD*1000, 'k-', 'LineWidth', 2.0);
+        hL = legend('measurement');
+        set(hL, 'FontSize', 12);
+        set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)],'YLim', [0 maxSPD*1000]);
+        set(gca, 'FontSize', 12);
+        xlabel('wavelength (nm)', 'FontSize', 14, 'FontWeight', 'bold');
+        ylabel('power (mW)', 'FontSize', 14, 'FontWeight', 'bold');
+        
+        
+        subplot(3,2,[2 4]);
+        subplot('Position', [0.55 0.29 0.44 0.70]);
+        plot(wavelengthAxis, data(spectrumIndex).meanSPD*1000, 'b-', 'Color', [0 0.4 1 1.0], 'LineWidth', 2.0);
+        hold on;
+        plot(SToWls(Svector), predictedSPD*1000, 'r-', 'Color', [1 0 0 0.5],  'LineWidth', 5.0);
+        hL = legend('measurement', 'prediction');
+        set(hL, 'FontSize', 12);
+        hold off;
+        yTickLevels = [-100:0.5:100];
+        set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)], 'YLim', [0 maxSPD*1000], 'YTick', yTickLevels, 'YTickLabel', sprintf('%2.1f\n', yTickLevels));
+        set(gca, 'FontSize', 12);
+        xlabel('wavelength (nm)', 'FontSize', 14, 'FontWeight', 'bold');
+        ylabel('power (mW)', 'FontSize', 14, 'FontWeight', 'bold');
+        grid on
+        box on
+        
+        subplot('Position', [0.05 0.05 0.44 0.20]);
+        bar(1:numel(primaryValues), primaryValues, 1.0, 'FaceColor', [1.0 0.6 0.6], 'EdgeColor', [0 0 0]);
+        set(gca, 'YLim', [0 1], 'XLim', [0 nPrimariesNum+1]);
+        if (referenceBand < interactingBand)
+            legendLabel = sprintf('%2.1f , %2.1f', referenceBandPrimaryLevel, interactingBandPrimaryLevel);
+        else
+            legendLabel = sprintf('%2.1f , %2.1f', interactingBandPrimaryLevel, referenceBandPrimaryLevel);
+        end
+        hL = legend(legendLabel);
+        set(hL, 'FontSize', 12);
+        set(gca, 'FontSize', 12);
+        xlabel('primary index', 'FontSize', 14, 'FontWeight', 'bold');
+        ylabel('primary activation', 'FontSize', 14, 'FontWeight', 'bold');
+        
+        
+        subplot('Position', [0.55 0.05 0.44 0.20]);
+        residual = (data(spectrumIndex).meanSPD(:) - predictedSPD(:))*1000;
+        plot(wavelengthAxis, residual, '-', 'Color', [1.0 0.2 0.1 0.8], 'LineWidth', 2.0);
+        grid on
+        box on
+        hL = legend('measured - prediction');
+        set(hL, 'FontSize', 12);
+        set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)], 'YLim', [-1 1], 'YTick', yTickLevels, 'YTickLabel', sprintf('%2.1f\n', yTickLevels));
+        set(gca, 'FontSize', 12);
+        xlabel('wavelength (nm)', 'FontSize', 14, 'FontWeight', 'bold');
+        ylabel('residual power (mW)', 'FontSize', 14, 'FontWeight', 'bold');
+        
+        drawnow;
+    end
+    
+end
+
+
+function measureData(rootDir, Svector)
     % Ask for email recipient
     emailRecipient = GetWithDefault('Send status email to','cottaris@psych.upenn.edu');
-    
     
     % Import a calibration 
     cal = OLGetCalibrationStructure;
@@ -77,15 +245,10 @@ function OLCharacterizeBandInteractions
     title('settings values');
     pause
     
-    % Compute starts and stops for all examined settings
-    [startsArray,stopsArray] = OLSettingsToStartsStops(cal,settingsValues);
-    
-    
     spectroRadiometerOBJ = [];
     ol = [];
     
     try
-        Svector = [380 2 201];
         meterToggle = [1 0];
         od = [];
         nAverage = 1;
@@ -133,7 +296,7 @@ function OLCharacterizeBandInteractions
         end
         
         % Save data
-        filename = sprintf('BandInteractions_%s_%s.mat', cal.describe.calType, datestr(now, 'dd-mmm-yyyy_HH_MM_SS'));
+        filename = fullfile(rootDir,sprintf('BandInteractions_%s_%s.mat', cal.describe.calType, datestr(now, 'dd-mmm-yyyy_HH_MM_SS')));
         save(filename, 'data', 'cal', '-v7.3');
         fprintf('Data saved in ''%s''. \n', filename); 
         SendEmail(emailRecipient, 'OneLight Calibration Complete', 'Finished!');
