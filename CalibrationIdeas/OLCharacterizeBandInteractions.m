@@ -23,8 +23,74 @@ end
 
 function analyzeData(rootDir, Svector)
     [fileName, pathName] = uigetfile('*.mat', 'Select a file to analyze', rootDir);
-    whos('-file', fileName);
-    load(fileName, 'cal', 'data');
+    load(fileName, 'data', 'primaryLevels', 'referenceBands', 'interactingBands', 'nRepeats', 'randomizedSpectraIndices', 'cal');
+    
+    nSpectraMeasured = numel(data);
+    fprintf('There are %d distinct spectra measured (each measured %d times). \n', nSpectraMeasured, nRepeats);
+    
+    nPrimariesNum = numel(data{1}.activation);
+    wavelengthAxis = SToWls(Svector);
+    nSpectralSamples = numel(wavelengthAxis);
+    
+    % Compute average and range of measured spectra
+    for repeatIndex = 1:nRepeats
+        stimulationSequence = squeeze(randomizedSpectraIndices(repeatIndex,:)); 
+            
+        % Show stimulation sequence for this repeat
+        figure(2);
+        clf;
+        subplot('Position', [0.04 0.04 0.95 0.95]);
+        pcolor(1:nPrimariesNum, 1:nSpectraMeasured, retrieveActivationSequence(data, stimulationSequence));
+        xlabel('primary no');
+        ylabel('spectrum no');
+        set(gca, 'CLim', [0 1], 'XLim', [1 nPrimariesNum], 'YLim', [0 nSpectraMeasured+1]);
+        colormap(gray);
+        title(sprintf('Repeat %d\n', repeatIndex));
+    end
+    
+    
+    for spectrumIndex = 1:nSpectraMeasured
+        
+        data{spectrumIndex}.meanSPD = mean(data{spectrumIndex}.measuredSPD(:, 1:nRepeats), 2);
+        data{spectrumIndex}.minSPD  = min(data{spectrumIndex}.measuredSPD(:, 1:nRepeats), 2);
+        data{spectrumIndex}.maxSPD  = max(data{spectrumIndex}.measuredSPD(:, 1:nRepeats), 2);
+        
+        activationLevelIndex = data{spectrumIndex}.activationLevelIndex;
+        
+        if (strcmp(spdType, 'singetonSPDi'))
+            interactingBand = data{spectrumIndex}.interactingBand;
+            singletonSPD(activationLevelIndex, interactingBand,:) = data{spectrumIndex}.meanSPD;
+        
+        elseif (strcmp(spdType, 'singetonSPDb'))
+            referenceBand = data{spectrumIndex}.referenceBand;
+            singletonSPD(activationLevelIndex, referenceBand,:) = data{spectrumIndex}.meanSPD;
+            
+        elseif (strcmp(spdType, 'comboSPD'))
+            interactingBand = data{spectrumIndex}.interactingBand;
+            referenceBand = data{spectrumIndex}.referenceBand;
+            comboSPD(activationLevelIndex, referenceBand, interactingBand,:) = data{spectrumIndex}.meanSPD;
+            
+        elseif (strcmp(spdType, 'darkSPD'))
+            darkSPD = data{spectrumIndex}.meanSPD;
+            
+        else
+            error('How can this be?')
+        end 
+    end
+    
+    % Substract darkSPD
+    singletonSPD = bsxfun(@minus, singletonSPD, reshape(darkSPD, [1 1 nSpectralSamples]));
+    comboSPD = bsxfun(@minus, comboSPD, reshape(darkSPD, [1 1 1 nSpectralSamples]));
+    
+    % Compute predictions for comboSPDs
+    for activationLevelIndex = 1:size(comboSPD,1)
+        for referenceBand = 1:size(comboSPD,2)
+            for interactingBand = 1:size(comboSPD,3)
+                comboSPDpredictions(activationLevelIndex, referenceBand, interactingBand,:) = ...
+                    singletonSPD(activationLevelIndex, interactingBand,:) + singletonSPD(activationLevelIndex, referenceBand,:);
+            end % interactingBandIndex
+        end % referenceBandIndex
+    end %  activationLevelIndex
 end
 
 
@@ -50,26 +116,28 @@ function measureData(rootDir, Svector)
     interactionRange = 10;
     interactingBands = [(-interactionRange:-1) (1:interactionRange)];
  
-    nRepeats = 4;
+    nRepeats = 2;
     
     stimPattern = 0;
     for activationLevelIndex = 1:numel(primaryLevels)
         for referenceBandIndex = 1:numel(referenceBands)    
+            
+            referenceBand = referenceBands(referenceBandIndex);
             for interactingBandIndex = 1:numel(interactingBands)
                 
-                referenceBand   = referenceBands(referenceBandIndex);
-                interactingBand = referenceBand + interactingBands(interactingBandIndex);
-                
-                for spdType = {'singetonSPD', 'comboSPD'}
+                interactingBand = referenceBand + interactingBands(interactingBandIndex);                
+                for spdType = {'singetonSPDi', 'comboSPD'}
                     stimPattern = stimPattern + 1;
                     activation = zeros(nPrimariesNum,1);
                 
-                    activation(interactingBand) = primaryLevels(activationLevelIndex);
-                    % combo or singleton SPD
                     if strcmp(spdType, 'comboSPD')
-                        activation(referenceBand) = primaryLevels(activationLevelIndex);
-                    elseif strcmp(spdType, 'singetonSPD')
-                        activation(referenceBand) = 0;
+                        % combo SPD
+                        activation(interactingBand) = primaryLevels(activationLevelIndex);
+                        activation(referenceBand)   = primaryLevels(activationLevelIndex);
+                    elseif strcmp(spdType, 'singetonSPDi')
+                        % singleton SPD for the interacting band
+                        activation(interactingBand) = primaryLevels(activationLevelIndex);
+                        activation(referenceBand)   = 0;
                     else
                         error('What the ?')
                     end
@@ -81,12 +149,27 @@ function measureData(rootDir, Svector)
                         'interactingBand', interactingBand, ...
                         'activationLevelIndex', activationLevelIndex, ...
                         'measurementTime', [], ...
-                        'measuredSPD', [], ....
-                        'predictedSPD', [] ...
+                        'measuredSPD', [] ....
                     );
             
                 end % for spdType
             end % interactingBandIndex
+            
+            % singleton for the reference band
+            spdType = 'singetonSPDb';
+            stimPattern = stimPattern + 1;
+            activation = zeros(nPrimariesNum,1);  
+            activation(referenceBand)   = primaryLevels(activationLevelIndex);
+            data{stimPattern} = struct(...
+                        'spdType', spdType, ...
+                        'activation', activation, ...
+                        'referenceBand', referenceBand, ...
+                        'interactingBand', 0, ...
+                        'activationLevelIndex', activationLevelIndex, ...
+                        'measurementTime', [], ...
+                        'measuredSPD', [] ....
+                    );
+                
         end % for refBandIndex
     end  % for activationLevelIndex
     
