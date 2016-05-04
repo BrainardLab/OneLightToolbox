@@ -229,7 +229,7 @@ function measureData(rootDir, Svector)
     nPrimariesNum = cal.describe.numWavelengthBands;
     
     % Measure at these levels
-    primaryLevels = [0.25 0.50 0.75 1.0];
+    primaryLevels = [0.33 0.66 1.0];
     
     referenceBands = round(nPrimariesNum/2); % For now fix the reference band to the center band. 
     % referenceBands = 6:10:nPrimariesNum-6;
@@ -237,43 +237,67 @@ function measureData(rootDir, Svector)
     range = 10;
     interactingBands = [(-range:-1) (1:range)];
  
+    nRepeats = 3;
+    
     stimPattern = 0;
-    
     for activationLevelIndex = 1:numel(primaryLevels)
-        for referenceBandIndex = 1:numel(referenceBands)
-            referenceBand = referenceBands(referenceBandIndex); 
-            for interactingBandIndex = 0:numel(interactingBands)
+        for referenceBandIndex = 1:numel(referenceBands)    
+            for interactingBandIndex = 1:numel(interactingBands)
                 
-                stimPattern = stimPattern + 1;
-                activation = zeros(nPrimariesNum,1);
-                activation(referenceBand)  = primaryLevels(activationLevelIndex);
+                referenceBand   = referenceBands(referenceBandIndex);
+                interactingBand = referenceBand + interactingBands(interactingBandIndex);
                 
-                if (interactingBandIndex == 0)
-                else
-                    interactingBand = referenceBand + interactingBands(interactingBandIndex);
+                for spdType = {'singetonSPD', 'comboSPD'}
+                    stimPattern = stimPattern + 1;
+                    activation = zeros(nPrimariesNum,1);
+                
                     activation(interactingBand) = primaryLevels(activationLevelIndex);
-                end
-                
-                data{stimPattern} = struct(...
-                    'activation', activation, ...
-                    'referenceBarIndex', referenceBandIndex, ...
-                    'interactingBarIndex', interactingBandIndex, ...
-                    'activationLevelIndex', activationLevelIndex, ...
-                    'measurementTime', [], ...
-                    'measuredSPD', [], ....
-                    'predictedSPD', [] ...
-                );
+                    % combo or singleton SPD
+                    if strcmp(spdType, 'comboSPD')
+                        activation(referenceBand) = primaryLevels(activationLevelIndex);
+                    elseif strcmp(spdType, 'singetonSPD')
+                        activation(referenceBand) = 0;
+                    else
+                        error('What the ?')
+                    end
+                    
+                    data{stimPattern} = struct(...
+                        'spdType', spdType, ...
+                        'activation', activation, ...
+                        'referenceBand', referenceBand, ...
+                        'interactingBand', interactingBand, ...
+                        'activationLevelIndex', activationLevelIndex, ...
+                        'measurementTime', [], ...
+                        'measuredSPD', [], ....
+                        'predictedSPD', [] ...
+                    );
             
-            primaryValues(stimPattern, :) = activation;
-            
-            end
-            
+                    primaryValues(stimPattern, :) = activation;
+                end % for spdType
+            end % interactingBandIndex
         end % for refBandIndex
-    end
+    end  % for activationLevelIndex
     
-
+    % add dark SPD
+    stimPattern = stimPattern + 1;
+    activation = zeros(nPrimariesNum,1);
+    data{stimPattern} = struct(...
+        'spdType', 'dark', ...
+        'activation', activation, ...
+        'referenceBand', 0, ...
+        'interactingBand', 0, ...
+        'activationLevelIndex', 0, ...
+        'measurementTime', [], ...
+        'measuredSPD', [], ....
+        'predictedSPD', [] ...
+     );       
+     primaryValues(stimPattern, :) = activation;
+                    
+                    
+    % Randomize presentation sequence
     nSpectraMeasured = numel(data);
-    
+    randomizedSpectraIndices = randperm(nSpectraMeasured);  
+    fprintf('There will be %d distinct spectra measured (%d reps). \n', nSpectraMeasured, nRepeats);
     
     figure(1);
     clf;
@@ -286,6 +310,19 @@ function measureData(rootDir, Svector)
     colormap(gray);
     
     
+    
+    figure(2);
+    clf;
+    subplot('Position', [0.04 0.04 0.95 0.95]);
+    pcolor(1:nPrimariesNum, 1:nSpectraMeasured, primaryValues(randomizedSpectraIndices,:));
+    xlabel('primary no');
+    ylabel('spectrum no');
+    set(gca, 'CLim', [0 1]);
+    title('primary values (randomized)');
+    colormap(gray);
+    
+    
+    
     spectroRadiometerOBJ = [];
     ol = [];
     
@@ -293,7 +330,7 @@ function measureData(rootDir, Svector)
         meterToggle = [1 0];
         od = [];
         nAverage = 1;
-        nRepeats = 1;
+        
         
         % Instantiate a PR670 object
         spectroRadiometerOBJ  = PR670dev(...
@@ -317,9 +354,13 @@ function measureData(rootDir, Svector)
 
         % Do all the measurements
         for repeatIndex = 1:nRepeats
-            for spectrumIndex = 1:nSpectraMeasured
-                fprintf('Measuring spectrum %d of %d (repeat: %d/%d)\n', spectrumIndex, nSpectraMeasured, repeatIndex, nRepeats);
+         
+            for spectrumIter = 1:nSpectraMeasured
+                fprintf('Measuring spectrum %d of %d (repeat: %d/%d)\n', spectrumIter, nSpectraMeasured, repeatIndex, nRepeats);
                 pause(0.1);
+                
+                % Get randomized index
+                spectrumIndex = randomizedSpectraIndices(spectrumIter);
                 
                 primaryValues  = data{spectrumIndex}.activation;
                 settingsValues = OLPrimaryToSettings(cal, primaryValues);
@@ -331,15 +372,17 @@ function measureData(rootDir, Svector)
                 figure(3);
                 clf;
                 subplot(2,1,1);
-                bar(primaryValues);
+                bar(primaryValues, 1);
                 set(gca, 'YLim', [0 1], 'XLim', [0 nPrimariesNum+1]);
                 subplot(2,1,2);
                 plot(SToWls(Svector), measurement.pr650.spectrum, 'k-');
                 drawnow;
-            end
-        end
-        
+            end  % spectrumIter
     
+            % re-randomize presentation sequence
+            randomizedSpectraIndices = randperm(nSpectraMeasured);  
+        end % repeatIndex
+        
         % Save data
         filename = fullfile(rootDir,sprintf('BandInteractions_%s_%s.mat', cal.describe.calType, datestr(now, 'dd-mmm-yyyy_HH_MM_SS')));
         save(filename, 'data', 'primaryLevels', 'referenceBands', 'interactingBands', 'cal', '-v7.3');
@@ -391,7 +434,8 @@ function checkHardware()
         
         ol = OneLight;
         fprintf('One Light is good!\n');
-        pause(0.5);
+        fprintf('Hit enter to continue  ');
+        pause
         
     catch err
         
