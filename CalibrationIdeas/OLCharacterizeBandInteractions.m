@@ -20,198 +20,11 @@ function OLCharacterizeBandInteractions
     end
 end
 
-function analyzeDataOLD(rootDir, Svector)
+
+function analyzeData(rootDir, Svector)
     [fileName, pathName] = uigetfile('*.mat', 'Select a file to analyze', rootDir);
     whos('-file', fileName);
     load(fileName, 'cal', 'data');
-    
-    nSpectraMeasured = numel(data);
-    d = data(1).measurement;
-    nRepeats = size(d,2);
-    primaryValues = data(1).activation.primaries;
-    nPrimariesNum = numel(primaryValues);
-    
-    
-    maxSPD = 0;
-    nullSPD = [];
-    singletonReferenceSPD = [];
-    singletonInteractingSPD = [];
-    refCounter = zeros(nPrimariesNum, 100);
-    interactingCounter = zeros(nPrimariesNum, 100);
-    examinedReferenceBandPrimaryLevels = [];
-    examinedInteractingBandPrimaryLevels = [];
-    
-    for spectrumIndex = 1:nSpectraMeasured 
-        
-        % get activation params for this spectum index
-        activationParams = data(spectrumIndex).activation;
-        referenceBand               = activationParams.referenceBand;
-        interactingBand             = activationParams.interactingBand;
-        referenceBandPrimaryLevel   = activationParams.referenceBandPrimaryLevel;
-        interactingBandPrimaryLevel = activationParams.interactingBandPrimaryLevel;
-         
-        % compute average SPD for each condition
-        d = data(spectrumIndex).measurement;
-        for repeatIndex = 1:nRepeats
-            if (repeatIndex == 1)
-                data(spectrumIndex).meanSPD = squeeze(d(:, repeatIndex));
-            else
-                data(spectrumIndex).meanSPD = data(spectrumIndex).meanSPD + squeeze(d(:, repeatIndex));
-            end
-        end
-        
-        data(spectrumIndex).meanSPD = data(spectrumIndex).meanSPD / nRepeats;
-        maxSPD = max([ maxSPD max(data(spectrumIndex).meanSPD)]);
-        
-        % Compute singleton SPD for the reference band(s)
-        if (interactingBandPrimaryLevel == 0)
-            if (referenceBandPrimaryLevel == 0)
-                nullSPD(size(nullSPD,1)+1,:) = data(spectrumIndex).meanSPD;
-            else
-                activationLevelIndex = round(referenceBandPrimaryLevel*100);
-                refCounter(referenceBand, activationLevelIndex) = refCounter(referenceBand, activationLevelIndex)+1;
-                singletonReferenceSPD(referenceBand, activationLevelIndex, refCounter(referenceBand, activationLevelIndex), :) = data(spectrumIndex).meanSPD;
-            end
-        end
-        
-        % Compute singleton SPD for the interacting bands
-        if (referenceBandPrimaryLevel == 0)
-            if (interactingBandPrimaryLevel == 0)
-                nullSPD(size(nullSPD,1)+1,:) = data(spectrumIndex).meanSPD;
-            else
-                activationLevelIndex = round(interactingBandPrimaryLevel*100);
-                interactingCounter(interactingBand, activationLevelIndex) = interactingCounter(interactingBand, activationLevelIndex)+1;
-                singletonInteractingSPD(interactingBand, activationLevelIndex, interactingCounter(interactingBand, activationLevelIndex), :) = data(spectrumIndex).meanSPD;
-            end
-        end
-    end % spectrumIndex
-    
-    % Compute the mean of all null SPDs
-    nullSPD = mean(nullSPD, 1);
-    
-    % Compute mean of referenceSPDs
-    singletonReferenceSPD = squeeze(mean(singletonReferenceSPD, 3));
-    singletonReferenceSPDStDev = squeeze(std(singletonReferenceSPD, 0, 3));
-    
-    % Compute mean of referenceSPDs
-    singletonInteractingSPD = squeeze(mean(singletonInteractingSPD, 3));
-    singletonInteractingSPDStDev = squeeze(std(singletonInteractingSPD, 0, 3));
-    
-    
-    wavelengthAxis = SToWls(Svector);
-    for refBand = 1:size(singletonReferenceSPD,1)
-        for activationLevelIndex = 1:size(singletonReferenceSPD,2)
-            if (refCounter(referenceBand, activationLevelIndex) > 0)
-                figure(100+activationLevelIndex);
-                plot(wavelengthAxis, squeeze(singletonReferenceSPD(refBand, activationLevelIndex, :)), 'k-');
-                hold on;
-                plot(wavelengthAxis, squeeze(singletonReferenceSPD(refBand, activationLevelIndex, :)+singletonReferenceSPDStDev(refBand, activationLevelIndex, :)), 'k--');
-                plot(wavelengthAxis, squeeze(singletonReferenceSPD(refBand, activationLevelIndex, :)-singletonReferenceSPDStDev(refBand, activationLevelIndex, :)), 'k--');
-                hold off
-            end
-        end
-    end
-    
-    
-    hFig = figure(3);
-    clf;
-    set(hFig, 'Position', [10 10 1150 1350], 'Color', [1 1 1], 'MenuBar', 'none');
-    
-    
-    videoFilename = sprintf('%s.m4v', fileName);
-    writerObj = VideoWriter(videoFilename, 'MPEG-4'); % H264 format
-    writerObj.FrameRate = 15; 
-    writerObj.Quality = 100;
-    writerObj.open();
-        
-    
-    % Do the plotting
-    for spectrumIndex = 1:nSpectraMeasured 
-        
-        % get activation params for this spectum index
-        activationParams = data(spectrumIndex).activation;
-        primaryValues               = activationParams.primaries;
-        referenceBand               = activationParams.referenceBand;
-        interactingBand             = activationParams.interactingBand;
-        referenceBandPrimaryLevel   = activationParams.referenceBandPrimaryLevel;
-        interactingBandPrimaryLevel = activationParams.interactingBandPrimaryLevel;
-        
-        % Compute predicted SPD and the sum of singletonReferenceSPD + singletonInteractingSPD
-        if (referenceBandPrimaryLevel == 0)
-            modulationReferenceSPD = nullSPD-nullSPD;
-        else
-            activationLevelIndex = round(referenceBandPrimaryLevel*100);
-            modulationReferenceSPD = squeeze(singletonReferenceSPD(referenceBand,activationLevelIndex,:))-nullSPD(:);
-        end
-        
-        if (interactingBandPrimaryLevel == 0)
-            modulationInteractingSPD = nullSPD-nullSPD;
-        else
-            activationLevelIndex = round(interactingBandPrimaryLevel*100);
-            modulationInteractingSPD = squeeze(singletonInteractingSPD(interactingBand,activationLevelIndex,:))-nullSPD(:);
-        end
-        
-        predictedSPD = nullSPD(:) + squeeze(modulationReferenceSPD(:) + modulationInteractingSPD(:));
-        
-        
-        subplot('Position', [0.05 0.29 0.44 0.70]);
-        plot(wavelengthAxis, data(spectrumIndex).meanSPD*1000, 'k-', 'LineWidth', 2.0);
-        hL = legend('measurement');
-        set(hL, 'FontSize', 12);
-        set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)],'YLim', [0 maxSPD*1000]);
-        set(gca, 'FontSize', 12);
-        xlabel('wavelength (nm)', 'FontSize', 14, 'FontWeight', 'bold');
-        ylabel('power (mW)', 'FontSize', 14, 'FontWeight', 'bold');
-        
-        
-        subplot('Position', [0.55 0.29 0.44 0.70]);
-        plot(wavelengthAxis, data(spectrumIndex).meanSPD*1000, 'b-', 'Color', [0 0.4 1 1.0], 'LineWidth', 2.0);
-        hold on;
-        plot(wavelengthAxis, predictedSPD*1000, 'r-', 'Color', [1 0 0 0.5],  'LineWidth', 5.0);
-        hL = legend('measurement', 'prediction');
-        set(hL, 'FontSize', 12);
-        hold off;
-        yTickLevels = [-100:0.5:100];
-        set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)], 'YLim', [0 maxSPD*1000], 'YTick', yTickLevels, 'YTickLabel', sprintf('%2.1f\n', yTickLevels));
-        set(gca, 'FontSize', 12);
-        xlabel('wavelength (nm)', 'FontSize', 14, 'FontWeight', 'bold');
-        ylabel('power (mW)', 'FontSize', 14, 'FontWeight', 'bold');
-        grid on
-        box on
-        
-        subplot('Position', [0.05 0.05 0.44 0.20]);
-        bar(1:numel(primaryValues), primaryValues, 1.0, 'FaceColor', [1.0 0.6 0.6], 'EdgeColor', [0 0 0]);
-        set(gca, 'YLim', [0 1], 'XLim', [0 nPrimariesNum+1]);
-        if (referenceBand < interactingBand)
-            legendLabel = sprintf('%2.1f , %2.1f', referenceBandPrimaryLevel, interactingBandPrimaryLevel);
-        else
-            legendLabel = sprintf('%2.1f , %2.1f', interactingBandPrimaryLevel, referenceBandPrimaryLevel);
-        end
-        hL = legend(legendLabel);
-        set(hL, 'FontSize', 12);
-        set(gca, 'FontSize', 12);
-        xlabel('primary index', 'FontSize', 14, 'FontWeight', 'bold');
-        ylabel('primary activation', 'FontSize', 14, 'FontWeight', 'bold');
-        
-        
-        subplot('Position', [0.55 0.05 0.44 0.20]);
-        residual = (data(spectrumIndex).meanSPD(:) - predictedSPD(:))*1000;
-        plot(wavelengthAxis, residual, '-', 'Color', [1.0 0.2 0.1 0.8], 'LineWidth', 2.0);
-        grid on
-        box on
-        hL = legend('measured - prediction');
-        set(hL, 'FontSize', 12);
-        set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)], 'YLim', [-1 1], 'YTick', yTickLevels, 'YTickLabel', sprintf('%2.1f\n', yTickLevels));
-        set(gca, 'FontSize', 12);
-        xlabel('wavelength (nm)', 'FontSize', 14, 'FontWeight', 'bold');
-        ylabel('residual power (mW)', 'FontSize', 14, 'FontWeight', 'bold');
-        
-        drawnow;
-        writerObj.writeVideo(getframe(hFig));
-    end
-    
-    writerObj.close();
-    
 end
 
 
@@ -272,7 +85,6 @@ function measureData(rootDir, Svector)
                         'predictedSPD', [] ...
                     );
             
-                    primaryValues(stimPattern, :) = activation;
                 end % for spdType
             end % interactingBandIndex
         end % for refBandIndex
@@ -287,6 +99,7 @@ function measureData(rootDir, Svector)
         'referenceBand', 0, ...
         'interactingBand', 0, ...
         'activationLevelIndex', 0, ...
+        'repeatIndex', 0, ...
         'measurementTime', [], ...
         'measuredSPD', [], ....
         'predictedSPD', [] ...
@@ -294,33 +107,18 @@ function measureData(rootDir, Svector)
      primaryValues(stimPattern, :) = activation;
                     
                     
-    % Randomize presentation sequence
     nSpectraMeasured = numel(data);
-    randomizedSpectraIndices = randperm(nSpectraMeasured);  
     fprintf('There will be %d distinct spectra measured (%d reps). \n', nSpectraMeasured, nRepeats);
     
     figure(1);
     clf;
     subplot('Position', [0.04 0.04 0.95 0.95]);
-    pcolor(1:nPrimariesNum, 1:nSpectraMeasured, primaryValues);
+    pcolor(1:nPrimariesNum, 1:nSpectraMeasured, retrieveActivationSequence(data, 1:nSpectrMeasured));
     xlabel('primary no');
     ylabel('spectrum no');
     set(gca, 'CLim', [0 1]);
     title('primary values');
     colormap(gray);
-    
-    
-    
-    figure(2);
-    clf;
-    subplot('Position', [0.04 0.04 0.95 0.95]);
-    pcolor(1:nPrimariesNum, 1:nSpectraMeasured, primaryValues(randomizedSpectraIndices,:));
-    xlabel('primary no');
-    ylabel('spectrum no');
-    set(gca, 'CLim', [0 1]);
-    title('primary values (randomized)');
-    colormap(gray);
-    
     
     
     spectroRadiometerOBJ = [];
@@ -355,12 +153,33 @@ function measureData(rootDir, Svector)
         % Do all the measurements
         for repeatIndex = 1:nRepeats
          
+            % Randomize presentation sequence
+            randomizedSpectraIndices(repeatIndex,:) = randperm(nSpectraMeasured); 
+            
+            % Show randomized stimulation sequence
+            figure(2);
+            clf;
+            subplot('Position', [0.04 0.04 0.95 0.95]);
+            pcolor(1:nPrimariesNum, 1:nSpectraMeasured, retrieveActivationSequence(data, squeeze(randomizedSpectraIndices(repeatIndex,:))));
+            hold on
+            xlabel('primary no');
+            ylabel('spectrum no');
+            set(gca, 'CLim', [0 1], 'XLim', [1 nPrimariesNum], 'YLim', [0 nSpectraMeasured+1]);
+            title('primary values (randomized)');
+            colormap(gray);
+    
             for spectrumIter = 1:nSpectraMeasured
+                
+                % Show where in the stimulation sequence we are right now.
+                figure(2);
+                plot([1 nPrimariesNum], spectrumIter*[1 1], 'r-');
+                drawnow;
+                
                 fprintf('Measuring spectrum %d of %d (repeat: %d/%d)\n', spectrumIter, nSpectraMeasured, repeatIndex, nRepeats);
                 pause(0.1);
                 
                 % Get randomized index
-                spectrumIndex = randomizedSpectraIndices(spectrumIter);
+                spectrumIndex = randomizedSpectraIndices(repeatIndex,spectrumIter);
                 
                 primaryValues  = data{spectrumIndex}.activation;
                 settingsValues = OLPrimaryToSettings(cal, primaryValues);
@@ -368,6 +187,7 @@ function measureData(rootDir, Svector)
                 measurement = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, Svector, meterToggle, nAverage);
                 data{spectrumIndex}.measuredSPD(:, repeatIndex)     = measurement.pr650.spectrum;
                 data{spectrumIndex}.measurementTime(:, repeatIndex) = measurement.pr650.time(1);
+                data{spectrumIndex}.repeatIndex = repeatIndex;
                 
                 figure(3);
                 clf;
@@ -378,14 +198,11 @@ function measureData(rootDir, Svector)
                 plot(SToWls(Svector), measurement.pr650.spectrum, 'k-');
                 drawnow;
             end  % spectrumIter
-    
-            % re-randomize presentation sequence
-            randomizedSpectraIndices = randperm(nSpectraMeasured);  
         end % repeatIndex
         
         % Save data
         filename = fullfile(rootDir,sprintf('BandInteractions_%s_%s.mat', cal.describe.calType, datestr(now, 'dd-mmm-yyyy_HH_MM_SS')));
-        save(filename, 'data', 'primaryLevels', 'referenceBands', 'interactingBands', 'cal', '-v7.3');
+        save(filename, 'data', 'primaryLevels', 'referenceBands', 'interactingBands', 'nRepeats', 'randomizedSpectraIndices', 'cal', '-v7.3');
         fprintf('Data saved in ''%s''. \n', filename); 
         SendEmail(emailRecipient, 'OneLight Calibration Complete', 'Finished!');
         
@@ -413,7 +230,14 @@ function measureData(rootDir, Svector)
         keyboard;
         rethrow(e);
     end
- 
+end
+
+function activationSequence = retrieveActivationSequence(data, presentationIndices)
+    for spectrumIter = 1:numel(presentationIndices)
+        % Get presentation index
+        spectrumIndex = presentationIndices(spectrumIter);
+        activationSequence(spectrumIter,:)  = data{spectrumIndex}.activation;
+    end
 end
 
 function checkHardware()
