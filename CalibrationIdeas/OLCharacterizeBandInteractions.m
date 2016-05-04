@@ -47,8 +47,8 @@ function measureData(rootDir, Svector)
     referenceBands = round(nPrimariesNum/2); % For now fix the reference band to the center band. 
     % referenceBands = 6:10:nPrimariesNum-6;
     
-    range = 10;
-    interactingBands = [(-range:-1) (1:range)];
+    interactionRange = 10;
+    interactingBands = [(-interactionRange:-1) (1:interactionRange)];
  
     nRepeats = 4;
     
@@ -113,7 +113,7 @@ function measureData(rootDir, Svector)
     figure(1);
     clf;
     subplot('Position', [0.04 0.04 0.95 0.95]);
-    pcolor(1:nPrimariesNum, 1:nSpectraMeasured, retrieveActivationSequence(data, 1:nSpectrMeasured));
+    pcolor(1:nPrimariesNum, 1:nSpectraMeasured, retrieveActivationSequence(data, 1:nSpectraMeasured));
     xlabel('primary no');
     ylabel('spectrum no');
     set(gca, 'CLim', [0 1]);
@@ -165,18 +165,16 @@ function measureData(rootDir, Svector)
             xlabel('primary no');
             ylabel('spectrum no');
             set(gca, 'CLim', [0 1], 'XLim', [1 nPrimariesNum], 'YLim', [0 nSpectraMeasured+1]);
-            title('primary values (randomized)');
             colormap(gray);
     
             for spectrumIter = 1:nSpectraMeasured
                 
                 % Show where in the stimulation sequence we are right now.
                 figure(2);
-                plot([1 nPrimariesNum], spectrumIter*[1 1], 'r-');
+                plot([1 nPrimariesNum], (spectrumIter+0.5)*[1 1], 'g-');
                 drawnow;
                 
                 fprintf('Measuring spectrum %d of %d (repeat: %d/%d)\n', spectrumIter, nSpectraMeasured, repeatIndex, nRepeats);
-                pause(0.1);
                 
                 % Get randomized index
                 spectrumIndex = randomizedSpectraIndices(repeatIndex,spectrumIter);
