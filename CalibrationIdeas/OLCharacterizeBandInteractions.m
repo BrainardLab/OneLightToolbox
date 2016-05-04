@@ -240,6 +240,7 @@ function measureData(rootDir, Svector)
     interactingBands = [(-range:-1) (1:range)];
     nchoosek(interactingBands,2)
     pause
+    % Randomize testings 
     % NEW 
     
     nSpectraMeasured = numel(referenceBands) * numel(interactingBands) * numel(primaryLevels) * numel(primaryLevels);
