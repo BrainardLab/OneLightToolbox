@@ -50,7 +50,7 @@ function measureData(rootDir, Svector)
     range = 10;
     interactingBands = [(-range:-1) (1:range)];
  
-    nRepeats = 3;
+    nRepeats = 4;
     
     stimPattern = 0;
     for activationLevelIndex = 1:numel(primaryLevels)
