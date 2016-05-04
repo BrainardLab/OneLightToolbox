@@ -37,7 +37,7 @@ function analyzeData(rootDir, Svector)
         stimulationSequence = squeeze(randomizedSpectraIndices(repeatIndex,:)); 
             
         % Show stimulation sequence for this repeat
-        figure(2);
+        figure(1);
         clf;
         subplot('Position', [0.04 0.04 0.95 0.95]);
         pcolor(1:nPrimariesNum, 1:nSpectraMeasured, retrieveActivationSequence(data, stimulationSequence));
@@ -50,47 +50,241 @@ function analyzeData(rootDir, Svector)
     
     
     for spectrumIndex = 1:nSpectraMeasured
-        
+        % average over all reps
         data{spectrumIndex}.meanSPD = mean(data{spectrumIndex}.measuredSPD(:, 1:nRepeats), 2);
-        data{spectrumIndex}.minSPD  = min(data{spectrumIndex}.measuredSPD(:, 1:nRepeats), 2);
-        data{spectrumIndex}.maxSPD  = max(data{spectrumIndex}.measuredSPD(:, 1:nRepeats), 2);
+
+        % compute min over all reps
+        data{spectrumIndex}.minSPD  = min(data{spectrumIndex}.measuredSPD(:, 1:nRepeats), [], 2);
+        
+        % compute max over all reps
+        data{spectrumIndex}.maxSPD  = max(data{spectrumIndex}.measuredSPD(:, 1:nRepeats), [], 2);
         
         activationLevelIndex = data{spectrumIndex}.activationLevelIndex;
+        spdType = data{spectrumIndex}.spdType;
         
         if (strcmp(spdType, 'singetonSPDi'))
             interactingBand = data{spectrumIndex}.interactingBand;
+            singletonSPDactivation(activationLevelIndex, interactingBand,:) = data{spectrumIndex}.activation;
             singletonSPD(activationLevelIndex, interactingBand,:) = data{spectrumIndex}.meanSPD;
-        
+            singletonSPDrange(activationLevelIndex, interactingBand,1,:) = data{spectrumIndex}.minSPD;
+            singletonSPDrange(activationLevelIndex, interactingBand,2,:) = data{spectrumIndex}.maxSPD;
+            
         elseif (strcmp(spdType, 'singetonSPDb'))
             referenceBand = data{spectrumIndex}.referenceBand;
+            singletonSPDactivation(activationLevelIndex, referenceBand,:) = data{spectrumIndex}.activation;
             singletonSPD(activationLevelIndex, referenceBand,:) = data{spectrumIndex}.meanSPD;
+            singletonSPDrange(activationLevelIndex, referenceBand,1,:) = data{spectrumIndex}.minSPD;
+            singletonSPDrange(activationLevelIndex, referenceBand,2,:) = data{spectrumIndex}.maxSPD;
             
         elseif (strcmp(spdType, 'comboSPD'))
             interactingBand = data{spectrumIndex}.interactingBand;
             referenceBand = data{spectrumIndex}.referenceBand;
+            comboSPDactivation(activationLevelIndex, referenceBand, interactingBand,:) = data{spectrumIndex}.activation;
             comboSPD(activationLevelIndex, referenceBand, interactingBand,:) = data{spectrumIndex}.meanSPD;
+            comboSPDrange(activationLevelIndex, referenceBand, interactingBand, 1, :) = data{spectrumIndex}.minSPD;
+            comboSPDrange(activationLevelIndex, referenceBand, interactingBand, 2, :) = data{spectrumIndex}.maxSPD;
             
-        elseif (strcmp(spdType, 'darkSPD'))
+        elseif (strcmp(spdType, 'dark'))
             darkSPD = data{spectrumIndex}.meanSPD;
-            
+            darkSPDrange(1,:) = data{spectrumIndex}.minSPD;
+            darkSPDrange(2,:) = data{spectrumIndex}.maxSPD;
         else
-            error('How can this be?')
+            error('How can spdType be ''%s'' ?', spdType)
         end 
     end
     
-    % Substract darkSPD
+    % Substract darkSPD from singleton
     singletonSPD = bsxfun(@minus, singletonSPD, reshape(darkSPD, [1 1 nSpectralSamples]));
-    comboSPD = bsxfun(@minus, comboSPD, reshape(darkSPD, [1 1 1 nSpectralSamples]));
     
     % Compute predictions for comboSPDs
     for activationLevelIndex = 1:size(comboSPD,1)
         for referenceBand = 1:size(comboSPD,2)
             for interactingBand = 1:size(comboSPD,3)
-                comboSPDpredictions(activationLevelIndex, referenceBand, interactingBand,:) = ...
-                    singletonSPD(activationLevelIndex, interactingBand,:) + singletonSPD(activationLevelIndex, referenceBand,:);
+                comboSPDprediction(activationLevelIndex, referenceBand, interactingBand,:) = ...
+                    darkSPD + ...
+                    squeeze(singletonSPD(activationLevelIndex, referenceBand,:)) + ...
+                    squeeze(singletonSPD(activationLevelIndex, interactingBand,:));
             end % interactingBandIndex
         end % referenceBandIndex
     end %  activationLevelIndex
+    
+    
+    % Compute max SPD
+    maxSPD = max([max(comboSPD(:)) max(comboSPDprediction(:))]);
+    
+    % Residuals
+    comboSPDresiduals = comboSPD - comboSPDprediction;
+    
+    
+    % Plotting
+     gain = 1000;
+     
+     
+    % Plot the singleton SPDs together with their min/maxs
+    measuredBandsNum = 0;
+    for bandNo = 1:size(singletonSPD,2)
+       spd = squeeze(singletonSPD(1, bandNo,:));
+       if (any(spd>0))
+           measuredBandsNum = measuredBandsNum + 1;
+       end
+    end
+    
+    plotCols = 6;
+    plotRows = ceil(measuredBandsNum/plotCols);
+    subplotPosVectors = NicePlot.getSubPlotPosVectors(...
+               'rowsNum', plotRows, ...
+               'colsNum', plotCols, ...
+               'heightMargin',   0.03, ...
+               'widthMargin',    0.01, ...
+               'leftMargin',     0.01, ...
+               'rightMargin',    0.005, ...
+               'bottomMargin',   0.03, ...
+               'topMargin',      0.01);
+           
+    for activationLevelIndex = 1:size(comboSPD,1)
+        figure(100+activationLevelIndex);
+        bandIter = 0;
+        for bandNo = 1:size(singletonSPD,2)
+            spd = squeeze(singletonSPD(activationLevelIndex, bandNo,:));
+            minSpd = squeeze(singletonSPDrange(activationLevelIndex, bandNo,1,:));
+            maxSpd = squeeze(singletonSPDrange(activationLevelIndex, bandNo,2,:));
+            if (any(spd>0))
+                bandIter = bandIter + 1;
+                col = mod(bandIter-1,plotCols) + 1;
+                row = floor((bandIter-1)/plotCols) + 1;
+                subplot('Position', subplotPosVectors(row,col).v);
+                plot(wavelengthAxis, gain*darkSPD, 'k-');
+                hold on;
+                plot(wavelengthAxis, gain*squeeze(darkSPDrange(1,:)), 'k--');
+                plot(wavelengthAxis, gain*squeeze(darkSPDrange(2,:)), 'k--');
+                plot(wavelengthAxis, gain*spd, 'r-', 'Color', [1.0 0.3 0.3 0.5], 'LineWidth', 4.0);
+                plot(wavelengthAxis, gain*minSpd, 'r--');
+                plot(wavelengthAxis, gain*maxSpd, 'r--');
+                set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)],'YLim', [0 maxSPD*gain]);
+                hold off;
+                title(sprintf('activated band: %d', bandNo));
+            end
+        end % bandNo
+    end
+    
+    
+    fprintf('\nInteraction data are available for the following reference bands:');
+    for k = 1:numel(referenceBands)
+        fprintf('%d ', referenceBands(k));
+    end
+    
+    selectedReferenceBand = input(sprintf('\nEnter reference band for visualization : [%d] ', referenceBands(1)), 's');
+    if (isempty(selectedReferenceBand))
+        selectedReferenceBand = referenceBands(1);
+    else
+        selectedReferenceBand = str2double(selectedReferenceBand);
+        if (isempty(selectedReferenceBand)) || (selectedReferenceBand<1) || (selectedReferenceBand>numel(referenceBands))
+            selectedReferenceBand = referenceBands(1);
+        else
+            selectedReferenceBand = referenceBands(selectedReferenceBand);
+        end
+    end
+    
+    % Plot the interactions
+    hFig = figure(1000);
+    clf;
+    set(hFig, 'Position', [10 10 1150 1350], 'Color', [1 1 1], 'MenuBar', 'none');
+    
+    % Open video stream
+    videoFilename = sprintf('%s_ReferenceBar_%d.m4v', fileName, selectedReferenceBand);
+    writerObj = VideoWriter(videoFilename, 'MPEG-4'); % H264 format
+    writerObj.FrameRate = 15; 
+    writerObj.Quality = 100;
+    writerObj.open();
+    
+    % Do the plotting
+    yTickLevels = [-100:0.5:100];
+    for spectrumIndex = 1:nSpectraMeasured
+        % get activation params for this spectum index
+        spdType = data{spectrumIndex}.spdType;
+        if (strcmp(spdType, 'comboSPD'))
+            
+            referenceBand = data{spectrumIndex}.referenceBand;
+            if (referenceBand ~= selectedReferenceBand)
+                continue;
+            end
+            activationLevelIndex  = data{spectrumIndex}.activationLevelIndex;
+            interactingBand       = data{spectrumIndex}.interactingBand;
+            
+            % The raw combo measurement (top left)
+            subplot('Position', [0.05 0.29 0.44 0.70]);
+            
+            meanSPDInMilliWatts = gain*squeeze(comboSPD(activationLevelIndex, referenceBand, interactingBand,:));
+            minSPDInMilliWatts  = gain*squeeze(comboSPDrange(activationLevelIndex, referenceBand, interactingBand, 1, :));
+            maxSPDInMilliWatts  = gain*squeeze(comboSPDrange(activationLevelIndex, referenceBand, interactingBand, 2, :));
+            
+            plot(wavelengthAxis, meanSPDInMilliWatts, 'r-', 'LineWidth', 2.0);
+            hold on;
+            plot(wavelengthAxis, minSPDInMilliWatts, 'k--', 'LineWidth', 1.0);
+            plot(wavelengthAxis, maxSPDInMilliWatts, 'k--', 'LineWidth', 1.0);
+            hold off;
+            hL = legend('measurement', 'min', 'max');
+            set(hL, 'FontSize', 12);
+            set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)],'YLim', [0 maxSPD*gain]);
+            set(gca, 'FontSize', 12);
+            xlabel('wavelength (nm)', 'FontSize', 14, 'FontWeight', 'bold');
+            ylabel('power (mW)', 'FontSize', 14, 'FontWeight', 'bold');
+            grid on
+            box on
+            
+            % The combo measurement and its prediction (top right)
+            subplot('Position', [0.55 0.29 0.44 0.70]);
+            predictionSPDInMilliWatts = gain*squeeze(comboSPDprediction(activationLevelIndex, referenceBand, interactingBand,:));
+            plot(wavelengthAxis, meanSPDInMilliWatts, 'r-', 'LineWidth', 2.0);
+            hold on;
+            plot(wavelengthAxis, predictionSPDInMilliWatts, 'b-', 'Color', [0 0.4 1 0.5], 'LineWidth', 2.0);
+            hold off;
+            hL = legend('measurement', 'prediction');
+            set(hL, 'FontSize', 12);
+            set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)],'YLim', [0 maxSPD*gain]);
+            set(gca, 'FontSize', 12);
+            xlabel('wavelength (nm)', 'FontSize', 14, 'FontWeight', 'bold');
+            ylabel('power (mW)', 'FontSize', 14, 'FontWeight', 'bold');
+            grid on
+            box on
+        
+            % The band activation pattern (bottom left)
+            subplot('Position', [0.05 0.05 0.44 0.20]);
+            activationPattern = squeeze(comboSPDactivation(activationLevelIndex, referenceBand, interactingBand,:));
+            bar(1:numel(activationPattern), activationPattern, 1.0, 'FaceColor', [1.0 0.6 0.6], 'EdgeColor', [0 0 0]);
+            hold on;
+            activationPattern(interactingBand) = 0;
+            bar(1:numel(activationPattern), activationPattern, 1.0, 'FaceColor', [0.6 0.6 1.0], 'EdgeColor', [0 0 0]);
+            hold off;
+            set(gca, 'YLim', [0 1.1], 'XLim', [0 nPrimariesNum+1]);
+            hL = legend({'interacting band', 'reference band'});
+            set(hL, 'FontSize', 12);
+            set(gca, 'FontSize', 12);
+            xlabel('primary index', 'FontSize', 14, 'FontWeight', 'bold');
+            ylabel('primary activation', 'FontSize', 14, 'FontWeight', 'bold');
+        
+            % The residual SPD (bottom right)
+            subplot('Position', [0.55 0.05 0.44 0.20]);
+            residualSPDInMilliWatts = gain*squeeze(comboSPDresiduals(activationLevelIndex, referenceBand, interactingBand,:));
+            plot(wavelengthAxis, residualSPDInMilliWatts, 'r-', 'LineWidth', 2.0);
+            hL = legend('measured - prediction');
+            set(hL, 'FontSize', 12);
+            set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)], 'YLim', [-1 1], 'YTick', yTickLevels, 'YTickLabel', sprintf('%2.1f\n', yTickLevels));
+            set(gca, 'FontSize', 12);
+            xlabel('wavelength (nm)', 'FontSize', 14, 'FontWeight', 'bold');
+            ylabel('residual power (mW)', 'FontSize', 14, 'FontWeight', 'bold');
+            grid on
+            box on
+            
+            % Write video frame
+            drawnow;
+            writerObj.writeVideo(getframe(hFig));
+        end  % plot comboSPDs 
+    end  % spectrumIndex
+    
+    % Close video stream
+    writerObj.close();
+    
 end
 
 
@@ -110,13 +304,18 @@ function measureData(rootDir, Svector)
     % Measure at these levels
     primaryLevels = [0.33 0.66 1.0];
     
-    referenceBands = round(nPrimariesNum/2); % For now fix the reference band to the center band. 
-    % referenceBands = 6:10:nPrimariesNum-6;
-    
+    % Measure interactions at +/- these many bands from the reference band
     interactionRange = 10;
     interactingBands = [(-interactionRange:-1) (1:interactionRange)];
  
-    nRepeats = 2;
+    % Reference band: One, at the center of the band range
+    % referenceBands = round(nPrimariesNum/2);
+    
+    % Reference bands: Span the range of bands
+    referenceBands = interactionRange+1 : interactionRange : nPrimariesNum-(interactionRange+1);
+    
+    % Repeat 3 times
+    nRepeats = 3;
     
     stimPattern = 0;
     for activationLevelIndex = 1:numel(primaryLevels)
@@ -189,6 +388,7 @@ function measureData(rootDir, Svector)
     nSpectraMeasured = numel(data);
     fprintf('There will be %d distinct spectra measured (%d reps). \n', nSpectraMeasured, nRepeats);
     
+    % Plot the activations (before randomization)
     figure(1);
     clf;
     subplot('Position', [0.04 0.04 0.95 0.95]);
