@@ -20,7 +20,7 @@ function OLCharacterizeBandInteractions
     end
 end
 
-function analyzeData(rootDir, Svector)
+function analyzeDataOLD(rootDir, Svector)
     [fileName, pathName] = uigetfile('*.mat', 'Select a file to analyze', rootDir);
     whos('-file', fileName);
     load(fileName, 'cal', 'data');
@@ -216,6 +216,10 @@ end
 
 
 function measureData(rootDir, Svector)
+
+    % check that hardware is responding
+    checkHardware();
+    
     % Ask for email recipient
     emailRecipient = GetWithDefault('Send status email to','cottaris@psych.upenn.edu');
     
@@ -225,74 +229,62 @@ function measureData(rootDir, Svector)
     nPrimariesNum = cal.describe.numWavelengthBands;
     
     % Measure at these levels
-    primaryLevels = 0.0:0.33:1.0;
+    primaryLevels = [0.25 0.50 0.75 1.0];
     
     referenceBands = round(nPrimariesNum/2); % For now fix the reference band to the center band. 
     % referenceBands = 6:10:nPrimariesNum-6;
     
-    % Activate (one at a time) bands +/- 5  around reference band
-    % NEW
-    % First measure all the interacting bands  + reference bar in isolation
-    interactingBands = [(-range:-1) (1:range)];
-    
-    % Then measure All pairs of interactions
     range = 10;
     interactingBands = [(-range:-1) (1:range)];
-    nchoosek(interactingBands,2)
-    pause
-    % Randomize testings 
-    % NEW 
+ 
+    stimPattern = 0;
     
-    nSpectraMeasured = numel(referenceBands) * numel(interactingBands) * numel(primaryLevels) * numel(primaryLevels);
-    primaryValues = zeros(nPrimariesNum, nSpectraMeasured); 
+    for activationLevelIndex = 1:numel(primaryLevels)
+        for referenceBandIndex = 1:numel(referenceBands)
+            referenceBand = referenceBands(referenceBandIndex); 
+            for interactingBandIndex = 0:numel(interactingBands)
+                
+                stimPattern = stimPattern + 1;
+                activation = zeros(nPrimariesNum,1);
+                activation(referenceBand)  = primaryLevels(activationLevelIndex);
+                
+                if (interactingBandIndex == 0)
+                else
+                    interactingBand = referenceBand + interactingBands(interactingBandIndex);
+                    activation(interactingBand) = primaryLevels(activationLevelIndex);
+                end
+                
+                data{stimPattern} = struct(...
+                    'activation', activation, ...
+                    'referenceBarIndex', referenceBandIndex, ...
+                    'interactingBarIndex', interactingBandIndex, ...
+                    'activationLevelIndex', activationLevelIndex, ...
+                    'measurementTime', [], ...
+                    'measuredSPD', [], ....
+                    'predictedSPD', [] ...
+                );
+            
+            primaryValues(stimPattern, :) = activation;
+            
+            end
+            
+        end % for refBandIndex
+    end
     
-    spectrumIndex = 0;
-    for referenceBandIndex = 1:numel(referenceBands)
-        referenceBand = referenceBands(referenceBandIndex);
-        for interactingBandIndex = 1:numel(interactingBands)
-            interactingBand = referenceBand + interactingBands(interactingBandIndex);
-            for referenceBandPrimaryLevelIndex = 1:numel(primaryLevels)
-                referenceBandPrimaryLevel = primaryLevels(referenceBandPrimaryLevelIndex);
-                for interactingBandPrimaryLevelIndex = 1:numel(primaryLevels)
-                    interactingBandPrimaryLevel = primaryLevels(interactingBandPrimaryLevelIndex);
-                    activation = zeros(nPrimariesNum,1);
-                    activation(referenceBand) = referenceBandPrimaryLevel;
-                    activation(interactingBand) = interactingBandPrimaryLevel;
-                    spectrumIndex = spectrumIndex + 1;
-                    primaryValues(:,spectrumIndex) = activation;
-                    data(spectrumIndex).activation = struct(...
-                        'referenceBand', referenceBand, ...
-                        'interactingBand', interactingBand', ...
-                        'referenceBandPrimaryLevel', referenceBandPrimaryLevel, ...
-                        'interactingBandPrimaryLevel', interactingBandPrimaryLevel, ...
-                        'primaries', activation ...
-                        );
-                end % interactingBandPrimaryLevelIndex
-            end % referenceBandPrimaryLevelIndex
-        end % interactingBandIndex
-    end % referenceBandIndex
+
+    nSpectraMeasured = numel(data);
+    
     
     figure(1);
     clf;
     subplot('Position', [0.04 0.04 0.95 0.95]);
-    pcolor(1:nPrimariesNum, 1:nSpectraMeasured, primaryValues');
+    pcolor(1:nPrimariesNum, 1:nSpectraMeasured, primaryValues);
     xlabel('primary no');
     ylabel('spectrum no');
     set(gca, 'CLim', [0 1]);
     title('primary values');
     colormap(gray);
     
-    settingsValues = OLPrimaryToSettings(cal, primaryValues);
-    figure(2);
-    clf;
-    subplot('Position', [0.04 0.04 0.95 0.95]);
-    pcolor(1:nPrimariesNum, 1:nSpectraMeasured, settingsValues');
-    xlabel('primary no');
-    ylabel('spectrum no');
-    set(gca, 'CLim', [0 1]);
-    colormap(gray);
-    title('settings values');
-    pause
     
     spectroRadiometerOBJ = [];
     ol = [];
@@ -309,6 +301,7 @@ function measureData(rootDir, Svector)
             'devicePortString', [] ...       % empty -> automatic port detection)
         );
 
+        
         % Set options Options available for PR670:
         spectroRadiometerOBJ.setOptions(...
             'verbosity',        1, ...
@@ -327,12 +320,14 @@ function measureData(rootDir, Svector)
             for spectrumIndex = 1:nSpectraMeasured
                 fprintf('Measuring spectrum %d of %d (repeat: %d/%d)\n', spectrumIndex, nSpectraMeasured, repeatIndex, nRepeats);
                 pause(0.1);
-                primaryValues = data(spectrumIndex).activation.primaries;
+                
+                primaryValues  = data{spectrumIndex}.activation;
                 settingsValues = OLPrimaryToSettings(cal, primaryValues);
                 [starts,stops] = OLSettingsToStartsStops(cal,settingsValues);
                 measurement = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, Svector, meterToggle, nAverage);
-                data(spectrumIndex).measurement(:, repeatIndex)       = measurement.pr650.spectrum;
-                data(spectrumIndex).timeOfMeasurement(:, repeatIndex) = measurement.pr650.time(1);
+                data{spectrumIndex}.measuredSPD(:, repeatIndex)     = measurement.pr650.spectrum;
+                data{spectrumIndex}.measurementTime(:, repeatIndex) = measurement.pr650.time(1);
+                
                 figure(3);
                 clf;
                 subplot(2,1,1);
@@ -344,9 +339,10 @@ function measureData(rootDir, Svector)
             end
         end
         
+    
         % Save data
         filename = fullfile(rootDir,sprintf('BandInteractions_%s_%s.mat', cal.describe.calType, datestr(now, 'dd-mmm-yyyy_HH_MM_SS')));
-        save(filename, 'data', 'cal', '-v7.3');
+        save(filename, 'data', 'primaryLevels', 'referenceBands', 'interactingBands', 'cal', '-v7.3');
         fprintf('Data saved in ''%s''. \n', filename); 
         SendEmail(emailRecipient, 'OneLight Calibration Complete', 'Finished!');
         
@@ -375,5 +371,38 @@ function measureData(rootDir, Svector)
         rethrow(e);
     end
  
+end
+
+function checkHardware()
+
+    spectroRadiometerOBJ = [];
+    ol = [];
+    
+    try
+        % Instantiate a PR670 object
+        spectroRadiometerOBJ  = PR670dev(...
+            'verbosity',        1, ...       % 1 -> minimum verbosity
+            'devicePortString', [] ...       % empty -> automatic port detection)
+        );
+
+        spectroRadiometerOBJ.shutDown();
+        fprintf('PR670 is good!\n');
+        pause(0.5);
+        
+        ol = OneLight;
+        fprintf('One Light is good!\n');
+        pause(0.5);
+        
+    catch err
+        
+        if (~isempty(spectroRadiometerOBJ))
+            % Shutdown spectroradiometer
+            spectroRadiometerOBJ.shutDown();
+        end
+        
+        rethrow(err);
+        
+    end
+    
 end
 
