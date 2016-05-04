@@ -33,14 +33,24 @@ function analyzeData(rootDir, Svector)
     
     
     maxSPD = 0;
-    nullReferenceSPD = [];
+    nullSPD = [];
+    singletonReferenceSPD = [];
+    singletonInteractingSPD = [];
+    refCounter = zeros(nPrimariesNum, 100);
+    interactingCounter = zeros(nPrimariesNum, 100);
+    examinedReferenceBandPrimaryLevels = [];
+    examinedInteractingBandPrimaryLevels = [];
+    
     for spectrumIndex = 1:nSpectraMeasured 
-        referenceBand   = data(spectrumIndex).activation.referenceBand;
-        interactingBand = data(spectrumIndex).activation.interactingBand;
-        referenceBandPrimaryLevel = data(spectrumIndex).activation.referenceBandPrimaryLevel;
-        interactingBandPrimaryLevel = data(spectrumIndex).activation.interactingBandPrimaryLevel;
-         
         
+        % get activation params for this spectum index
+        activationParams = data(spectrumIndex).activation;
+        referenceBand               = activationParams.referenceBand;
+        interactingBand             = activationParams.interactingBand;
+        referenceBandPrimaryLevel   = activationParams.referenceBandPrimaryLevel;
+        interactingBandPrimaryLevel = activationParams.interactingBandPrimaryLevel;
+         
+        % compute average SPD for each condition
         d = data(spectrumIndex).measurement;
         for repeatIndex = 1:nRepeats
             if (repeatIndex == 1)
@@ -49,72 +59,100 @@ function analyzeData(rootDir, Svector)
                 data(spectrumIndex).meanSPD = data(spectrumIndex).meanSPD + squeeze(d(:, repeatIndex));
             end
         end
+        
         data(spectrumIndex).meanSPD = data(spectrumIndex).meanSPD / nRepeats;
+        maxSPD = max([ maxSPD max(data(spectrumIndex).meanSPD)]);
         
+        % Compute singleton SPD for the reference band(s)
         if (interactingBandPrimaryLevel == 0)
-            referenceBandActivationLevelIndex = round(referenceBandPrimaryLevel*100);
-            if (referenceBandActivationLevelIndex==0)
-                if (isempty(nullReferenceSPD))
-                    nullReferenceSPD(1,:) =  data(spectrumIndex).meanSPD;
-                else
-                    nullReferenceSPD(size(nullReferenceSPD,1)+1,:) = data(spectrumIndex).meanSPD;
-                end
+            if (referenceBandPrimaryLevel == 0)
+                nullSPD(size(nullSPD,1)+1,:) = data(spectrumIndex).meanSPD;
             else
-                singletonReferenceSPD(referenceBand, referenceBandActivationLevelIndex,:) = data(spectrumIndex).meanSPD;
+                activationLevelIndex = round(referenceBandPrimaryLevel*100);
+                refCounter(referenceBand, activationLevelIndex) = refCounter(referenceBand, activationLevelIndex)+1;
+                singletonReferenceSPD(referenceBand, activationLevelIndex, refCounter(referenceBand, activationLevelIndex), :) = data(spectrumIndex).meanSPD;
             end
         end
         
+        % Compute singleton SPD for the interacting bands
         if (referenceBandPrimaryLevel == 0)
-            interactingBandActivationLevelIndex = round(interactingBandPrimaryLevel*100);
-            if (interactingBandActivationLevelIndex == 0)
-                if (isempty(nullReferenceSPD))
-                    nullReferenceSPD(1,:) =  data(spectrumIndex).meanSPD;
-                else
-                    nullReferenceSPD(size(nullReferenceSPD,1)+1,:) = data(spectrumIndex).meanSPD;
-                end
+            if (interactingBandPrimaryLevel == 0)
+                nullSPD(size(nullSPD,1)+1,:) = data(spectrumIndex).meanSPD;
             else
-                singletonInteractingSPD(interactingBand, interactingBandActivationLevelIndex,:) = data(spectrumIndex).meanSPD;
+                activationLevelIndex = round(interactingBandPrimaryLevel*100);
+                interactingCounter(interactingBand, activationLevelIndex) = interactingCounter(interactingBand, activationLevelIndex)+1;
+                singletonInteractingSPD(interactingBand, activationLevelIndex, interactingCounter(interactingBand, activationLevelIndex), :) = data(spectrumIndex).meanSPD;
             end
         end
-        
-        
-        if (max(data(spectrumIndex).meanSPD) > maxSPD)
-            maxSPD = max(data(spectrumIndex).meanSPD);
+    end % spectrumIndex
+    
+    % Compute the mean of all null SPDs
+    nullSPD = mean(nullSPD, 1);
+    
+    % Compute mean of referenceSPDs
+    singletonReferenceSPD = squeeze(mean(singletonReferenceSPD, 3));
+    singletonReferenceSPDStDev = squeeze(std(singletonReferenceSPD, 0, 3));
+    
+    % Compute mean of referenceSPDs
+    singletonInteractingSPD = squeeze(mean(singletonInteractingSPD, 3));
+    singletonInteractingSPDStDev = squeeze(std(singletonInteractingSPD, 0, 3));
+    
+    
+    wavelengthAxis = SToWls(Svector);
+    for refBand = 1:size(singletonReferenceSPD,1)
+        for activationLevelIndex = 1:size(singletonReferenceSPD,2)
+            if (refCounter(referenceBand, activationLevelIndex) > 0)
+                figure(100+activationLevelIndex);
+                plot(wavelengthAxis, squeeze(singletonReferenceSPD(refBand, activationLevelIndex, :)), 'k-');
+                hold on;
+                plot(wavelengthAxis, squeeze(singletonReferenceSPD(refBand, activationLevelIndex, :)+singletonReferenceSPDStDev(refBand, activationLevelIndex, :)), 'k--');
+                plot(wavelengthAxis, squeeze(singletonReferenceSPD(refBand, activationLevelIndex, :)-singletonReferenceSPDStDev(refBand, activationLevelIndex, :)), 'k--');
+                hold off
+            end
         end
     end
     
-    nullReferenceSPD = mean(nullReferenceSPD, 1);
+    
+    hFig = figure(3);
+    clf;
+    set(hFig, 'Position', [10 10 1150 1350], 'Color', [1 1 1], 'MenuBar', 'none');
     
     
+    videoFilename = sprintf('%s.m4v', fileName);
+    writerObj = VideoWriter(videoFilename, 'MPEG-4'); % H264 format
+    writerObj.FrameRate = 15; 
+    writerObj.Quality = 100;
+    writerObj.open();
+        
+    
+    % Do the plotting
     for spectrumIndex = 1:nSpectraMeasured 
-        primaryValues = data(spectrumIndex).activation.primaries;
         
-        referenceBand   = data(spectrumIndex).activation.referenceBand;
-        interactingBand = data(spectrumIndex).activation.interactingBand;
-        referenceBandPrimaryLevel = data(spectrumIndex).activation.referenceBandPrimaryLevel;
-        interactingBandPrimaryLevel = data(spectrumIndex).activation.interactingBandPrimaryLevel;
+        % get activation params for this spectum index
+        activationParams = data(spectrumIndex).activation;
+        primaryValues               = activationParams.primaries;
+        referenceBand               = activationParams.referenceBand;
+        interactingBand             = activationParams.interactingBand;
+        referenceBandPrimaryLevel   = activationParams.referenceBandPrimaryLevel;
+        interactingBandPrimaryLevel = activationParams.interactingBandPrimaryLevel;
         
-        referenceBandActivationLevelIndex = round(referenceBandPrimaryLevel*100);
-        if (referenceBandActivationLevelIndex == 0)
-            referenceSPD = nullReferenceSPD-nullReferenceSPD;
+        % Compute predicted SPD and the sum of singletonReferenceSPD + singletonInteractingSPD
+        if (referenceBandPrimaryLevel == 0)
+            modulationReferenceSPD = nullSPD-nullSPD;
         else
-            referenceSPD = squeeze(singletonReferenceSPD(referenceBand,referenceBandActivationLevelIndex,:))-nullReferenceSPD(:);
+            activationLevelIndex = round(referenceBandPrimaryLevel*100);
+            modulationReferenceSPD = squeeze(singletonReferenceSPD(referenceBand,activationLevelIndex,:))-nullSPD(:);
         end
         
-        interactingBandPrimaryLevelIndex = round(interactingBandPrimaryLevel*100);
-        if (interactingBandPrimaryLevelIndex == 0)
-            interactingSPD = nullReferenceSPD-nullReferenceSPD;
+        if (interactingBandPrimaryLevel == 0)
+            modulationInteractingSPD = nullSPD-nullSPD;
         else
-            interactingSPD = squeeze(singletonInteractingSPD(interactingBand,interactingBandPrimaryLevelIndex,:))-nullReferenceSPD(:);
+            activationLevelIndex = round(interactingBandPrimaryLevel*100);
+            modulationInteractingSPD = squeeze(singletonInteractingSPD(interactingBand,activationLevelIndex,:))-nullSPD(:);
         end
         
-        predictedSPD = nullReferenceSPD(:) + squeeze(referenceSPD(:) + interactingSPD(:));
+        predictedSPD = nullSPD(:) + squeeze(modulationReferenceSPD(:) + modulationInteractingSPD(:));
         
-        hFig = figure(3);
-        clf;
-        set(hFig, 'Position', [10 10 1150 1350], 'Color', [1 1 1], 'MenuBar', 'none');
-
-        wavelengthAxis = SToWls(Svector);
         
         subplot('Position', [0.05 0.29 0.44 0.70]);
         plot(wavelengthAxis, data(spectrumIndex).meanSPD*1000, 'k-', 'LineWidth', 2.0);
@@ -126,11 +164,10 @@ function analyzeData(rootDir, Svector)
         ylabel('power (mW)', 'FontSize', 14, 'FontWeight', 'bold');
         
         
-        subplot(3,2,[2 4]);
         subplot('Position', [0.55 0.29 0.44 0.70]);
         plot(wavelengthAxis, data(spectrumIndex).meanSPD*1000, 'b-', 'Color', [0 0.4 1 1.0], 'LineWidth', 2.0);
         hold on;
-        plot(SToWls(Svector), predictedSPD*1000, 'r-', 'Color', [1 0 0 0.5],  'LineWidth', 5.0);
+        plot(wavelengthAxis, predictedSPD*1000, 'r-', 'Color', [1 0 0 0.5],  'LineWidth', 5.0);
         hL = legend('measurement', 'prediction');
         set(hL, 'FontSize', 12);
         hold off;
@@ -170,7 +207,10 @@ function analyzeData(rootDir, Svector)
         ylabel('residual power (mW)', 'FontSize', 14, 'FontWeight', 'bold');
         
         drawnow;
+        writerObj.writeVideo(getframe(hFig));
     end
+    
+    writerObj.close();
     
 end
 
@@ -191,8 +231,16 @@ function measureData(rootDir, Svector)
     % referenceBands = 6:10:nPrimariesNum-6;
     
     % Activate (one at a time) bands +/- 5  around reference band
+    % NEW
+    % First measure all the interacting bands  + reference bar in isolation
+    interactingBands = [(-range:-1) (1:range)];
+    
+    % Then measure All pairs of interactions
     range = 10;
     interactingBands = [(-range:-1) (1:range)];
+    nchoosek(interactingBands,2)
+    pause
+    % NEW 
     
     nSpectraMeasured = numel(referenceBands) * numel(interactingBands) * numel(primaryLevels) * numel(primaryLevels);
     primaryValues = zeros(nPrimariesNum, nSpectraMeasured); 
