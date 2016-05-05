@@ -81,25 +81,25 @@ try
             cal.describe.useAverageGamma = false;
             cal.describe.nShortPrimariesSkip = 7;
             cal.describe.nLongPrimariesSkip = 3;
-            cal.describe.nGammaBands = 'eachPrimary';        % either a number, e.g., 16, or one of these strings: 'everyOtherPrimary', 'eachPrimary'
+            cal.describe.nGammaBands = 'everyOtherPrimary';        % either a number, e.g., 16, or one of these strings: 'everyOtherPrimary', 'eachPrimary'
         case 'BoxB'
             cal.describe.gammaFitType = 'betacdfpiecelin';
             cal.describe.useAverageGamma = false;
             cal.describe.nShortPrimariesSkip = 5;
             cal.describe.nLongPrimariesSkip = 3;
-            cal.describe.nGammaBands = 'eachPrimary';
+            cal.describe.nGammaBands = 'everyOtherPrimary';
         case 'BoxC'
             cal.describe.gammaFitType = 'betacdfpiecelin';
             cal.describe.useAverageGamma = false;
             cal.describe.nShortPrimariesSkip = 8;
             cal.describe.nLongPrimariesSkip = 8;
-            cal.describe.nGammaBands = 'eachPrimary';
+            cal.describe.nGammaBands = 'everyOtherPrimary';
         case 'BoxD'
             cal.describe.gammaFitType = 'betacdfpiecelin';
             cal.describe.useAverageGamma = false;
             cal.describe.nShortPrimariesSkip = 8;
             cal.describe.nLongPrimariesSkip = 2;
-            cal.describe.nGammaBands = 'eachPrimary';
+            cal.describe.nGammaBands = 'everyOtherPrimary';
         otherwise
             error('Unknown OneLight box');
     end
