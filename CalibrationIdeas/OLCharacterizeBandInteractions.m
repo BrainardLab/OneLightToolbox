@@ -187,8 +187,10 @@ function analyzeData(rootDir, Svector)
         fprintf('%d ', referenceBands(k));
     end
     
-    selectedReferenceBand = input(sprintf('\nEnter reference band for visualization : [%d] ', referenceBands(1)), 's');
-    if (isempty(selectedReferenceBand))
+    selectedReferenceBand = input(sprintf('\nEnter reference band for visualization : [%d, or ''ALL'' for all] ', referenceBands(1)), 's');
+    if (strcmp(selectedReferenceBand, 'ALL'))
+        selectedReferenceBand = referenceBands;
+    elseif (isempty(selectedReferenceBand))
         selectedReferenceBand = referenceBands(1);
     else
         selectedReferenceBand = str2double(selectedReferenceBand);
@@ -198,6 +200,8 @@ function analyzeData(rootDir, Svector)
             selectedReferenceBand = referenceBands(selectedReferenceBand);
         end
     end
+    
+    theSelectedReferenceBand = selectedReferenceBand;
     
     % Plot the interactions
     hFig = figure(1000);
@@ -213,6 +217,7 @@ function analyzeData(rootDir, Svector)
     
     % Do the plotting
     yTickLevels = [-100:0.5:100];
+    for selectedReferenceBand = theSelectedReferenceBand
     for spectrumIndex = 1:nSpectraMeasured
         % get activation params for this spectum index
         spdType = data{spectrumIndex}.spdType;
@@ -301,6 +306,7 @@ function analyzeData(rootDir, Svector)
             writerObj.writeVideo(getframe(hFig));
         end  % plot comboSPDs 
     end  % spectrumIndex
+    end
     
     % Close video stream
     writerObj.close();
