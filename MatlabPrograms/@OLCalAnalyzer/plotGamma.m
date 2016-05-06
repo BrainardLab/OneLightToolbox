@@ -142,27 +142,18 @@ function plotGamma(obj, varargin)
     end
     drawnow;
     
-    
-    figure()
-    clf;
-    colors = jet(size(obj.cal.computed.gammaTableMeasuredBands,1));
-    hold on;
-    for gammaBandIter = 1:size(obj.cal.computed.gammaTableMeasuredBands,1)
-        plot(gammaInRawValues, squeeze(obj.cal.computed.gammaTableMeasuredBands(:,gammaBandIter)), 'k-', 'Color', squeeze(colors(gammaBandIter,:)));
-    end
-    drawnow;
-    
+
     % Generate ratios video
     
     % Open video stream
-    videoFilename = sprintf('%s_Ratios.m4v', 'dummy');
+    videoFilename = sprintf('%s_Ratios.m4v', gammaType);
     writerObj = VideoWriter(videoFilename, 'MPEG-4'); % H264 format
     writerObj.FrameRate = 15; 
     writerObj.Quality = 100;
     writerObj.open();
     
     hFig = figure; clf;
-    figurePrefix = sprintf('%s_GammaScalarsVideoFig%d', gammaType, gammaBandIndices(gammaBandIter));
+    figurePrefix = sprintf('%s_GammaScalarsVideoFig', gammaType);
     obj.figsList.(figurePrefix) = hFig;
     set(hFig, 'Position', [10 1000 1024 768], 'Name', figurePrefix,  'Color', [1 1 1]);
     
