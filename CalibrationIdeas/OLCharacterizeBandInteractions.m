@@ -10,11 +10,19 @@ function OLCharacterizeBandInteractions
     [rootDir,~] = fileparts(which(mfilename()));
     cd(rootDir);
     
-    Svector = [380 2 201];
+    radiometerType = GetWithDefault('Enter PR-6XX radiometer type','PR-670');
+    switch (radiometerType)
+        case 'PR-650'
+                Svector = [380 4 101];
+        case 'PR-670'
+                Svector = [380 2 201];
+        otherwise
+            error('Unknown radiometer type: ''%s''.', radiometerType)
+    end
     
     choice = input('Measure data(0), or analyze data(1) : ', 's');
     if (str2double(choice) == 0)
-        measureData(rootDir, Svector);
+        measureData(rootDir, Svector, radiometerType);
     else
         analyzeData(rootDir, Svector);
     end
@@ -117,7 +125,7 @@ function analyzeData(rootDir, Svector)
     
     
     % Plotting
-     gain = 1000;
+    gain = 1000;
      
      
     % Plot the singleton SPDs together with their min/maxs
@@ -288,7 +296,7 @@ function analyzeData(rootDir, Svector)
 end
 
 
-function measureData(rootDir, Svector)
+function measureData(rootDir, Svector, radiometerType)
 
     % check that hardware is responding
     checkHardware();
@@ -408,7 +416,7 @@ function measureData(rootDir, Svector)
         od = [];
         nAverage = 1;
         
-        spectroRadiometerOBJ = initRadiometerObject();
+        spectroRadiometerOBJ = initRadiometerObject(radiometerType);
         
         % Get handle to OneLight
         ol = OneLight;
@@ -532,13 +540,12 @@ function checkHardware()
 end
 
 
-function spectroRadiometerOBJ = initRadiometerObject()
+function spectroRadiometerOBJ = initRadiometerObject(radiometerType)
 
- 	radiometerType = GetWithDefault('Enter PR-6XX radiometer type','PR-670');
     spectroRadiometerOBJ = [];
     
     switch (radiometerType)
-        case 'PR-650',
+        case 'PR-650'
             cal.describe.meterTypeNum = 1;
             cal.describe.S = [380 4 101];
             nAverage = 1;

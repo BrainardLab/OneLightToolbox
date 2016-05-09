@@ -667,7 +667,7 @@ try
     SendEmail(emailRecipient, 'OneLight Calibration Complete', ...
         'Finished!');
 catch e
-    fprintf('Failed with message: ''%s''.\nPlease wait for the PR670OBJ to shut down .... ', e.message);
+    fprintf('Failed with message: ''%s''.\nPlease wait for the spectroradiometer to shut down .... ', e.message);
     if (~isempty(spectroRadiometerOBJ))
         spectroRadiometerOBJ.shutDown();
     end
