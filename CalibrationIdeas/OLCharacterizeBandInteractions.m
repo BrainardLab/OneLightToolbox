@@ -59,13 +59,13 @@ function analyzeData(rootDir, Svector)
     
     for spectrumIndex = 1:nSpectraMeasured
         % average over all reps
-        data{spectrumIndex}.meanSPD = mean(data{spectrumIndex}.measuredSPD(:, 1:nRepeats), 2);
+        data{spectrumIndex}.meanSPD = mean(data{spectrumIndex}.measuredSPD, 2);
 
         % compute min over all reps
-        data{spectrumIndex}.minSPD  = min(data{spectrumIndex}.measuredSPD(:, 1:nRepeats), [], 2);
+        data{spectrumIndex}.minSPD  = min(data{spectrumIndex}.measuredSPD, [], 2);
         
         % compute max over all reps
-        data{spectrumIndex}.maxSPD  = max(data{spectrumIndex}.measuredSPD(:, 1:nRepeats), [], 2);
+        data{spectrumIndex}.maxSPD  = max(data{spectrumIndex}.measuredSPD, [], 2);
         
         activationLevelIndex = data{spectrumIndex}.activationLevelIndex;
         spdType = data{spectrumIndex}.spdType;
@@ -103,6 +103,7 @@ function analyzeData(rootDir, Svector)
     
     % Substract darkSPD from singleton
     singletonSPD = bsxfun(@minus, singletonSPD, reshape(darkSPD, [1 1 nSpectralSamples]));
+    singletonSPDrange = bsxfun(@minus, singletonSPDrange, reshape(darkSPD, [1 1 1 nSpectralSamples]));
     
     % Compute predictions for comboSPDs
     for activationLevelIndex = 1:size(comboSPD,1)
@@ -112,6 +113,17 @@ function analyzeData(rootDir, Svector)
                     darkSPD + ...
                     squeeze(singletonSPD(activationLevelIndex, referenceBand,:)) + ...
                     squeeze(singletonSPD(activationLevelIndex, interactingBand,:));
+                
+                comboSPDpredictionRange(activationLevelIndex, referenceBand, interactingBand,1,:) = ...
+                    darkSPD + ...
+                    squeeze(singletonSPDrange(activationLevelIndex, referenceBand,1,:)) + ...
+                    squeeze(singletonSPDrange(activationLevelIndex, interactingBand,1,:));
+                
+                comboSPDpredictionRange(activationLevelIndex, referenceBand, interactingBand,2,:) = ...
+                    darkSPD + ...
+                    squeeze(singletonSPDrange(activationLevelIndex, referenceBand,2,:)) + ...
+                    squeeze(singletonSPDrange(activationLevelIndex, interactingBand,2,:));
+                
             end % interactingBandIndex
         end % referenceBandIndex
     end %  activationLevelIndex
@@ -121,7 +133,9 @@ function analyzeData(rootDir, Svector)
     maxSPD = max([max(comboSPD(:)) max(comboSPDprediction(:))]);
     
     % Residuals
-    comboSPDresiduals = comboSPD - comboSPDprediction;
+    comboSPDresiduals  = comboSPD - comboSPDprediction;
+    comboSPDpredictionMinError = comboSPDprediction - squeeze(comboSPDpredictionRange(:,:,:,1,:));
+    comboSPDpredictionMaxError = comboSPDprediction - squeeze(comboSPDpredictionRange(:,:,:,2,:));
     
     
     % Plotting
@@ -166,11 +180,11 @@ function analyzeData(rootDir, Svector)
                 plot(wavelengthAxis, gain*squeeze(darkSPDrange(1,:)), 'k--');
                 plot(wavelengthAxis, gain*squeeze(darkSPDrange(2,:)), 'k--');
                 plot(wavelengthAxis, gain*spd, 'r-', 'Color', [1.0 0.3 0.3 0.5], 'LineWidth', 4.0);
-                plot(wavelengthAxis, gain*minSpd, 'r--');
-                plot(wavelengthAxis, gain*maxSpd, 'r--');
+                plot(wavelengthAxis, gain*minSpd, 'r--', 'Color', [0.0 0.4 0.4]);
+                plot(wavelengthAxis, gain*maxSpd, 'r--', 'Color', [0.0 0.7 0.7]);
                 set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)],'YLim', [0 maxSPD*gain]);
                 hold off;
-                title(sprintf('activated band: %d', bandNo));
+                title(sprintf('SPD(band no %d) - darkSPD', bandNo));
             end
         end % bandNo
     end
@@ -181,8 +195,10 @@ function analyzeData(rootDir, Svector)
         fprintf('%d ', referenceBands(k));
     end
     
-    selectedReferenceBand = input(sprintf('\nEnter reference band for visualization : [%d] ', referenceBands(1)), 's');
-    if (isempty(selectedReferenceBand))
+    selectedReferenceBand = input(sprintf('\nEnter reference band for visualization : [%d, or ''ALL'' for all] ', referenceBands(1)), 's');
+    if (strcmp(selectedReferenceBand, 'ALL'))
+        selectedReferenceBand = referenceBands;
+    elseif (isempty(selectedReferenceBand))
         selectedReferenceBand = referenceBands(1);
     else
         selectedReferenceBand = str2double(selectedReferenceBand);
@@ -192,6 +208,8 @@ function analyzeData(rootDir, Svector)
             selectedReferenceBand = referenceBands(selectedReferenceBand);
         end
     end
+    
+    theSelectedReferenceBand = selectedReferenceBand;
     
     % Plot the interactions
     hFig = figure(1000);
@@ -207,6 +225,7 @@ function analyzeData(rootDir, Svector)
     
     % Do the plotting
     yTickLevels = [-100:0.5:100];
+    for selectedReferenceBand = theSelectedReferenceBand
     for spectrumIndex = 1:nSpectraMeasured
         % get activation params for this spectum index
         spdType = data{spectrumIndex}.spdType;
@@ -273,9 +292,15 @@ function analyzeData(rootDir, Svector)
         
             % The residual SPD (bottom right)
             subplot('Position', [0.55 0.05 0.44 0.20]);
-            residualSPDInMilliWatts = gain*squeeze(comboSPDresiduals(activationLevelIndex, referenceBand, interactingBand,:));
+            residualSPDInMilliWatts  = gain*squeeze(comboSPDresiduals(activationLevelIndex, referenceBand, interactingBand,:));
+            comboSPDpredictionMinErrorInMilliWatts = gain*squeeze(comboSPDpredictionMinError(activationLevelIndex, referenceBand, interactingBand,:));
+            comboSPDpredictionMaxErrorInMilliWatts = gain*squeeze(comboSPDpredictionMaxError(activationLevelIndex, referenceBand, interactingBand,:));
             plot(wavelengthAxis, residualSPDInMilliWatts, 'r-', 'LineWidth', 2.0);
-            hL = legend('measured - prediction');
+            hold on
+            plot(wavelengthAxis, comboSPDpredictionMinErrorInMilliWatts, 'r--', 'Color', [0.3 0.3 0.3], 'LineWidth', 2.0);
+            plot(wavelengthAxis, comboSPDpredictionMaxErrorInMilliWatts, 'r--', 'Color', [0.7 0.7 0.7], 'LineWidth', 2.0);
+            hold off
+            hL = legend({'measured - prediction', 'prediction error across trials (min)', 'prediction error across trials (max)'});
             set(hL, 'FontSize', 12);
             set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)], 'YLim', [-1 1], 'YTick', yTickLevels, 'YTickLabel', sprintf('%2.1f\n', yTickLevels));
             set(gca, 'FontSize', 12);
@@ -289,6 +314,7 @@ function analyzeData(rootDir, Svector)
             writerObj.writeVideo(getframe(hFig));
         end  % plot comboSPDs 
     end  % spectrumIndex
+    end
     
     % Close video stream
     writerObj.close();

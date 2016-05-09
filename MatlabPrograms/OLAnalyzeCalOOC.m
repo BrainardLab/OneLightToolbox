@@ -3,19 +3,19 @@ function OLAnalyzeCalOOC
     calAnalyzer = OLCalAnalyzer('refitGammaTablesUsingLinearInterpolation', false);
    
     plotCompositeMeasurents = false;
-    plotSampledSpectra = true;
-    plotFullSpectra = true;
-    plotGammaSPDs = true;
+    plotSampledSpectra = ~true;
+    plotFullSpectra = ~true;
+    plotGammaSPDs = ~true;
     plotGammaTables = true;
-    plotPredictions = true;
+    plotPredictions = ~true;
     
     
     if (plotCompositeMeasurents)
         % Plot dark, half-on, and full-on raw measurements
         spdType = 'raw';
         calAnalyzer.plotSPD(spdType, 'darkMeas'); 
-        calAnalyzer.plotSPD(spdType, 'halfOnMeas');
-        calAnalyzer.plotSPD(spdType, 'fullOn');
+        %calAnalyzer.plotSPD(spdType, 'halfOnMeas');
+        %calAnalyzer.plotSPD(spdType, 'fullOn');
     end
     
     if (plotSampledSpectra)
