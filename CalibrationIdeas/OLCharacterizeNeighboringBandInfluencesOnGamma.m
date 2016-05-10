@@ -438,7 +438,7 @@ function measureData(rootDir, Svector, radiometerType)
     if (fullSet)
         % Measure at these levels
         interactingBandSettingsLevels = [0.33 0.66 1.0];
-        nGammaLevels = 16;
+        nGammaLevels = 24;
         referenceBandSettingsLevels = linspace(1.0/nGammaLevels, 1.0, nGammaLevels);
     
         % Measure interactions at these bands around the reference band
