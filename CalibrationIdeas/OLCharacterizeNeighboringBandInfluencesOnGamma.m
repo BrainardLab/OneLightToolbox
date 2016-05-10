@@ -31,12 +31,8 @@ function analyzeData(rootDir)
 
     [fileName, pathName] = uigetfile('*.mat', 'Select a file to analyze', rootDir);
     load(fileName, 'data', 'Svector', 'interactingBandSettingsLevels', 'referenceBandSettingsLevels', 'referenceBands', 'interactingBands', 'nRepeats', 'randomizedSpectraIndices', 'cal');
+    interactingBands
     
-    for k = 1:numel(interactingBands)
-        interactingBandsStrings{k} = sprintf('%d \n', interactingBands{k});
-    end
-    
-
     nSpectraMeasured = numel(data);
     fprintf('There are %d distinct spectra measured (each measured %d times). \n', nSpectraMeasured, nRepeats);
     
@@ -78,16 +74,22 @@ function analyzeData(rootDir)
         % compute max over all reps
         data{spectrumIndex}.maxSPD  = max(data{spectrumIndex}.measuredSPD, [], 2);
         
+        referenceBandIndex = data{spectrumIndex}.referenceBandIndex;
+        interactingBandsIndex = data{spectrumIndex}.interactingBandsIndex
         referenceBandSettingsIndex = data{spectrumIndex}.referenceBandSettingsIndex;
         interactingBandSettingsIndex = data{spectrumIndex}.interactingBandSettingsIndex;
-        interactingBands = data{spectrumIndex}.interactingBands;
+        if (isempty(interactingBandsIndex))
+            theInteractingBands = [];
+        else
+            theInteractingBands = interactingBands{interactingBandsIndex}; 
+        end
+        theReferenceBand = referenceBands(data{spectrumIndex}.referenceBandIndex);
         
-        referenceBand = data{spectrumIndex}.referenceBand;
         spdType = data{spectrumIndex}.spdType;
         
         if (strcmp(spdType, 'singletonSPDi'))
-            interactingBands = referenceBand+interactingBands;
-            interactingBandsString = sprintf('%d \n', interactingBands);
+            interactingBandsForThisCondition = theReferenceBand+theInteractingBands;
+            interactingBandsString = sprintf('%d \n', interactingBandsForThisCondition);
             key = sprintf('activationIndex: %d, bands: %s', interactingBandSettingsIndex, interactingBandsString);
             allSingletonSPDiKeys{numel(allSingletonSPDiKeys)+1} = key;
             interactingBandData(key) = struct(...
@@ -98,7 +100,7 @@ function analyzeData(rootDir)
             );
  
         elseif (strcmp(spdType, 'singletonSPDr'))
-            referenceBandsString = sprintf('%d \n', referenceBand);
+            referenceBandsString = sprintf('%d \n', theReferenceBand);
             key = sprintf('activationIndex: %d, bands: %s', referenceBandSettingsIndex, referenceBandsString);
             allSingletonSPDrKeys{numel(allSingletonSPDrKeys)+1} = key;
             referenceBandData(key) = struct(...
@@ -109,12 +111,13 @@ function analyzeData(rootDir)
             );
             
         elseif (strcmp(spdType, 'comboSPD'))
-            
-            interactingBands = referenceBand+interactingBands;
-            interactingBandsString = sprintf('%d \n', interactingBands);
-            referenceBandsString = sprintf('%d \n', referenceBand);
+            interactingBandsForThisCondition = theReferenceBand+theInteractingBands;
+            interactingBandsString = sprintf('%d \n', interactingBandsForThisCondition);
+            referenceBandsString = sprintf('%d \n', theReferenceBand);
             key = sprintf('activationIndices: [Reference=%d, Interacting=%d], Reference bands:%s Interacting bands:%s', referenceBandSettingsIndex, interactingBandSettingsIndex, referenceBandsString, interactingBandsString);
-            allComboKeys{numel(allComboKeys)+1} = key;
+            
+            comboKeyIndex = numel(allComboKeys)+1;
+            allComboKeys{comboKeyIndex} = key;
             
             comboBandData(key) = struct(...
                 'activation', data{spectrumIndex}.activation, ...
@@ -302,12 +305,12 @@ function measureData(rootDir, Svector, radiometerType)
     
     nPrimariesNum = cal.describe.numWavelengthBands;
     
-    fullSet = false;
+    fullSet = true;
     
     if (fullSet)
         % Measure at these levels
         interactingBandSettingsLevels = [0.33 0.66 1.0];
-        nGammaLevels = 24;
+        nGammaLevels = 16;
         referenceBandSettingsLevels = linspace(1.0/nGammaLevels, 1.0, nGammaLevels);
     
         % Measure interactions at these bands around the reference band
