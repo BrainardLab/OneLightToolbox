@@ -3,7 +3,7 @@ function OLCharacterizeNeighboringBandInfluencesOnGamma
 % Syntax:
 % OLCharacterizeNeighboringBandInfluencesOnGamma
 %
-% 5/2/16  npc  Wrote it.
+% 5/10/16  npc  Wrote it.
 %
 
     [rootDir,~] = fileparts(which(mfilename()));
@@ -334,12 +334,12 @@ function measureData(rootDir, Svector, radiometerType)
     
     nPrimariesNum = cal.describe.numWavelengthBands;
     
-    fullSet = false;
+    fullSet = true;
     
     if (fullSet)
         % Measure at these levels
         interactingBandSettingsLevels = [0.33 0.66 1.0];
-        nGammaLevels = 12;
+        nGammaLevels = 16;
         referenceBandSettingsLevels = linspace(1.0/nGammaLevels, 1.0, nGammaLevels);
     
         % Measure interactions at these bands around the reference band
@@ -501,9 +501,9 @@ function measureData(rootDir, Svector, radiometerType)
             randomizedSpectraIndices(repeatIndex,:) = randperm(nSpectraMeasured); 
             
             % Show randomized stimulation sequence
-            figure(2);
+            hFig = figure(2); set(hFig, 'Position', [10 10 1500 970]);
             clf;
-            subplot('Position', [0.04 0.04 0.95 0.95]);
+            subplot('Position', [0.04 0.04 0.45 0.95]);
             pcolor(1:nPrimariesNum, 1:nSpectraMeasured, retrieveActivationSequence(data, squeeze(randomizedSpectraIndices(repeatIndex,:))));
             hold on
             xlabel('primary no');
@@ -514,7 +514,7 @@ function measureData(rootDir, Svector, radiometerType)
             for spectrumIter = 1:nSpectraMeasured
                 
                 % Show where in the stimulation sequence we are right now.
-                figure(2);
+                subplot('Position', [0.04 0.04 0.45 0.95]);
                 plot([1 nPrimariesNum], (spectrumIter+0.5)*[1 1], 'g-');
                 drawnow;
                 
@@ -530,12 +530,10 @@ function measureData(rootDir, Svector, radiometerType)
                 data{spectrumIndex}.measurementTime(:, repeatIndex) = measurement.pr650.time(1);
                 data{spectrumIndex}.repeatIndex = repeatIndex;
                 
-                figure(3);
-                clf;
-                subplot(2,1,1);
-                bar(primaryValues, 1);
+                subplot('Position', [0.5 0.04 0.45 0.5]);
+                bar(settingsValues, 1);
                 set(gca, 'YLim', [0 1], 'XLim', [0 nPrimariesNum+1]);
-                subplot(2,1,2);
+                subplot('Position', [0.5 0.5 0.45 0.5]);
                 plot(SToWls(Svector), measurement.pr650.spectrum, 'k-');
                 drawnow;
             end  % spectrumIter
