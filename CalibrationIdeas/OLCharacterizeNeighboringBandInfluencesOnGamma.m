@@ -530,10 +530,10 @@ function measureData(rootDir, Svector, radiometerType)
                 data{spectrumIndex}.measurementTime(:, repeatIndex) = measurement.pr650.time(1);
                 data{spectrumIndex}.repeatIndex = repeatIndex;
                 
-                subplot('Position', [0.5 0.04 0.45 0.5]);
+                subplot('Position', [0.5 0.04 0.45 0.47]);
                 bar(settingsValues, 1);
                 set(gca, 'YLim', [0 1], 'XLim', [0 nPrimariesNum+1]);
-                subplot('Position', [0.5 0.5 0.45 0.5]);
+                subplot('Position', [0.5 0.52 0.45 0.47]);
                 plot(SToWls(Svector), measurement.pr650.spectrum, 'k-');
                 drawnow;
             end  % spectrumIter
