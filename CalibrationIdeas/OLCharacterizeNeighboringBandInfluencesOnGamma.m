@@ -75,7 +75,7 @@ function analyzeData(rootDir)
         data{spectrumIndex}.maxSPD  = max(data{spectrumIndex}.measuredSPD, [], 2);
         
         referenceBandIndex = data{spectrumIndex}.referenceBandIndex;
-        interactingBandsIndex = data{spectrumIndex}.interactingBandsIndex
+        interactingBandsIndex = data{spectrumIndex}.interactingBandsIndex;
         referenceBandSettingsIndex = data{spectrumIndex}.referenceBandSettingsIndex;
         interactingBandSettingsIndex = data{spectrumIndex}.interactingBandSettingsIndex;
         if (isempty(interactingBandsIndex))
@@ -116,7 +116,17 @@ function analyzeData(rootDir)
             referenceBandsString = sprintf('%d \n', theReferenceBand);
             key = sprintf('activationIndices: [Reference=%d, Interacting=%d], Reference bands:%s Interacting bands:%s', referenceBandSettingsIndex, interactingBandSettingsIndex, referenceBandsString, interactingBandsString);
             
-            comboKeyIndex = numel(allComboKeys)+1;
+            % arrange according to interactingBandsIndex
+            comboKeyIndex =  (referenceBandIndex-1) * numel(referenceBandSettingsLevels)*(numel(interactingBands))*numel(interactingBandSettingsLevels) + ...
+                             (referenceBandSettingsIndex-1) * (numel(interactingBands))*numel(interactingBandSettingsLevels) + ...
+                             (interactingBandSettingsIndex-1)*(numel(interactingBands)) + interactingBandsIndex;
+            
+            % arrange according to interactingBandSettingsIndex
+            comboKeyIndex =  (referenceBandIndex-1) * numel(referenceBandSettingsLevels)*(numel(interactingBands))*numel(interactingBandSettingsLevels) + ...
+                             (referenceBandSettingsIndex-1) * (numel(interactingBands))*numel(interactingBandSettingsLevels) + ...
+                             (interactingBandsIndex-1)* numel(interactingBandSettingsLevels) + interactingBandSettingsIndex;
+            %comboKeyIndex = numel(allComboKeys)+1;
+            
             allComboKeys{comboKeyIndex} = key;
             
             comboBandData(key) = struct(...
@@ -208,11 +218,17 @@ function analyzeData(rootDir)
         refActivation         = refS.activation;
         interactingActivation = interactingS.activation;
         refSPD              = gain * refS.meanSPD;
+        refSPDmin           = gain * refS.minSPD;
+        refSPDmax           = gain * refS.maxSPD;
         interactingSPD      = gain * interactingS.meanSPD;
+        interactingSPDmin   = gain * interactingS.minSPD;
+        interactingSPDmax   = gain * interactingS.maxSPD;
         predictedComboSPD   = gain * s.predictionSPD;
         measuredComboSPD    = gain * s.meanSPD;
+        measuredComboSPDmin = gain * s.minSPD;
+        measuredComboSPDmax = gain * s.maxSPD;
         
-        plotFrame(refActivation, interactingActivation, wavelengthAxis, refSPD, interactingSPD, measuredComboSPD, predictedComboSPD, maxSPD, subplotPosVectors);
+        plotFrame(refActivation, interactingActivation, wavelengthAxis, refSPD, refSPDmin, refSPDmax, interactingSPD, interactingSPDmin, interactingSPDmax, measuredComboSPD, predictedComboSPD, measuredComboSPDmin, measuredComboSPDmax, maxSPD, subplotPosVectors);
         writerObj.writeVideo(getframe(hFig));
     end
    
@@ -221,7 +237,7 @@ function analyzeData(rootDir)
     
 end
 
-function plotFrame(refActivation, interactingActivation, wavelengthAxis, refSPD, interactingSPD, measuredComboSPD, predictedComboSPD, maxSPD, subplotPosVectors)
+function plotFrame(refActivation, interactingActivation, wavelengthAxis, refSPD, refSPDmin, refSPDmax, interactingSPD, interactingSPDmin, interactingSPDmax, measuredComboSPD, predictedComboSPD, measuredComboSPDmin, measuredComboSPDmax, maxSPD, subplotPosVectors)
     clf;
     % The activation pattern on top-left
     subplot('Position', subplotPosVectors(1,1).v);
@@ -243,11 +259,15 @@ function plotFrame(refActivation, interactingActivation, wavelengthAxis, refSPD,
     y = [baseline refSPD' baseline]; 
     patch(x,y, 'green', 'FaceColor', [1.0 0.8 0.8], 'EdgeColor', [1.0 0. 0.], 'EdgeAlpha', 0.5, 'LineWidth', 2.0);
     hold on
+    plot(wavelengthAxis, refSPDmin, '-', 'Color', [0 0 0]);
+    plot(wavelengthAxis, refSPDmax, '-', 'Color', [0 0 0]);
     baseline = min([0 min(interactingSPD)]);
     y = [baseline interactingSPD' baseline]; 
     patch(x,y, 'green', 'FaceColor', [0.8 0.8 1.0], 'EdgeColor', [0.0 0. 1], 'EdgeAlpha', 0.5, 'FaceAlpha', 0.5, 'LineWidth', 2.0);
+    plot(wavelengthAxis, interactingSPDmin, '-', 'Color', [0 0 0]);
+    plot(wavelengthAxis, interactingSPDmax, '-', 'Color', [0 0 0]);
     hold off;
-    hL = legend('reference band SPD', 'interacting band SPD');
+    hL = legend('reference band SPD', 'reference band SPD(min)', 'reference band SPD(max)', 'interacting band SPD', 'interacting band SPD (min)', 'interacting band SPD (max)');
     set(hL, 'FontSize', 12);
     set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)],'YLim', [0 maxSPD], 'XTick', [300:25:800]);
     set(gca, 'FontSize', 12);
@@ -258,15 +278,21 @@ function plotFrame(refActivation, interactingActivation, wavelengthAxis, refSPD,
 
     % The measured and predicted combo SPDs on bottom-left
     subplot('Position', subplotPosVectors(2,1).v);
-    baseline = min([0 min(predictedComboSPD)]);
-    y = [baseline predictedComboSPD' baseline]; 
-    patch(x,y, 'green', 'FaceColor', [1.0 0.1 0.9], 'EdgeColor', [1.0 0.1 0.9], 'EdgeAlpha', 1.0,  'LineWidth', 2.0);
-    hold on
-    baseline = min([0 min(measuredComboSPD)]);
-    y = [baseline measuredComboSPD' baseline]; 
-    patch(x,y, 'green', 'FaceColor', [1.0 0.8 0.2], 'EdgeColor', [1.0 0.8 0.2], 'EdgeAlpha', 0.5, 'FaceAlpha', 0.4, 'LineWidth', 2.0);
+    plot(wavelengthAxis,predictedComboSPD, '-', 'Color', [1.0 0.1 0.9], 'LineWidth', 2.0);
+    hold on;
+    plot(wavelengthAxis,measuredComboSPD, '-', 'Color', [0.1 0.8 0.5],  'LineWidth', 2.0);
+    
+    %baseline = min([0 min(predictedComboSPD)]);
+    %y = [baseline predictedComboSPD' baseline]; 
+    %patch(x,y, 'green', 'FaceColor', [1.0 0.1 0.9], 'EdgeColor', [1.0 0.1 0.9], 'EdgeAlpha', 1.0,  'LineWidth', 2.0);
+    %hold on
+    %baseline = min([0 min(measuredComboSPD)]);
+    %y = [baseline measuredComboSPD' baseline]; 
+    %patch(x,y, 'green', 'FaceColor', [0.7 0.7 0.7], 'EdgeColor', [0.7 0.7 0.7], 'EdgeAlpha', 0.5, 'FaceAlpha', 0.4, 'LineWidth', 2.0);
+    plot(wavelengthAxis, measuredComboSPDmin, '-', 'Color', [0 0 0]);
+    plot(wavelengthAxis, measuredComboSPDmax, '-', 'Color', [0 0 0]);
     hold off;
-    hL = legend('predicted combo SPD', 'measured combo SPD');
+    hL = legend('predicted combo SPD', 'measured combo SPD', 'measured combo SPD (min)', 'measured combo SPD (max)');
     set(hL, 'FontSize', 12);
     set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)],'YLim', [0 maxSPD], 'XTick', [300:25:800]);
     set(gca, 'FontSize', 12);
@@ -278,8 +304,12 @@ function plotFrame(refActivation, interactingActivation, wavelengthAxis, refSPD,
     % The residual (measured - predicted combo SPDs) on bottom-right
     subplot('Position', subplotPosVectors(2,2).v);
     y = [0 (measuredComboSPD-predictedComboSPD)' 0];
-    patch(x,y, 'green', 'FaceColor', [0.3 0.8 0.9], 'EdgeColor', [0.2 0.2 0.2], 'EdgeAlpha', 0.7, 'LineWidth', 2.0);
-    hL = legend('measured combo SPD - predicted combo SPD');
+    patch(x,y, 'green', 'FaceColor', [0.3 0.8 0.9], 'EdgeColor', [0.3 0.8 0.9], 'EdgeAlpha', 0.7, 'LineWidth', 2.0);
+    hold on;
+    plot(wavelengthAxis, measuredComboSPD-measuredComboSPDmin, 'k--', 'LineWidth', 2.0);
+    plot(wavelengthAxis, measuredComboSPD-measuredComboSPDmax, 'k:',  'LineWidth', 2.0);
+    
+    hL = legend('measured combo SPD - predicted combo SPD', 'measured combo SPDmin', 'measured combo SPDmax');
     set(hL, 'FontSize', 12);
     set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)],'YLim', [-5 5], 'XTick', [300:25:800]);
     set(gca, 'FontSize', 12);
@@ -305,19 +335,55 @@ function measureData(rootDir, Svector, radiometerType)
     
     nPrimariesNum = cal.describe.numWavelengthBands;
     
-    fullSet = true;
+    % Reference band: One, at the center of the band range
+    referenceBands = round(nPrimariesNum/2);
     
-    if (fullSet)
+    setType = 'combinatorialFull';
+    setType = 'combinatorialSmall';
+    setType = 'slidingInteraction';
+    
+    % Repeat 3 times
+    nRepeats = 1;
+            
+    if (strcmp(setType, 'slidingInteraction'))
+        % Measure at these levels
+        interactingBandSettingsLevels = [0.25 0.50 0.75 1.0];
+        nGammaLevels = 16;
+        referenceBandSettingsLevels = linspace(1.0/nGammaLevels, 1.0, nGammaLevels);
+        
+        pattern = [1 2 3 4];
+        pattern = [1 2 3];
+        pattern = [1 2];
+        interactingBands = {};
+        
+        k = 0;
+        while (max(referenceBands) + max(pattern) < 56)
+            k = k + 1;
+            interactingBands{k} = pattern;
+            pattern = pattern + numel(pattern);
+        end
+        max(max(referenceBands) + max(pattern))
+        if (max(max(referenceBands) + max(pattern)) > 56)
+            interactingBands = interactingBands(1:(numel(interactingBands)-1));
+        end
+        
+    elseif (strcmp(setType, 'combinatorialFull'))
         % Measure at these levels
         interactingBandSettingsLevels = [0.33 0.66 1.0];
         nGammaLevels = 16;
         referenceBandSettingsLevels = linspace(1.0/nGammaLevels, 1.0, nGammaLevels);
     
-        % Measure interactions at these bands around the reference band
+        % Measure interactions with bands around the reference band
         pattern0 = [3 4];
         pattern1 = [1 2];
         pattern2 = [-2 -1];
         pattern3 = [-4 -3];
+        
+        % OR Measure interactions with bands to the right of the reference band
+        pattern0 = [6 7];
+        pattern1 = [4 5];
+        pattern2 = [2 3];
+        pattern3 = [0 1];
         
         interactingBands = { ...
             [                                       pattern0(:) ]; ...
@@ -336,10 +402,7 @@ function measureData(rootDir, Svector, radiometerType)
             [pattern3(:)   pattern2(:) pattern1(:) pattern0(:)  ]; ...
             };
  
-            % Repeat 3 times
-            nRepeats = 1;
-    
-    else
+    elseif (strcmp(setType, 'combinatorialSmall'));
         % Measure at these levels
         interactingBandSettingsLevels = [0.4 0.8];
         nGammaLevels = 6;
@@ -353,14 +416,10 @@ function measureData(rootDir, Svector, radiometerType)
             [pattern1(:)            ]; ...
             [pattern1(:) pattern0(:)]; ...
             };
-        
-        % Repeat 3 times
-        nRepeats = 3;
     end
     
     
-    % Reference band: One, at the center of the band range
-    referenceBands = round(nPrimariesNum/2);
+    
     
     
     stimPattern = 0;
