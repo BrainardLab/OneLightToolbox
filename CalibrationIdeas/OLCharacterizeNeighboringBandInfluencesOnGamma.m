@@ -34,6 +34,11 @@ function analyzeData(rootDir)
     [fileName, pathName] = uigetfile('*.mat', 'Select a file to analyze', rootDir);
     load(fileName, 'data', 'interactingBandSettingsLevels', 'referenceBandSettingsLevels', 'referenceBands', 'interactingBands', 'nRepeats', 'randomizedSpectraIndices', 'cal');
     
+    for k = 1:numel(interactingBands)
+        interactingBandsStrings{k} = sprintf('%d \n', interactingBands{k});
+    end
+    
+
     nSpectraMeasured = numel(data);
     fprintf('There are %d distinct spectra measured (each measured %d times). \n', nSpectraMeasured, nRepeats);
     
@@ -61,6 +66,10 @@ function analyzeData(rootDir)
     referenceBandData = containers.Map;
     comboBandData = containers.Map;
     
+    allComboKeys = {};
+    allSingletonSPDiKeys = {};
+    allSingletonSPDrKeys = {};
+    
     for spectrumIndex = 1:nSpectraMeasured
         % average over all reps
         data{spectrumIndex}.meanSPD = mean(data{spectrumIndex}.measuredSPD, 2);
@@ -74,14 +83,15 @@ function analyzeData(rootDir)
         referenceBandSettingsIndex = data{spectrumIndex}.referenceBandSettingsIndex;
         interactingBandSettingsIndex = data{spectrumIndex}.interactingBandSettingsIndex;
         interactingBands = data{spectrumIndex}.interactingBands;
+        
         referenceBand = data{spectrumIndex}.referenceBand;
         spdType = data{spectrumIndex}.spdType;
         
         if (strcmp(spdType, 'singletonSPDi'))
-            fprintf('ref band: %d (activation index: %d), interacting bands(%d): #1=%d (activation index: %d)\n', referenceBand, referenceBandSettingsIndex, numel(interactingBands), interactingBands(1), interactingBandSettingsIndex);
             interactingBands = referenceBand+interactingBands;
             interactingBandsString = sprintf('%d \n', interactingBands);
             key = sprintf('activationIndex: %d, bands: %s', interactingBandSettingsIndex, interactingBandsString);
+            allSingletonSPDiKeys{numel(allSingletonSPDiKeys)+1} = key;
             interactingBandData(key) = struct(...
                 'activation', data{spectrumIndex}.activation, ...
                 'meanSPD', data{spectrumIndex}.meanSPD, ...
@@ -92,6 +102,7 @@ function analyzeData(rootDir)
         elseif (strcmp(spdType, 'singletonSPDr'))
             referenceBandsString = sprintf('%d \n', referenceBand);
             key = sprintf('activationIndex: %d, bands: %s', referenceBandSettingsIndex, referenceBandsString);
+            allSingletonSPDrKeys{numel(allSingletonSPDrKeys)+1} = key;
             referenceBandData(key) = struct(...
                 'activation', data{spectrumIndex}.activation, ...
                 'meanSPD', data{spectrumIndex}.meanSPD, ...
@@ -100,10 +111,13 @@ function analyzeData(rootDir)
             );
             
         elseif (strcmp(spdType, 'comboSPD'))
+            
             interactingBands = referenceBand+interactingBands;
             interactingBandsString = sprintf('%d \n', interactingBands);
             referenceBandsString = sprintf('%d \n', referenceBand);
             key = sprintf('activationIndices: [Reference=%d, Interacting=%d], Reference bands:%s Interacting bands:%s', referenceBandSettingsIndex, interactingBandSettingsIndex, referenceBandsString, interactingBandsString);
+            allComboKeys{numel(allComboKeys)+1} = key;
+            
             comboBandData(key) = struct(...
                 'activation', data{spectrumIndex}.activation, ...
                 'meanSPD', data{spectrumIndex}.meanSPD, ...
@@ -124,10 +138,9 @@ function analyzeData(rootDir)
     end
     
     % Substract darkSPD from singleton
-    allKeys = keys(interactingBandData);
-    for keyIndex = 1:numel(allKeys)
-        key = allKeys{keyIndex};
-        fprintf('%s\current key:%s\n', allKeys{1}, key);
+    selectKeys = keys(interactingBandData);
+    for keyIndex = 1:numel(selectKeys)
+        key = selectKeys{keyIndex};
         s = interactingBandData(key);
         s.meanSPD = s.meanSPD - darkSPD;
         s.minSPD = s.minSPD - darkSPD;
@@ -135,10 +148,9 @@ function analyzeData(rootDir)
         interactingBandData(key) = s;
     end
     
-    allKeys = keys(referenceBandData);
-    for keyIndex = 1:numel(allKeys)
-        key = allKeys{keyIndex};
-        fprintf('%s\current key:%s\n', allKeys{1}, key);
+    selectKeys = keys(referenceBandData);
+    for keyIndex = 1:numel(selectKeys)
+        key = selectKeys{keyIndex};
         s = referenceBandData(key);
         s.meanSPD = s.meanSPD - darkSPD;
         s.minSPD = s.minSPD - darkSPD;
@@ -147,10 +159,10 @@ function analyzeData(rootDir)
     end
     
     % Compute combo predictions
-    allKeys = keys(comboBandData);
+    selectKeys = keys(comboBandData);
     maxSPD = 0;
-    for keyIndex = 1:numel(allKeys)
-        key = allKeys{keyIndex};
+    for keyIndex = 1:numel(selectKeys)
+        key = selectKeys{keyIndex};
         s = comboBandData(key);
         refS = referenceBandData(s.referenceBandKey);
         interactingS = interactingBandData(s.interactingBandKey);
@@ -164,259 +176,118 @@ function analyzeData(rootDir)
     
     
     % Plotting
+    % plot in milliWatts
     gain = 1000;
-    
-    hFig = figure(11);
-    allKeys = keys(comboBandData);
-    for keyIndex = 1:numel(allKeys)
-        key = allKeys{keyIndex};
-        s            = comboBandData(key);
-        refS         = referenceBandData(s.referenceBandKey);
-        interactingS = interactingBandData(s.interactingBandKey);
-        refActivation         = refS.activation;
-        interactingActivation = interactingS.activation;
-        totalActivation       = s.activation;
-        refSPD              = gain * refS.meanSPD;
-        interactingSPD      = gain * interactingS.meanSPD;
-        predictedComboSPD   = gain * s.predictionSPD;
-        measuredComboSPD    = gain * s.meanSPD;
-        
-        % The activation pattern on top-left
-        subplot(2,2,1);
-        bar(1:numel(refActivation), refActivation, 1.0, 'FaceColor', [1.0 0.75 0.75], 'EdgeColor', [1 0 0]);
-        hold on
-        bar(1:numel(interactingActivation), interactingActivation, 1.0, 'FaceColor', [0.75 0.75 1.0], 'EdgeColor', [0 0 1]);
-        hold off;
-        set(gca, 'YLim', [0 1.1], 'XLim', [0 numel(refActivation)+1]);
-        hL = legend({'reference band', 'interacting band'});
-        set(hL, 'FontSize', 12);
-        set(gca, 'FontSize', 12);
-        xlabel('primary index', 'FontSize', 14, 'FontWeight', 'bold');
-        ylabel('primary activation', 'FontSize', 14, 'FontWeight', 'bold');
-
-        % The reference and interacting SPDs pattern on top-right
-        subplot(2,2,2);
-        plot(wavelengthAxis, refSPD, 'r-', 'LineWidth', 2.0);
-        hold on;
-        plot(wavelengthAxis, interactingSPD, 'b-', 'LineWidth', 2.0);
-        hold off;
-        hL = legend('reference band SPD', 'interacting band SPD');
-        set(hL, 'FontSize', 12);
-        set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)],'YLim', [0 maxSPD*gain]);
-        set(gca, 'FontSize', 12);
-        xlabel('wavelength (nm)', 'FontSize', 14, 'FontWeight', 'bold');
-        ylabel('power (mW)', 'FontSize', 14, 'FontWeight', 'bold');
-        grid on
-        box on
-            
-        % The measured and predicted combo SPDs on bottom-left
-        subplot(2,2,3);
-        plot(wavelengthAxis, measuredComboSPD, 'k-', 'LineWidth', 2.0);
-        hold on;
-        plot(wavelengthAxis, predictedComboSPD, 'm-', 'LineWidth', 2.0);
-        hold off;
-        hL = legend('measured combo SPD', 'predicted combo SPD');
-        set(hL, 'FontSize', 12);
-        set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)],'YLim', [0 maxSPD*gain]);
-        set(gca, 'FontSize', 12);
-        xlabel('wavelength (nm)', 'FontSize', 14, 'FontWeight', 'bold');
-        ylabel('power (mW)', 'FontSize', 14, 'FontWeight', 'bold');
-        grid on
-        box on
-        
-        % The residual (measured - predicted combo SPDs) on bottom-right
-        subplot(2,2,4);
-        plot(wavelengthAxis, measuredComboSPD-predictedComboSPD, 'k-', 'LineWidth', 2.0);
-        hL = legend('measured combo SPD - predicted combo SPD');
-        set(hL, 'FontSize', 12);
-        set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)],'YLim', [-5 5]);
-        set(gca, 'FontSize', 12);
-        xlabel('wavelength (nm)', 'FontSize', 14, 'FontWeight', 'bold');
-        ylabel('power (mW)', 'FontSize', 14, 'FontWeight', 'bold');
-        grid on
-        box on
-        
-        pause
-    end
-    
-    return;
-    % Plot the singleton SPDs together with their min/maxs
-    measuredBandsNum = 0;
-    for bandNo = 1:size(singletonSPD,2)
-       spd = squeeze(singletonSPD(1, bandNo,:));
-       if (any(spd>0))
-           measuredBandsNum = measuredBandsNum + 1;
-       end
-    end
-    
-    plotCols = 6;
-    plotRows = ceil(measuredBandsNum/plotCols);
-    subplotPosVectors = NicePlot.getSubPlotPosVectors(...
-               'rowsNum', plotRows, ...
-               'colsNum', plotCols, ...
-               'heightMargin',   0.03, ...
-               'widthMargin',    0.01, ...
-               'leftMargin',     0.01, ...
-               'rightMargin',    0.005, ...
-               'bottomMargin',   0.03, ...
-               'topMargin',      0.01);
-           
-    for activationLevelIndex = 1:size(comboSPD,1)
-        figure(100+activationLevelIndex);
-        bandIter = 0;
-        for bandNo = 1:size(singletonSPD,2)
-            spd = squeeze(singletonSPD(activationLevelIndex, bandNo,:));
-            minSpd = squeeze(singletonSPDrange(activationLevelIndex, bandNo,1,:));
-            maxSpd = squeeze(singletonSPDrange(activationLevelIndex, bandNo,2,:));
-            if (any(spd>0))
-                bandIter = bandIter + 1;
-                col = mod(bandIter-1,plotCols) + 1;
-                row = floor((bandIter-1)/plotCols) + 1;
-                subplot('Position', subplotPosVectors(row,col).v);
-                plot(wavelengthAxis, gain*darkSPD, 'k-');
-                hold on;
-                plot(wavelengthAxis, gain*squeeze(darkSPDrange(1,:)), 'k--');
-                plot(wavelengthAxis, gain*squeeze(darkSPDrange(2,:)), 'k--');
-                plot(wavelengthAxis, gain*spd, 'r-', 'Color', [1.0 0.3 0.3 0.5], 'LineWidth', 4.0);
-                plot(wavelengthAxis, gain*minSpd, 'r--', 'Color', [0.0 0.4 0.4]);
-                plot(wavelengthAxis, gain*maxSpd, 'r--', 'Color', [0.0 0.7 0.7]);
-                set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)],'YLim', [0 maxSPD*gain]);
-                hold off;
-                title(sprintf('SPD(band no %d) - darkSPD', bandNo));
-            end
-        end % bandNo
-    end
-    
-    
-    fprintf('\nInteraction data are available for the following reference bands:');
-    for k = 1:numel(referenceBands)
-        fprintf('%d ', referenceBands(k));
-    end
-    
-    selectedReferenceBand = input(sprintf('\nEnter reference band for visualization : [%d, or ''ALL'' for all] ', referenceBands(1)), 's');
-    if (strcmp(selectedReferenceBand, 'ALL'))
-        selectedReferenceBand = referenceBands;
-    elseif (isempty(selectedReferenceBand))
-        selectedReferenceBand = referenceBands(1);
-    else
-        selectedReferenceBand = str2double(selectedReferenceBand);
-        if (isempty(selectedReferenceBand)) || (selectedReferenceBand<1) || (selectedReferenceBand>numel(referenceBands))
-            selectedReferenceBand = referenceBands(1);
-        else
-            selectedReferenceBand = referenceBands(selectedReferenceBand);
-        end
-    end
-    
-    theSelectedReferenceBand = selectedReferenceBand;
-    
-    % Plot the interactions
-    hFig = figure(1000);
-    clf;
-    set(hFig, 'Position', [10 10 1150 1350], 'Color', [1 1 1], 'MenuBar', 'none');
+    maxSPD = maxSPD * gain;
     
     % Open video stream
-    videoFilename = sprintf('%s_ReferenceBar_%d.m4v', fileName, selectedReferenceBand);
+    videoFilename = sprintf('%s.m4v', fileName);
     writerObj = VideoWriter(videoFilename, 'MPEG-4'); % H264 format
     writerObj.FrameRate = 15; 
     writerObj.Quality = 100;
     writerObj.open();
     
-    % Do the plotting
-    yTickLevels = [-100:0.5:100];
-    for selectedReferenceBand = theSelectedReferenceBand
-    for spectrumIndex = 1:nSpectraMeasured
-        % get activation params for this spectum index
-        spdType = data{spectrumIndex}.spdType;
-        if (strcmp(spdType, 'comboSPD'))
-            
-            referenceBand = data{spectrumIndex}.referenceBand;
-            if (referenceBand ~= selectedReferenceBand)
-                continue;
-            end
-            activationLevelIndex  = data{spectrumIndex}.activationLevelIndex;
-            interactingBand       = data{spectrumIndex}.interactingBand;
-            
-            % The raw combo measurement (top left)
-            subplot('Position', [0.05 0.29 0.44 0.70]);
-            
-            meanSPDInMilliWatts = gain*squeeze(comboSPD(activationLevelIndex, referenceBand, interactingBand,:));
-            minSPDInMilliWatts  = gain*squeeze(comboSPDrange(activationLevelIndex, referenceBand, interactingBand, 1, :));
-            maxSPDInMilliWatts  = gain*squeeze(comboSPDrange(activationLevelIndex, referenceBand, interactingBand, 2, :));
-            
-            plot(wavelengthAxis, meanSPDInMilliWatts, 'r-', 'LineWidth', 2.0);
-            hold on;
-            plot(wavelengthAxis, minSPDInMilliWatts, 'k--', 'LineWidth', 1.0);
-            plot(wavelengthAxis, maxSPDInMilliWatts, 'k--', 'LineWidth', 1.0);
-            hold off;
-            hL = legend('measurement', 'min', 'max');
-            set(hL, 'FontSize', 12);
-            set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)],'YLim', [0 maxSPD*gain]);
-            set(gca, 'FontSize', 12);
-            xlabel('wavelength (nm)', 'FontSize', 14, 'FontWeight', 'bold');
-            ylabel('power (mW)', 'FontSize', 14, 'FontWeight', 'bold');
-            grid on
-            box on
-            
-            % The combo measurement and its prediction (top right)
-            subplot('Position', [0.55 0.29 0.44 0.70]);
-            predictionSPDInMilliWatts = gain*squeeze(comboSPDprediction(activationLevelIndex, referenceBand, interactingBand,:));
-            plot(wavelengthAxis, meanSPDInMilliWatts, 'r-', 'LineWidth', 2.0);
-            hold on;
-            plot(wavelengthAxis, predictionSPDInMilliWatts, 'b-', 'Color', [0 0.4 1 0.5], 'LineWidth', 2.0);
-            hold off;
-            hL = legend('measurement', 'prediction');
-            set(hL, 'FontSize', 12);
-            set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)],'YLim', [0 maxSPD*gain]);
-            set(gca, 'FontSize', 12);
-            xlabel('wavelength (nm)', 'FontSize', 14, 'FontWeight', 'bold');
-            ylabel('power (mW)', 'FontSize', 14, 'FontWeight', 'bold');
-            grid on
-            box on
+    hFig = figure(11); clf; set(hFig, 'Position', [10 10 1750 1100], 'Color', [1 1 1]);
+    subplotPosVectors = NicePlot.getSubPlotPosVectors(...
+               'rowsNum', 2, ...
+               'colsNum', 2, ...
+               'heightMargin',   0.04, ...
+               'widthMargin',    0.05, ...
+               'leftMargin',     0.05, ...
+               'rightMargin',    0.005, ...
+               'bottomMargin',   0.04, ...
+               'topMargin',      0.01);
+           
+ 
+    for keyIndex = 1:numel(allComboKeys) 
+        key          = allComboKeys{keyIndex};
+        s            = comboBandData(key);
+        refS         = referenceBandData(s.referenceBandKey);
+        interactingS = interactingBandData(s.interactingBandKey);
+        refActivation         = refS.activation;
+        interactingActivation = interactingS.activation;
+        refSPD              = gain * refS.meanSPD;
+        interactingSPD      = gain * interactingS.meanSPD;
+        predictedComboSPD   = gain * s.predictionSPD;
+        measuredComboSPD    = gain * s.meanSPD;
         
-            % The band activation pattern (bottom left)
-            subplot('Position', [0.05 0.05 0.44 0.20]);
-            activationPattern = squeeze(comboSPDactivation(activationLevelIndex, referenceBand, interactingBand,:));
-            bar(1:numel(activationPattern), activationPattern, 1.0, 'FaceColor', [1.0 0.6 0.6], 'EdgeColor', [0 0 0]);
-            hold on;
-            activationPattern(interactingBand) = 0;
-            bar(1:numel(activationPattern), activationPattern, 1.0, 'FaceColor', [0.6 0.6 1.0], 'EdgeColor', [0 0 0]);
-            hold off;
-            set(gca, 'YLim', [0 1.1], 'XLim', [0 nPrimariesNum+1]);
-            hL = legend({'interacting band', 'reference band'});
-            set(hL, 'FontSize', 12);
-            set(gca, 'FontSize', 12);
-            xlabel('primary index', 'FontSize', 14, 'FontWeight', 'bold');
-            ylabel('primary activation', 'FontSize', 14, 'FontWeight', 'bold');
-        
-            % The residual SPD (bottom right)
-            subplot('Position', [0.55 0.05 0.44 0.20]);
-            residualSPDInMilliWatts  = gain*squeeze(comboSPDresiduals(activationLevelIndex, referenceBand, interactingBand,:));
-            comboSPDpredictionMinErrorInMilliWatts = gain*squeeze(comboSPDpredictionMinError(activationLevelIndex, referenceBand, interactingBand,:));
-            comboSPDpredictionMaxErrorInMilliWatts = gain*squeeze(comboSPDpredictionMaxError(activationLevelIndex, referenceBand, interactingBand,:));
-            plot(wavelengthAxis, residualSPDInMilliWatts, 'r-', 'LineWidth', 2.0);
-            hold on
-            plot(wavelengthAxis, comboSPDpredictionMinErrorInMilliWatts, 'r--', 'Color', [0.3 0.3 0.3], 'LineWidth', 2.0);
-            plot(wavelengthAxis, comboSPDpredictionMaxErrorInMilliWatts, 'r--', 'Color', [0.7 0.7 0.7], 'LineWidth', 2.0);
-            hold off
-            hL = legend({'measured - prediction', 'prediction error across trials (min)', 'prediction error across trials (max)'});
-            set(hL, 'FontSize', 12);
-            set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)], 'YLim', [-1 1], 'YTick', yTickLevels, 'YTickLabel', sprintf('%2.1f\n', yTickLevels));
-            set(gca, 'FontSize', 12);
-            xlabel('wavelength (nm)', 'FontSize', 14, 'FontWeight', 'bold');
-            ylabel('residual power (mW)', 'FontSize', 14, 'FontWeight', 'bold');
-            grid on
-            box on
-            
-            % Write video frame
-            drawnow;
-            writerObj.writeVideo(getframe(hFig));
-        end  % plot comboSPDs 
-    end  % spectrumIndex
+        plotFrame(refActivation, interactingActivation, wavelengthAxis, refSPD, interactingSPD, measuredComboSPD, predictedComboSPD, maxSPD, subplotPosVectors);
+        writerObj.writeVideo(getframe(hFig));
     end
-    
+   
     % Close video stream
     writerObj.close();
     
+end
+
+function plotFrame(refActivation, interactingActivation, wavelengthAxis, refSPD, interactingSPD, measuredComboSPD, predictedComboSPD, maxSPD, subplotPosVectors)
+    clf;
+    % The activation pattern on top-left
+    subplot('Position', subplotPosVectors(1,1).v);
+    bar(1:numel(refActivation), refActivation, 1.0, 'FaceColor', [1.0 0.75 0.75], 'EdgeColor', [1 0 0]);
+    hold on
+    bar(1:numel(interactingActivation), interactingActivation, 1.0, 'FaceColor', [0.75 0.75 1.0], 'EdgeColor', [0 0 1]);
+    hold off;
+    set(gca, 'YLim', [0 1.1], 'XLim', [0 numel(refActivation)+1]);
+    hL = legend({'reference band', 'interacting band'});
+    set(hL, 'FontSize', 12);
+    set(gca, 'FontSize', 12);
+    xlabel('band no', 'FontSize', 14, 'FontWeight', 'bold');
+    ylabel('settings value', 'FontSize', 14, 'FontWeight', 'bold');
+
+    % The reference and interacting SPDs pattern on top-right
+    subplot('Position', subplotPosVectors(1,2).v);
+    x = [wavelengthAxis(1) wavelengthAxis' wavelengthAxis(end)];
+    baseline = min([0 min(refSPD)]);
+    y = [baseline refSPD' baseline]; 
+    patch(x,y, 'green', 'FaceColor', [1.0 0.8 0.8], 'EdgeColor', [1.0 0. 0.], 'EdgeAlpha', 0.5, 'LineWidth', 2.0);
+    hold on
+    baseline = min([0 min(interactingSPD)]);
+    y = [baseline interactingSPD' baseline]; 
+    patch(x,y, 'green', 'FaceColor', [0.8 0.8 1.0], 'EdgeColor', [0.0 0. 1], 'EdgeAlpha', 0.5, 'FaceAlpha', 0.5, 'LineWidth', 2.0);
+    hold off;
+    hL = legend('reference band SPD', 'interacting band SPD');
+    set(hL, 'FontSize', 12);
+    set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)],'YLim', [0 maxSPD], 'XTick', [300:25:800]);
+    set(gca, 'FontSize', 12);
+    xlabel('wavelength (nm)', 'FontSize', 14, 'FontWeight', 'bold');
+    ylabel('power (mW)', 'FontSize', 14, 'FontWeight', 'bold');
+    grid on
+    box on
+
+    % The measured and predicted combo SPDs on bottom-left
+    subplot('Position', subplotPosVectors(2,1).v);
+    baseline = min([0 min(predictedComboSPD)]);
+    y = [baseline predictedComboSPD' baseline]; 
+    patch(x,y, 'green', 'FaceColor', [1.0 0.1 0.9], 'EdgeColor', [1.0 0.1 0.9], 'EdgeAlpha', 1.0,  'LineWidth', 2.0);
+    hold on
+    baseline = min([0 min(measuredComboSPD)]);
+    y = [baseline measuredComboSPD' baseline]; 
+    patch(x,y, 'green', 'FaceColor', [1.0 0.8 0.2], 'EdgeColor', [1.0 0.8 0.2], 'EdgeAlpha', 0.5, 'FaceAlpha', 0.4, 'LineWidth', 2.0);
+    hold off;
+    hL = legend('predicted combo SPD', 'measured combo SPD');
+    set(hL, 'FontSize', 12);
+    set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)],'YLim', [0 maxSPD], 'XTick', [300:25:800]);
+    set(gca, 'FontSize', 12);
+    xlabel('wavelength (nm)', 'FontSize', 14, 'FontWeight', 'bold');
+    ylabel('power (mW)', 'FontSize', 14, 'FontWeight', 'bold');
+    grid on
+    box on
+
+    % The residual (measured - predicted combo SPDs) on bottom-right
+    subplot('Position', subplotPosVectors(2,2).v);
+    y = [0 (measuredComboSPD-predictedComboSPD)' 0];
+    patch(x,y, 'green', 'FaceColor', [0.3 0.8 0.9], 'EdgeColor', [0.2 0.2 0.2], 'EdgeAlpha', 0.7, 'LineWidth', 2.0);
+    hL = legend('measured combo SPD - predicted combo SPD');
+    set(hL, 'FontSize', 12);
+    set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)],'YLim', [-5 5], 'XTick', [300:25:800]);
+    set(gca, 'FontSize', 12);
+    xlabel('wavelength (nm)', 'FontSize', 14, 'FontWeight', 'bold');
+    ylabel('power (mW)', 'FontSize', 14, 'FontWeight', 'bold');
+    grid on
+    box on
+    
+    drawnow;
 end
 
 
@@ -491,8 +362,8 @@ function measureData(rootDir, Svector, radiometerType)
     data{stimPattern} = struct(...
         'spdType', spdType, ...
         'activation', activation, ...
-        'referenceBand', [], ...
-        'interactingBands', [], ...
+        'referenceBandIndex', [], ...
+        'interactingBandsIndex', [], ...
         'referenceBandSettingsIndex', 0, ...
         'interactingBandSettingsIndex', 0, ...
         'measurementTime', [], ...
@@ -517,8 +388,8 @@ function measureData(rootDir, Svector, radiometerType)
                     data{stimPattern} = struct(...
                         'spdType', spdType, ...
                         'activation', activation, ...
-                        'referenceBand', referenceBand, ...
-                        'interactingBands', interactingBand, ...
+                        'referenceBandIndex', referenceBandIndex, ...
+                        'interactingBandsIndex', interactingBandIndex, ...
                         'referenceBandSettingsIndex', referenceBandSettingsIndex, ...
                         'interactingBandSettingsIndex', interactingBandSettingsIndex, ...
                         'measurementTime', [], ...
@@ -533,8 +404,8 @@ function measureData(rootDir, Svector, radiometerType)
                         data{stimPattern} = struct(...
                             'spdType', spdType, ...
                             'activation', activation, ...
-                            'referenceBand', referenceBand, ...
-                            'interactingBands', interactingBand, ...
+                            'referenceBandIndex', referenceBandIndex, ...
+                            'interactingBandsIndex', interactingBandIndex, ...
                             'referenceBandSettingsIndex', 0, ...
                             'interactingBandSettingsIndex', interactingBandSettingsIndex, ...
                             'measurementTime', [], ...
@@ -552,8 +423,8 @@ function measureData(rootDir, Svector, radiometerType)
             data{stimPattern} = struct(...
                         'spdType', spdType, ...
                         'activation', activation, ...
-                        'referenceBand', referenceBand, ...
-                        'interactingBands', [], ...
+                        'referenceBandIndex', referenceBandIndex, ...
+                        'interactingBandsIndex', [], ...
                         'referenceBandSettingsIndex', referenceBandSettingsIndex, ...
                         'interactingBandSettingsIndex', 0, ...
                         'measurementTime', [], ...
