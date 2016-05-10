@@ -125,10 +125,11 @@ function analyzeData(rootDir)
             comboKeyIndex =  (referenceBandIndex-1) * numel(referenceBandSettingsLevels)*(numel(interactingBands))*numel(interactingBandSettingsLevels) + ...
                              (referenceBandSettingsIndex-1) * (numel(interactingBands))*numel(interactingBandSettingsLevels) + ...
                              (interactingBandsIndex-1)* numel(interactingBandSettingsLevels) + interactingBandSettingsIndex;
+            [comboKeyIndex referenceBandIndex referenceBandSettingsIndex interactingBandsIndex interactingBandSettingsIndex]
             %comboKeyIndex = numel(allComboKeys)+1;
             
             allComboKeys{comboKeyIndex} = key;
-            
+            q(comboKeyIndex,:) = [referenceBandIndex referenceBandSettingsIndex interactingBandsIndex interactingBandSettingsIndex];
             comboBandData(key) = struct(...
                 'activation', data{spectrumIndex}.activation, ...
                 'meanSPD', data{spectrumIndex}.meanSPD, ...
@@ -147,6 +148,9 @@ function analyzeData(rootDir)
             error('How can spdType be ''%s'' ?', spdType)
         end 
     end
+    
+    q
+    pause
     
     % Substract darkSPD from singleton
     selectKeys = keys(interactingBandData);
@@ -339,8 +343,8 @@ function measureData(rootDir, Svector, radiometerType)
     referenceBands = round(nPrimariesNum/2);
     
     setType = 'combinatorialFull';
-    setType = 'combinatorialSmall';
-    setType = 'slidingInteraction';
+    %setType = 'combinatorialSmall';
+    %setType = 'slidingInteraction';
     
     % Repeat 3 times
     nRepeats = 1;
@@ -351,9 +355,9 @@ function measureData(rootDir, Svector, radiometerType)
         nGammaLevels = 16;
         referenceBandSettingsLevels = linspace(1.0/nGammaLevels, 1.0, nGammaLevels);
         
-        pattern = [1 2 3 4];
+       % pattern = [1 2 3 4];
         pattern = [1 2 3];
-        pattern = [1 2];
+       % pattern = [1 2];
         interactingBands = {};
         
         k = 0;
@@ -373,32 +377,38 @@ function measureData(rootDir, Svector, radiometerType)
         nGammaLevels = 16;
         referenceBandSettingsLevels = linspace(1.0/nGammaLevels, 1.0, nGammaLevels);
     
-        % Measure interactions with bands around the reference band
-        pattern0 = [3 4];
-        pattern1 = [1 2];
-        pattern2 = [-2 -1];
-        pattern3 = [-4 -3];
+        interactingBandLocation = 'BilateralToReferenceBand';
+        interactingBandLocation = 'UnilateralToReferenceBand';
         
-        % OR Measure interactions with bands to the right of the reference band
-        pattern0 = [6 7];
-        pattern1 = [4 5];
-        pattern2 = [2 3];
-        pattern3 = [0 1];
+        if (strcmp(interactingBandLocation, 'BilateralToReferenceBand'))
+            % Measure interactions with bands around the reference band
+            pattern0 = [ 3  4];
+            pattern1 = [ 1  2];
+            pattern2 = [-2 -1];
+            pattern3 = [-4 -3];
+        elseif (strcmp(interactingBandLocation, 'UnilateralToReferenceBand'))
+            % OR Measure interactions with bands to the right of the reference band
+            pattern0 = [7 8];
+            pattern1 = [5 6];
+            pattern2 = [3 4];
+            pattern3 = [1 2];
+        end
         
         interactingBands = { ...
             [                                       pattern0(:) ]; ...
             [                           pattern1(:)             ]; ...
             [                           pattern1(:) pattern0(:) ]; ...
             [               pattern2(:)                         ]; ...
-            [               pattern2(:) pattern1(:)             ]; ...
             [               pattern2(:)             pattern0(:) ]; ...
+            [               pattern2(:) pattern1(:)             ]; ...
             [               pattern2(:) pattern1(:) pattern0(:) ]; ...
-            [                                       pattern0(:) ]; ...
+            [pattern3(:)                                        ]; ...
+            [pattern3(:)                            pattern0(:) ]; ...
             [pattern3(:)               pattern1(:)              ]; ...
             [pattern3(:)               pattern1(:) pattern0(:)  ]; ...
             [pattern3(:)   pattern2(:)                          ]; ...
-            [pattern3(:)   pattern2(:) pattern1(:)              ]; ...
             [pattern3(:)   pattern2(:)             pattern0(:)  ]; ...
+            [pattern3(:)   pattern2(:) pattern1(:)              ]; ...
             [pattern3(:)   pattern2(:) pattern1(:) pattern0(:)  ]; ...
             };
  
@@ -417,9 +427,6 @@ function measureData(rootDir, Svector, radiometerType)
             [pattern1(:) pattern0(:)]; ...
             };
     end
-    
-    
-    
     
     
     stimPattern = 0;
