@@ -325,7 +325,7 @@ end
 function measureData(rootDir, Svector, radiometerType)
 
     % check that hardware is responding
-    checkHardware();
+    checkHardware(radiometerType);
     
     % Ask for email recipient
     emailRecipient = GetWithDefault('Send status email to','cottaris@psych.upenn.edu');
@@ -535,13 +535,13 @@ function activationSequence = retrieveActivationSequence(data, presentationIndic
     end
 end
 
-function checkHardware()
+function checkHardware(radiometerType)
 
     spectroRadiometerOBJ = [];
     ol = [];
     
     try
-        spectroRadiometerOBJ = initRadiometerObject();
+        spectroRadiometerOBJ = initRadiometerObject(radiometerType);
 
         spectroRadiometerOBJ.shutDown();
         fprintf('PR670 is good!\n');
