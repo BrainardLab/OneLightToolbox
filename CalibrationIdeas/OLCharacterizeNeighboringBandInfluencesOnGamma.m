@@ -94,6 +94,7 @@ function analyzeData(rootDir)
             allSingletonSPDiKeys{numel(allSingletonSPDiKeys)+1} = key;
             interactingBandData(key) = struct(...
                 'activation', data{spectrumIndex}.activation, ...
+                'settingsValue', interactingBandSettingsLevels(data{spectrumIndex}.interactingBandSettingsIndex), ...
                 'meanSPD', data{spectrumIndex}.meanSPD, ...
                 'minSPD', data{spectrumIndex}.minSPD, ...
                 'maxSPD', data{spectrumIndex}.maxSPD ...
@@ -105,6 +106,7 @@ function analyzeData(rootDir)
             allSingletonSPDrKeys{numel(allSingletonSPDrKeys)+1} = key;
             referenceBandData(key) = struct(...
                 'activation', data{spectrumIndex}.activation, ...
+                'settingsValue', referenceBandSettingsLevels(data{spectrumIndex}.referenceBandSettingsIndex), ...
                 'meanSPD', data{spectrumIndex}.meanSPD, ...
                 'minSPD', data{spectrumIndex}.minSPD, ...
                 'maxSPD', data{spectrumIndex}.maxSPD ...
@@ -125,6 +127,12 @@ function analyzeData(rootDir)
             comboKeyIndex =  (referenceBandIndex-1) * numel(referenceBandSettingsLevels)*(numel(interactingBands))*numel(interactingBandSettingsLevels) + ...
                              (referenceBandSettingsIndex-1) * (numel(interactingBands))*numel(interactingBandSettingsLevels) + ...
                              (interactingBandsIndex-1)* numel(interactingBandSettingsLevels) + interactingBandSettingsIndex;
+                         
+            % arrange so we get gamma data for each condition
+            comboKeyIndex = (referenceBandIndex-1) * (numel(interactingBands)) * (numel(interactingBandSettingsLevels)) * (numel(referenceBandSettingsLevels)) + ...
+                            (interactingBandsIndex-1) * (numel(interactingBandSettingsLevels)) * (numel(referenceBandSettingsLevels)) + ...
+                            (interactingBandSettingsIndex-1) * numel(referenceBandSettingsLevels) + referenceBandSettingsIndex;
+            
             [comboKeyIndex referenceBandIndex referenceBandSettingsIndex interactingBandsIndex interactingBandSettingsIndex]
             %comboKeyIndex = numel(allComboKeys)+1;
             
@@ -149,8 +157,7 @@ function analyzeData(rootDir)
         end 
     end
     
-    q
-    pause
+
     
     % Substract darkSPD from singleton
     selectKeys = keys(interactingBandData);
@@ -194,33 +201,41 @@ function analyzeData(rootDir)
     % plot in milliWatts
     gain = 1000;
     maxSPD = maxSPD * gain;
+    maxSPD = round((maxSPD+4)/10)*10;
     
-    % Open video stream
-    videoFilename = sprintf('%s.m4v', fileName);
-    writerObj = VideoWriter(videoFilename, 'MPEG-4'); % H264 format
-    writerObj.FrameRate = 15; 
-    writerObj.Quality = 100;
-    writerObj.open();
+    generateVideo = false;
     
-    hFig = figure(11); clf; set(hFig, 'Position', [10 10 1750 1100], 'Color', [1 1 1]);
-    subplotPosVectors = NicePlot.getSubPlotPosVectors(...
-               'rowsNum', 2, ...
-               'colsNum', 2, ...
-               'heightMargin',   0.04, ...
-               'widthMargin',    0.05, ...
-               'leftMargin',     0.05, ...
-               'rightMargin',    0.005, ...
-               'bottomMargin',   0.04, ...
-               'topMargin',      0.01);
-           
+    if (generateVideo)
+        % Open video stream
+        videoFilename = sprintf('%s.m4v', fileName);
+        writerObj = VideoWriter(videoFilename, 'MPEG-4'); % H264 format
+        writerObj.FrameRate = 15; 
+        writerObj.Quality = 100;
+        writerObj.open();
+
+        hFig = figure(11); clf; set(hFig, 'Position', [10 10 1750 1100], 'Color', [1 1 1]);
+        subplotPosVectors = NicePlot.getSubPlotPosVectors(...
+                   'rowsNum', 2, ...
+                   'colsNum', 2, ...
+                   'heightMargin',   0.05, ...
+                   'widthMargin',    0.05, ...
+                   'leftMargin',     0.04, ...
+                   'rightMargin',    0.005, ...
+                   'bottomMargin',   0.04, ...
+                   'topMargin',      0.005);
+    end
+    
  
+    maxResidualSPD = zeros(1,numel(allComboKeys));
     for keyIndex = 1:numel(allComboKeys) 
         key          = allComboKeys{keyIndex};
         s            = comboBandData(key);
         refS         = referenceBandData(s.referenceBandKey);
         interactingS = interactingBandData(s.interactingBandKey);
+        refSettingsValue     = refS.settingsValue;
         refActivation         = refS.activation;
         interactingActivation = interactingS.activation;
+        interactingSettingsValue = interactingS.settingsValue;
         refSPD              = gain * refS.meanSPD;
         refSPDmin           = gain * refS.minSPD;
         refSPDmax           = gain * refS.maxSPD;
@@ -231,31 +246,186 @@ function analyzeData(rootDir)
         measuredComboSPD    = gain * s.meanSPD;
         measuredComboSPDmin = gain * s.minSPD;
         measuredComboSPDmax = gain * s.maxSPD;
-        
-        plotFrame(refActivation, interactingActivation, wavelengthAxis, refSPD, refSPDmin, refSPDmax, interactingSPD, interactingSPDmin, interactingSPDmax, measuredComboSPD, predictedComboSPD, measuredComboSPDmin, measuredComboSPDmax, maxSPD, subplotPosVectors);
-        writerObj.writeVideo(getframe(hFig));
+        maxResidualSPD(keyIndex)  = max(abs(measuredComboSPD - predictedComboSPD));
+        if (generateVideo)
+            plotFrame(refActivation, interactingActivation, wavelengthAxis, refSettingsValue, interactingSettingsValue, refSPD, refSPDmin, refSPDmax, interactingSPD, interactingSPDmin, interactingSPDmax, measuredComboSPD, predictedComboSPD, measuredComboSPDmin, measuredComboSPDmax, maxSPD, subplotPosVectors);
+            writerObj.writeVideo(getframe(hFig));
+        end
     end
    
-    % Close video stream
+    if (generateVideo)
+        % Close video stream
+        writerObj.close();
+    end
+    
+    % Now show SPDs in decreasing residual error
+    [~, indices] = sort(maxResidualSPD, 'descend');
+    
+    
+    % Open video stream
+    videoFilename = sprintf('%s_ranked.m4v', fileName);
+    writerObj = VideoWriter(videoFilename, 'MPEG-4'); % H264 format
+    writerObj.FrameRate = 15; 
+    writerObj.Quality = 100;
+    writerObj.open();
+        
+    measurementsPerFigure = 4;
+    subplotPosVectors = NicePlot.getSubPlotPosVectors(...
+                   'rowsNum', 4, ...
+                   'colsNum', measurementsPerFigure, ...
+                   'heightMargin',   0.05, ...
+                   'widthMargin',    0.02, ...
+                   'leftMargin',     0.02, ...
+                   'rightMargin',    0.005, ...
+                   'bottomMargin',   0.04, ...
+                   'topMargin',      0.005);
+               
+    hFig = figure(100); set(hFig, 'Position', [1 1 2000 1150], 'Color', [1 1 1]);
+    
+    for groupNo = 1:floor(numel(allComboKeys)/measurementsPerFigure)
+        clf;
+  
+        for k = 1:measurementsPerFigure
+            key     = allComboKeys{indices((groupNo-1)*measurementsPerFigure+k)};
+            s            = comboBandData(key);
+            refS         = referenceBandData(s.referenceBandKey);
+            interactingS = interactingBandData(s.interactingBandKey);
+            refSettingsValue     = refS.settingsValue;
+            refActivation         = refS.activation;
+            interactingActivation = interactingS.activation;
+            interactingSettingsValue = interactingS.settingsValue;
+            refSPD              = gain * refS.meanSPD;
+            refSPDmin           = gain * refS.minSPD;
+            refSPDmax           = gain * refS.maxSPD;
+            interactingSPD      = gain * interactingS.meanSPD;
+            interactingSPDmin   = gain * interactingS.minSPD;
+            interactingSPDmax   = gain * interactingS.maxSPD;
+            predictedComboSPD   = gain * s.predictionSPD;
+            measuredComboSPD    = gain * s.meanSPD;
+            measuredComboSPDmin = gain * s.minSPD;
+            measuredComboSPDmax = gain * s.maxSPD;
+            maxResidualSPD  = max(abs(measuredComboSPD - predictedComboSPD)); 
+            meanResidualSPD = mean(abs(measuredComboSPD - predictedComboSPD));
+            plotSummarySubFrame(refActivation, interactingActivation, wavelengthAxis, refSettingsValue, interactingSettingsValue, refSPD, refSPDmin, refSPDmax, interactingSPD, interactingSPDmin, interactingSPDmax, measuredComboSPD, predictedComboSPD, measuredComboSPDmin, measuredComboSPDmax, maxSPD, maxResidualSPD, meanResidualSPD ,squeeze(subplotPosVectors(:,k)));
+        end
+        
+        writerObj.writeVideo(getframe(hFig));
+        pause(0.5);
+    end % groupNo
+    
     writerObj.close();
     
 end
 
-function plotFrame(refActivation, interactingActivation, wavelengthAxis, refSPD, refSPDmin, refSPDmax, interactingSPD, interactingSPDmin, interactingSPDmax, measuredComboSPD, predictedComboSPD, measuredComboSPDmin, measuredComboSPDmax, maxSPD, subplotPosVectors)
+function plotSummarySubFrame(refActivation, interactingActivation, wavelengthAxis, referenceSettingsValue, interactingSettingsValue, refSPD, refSPDmin, refSPDmax, interactingSPD, interactingSPDmin, interactingSPDmax, measuredComboSPD, predictedComboSPD, measuredComboSPDmin, measuredComboSPDmax, maxSPD, maxResidualSPD, meanResidualSPD ,subplotPosVectors)
+% The activation pattern on top-left
+    subplot('Position', subplotPosVectors(1,1).v);
+    bar(1:numel(refActivation), refActivation, 1.0, 'FaceColor', [1.0 0.75 0.75], 'EdgeColor', [1 0 0], 'EdgeAlpha', 0.5, 'LineWidth', 1.5);
+    hold on
+    bar(1:numel(interactingActivation), interactingActivation, 1.0, 'FaceColor', [0.75 0.75 1.0], 'EdgeColor', [0 0 1], 'EdgeAlpha', 0.7, 'LineWidth', 1.5);
+    hold off;
+    set(gca, 'YLim', [0 1.0], 'XLim', [0 numel(refActivation)+1]);
+    %hL = legend({'reference band', 'interacting band(s)'}, 'Location', 'SouthWest');
+    %legend boxoff;
+    %set(hL, 'FontSize', 12, 'FontName', 'Menlo');
+    %set(gca, 'FontSize', 12);
+    xlabel('band no', 'FontSize', 14, 'FontWeight', 'bold');
+    ylabel('settings value', 'FontSize', 14, 'FontWeight', 'bold');
+    box off;
+    
+    % The reference and interacting SPDs pattern on top-right
+    subplot('Position', subplotPosVectors(2,1).v);
+    x = [wavelengthAxis(1) wavelengthAxis' wavelengthAxis(end)];
+    baseline = min([0 min(refSPD)]);
+    y = [baseline refSPD' baseline]; 
+    patch(x,y, 'green', 'FaceColor', [1.0 0.8 0.8], 'EdgeColor', [1.0 0. 0.], 'EdgeAlpha', 0.5, 'LineWidth', 2.0);
+    hold on
+    plot(wavelengthAxis, refSPDmin, '-', 'Color', [0 0 0]);
+    plot(wavelengthAxis, refSPDmax, '-', 'Color', [0 0 0]);
+    baseline = min([0 min(interactingSPD)]);
+    y = [baseline interactingSPD' baseline]; 
+    patch(x,y, 'green', 'FaceColor', [0.8 0.8 1.0], 'EdgeColor', [0.0 0. 1], 'EdgeAlpha', 0.5, 'FaceAlpha', 0.5, 'LineWidth', 2.0);
+    plot(wavelengthAxis, interactingSPDmin, '-', 'Color', [0 0 0]);
+    plot(wavelengthAxis, interactingSPDmax, '-', 'Color', [0 0 0]);
+    hold off;
+    %hL = legend('reference band SPD', 'reference band SPD(min)', 'reference band SPD(max)', 'interacting band(s) SPD', 'interacting band(s) SPD (min)', 'interacting band(s) SPD (max)', 'Location', 'SouthWest');
+    %set(hL, 'FontSize', 12, 'FontName', 'Menlo');
+    %legend boxoff;
+    set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)],'YLim', [0 maxSPD], 'XTick', [300:25:800]);
+    set(gca, 'FontSize', 12);
+    xlabel('wavelength (nm)', 'FontSize', 14, 'FontWeight', 'bold');
+    ylabel('power (mW)', 'FontSize', 14, 'FontWeight', 'bold');
+    grid on
+    box off
+
+    % The measured and predicted combo SPDs on bottom-left
+    subplot('Position', subplotPosVectors(3,1).v);
+    plot(wavelengthAxis,predictedComboSPD, '-', 'Color', [1.0 0.1 0.9], 'LineWidth', 2.0);
+    hold on;
+    plot(wavelengthAxis,measuredComboSPD, '-', 'Color', [0.1 0.8 0.5],  'LineWidth', 2.0);
+    
+    %baseline = min([0 min(predictedComboSPD)]);
+    %y = [baseline predictedComboSPD' baseline]; 
+    %patch(x,y, 'green', 'FaceColor', [1.0 0.1 0.9], 'EdgeColor', [1.0 0.1 0.9], 'EdgeAlpha', 1.0,  'LineWidth', 2.0);
+    %hold on
+    %baseline = min([0 min(measuredComboSPD)]);
+    %y = [baseline measuredComboSPD' baseline]; 
+    %patch(x,y, 'green', 'FaceColor', [0.7 0.7 0.7], 'EdgeColor', [0.7 0.7 0.7], 'EdgeAlpha', 0.5, 'FaceAlpha', 0.4, 'LineWidth', 2.0);
+    plot(wavelengthAxis, measuredComboSPDmin, '-', 'Color', [0 0 0]);
+    plot(wavelengthAxis, measuredComboSPDmax, '-', 'Color', [0 0 0]);
+    hold off;
+    %hL = legend('predicted SPD', 'measured SPD', 'measured SPD (min)', 'measured SPD (max)', 'Location', 'SouthWest');
+    %set(hL, 'FontSize', 12, 'FontName', 'Menlo');
+    %legend boxoff;
+    set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)],'YLim', [0 maxSPD], 'XTick', [300:25:800]);
+    set(gca, 'FontSize', 12, 'FontName', 'Menlo');
+    xlabel('wavelength (nm)', 'FontSize', 14, 'FontWeight', 'bold');
+    ylabel('power (mW)', 'FontSize', 14, 'FontWeight', 'bold');
+    grid on
+    box off
+
+    % The residual (measured - predicted combo SPDs) on bottom-right
+    subplot('Position', subplotPosVectors(4,1).v);
+    y = [0 (measuredComboSPD-predictedComboSPD)' 0];
+    patch(x,y, 'green', 'FaceColor', [0.3 0.8 1.0], 'EdgeColor', [0.2 0.6 0.6], 'FaceAlpha', 0.7, 'EdgeAlpha', 0.9, 'LineWidth', 2.0);
+    hold on;
+    plot(wavelengthAxis, measuredComboSPD-measuredComboSPDmin, 'k--', 'LineWidth', 2.0);
+    plot(wavelengthAxis, measuredComboSPD-measuredComboSPDmax, 'k:',  'LineWidth', 2.0);
+    
+    %hL = legend('measured SPD - predicted SPD', 'measured SPD - measured SPDmin', 'measured SPD - measured SPDmax', 'Location', 'SouthWest');
+    %set(hL, 'FontSize', 12, 'FontName', 'Menlo');
+    %legend boxoff;
+    set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)],'YLim', [-5 5], 'XTick', [300:25:800]);
+    set(gca, 'FontSize', 12);
+    xlabel('wavelength (nm)', 'FontSize', 14, 'FontWeight', 'bold');
+    ylabel('residual power (mW)', 'FontSize', 14, 'FontWeight', 'bold');
+    grid on
+    box off
+    
+    text(385, 4.7, sprintf('reference   band  settings: %2.2f', referenceSettingsValue), 'Color', [1.0 0.3 0.3], 'FontName', 'Menlo', 'FontSize', 12);
+    text(385, 4.2, sprintf('interacting band(s) settings: %2.2f', interactingSettingsValue), 'Color', [0.3 0.3 1.0],'FontName', 'Menlo', 'FontSize', 12);
+    %text(385, 3.7, sprintf('residualSPD: max = %2.2f mW, mean = %2.2f mW', maxResidualSPD, meanResidualSPD), 'Color', [0.3 0.3 0.3],'FontName', 'Menlo', 'FontSize', 14);
+    drawnow;
+    
+end
+
+function plotFrame(refActivation, interactingActivation, wavelengthAxis, referenceSettingsValue, interactingSettingsValue, refSPD, refSPDmin, refSPDmax, interactingSPD, interactingSPDmin, interactingSPDmax, measuredComboSPD, predictedComboSPD, measuredComboSPDmin, measuredComboSPDmax, maxSPD, subplotPosVectors)
     clf;
     % The activation pattern on top-left
     subplot('Position', subplotPosVectors(1,1).v);
-    bar(1:numel(refActivation), refActivation, 1.0, 'FaceColor', [1.0 0.75 0.75], 'EdgeColor', [1 0 0]);
+    bar(1:numel(refActivation), refActivation, 1.0, 'FaceColor', [1.0 0.75 0.75], 'EdgeColor', [1 0 0], 'EdgeAlpha', 0.5, 'LineWidth', 1.5);
     hold on
-    bar(1:numel(interactingActivation), interactingActivation, 1.0, 'FaceColor', [0.75 0.75 1.0], 'EdgeColor', [0 0 1]);
+    bar(1:numel(interactingActivation), interactingActivation, 1.0, 'FaceColor', [0.75 0.75 1.0], 'EdgeColor', [0 0 1], 'EdgeAlpha', 0.7, 'LineWidth', 1.5);
     hold off;
-    set(gca, 'YLim', [0 1.1], 'XLim', [0 numel(refActivation)+1]);
-    hL = legend({'reference band', 'interacting band'});
-    set(hL, 'FontSize', 12);
-    set(gca, 'FontSize', 12);
-    xlabel('band no', 'FontSize', 14, 'FontWeight', 'bold');
-    ylabel('settings value', 'FontSize', 14, 'FontWeight', 'bold');
-
+    set(gca, 'YLim', [0 1.0], 'XLim', [0 numel(refActivation)+1]);
+    hL = legend({'reference band', 'interacting band(s)'}, 'Location', 'SouthWest');
+    legend boxoff;
+    set(hL, 'FontSize', 14, 'FontName', 'Menlo');
+    set(gca, 'FontSize', 14);
+    xlabel('band no', 'FontSize', 16, 'FontWeight', 'bold');
+    ylabel('settings value', 'FontSize', 16, 'FontWeight', 'bold');
+    box off;
+    
     % The reference and interacting SPDs pattern on top-right
     subplot('Position', subplotPosVectors(1,2).v);
     x = [wavelengthAxis(1) wavelengthAxis' wavelengthAxis(end)];
@@ -271,14 +441,15 @@ function plotFrame(refActivation, interactingActivation, wavelengthAxis, refSPD,
     plot(wavelengthAxis, interactingSPDmin, '-', 'Color', [0 0 0]);
     plot(wavelengthAxis, interactingSPDmax, '-', 'Color', [0 0 0]);
     hold off;
-    hL = legend('reference band SPD', 'reference band SPD(min)', 'reference band SPD(max)', 'interacting band SPD', 'interacting band SPD (min)', 'interacting band SPD (max)');
-    set(hL, 'FontSize', 12);
+    hL = legend('reference band SPD', 'reference band SPD(min)', 'reference band SPD(max)', 'interacting band(s) SPD', 'interacting band(s) SPD (min)', 'interacting band(s) SPD (max)', 'Location', 'SouthWest');
+    set(hL, 'FontSize', 14, 'FontName', 'Menlo');
+    legend boxoff;
     set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)],'YLim', [0 maxSPD], 'XTick', [300:25:800]);
-    set(gca, 'FontSize', 12);
-    xlabel('wavelength (nm)', 'FontSize', 14, 'FontWeight', 'bold');
-    ylabel('power (mW)', 'FontSize', 14, 'FontWeight', 'bold');
+    set(gca, 'FontSize', 14);
+    xlabel('wavelength (nm)', 'FontSize', 16, 'FontWeight', 'bold');
+    ylabel('power (mW)', 'FontSize', 16, 'FontWeight', 'bold');
     grid on
-    box on
+    box off
 
     % The measured and predicted combo SPDs on bottom-left
     subplot('Position', subplotPosVectors(2,1).v);
@@ -296,32 +467,36 @@ function plotFrame(refActivation, interactingActivation, wavelengthAxis, refSPD,
     plot(wavelengthAxis, measuredComboSPDmin, '-', 'Color', [0 0 0]);
     plot(wavelengthAxis, measuredComboSPDmax, '-', 'Color', [0 0 0]);
     hold off;
-    hL = legend('predicted combo SPD', 'measured combo SPD', 'measured combo SPD (min)', 'measured combo SPD (max)');
-    set(hL, 'FontSize', 12);
+    hL = legend('predicted SPD', 'measured SPD', 'measured SPD (min)', 'measured SPD (max)', 'Location', 'SouthWest');
+    set(hL, 'FontSize', 14, 'FontName', 'Menlo');
+    legend boxoff;
     set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)],'YLim', [0 maxSPD], 'XTick', [300:25:800]);
-    set(gca, 'FontSize', 12);
-    xlabel('wavelength (nm)', 'FontSize', 14, 'FontWeight', 'bold');
-    ylabel('power (mW)', 'FontSize', 14, 'FontWeight', 'bold');
+    set(gca, 'FontSize', 14, 'FontName', 'Menlo');
+    xlabel('wavelength (nm)', 'FontSize', 16, 'FontWeight', 'bold');
+    ylabel('power (mW)', 'FontSize', 16, 'FontWeight', 'bold');
     grid on
-    box on
+    box off
 
     % The residual (measured - predicted combo SPDs) on bottom-right
     subplot('Position', subplotPosVectors(2,2).v);
     y = [0 (measuredComboSPD-predictedComboSPD)' 0];
-    patch(x,y, 'green', 'FaceColor', [0.3 0.8 0.9], 'EdgeColor', [0.3 0.8 0.9], 'EdgeAlpha', 0.7, 'LineWidth', 2.0);
+    patch(x,y, 'green', 'FaceColor', [0.3 0.8 1.0], 'EdgeColor', [0.2 0.6 0.6], 'FaceAlpha', 0.7, 'EdgeAlpha', 0.9, 'LineWidth', 2.0);
     hold on;
     plot(wavelengthAxis, measuredComboSPD-measuredComboSPDmin, 'k--', 'LineWidth', 2.0);
     plot(wavelengthAxis, measuredComboSPD-measuredComboSPDmax, 'k:',  'LineWidth', 2.0);
     
-    hL = legend('measured combo SPD - predicted combo SPD', 'measured combo SPDmin', 'measured combo SPDmax');
-    set(hL, 'FontSize', 12);
+    hL = legend('measured SPD - predicted SPD', 'measured SPD - measured SPDmin', 'measured SPD - measured SPDmax', 'Location', 'SouthWest');
+    set(hL, 'FontSize', 14, 'FontName', 'Menlo');
+    legend boxoff;
     set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)],'YLim', [-5 5], 'XTick', [300:25:800]);
-    set(gca, 'FontSize', 12);
-    xlabel('wavelength (nm)', 'FontSize', 14, 'FontWeight', 'bold');
-    ylabel('power (mW)', 'FontSize', 14, 'FontWeight', 'bold');
+    set(gca, 'FontSize', 14);
+    xlabel('wavelength (nm)', 'FontSize', 16, 'FontWeight', 'bold');
+    ylabel('residual power (mW)', 'FontSize', 16, 'FontWeight', 'bold');
     grid on
-    box on
+    box off
     
+    text(385, 4.7, sprintf('reference   band  settings: %2.2f', referenceSettingsValue), 'Color', [1.0 0.3 0.3], 'FontName', 'Menlo', 'FontSize', 14);
+    text(385, 4.2, sprintf('interacting band(s) settings: %2.2f', interactingSettingsValue), 'Color', [0.3 0.3 1.0],'FontName', 'Menlo', 'FontSize', 14);
     drawnow;
 end
 
@@ -346,8 +521,8 @@ function measureData(rootDir, Svector, radiometerType)
     %setType = 'combinatorialSmall';
     %setType = 'slidingInteraction';
     
-    % Repeat 3 times
-    nRepeats = 1;
+    % How many times to repeat each measurement
+    nRepeats = 6;
             
     if (strcmp(setType, 'slidingInteraction'))
         % Measure at these levels
