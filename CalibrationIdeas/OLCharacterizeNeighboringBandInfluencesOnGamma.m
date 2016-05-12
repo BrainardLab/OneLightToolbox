@@ -648,35 +648,34 @@ function plotFrame(axesStruct, refActivation, interactingActivation, wavelengthA
     ylabel(axesStruct.activationAxes,'settings value', 'FontSize', 16, 'FontWeight', 'bold');
     box(axesStruct.activationAxes, 'off');
     
-%     % The reference and interacting SPDs pattern on top-right
-     subplot('Position', subplotPosVectors(1,2).v);
-     x = [wavelengthAxis(1) wavelengthAxis' wavelengthAxis(end)];
-     baseline = min([0 min(refSPD)]);
-     y = [baseline refSPD' baseline]; 
-     patch(x,y, 'green', 'FaceColor', [1.0 0.8 0.8], 'EdgeColor', [1.0 0. 0.], 'EdgeAlpha', 0.5, 'LineWidth', 2.0, 'parent', axesStruct.singletonSPDAxes);
-     hold(axesStruct.singletonSPDAxes, 'on');
-     plot(axesStruct.singletonSPDAxes, wavelengthAxis, refSPDmin, '-', 'Color', [0 0 0]);
-     plot(axesStruct.singletonSPDAxes, wavelengthAxis, refSPDmax, '-', 'Color', [0 0 0]);
-     baseline = min([0 min(interactingSPD)]);
-     y = [baseline interactingSPD' baseline]; 
-     patch(x,y, 'green', 'FaceColor', [0.8 0.8 1.0], 'EdgeColor', [0.0 0. 1], 'EdgeAlpha', 0.5, 'FaceAlpha', 0.5, 'LineWidth', 2.0, 'parent', axesStruct.singletonSPDAxes);
-     plot(axesStruct.singletonSPDAxes, wavelengthAxis, interactingSPDmin, '-', 'Color', [0 0 0]);
-     plot(axesStruct.singletonSPDAxes, wavelengthAxis, interactingSPDmax, '-', 'Color', [0 0 0]);
-     hold(axesStruct.singletonSPDAxes, 'off');
-     hL = legend(axesStruct.singletonSPDAxes, 'reference band SPD', 'reference band SPD(min)', 'reference band SPD(max)', 'interacting band(s) SPD', 'interacting band(s) SPD (min)', 'interacting band(s) SPD (max)', 'Location', 'SouthWest');
-     set(hL, 'FontSize', 14, 'FontName', 'Menlo');
-     legend boxoff;
-     set(axesStruct.singletonSPDAxes, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)],'YLim', [0 maxSPD], 'XTick', [300:25:800], 'FontSize', 14);
-     xlabel(axesStruct.singletonSPDAxes, 'wavelength (nm)', 'FontSize', 16, 'FontWeight', 'bold');
-     ylabel(axesStruct.singletonSPDAxes, 'power (mW)', 'FontSize', 16, 'FontWeight', 'bold');
-     grid(axesStruct.singletonSPDAxes, 'on');
-     box(axesStruct.singletonSPDAxes, 'off');
+    % The reference and interacting SPDs pattern on top-right
+    plot(axesStruct.singletonSPDAxes, wavelengthAxis, refSPDmin, '-', 'Color', [0 0 0], 'LineWidth', 2.0);
+    hold(axesStruct.singletonSPDAxes, 'on');
+    plot(axesStruct.singletonSPDAxes, wavelengthAxis, refSPDmax, '-', 'Color', [0 0 0], 'LineWidth', 2.0);
+    plot(axesStruct.singletonSPDAxes, wavelengthAxis, interactingSPDmin, '-', 'Color', [0 0 0], 'LineWidth', 2.0);
+    plot(axesStruct.singletonSPDAxes, wavelengthAxis, interactingSPDmax, '-', 'Color', [0 0 0], 'LineWidth', 2.0);
+    x = [wavelengthAxis(1) wavelengthAxis' wavelengthAxis(end)];
+    baseline = min([0 min(refSPD)]);
+    y = [baseline refSPD' baseline]; 
+    patch(x,y, 'green', 'FaceColor', [1.0 0.8 0.8], 'EdgeColor', 'none',  'LineWidth', 2.0, 'parent', axesStruct.singletonSPDAxes);
+    baseline = min([0 min(interactingSPD)]);
+    y = [baseline interactingSPD' baseline]; 
+    patch(x,y, 'green', 'FaceColor', [0.8 0.8 1.0], 'EdgeColor', 'none',  'FaceAlpha', 0.5, 'LineWidth', 2.0, 'parent', axesStruct.singletonSPDAxes);
+    hold(axesStruct.singletonSPDAxes, 'off');
+    hL = legend(axesStruct.singletonSPDAxes, {'reference band SPD(min)', 'reference band SPD(max)', 'interacting band(s) SPD (min)', 'interacting band(s) SPD (max)', 'reference band SPD', 'interacting band(s) SPD'}, 'Location', 'SouthWest');
+    set(hL, 'FontSize', 14, 'FontName', 'Menlo');
+    legend boxoff;
+    set(axesStruct.singletonSPDAxes, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)],'YLim', [0 maxSPD], 'XTick', [300:25:800], 'FontSize', 14);
+    xlabel(axesStruct.singletonSPDAxes, 'wavelength (nm)', 'FontSize', 16, 'FontWeight', 'bold');
+    ylabel(axesStruct.singletonSPDAxes, 'power (mW)', 'FontSize', 16, 'FontWeight', 'bold');
+    grid(axesStruct.singletonSPDAxes, 'on');
+    box(axesStruct.singletonSPDAxes, 'off');
  
-%     % The measured and predicted combo SPDs on bottom-left
-     repeatsColors = colormap(jet(2+size(measuredComboAllSPDs,2)));
+    % The measured and predicted combo SPDs on bottom-left
+    repeatsColors = colormap(jet(2+size(measuredComboAllSPDs,2)));
    
-     allLegends = {};
-     for k = 1:size(measuredComboAllSPDs,2)
+    allLegends = {};
+    for k = 1:size(measuredComboAllSPDs,2)
          allLegends{k} = sprintf('measured SPD (#%d)\n', k);
          plot(axesStruct.comboSPDAxes, wavelengthAxis,squeeze(measuredComboAllSPDs(:,k)), '-', 'Color', squeeze(repeatsColors(k+1,:)), 'LineWidth', 1.5);
          if (k == 1)
