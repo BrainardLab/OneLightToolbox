@@ -662,11 +662,11 @@ function plotFrame(axesStruct, refActivation, interactingActivation, wavelengthA
      patch(x,y, 'green', 'FaceColor', [0.8 0.8 1.0], 'EdgeColor', [0.0 0. 1], 'EdgeAlpha', 0.5, 'FaceAlpha', 0.5, 'LineWidth', 2.0, 'parent', axesStruct.singletonSPDAxes);
      plot(axesStruct.singletonSPDAxes, wavelengthAxis, interactingSPDmin, '-', 'Color', [0 0 0]);
      plot(axesStruct.singletonSPDAxes, wavelengthAxis, interactingSPDmax, '-', 'Color', [0 0 0]);
-     hold(axesStruct.singletonSPDAxes, off);
+     hold(axesStruct.singletonSPDAxes, 'off');
      hL = legend(axesStruct.singletonSPDAxes, 'reference band SPD', 'reference band SPD(min)', 'reference band SPD(max)', 'interacting band(s) SPD', 'interacting band(s) SPD (min)', 'interacting band(s) SPD (max)', 'Location', 'SouthWest');
      set(hL, 'FontSize', 14, 'FontName', 'Menlo');
      legend boxoff;
-     set(axesStruct.singletonSPDAxes, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)],'YLim', [0 maxSPD], 'XTick', [300:25:800], 'FontSize', 14));
+     set(axesStruct.singletonSPDAxes, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)],'YLim', [0 maxSPD], 'XTick', [300:25:800], 'FontSize', 14);
      xlabel(axesStruct.singletonSPDAxes, 'wavelength (nm)', 'FontSize', 16, 'FontWeight', 'bold');
      ylabel(axesStruct.singletonSPDAxes, 'power (mW)', 'FontSize', 16, 'FontWeight', 'bold');
      grid(axesStruct.singletonSPDAxes, 'on');
@@ -718,15 +718,14 @@ function plotFrame(axesStruct, refActivation, interactingActivation, wavelengthA
     hL = legend(axesStruct.residualSPDAxes, allLegends, 'Location', 'SouthWest');
     set(hL, 'FontSize', 14, 'FontName', 'Menlo');
     legend boxoff;
-    set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)],'YLim', [-3 3], 'XTick', [300:25:800]);
-     set(gca, 'FontSize', 14);
-    xlabel('wavelength (nm)', 'FontSize', 16, 'FontWeight', 'bold');
-    ylabel('residual power (mW)', 'FontSize', 16, 'FontWeight', 'bold');
+    set(axesStruct.residualSPDAxes, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)],'YLim', [-3 3], 'XTick', [300:25:800], 'FontSize', 14);
+    xlabel(axesStruct.residualSPDAxes, 'wavelength (nm)', 'FontSize', 16, 'FontWeight', 'bold');
+    ylabel(axesStruct.residualSPDAxes, 'residual power (mW)', 'FontSize', 16, 'FontWeight', 'bold');
     grid on
     box off
 %     
-    text(axesStruct.residualSPDAxes, 385, 2.7, sprintf('reference   band  settings: %2.2f', referenceSettingsValue), 'Color', [1.0 0.3 0.3], 'FontName', 'Menlo', 'FontSize', 14);
-    text(axesStruct.residualSPDAxes, 385, 2.2, sprintf('interacting band(s) settings: %2.2f', interactingSettingsValue), 'Color', [0.3 0.3 1.0],'FontName', 'Menlo', 'FontSize', 14);
+    text(385, 2.7, sprintf('reference   band  settings: %2.2f', referenceSettingsValue), 'Color', [1.0 0.3 0.3], 'FontName', 'Menlo', 'FontSize', 14, 'parent', axesStruct.residualSPDAxes);
+    text(385, 2.2, sprintf('interacting band(s) settings: %2.2f', interactingSettingsValue), 'Color', [0.3 0.3 1.0],'FontName', 'Menlo', 'FontSize', 14, 'parent', axesStruct.residualSPDAxes);
     drawnow;
 end
 
