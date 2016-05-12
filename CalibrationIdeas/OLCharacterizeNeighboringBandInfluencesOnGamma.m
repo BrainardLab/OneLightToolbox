@@ -27,7 +27,7 @@ function OLCharacterizeNeighboringBandInfluencesOnGamma
 end
 
 
-function data = doLinearDriftCorrection(uncorrectedData, nRepeats)
+function [data, allTimes] = doLinearDriftCorrection(uncorrectedData, nRepeats)
     data = uncorrectedData;
     nSpectraMeasured = numel(data);
     allTimes = zeros(nRepeats*nSpectraMeasured,1);
@@ -97,7 +97,7 @@ function analyzeData(rootDir)
     [fileName, pathName] = uigetfile('*.mat', 'Select a file to analyze', rootDir);
     load(fileName, 'data', 'Svector', 'interactingBandSettingsLevels', 'referenceBandSettingsLevels', 'referenceBands', 'interactingBands', 'nRepeats', 'randomizedSpectraIndices', 'cal');
     
-    data = doLinearDriftCorrection(data, nRepeats);
+    [data, measurementTimes] = doLinearDriftCorrection(data, nRepeats);
     
     nSpectraMeasured = numel(data);
     fprintf('There are %d distinct spectra measured (each measured %d times). \n', nSpectraMeasured, nRepeats);
@@ -163,6 +163,8 @@ function analyzeData(rootDir)
                 'activation', data{spectrumIndex}.activation, ...
                 'settingsValue', interactingBandSettingsLevels(data{spectrumIndex}.interactingBandSettingsIndex), ...
                 'allSPDs', data{spectrumIndex}.measuredSPD, ...
+                'allSPDtimes', squeeze(data{spectrumIndex}.measurementTime(1, :)), ...
+                'allSPDmaxDeviationsFromMean', [], ...
                 'meanSPD', data{spectrumIndex}.meanSPD, ...
                 'minSPD', data{spectrumIndex}.minSPD, ...
                 'maxSPD', data{spectrumIndex}.maxSPD ...
@@ -176,6 +178,8 @@ function analyzeData(rootDir)
                 'activation', data{spectrumIndex}.activation, ...
                 'settingsValue', referenceBandSettingsLevels(data{spectrumIndex}.referenceBandSettingsIndex), ...
                 'allSPDs', data{spectrumIndex}.measuredSPD, ...
+                'allSPDtimes', squeeze(data{spectrumIndex}.measurementTime(1, :)), ...
+                'allSPDmaxDeviationsFromMean', [], ...
                 'meanSPD', data{spectrumIndex}.meanSPD, ...
                 'minSPD', data{spectrumIndex}.minSPD, ...
                 'maxSPD', data{spectrumIndex}.maxSPD ...
@@ -187,29 +191,29 @@ function analyzeData(rootDir)
             referenceBandsString = sprintf('%d \n', theReferenceBand);
             key = sprintf('activationIndices: [Reference=%d, Interacting=%d], Reference bands:%s Interacting bands:%s', referenceBandSettingsIndex, interactingBandSettingsIndex, referenceBandsString, interactingBandsString);
             
-            % arrange according to interactingBandsIndex
-            comboKeyIndex =  (referenceBandIndex-1) * numel(referenceBandSettingsLevels)*(numel(interactingBands))*numel(interactingBandSettingsLevels) + ...
-                             (referenceBandSettingsIndex-1) * (numel(interactingBands))*numel(interactingBandSettingsLevels) + ...
-                             (interactingBandSettingsIndex-1)*(numel(interactingBands)) + interactingBandsIndex;
-            
-            % arrange according to interactingBandSettingsIndex
-            comboKeyIndex =  (referenceBandIndex-1) * numel(referenceBandSettingsLevels)*(numel(interactingBands))*numel(interactingBandSettingsLevels) + ...
-                             (referenceBandSettingsIndex-1) * (numel(interactingBands))*numel(interactingBandSettingsLevels) + ...
-                             (interactingBandsIndex-1)* numel(interactingBandSettingsLevels) + interactingBandSettingsIndex;
+%             % arrange according to interactingBandsIndex
+%             comboKeyIndex =  (referenceBandIndex-1) * numel(referenceBandSettingsLevels)*(numel(interactingBands))*numel(interactingBandSettingsLevels) + ...
+%                              (referenceBandSettingsIndex-1) * (numel(interactingBands))*numel(interactingBandSettingsLevels) + ...
+%                              (interactingBandSettingsIndex-1)*(numel(interactingBands)) + interactingBandsIndex;
+%             
+%             % arrange according to interactingBandSettingsIndex
+%             comboKeyIndex =  (referenceBandIndex-1) * numel(referenceBandSettingsLevels)*(numel(interactingBands))*numel(interactingBandSettingsLevels) + ...
+%                              (referenceBandSettingsIndex-1) * (numel(interactingBands))*numel(interactingBandSettingsLevels) + ...
+%                              (interactingBandsIndex-1)* numel(interactingBandSettingsLevels) + interactingBandSettingsIndex;
                          
             % arrange so we get gamma data for each condition
             comboKeyIndex = (referenceBandIndex-1) * (numel(interactingBands)) * (numel(interactingBandSettingsLevels)) * (numel(referenceBandSettingsLevels)) + ...
                             (interactingBandsIndex-1) * (numel(interactingBandSettingsLevels)) * (numel(referenceBandSettingsLevels)) + ...
                             (interactingBandSettingsIndex-1) * numel(referenceBandSettingsLevels) + referenceBandSettingsIndex;
             
-            [comboKeyIndex referenceBandIndex referenceBandSettingsIndex interactingBandsIndex interactingBandSettingsIndex]
-            %comboKeyIndex = numel(allComboKeys)+1;
             
             allComboKeys{comboKeyIndex} = key;
-            q(comboKeyIndex,:) = [referenceBandIndex referenceBandSettingsIndex interactingBandsIndex interactingBandSettingsIndex];
+            %q(comboKeyIndex,:) = [referenceBandIndex referenceBandSettingsIndex interactingBandsIndex interactingBandSettingsIndex];
             comboBandData(key) = struct(...
                 'activation', data{spectrumIndex}.activation, ...
                 'allSPDs', data{spectrumIndex}.measuredSPD, ...
+                'allSPDtimes', squeeze(data{spectrumIndex}.measurementTime(1, :)), ...
+                'allSPDmaxDeviationsFromMean', [], ...
                 'meanSPD', data{spectrumIndex}.meanSPD, ...
                 'minSPD', data{spectrumIndex}.minSPD, ...
                 'maxSPD', data{spectrumIndex}.maxSPD, ...
@@ -234,6 +238,9 @@ function analyzeData(rootDir)
     for keyIndex = 1:numel(selectKeys)
         key = selectKeys{keyIndex};
         s = interactingBandData(key);
+        allSPDdiffs = abs(bsxfun(@minus, s.allSPDs, s.meanSPD));
+        s.allSPDmaxDeviationsFromMean = squeeze(max(allSPDdiffs,[],1));
+        % compute darkSPD subtracted SPDs
         s.meanSPD = s.meanSPD - darkSPD;
         s.minSPD = s.minSPD - darkSPD;
         s.maxSPD = s.maxSPD - darkSPD;
@@ -244,7 +251,12 @@ function analyzeData(rootDir)
     for keyIndex = 1:numel(selectKeys)
         key = selectKeys{keyIndex};
         s = referenceBandData(key);
+        % compute residuals between individual repeats and mean
+        allSPDdiffs = abs(bsxfun(@minus, s.allSPDs, s.meanSPD));
+        s.allSPDmaxDeviationsFromMean = squeeze(max(allSPDdiffs,[],1));
+        % compute darkSPD subtracted SPDs
         s.meanSPD = s.meanSPD - darkSPD;
+        s.allSPDs = bsxfun(@minus, s.allSPDs, darkSPD);
         s.minSPD = s.minSPD - darkSPD;
         s.maxSPD = s.maxSPD - darkSPD;
         referenceBandData(key) = s;
@@ -256,9 +268,14 @@ function analyzeData(rootDir)
     for keyIndex = 1:numel(selectKeys)
         key = selectKeys{keyIndex};
         s = comboBandData(key);
+        % compute residuals between individual repeats and mean
+        allSPDdiffs = abs(bsxfun(@minus, s.allSPDs, s.meanSPD));
+        s.allSPDmaxDeviationsFromMean = squeeze(max(allSPDdiffs,[],1));
+        % compute prediction SPD
         refS = referenceBandData(s.referenceBandKey);
         interactingS = interactingBandData(s.interactingBandKey);
         s.predictionSPD = darkSPD + refS.meanSPD + interactingS.meanSPD;
+        % compute maxSPD
         thisMax = max([max(s.predictionSPD) max(s.meanSPD)]);
         if (thisMax > maxSPD)
             maxSPD = thisMax;
@@ -267,11 +284,60 @@ function analyzeData(rootDir)
     end
     
     
+    
     % Plotting
     % plot in milliWatts
     gain = 1000;
     maxSPD = maxSPD * gain;
     maxSPD = round((maxSPD+4)/10)*10;
+    
+    hFig = figure(14); clf;
+    set(hFig, 'Color', [1 1 1], 'Position', [1 1 2550 770]);
+    subplotPosVectors = NicePlot.getSubPlotPosVectors(...
+                   'rowsNum', 3, ...
+                   'colsNum', 1, ...
+                   'heightMargin',   0.05, ...
+                   'widthMargin',    0.00, ...
+                   'leftMargin',     0.02, ...
+                   'rightMargin',    0.001, ...
+                   'bottomMargin',   0.05, ...
+                   'topMargin',      0.04);
+               
+    for k = 1:3
+        subplot('Position', subplotPosVectors(k,1).v);
+        if (k == 1)
+            dataSubSet = referenceBandData;
+            titleString = 'reference band measurements';
+        elseif (k == 2)
+            dataSubSet = interactingBandData;
+            titleString = 'interacting band measurements';
+        else 
+            dataSubSet = comboBandData;
+            titleString = 'reference + interacting band combo measurements';
+        end
+        selectKeys = keys(dataSubSet);
+        for keyIndex = 1:numel(selectKeys)
+            key = selectKeys{keyIndex};
+            s = dataSubSet(key);
+            diffs = s.allSPDmaxDeviationsFromMean;
+            times = s.allSPDtimes/(60*60);
+            plot(times, gain*diffs, 'rs', 'MarkerFaceColor', [1.0 0.5 0.5]);
+            if (keyIndex == 1)
+                hold on
+            end
+        end
+        set(gca, 'YLim', [-0.2 4], 'XTick', [0:1:(max(measurementTimes)/(60*60))], 'XLim', [min(measurementTimes) max(measurementTimes)]/(60*60), 'FontSize', 14);
+        grid on;
+        box off
+        if (k == 3)
+            xlabel('time (hours)', 'FontSize', 16,  'FontWeight', 'bold');
+        end
+        ylabel(sprintf('mean - single trial\ndiff. power (mWatts)'), 'FontSize', 16, 'FontWeight', 'bold');
+        title(titleString);
+    end
+    drawnow;
+    pause;
+    
     
     generateVideo = true;
     
