@@ -832,7 +832,7 @@ function measureData(rootDir, Svector, radiometerType)
     
     % Bands that are constant across all conditions
     steadyBands = [];
-    steadyBandSettings = [];
+    steadyBandSettingsLevels = [];
     
     setType = 'wigglySpectrumVariation1';
     %setType = 'combinatorialFull';
@@ -840,8 +840,7 @@ function measureData(rootDir, Svector, radiometerType)
     %setType = 'slidingInteraction';
     
     % How many times to repeat each measurement
-    nRepeats = 6;
-           
+    nRepeats = 6;  
         
     if (strcmp(setType, 'slidingInteraction'))
         % Measure at these levels
@@ -971,7 +970,7 @@ function measureData(rootDir, Svector, radiometerType)
 
         % these bands will have steady settings across all conditions (except the dark SPD)
         steadyBands = referenceBands + [8 -8 16 -16 24 -24];
-        steadyBandSettings = 0.8 * ones(numel(steadyBands),1);
+        steadyBandSettingsLevels = 0.8 * ones(numel(steadyBands),1);
     end
     
     
@@ -1008,7 +1007,7 @@ function measureData(rootDir, Svector, radiometerType)
                     activation(interactingBand) = interactingBandSettings;
                     activation(referenceBand) = referenceBandSettings;
                     if (~isempty(steadyBands))
-                        activation(steadyBands) = steadyBandSettings;
+                        activation(steadyBands) = steadyBandSettingsLevels;
                     end
                     data{stimPattern} = struct(...
                         'spdType', spdType, ...
@@ -1027,7 +1026,7 @@ function measureData(rootDir, Svector, radiometerType)
                         activation = zeros(nPrimariesNum,1);
                         activation(interactingBand) = interactingBandSettings;
                         if (~isempty(steadyBands))
-                            activation(steadyBands) = steadyBandSettings;
+                            activation(steadyBands) = steadyBandSettingsLevels;
                         end
                         data{stimPattern} = struct(...
                             'spdType', spdType, ...
@@ -1049,7 +1048,7 @@ function measureData(rootDir, Svector, radiometerType)
             activation = zeros(nPrimariesNum,1);
             activation(referenceBand) = referenceBandSettings;
             if (~isempty(steadyBands))
-               activation(steadyBands) = steadyBandSettings;
+               activation(steadyBands) = steadyBandSettingsLevels;
             end
             data{stimPattern} = struct(...
                         'spdType', spdType, ...
@@ -1070,8 +1069,7 @@ function measureData(rootDir, Svector, radiometerType)
     fprintf('There will be %d distinct spectra measured (%d reps). \n', nSpectraMeasured, nRepeats);
     
     % Plot the activations (before randomization)
-    figure(1);
-    clf;
+    hFig = figure(1); clf; set(hFig, 'Position', [1 1 573 1290]);
     subplot('Position', [0.04 0.04 0.95 0.95]);
     pcolor(1:nPrimariesNum, 1:nSpectraMeasured, retrieveActivationSequence(data, 1:nSpectraMeasured));
     xlabel('primary no');
@@ -1143,7 +1141,7 @@ function measureData(rootDir, Svector, radiometerType)
         
         % Save data
         filename = fullfile(rootDir,sprintf('NeighboringBandInfluencesOnReferenceGamma_%s_%s.mat', cal.describe.calType, datestr(now, 'dd-mmm-yyyy_HH_MM_SS')));
-        save(filename, 'data', 'Svector', 'interactingBandSettingsLevels', 'referenceBandSettingsLevels', 'referenceBands', 'interactingBands', 'nRepeats', 'randomizedSpectraIndices', 'cal', '-v7.3');
+        save(filename, 'data', 'Svector', 'setType', 'steadyBands', 'steadyBandSettingsLevels', 'interactingBandSettingsLevels', 'referenceBandSettingsLevels', 'referenceBands', 'interactingBands', 'nRepeats', 'randomizedSpectraIndices', 'cal', '-v7.3');
         fprintf('Data saved in ''%s''. \n', filename); 
         SendEmail(emailRecipient, 'OneLight Calibration Complete', 'Finished!');
         
