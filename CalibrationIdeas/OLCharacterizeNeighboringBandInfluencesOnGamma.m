@@ -344,6 +344,101 @@ function analyzeData(rootDir)
     maxSPD = maxSPD * gain;
     maxSPD = round((maxSPD+4)/10)*10;
     
+    maxSingleTrialsSPDdiffFromMean = 3.0;
+    
+    % Plot single trial max deviation from mean as a function of # of bands activated
+    hFig = figure(12); clf;
+    set(hFig, 'Color', [1 1 1], 'Position', [1 1 1590 1290]);
+    subplotPosVectors = NicePlot.getSubPlotPosVectors(...
+                   'rowsNum', 1, ...
+                   'colsNum', 2, ...
+                   'heightMargin',   0.01, ...
+                   'widthMargin',    0.05, ...
+                   'leftMargin',     0.04, ...
+                   'rightMargin',    0.001, ...
+                   'bottomMargin',   0.05, ...
+                   'topMargin',      0.04);
+               
+    for k = 3:-1:1
+        if (k == 1)
+            faceColor = [1.0 0.8 0.8];
+            edgeColor = [1.0 0.0 0.0];
+        elseif (k == 2)
+            faceColor = [0.4 0.8 0.4];
+            edgeColor = [0.0 0.8 0.0];
+        elseif (k == 3)
+            faceColor = [0.7 0.7 1.0];
+            edgeColor = [0.0 0.0 1.0];
+        end
+        
+        subplot('Position', subplotPosVectors(1,1).v);
+        if (k == 1)
+            dataSubSet = referenceBandData;
+            titleString = 'reference band';
+        elseif (k == 2)
+            dataSubSet = interactingBandData;
+            titleString = 'interacting band(s)';
+        else 
+            dataSubSet = comboBandData;
+            titleString = 'reference + interacting band(s)';
+        end
+        selectKeys = keys(dataSubSet);
+        for keyIndex = 1:numel(selectKeys)
+            key = selectKeys{keyIndex};
+            s = dataSubSet(key);
+            diffs = s.allSPDmaxDeviationsFromMean;
+            activatedBandsNo = numel(find(s.activation > 0));
+            plot(activatedBandsNo*ones(1,numel(diffs)), gain*diffs, 'rs', 'MarkerFaceColor', [1.0 0.5 0.5], 'MarkerFaceColor', faceColor, 'MarkerEdgeColor', edgeColor);
+            if (keyIndex == 1)
+                hold on
+            end
+        end
+        set(gca, 'YLim', [-0.2 maxSingleTrialsSPDdiffFromMean], 'FontSize', 14);
+        grid on;
+        box off
+        if (k == 3)
+            xlabel('number of activated bands', 'FontSize', 16,  'FontWeight', 'bold');
+        end
+        ylabel(sprintf('mean - single trial\ndiff. power (mWatts)'), 'FontSize', 16, 'FontWeight', 'bold');
+        text(0.25, 2.8+(k-1)*0.05, 5, titleString, 'FontSize', 16, 'FontName', 'Menlo');
+        
+        
+        subplot('Position', subplotPosVectors(1,2).v);
+        if (k == 1)
+            dataSubSet = referenceBandData;
+            titleString = 'reference band';
+        elseif (k == 2)
+            dataSubSet = interactingBandData;
+            titleString = 'interacting band(s)';
+        else 
+            dataSubSet = comboBandData;
+            titleString = 'reference + interacting band(s)';
+        end
+        selectKeys = keys(dataSubSet);
+        for keyIndex = 1:numel(selectKeys)
+            key = selectKeys{keyIndex};
+            s = dataSubSet(key);
+            diffs = s.allSPDmaxDeviationsFromMean;
+            totalActivation = sum(s.activation);
+            plot(totalActivation*ones(1,numel(diffs)), gain*diffs, 'rs', 'MarkerFaceColor', [1.0 0.5 0.5], 'MarkerFaceColor', faceColor, 'MarkerEdgeColor', edgeColor);
+            if (keyIndex == 1)
+                hold on
+            end
+        end
+        set(gca, 'YLim', [-0.2 maxSingleTrialsSPDdiffFromMean], 'FontSize', 14);
+        grid on;
+        box off
+        if (k == 3)
+            xlabel('total activation (settings)', 'FontSize', 16,  'FontWeight', 'bold');
+        end
+        ylabel(sprintf('mean - single trial\ndiff. power (mWatts)'), 'FontSize', 16, 'FontWeight', 'bold');
+        text(0.25, 2.8+(k-1)*0.05, 5, titleString, 'FontSize', 16, 'FontName', 'Menlo');        
+    end
+    
+
+    
+    
+    % Plot single trial max deviation from mean as a function of measurement time
     hFig = figure(14); clf;
     set(hFig, 'Color', [1 1 1], 'Position', [1 1 2550 770]);
     subplotPosVectors = NicePlot.getSubPlotPosVectors(...
@@ -351,12 +446,22 @@ function analyzeData(rootDir)
                    'colsNum', 1, ...
                    'heightMargin',   0.05, ...
                    'widthMargin',    0.00, ...
-                   'leftMargin',     0.02, ...
+                   'leftMargin',     0.04, ...
                    'rightMargin',    0.001, ...
                    'bottomMargin',   0.05, ...
                    'topMargin',      0.04);
                
     for k = 1:3
+        if (k == 1)
+            faceColor = [1.0 0.8 0.8];
+            edgeColor = [1.0 0.0 0.0];
+        elseif (k == 2)
+            faceColor = [0.4 0.8 0.4];
+            edgeColor = [0.0 0.8 0.0];
+        elseif (k == 3)
+            faceColor = [0.7 0.7 1.0];
+            edgeColor = [0.0 0.0 1.0];
+        end
         subplot('Position', subplotPosVectors(k,1).v);
         if (k == 1)
             dataSubSet = referenceBandData;
@@ -374,12 +479,12 @@ function analyzeData(rootDir)
             s = dataSubSet(key);
             diffs = s.allSPDmaxDeviationsFromMean;
             times = s.allSPDtimes/(60*60);
-            plot(times, gain*diffs, 'rs', 'MarkerFaceColor', [1.0 0.5 0.5]);
+            plot(times, gain*diffs, 'rs', 'MarkerFaceColor', faceColor, 'MarkerEdgeColor', edgeColor);
             if (keyIndex == 1)
                 hold on
             end
         end
-        set(gca, 'YLim', [-0.2 4], 'XTick', [0:1:(max(measurementTimes)/(60*60))], 'XLim', [min(measurementTimes) max(measurementTimes)]/(60*60), 'FontSize', 14);
+        set(gca, 'YLim', [-0.2 maxSingleTrialsSPDdiffFromMean], 'XTick', [0:1:(max(measurementTimes)/(60*60))], 'XLim', [min(measurementTimes) max(measurementTimes)]/(60*60), 'FontSize', 14);
         grid on;
         box off
         if (k == 3)
@@ -413,11 +518,12 @@ function analyzeData(rootDir)
                    'bottomMargin',   0.04, ...
                    'topMargin',      0.005);
                
-        axesStruct.activationAxes = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(1,1).v);
+        pos11 = subplotPosVectors(1,1).v;
+        axesStruct.activationAxes = axes('parent', hFig, 'unit', 'normalized', 'position', [pos11(1) pos11(2) pos11(3)*0.45 pos11(4)]);
+        axesStruct.gammaAxes      = axes('parent', hFig, 'unit', 'normalized', 'position', [pos11(1)+pos11(3)*0.45+0.04 pos11(2) pos11(3)*0.45 pos11(4)*0.92]);
         axesStruct.singletonSPDAxes = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(1,2).v);
         axesStruct.comboSPDAxes = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(2,1).v);
         axesStruct.residualSPDAxes = axes('parent', hFig, 'unit', 'normalized', 'position', subplotPosVectors(2,2).v);
-        axesStruct.gammaAxes = axes('parent', hFig, 'unit', 'normalized', 'position', [0.073 0.62 0.15 0.37]);
     end
     
  
@@ -526,10 +632,6 @@ function plotSummarySubFrame(refActivation, interactingActivation, wavelengthAxi
     bar(1:numel(interactingActivation), interactingActivation, 1.0, 'FaceColor', [0.75 0.75 1.0], 'EdgeColor', [0 0 1], 'EdgeAlpha', 0.7, 'LineWidth', 1.5);
     hold off;
     set(gca, 'YLim', [0 1.0], 'XLim', [0 numel(refActivation)+1]);
-    %hL = legend({'reference band', 'interacting band(s)'}, 'Location', 'SouthWest');
-    %legend boxoff;
-    %set(hL, 'FontSize', 12, 'FontName', 'Menlo');
-    %set(gca, 'FontSize', 12);
     xlabel('band no', 'FontSize', 14, 'FontWeight', 'bold');
     ylabel('settings value', 'FontSize', 14, 'FontWeight', 'bold');
     box off;
@@ -549,9 +651,6 @@ function plotSummarySubFrame(refActivation, interactingActivation, wavelengthAxi
     plot(wavelengthAxis, interactingSPDmin, '-', 'Color', [0 0 0]);
     plot(wavelengthAxis, interactingSPDmax, '-', 'Color', [0 0 0]);
     hold off;
-    %hL = legend('reference band SPD', 'reference band SPD(min)', 'reference band SPD(max)', 'interacting band(s) SPD', 'interacting band(s) SPD (min)', 'interacting band(s) SPD (max)', 'Location', 'SouthWest');
-    %set(hL, 'FontSize', 12, 'FontName', 'Menlo');
-    %legend boxoff;
     set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)],'YLim', [0 maxSPD], 'XTick', [300:25:800]);
     set(gca, 'FontSize', 12);
     xlabel('wavelength (nm)', 'FontSize', 14, 'FontWeight', 'bold');
@@ -564,14 +663,6 @@ function plotSummarySubFrame(refActivation, interactingActivation, wavelengthAxi
     plot(wavelengthAxis,predictedComboSPD, '-', 'Color', [1.0 0.1 0.9], 'LineWidth', 2.0);
     hold on;
     plot(wavelengthAxis,measuredComboSPD, '-', 'Color', [0.1 0.8 0.5],  'LineWidth', 2.0);
-    
-    %baseline = min([0 min(predictedComboSPD)]);
-    %y = [baseline predictedComboSPD' baseline]; 
-    %patch(x,y, 'green', 'FaceColor', [1.0 0.1 0.9], 'EdgeColor', [1.0 0.1 0.9], 'EdgeAlpha', 1.0,  'LineWidth', 2.0);
-    %hold on
-    %baseline = min([0 min(measuredComboSPD)]);
-    %y = [baseline measuredComboSPD' baseline]; 
-    %patch(x,y, 'green', 'FaceColor', [0.7 0.7 0.7], 'EdgeColor', [0.7 0.7 0.7], 'EdgeAlpha', 0.5, 'FaceAlpha', 0.4, 'LineWidth', 2.0);
     plot(wavelengthAxis, measuredComboSPDmin, '-', 'Color', [0 0 0]);
     plot(wavelengthAxis, measuredComboSPDmax, '-', 'Color', [0 0 0]);
     hold off;
@@ -592,10 +683,6 @@ function plotSummarySubFrame(refActivation, interactingActivation, wavelengthAxi
     hold on;
     plot(wavelengthAxis, measuredComboSPD-measuredComboSPDmin, 'k--', 'LineWidth', 2.0);
     plot(wavelengthAxis, measuredComboSPD-measuredComboSPDmax, 'k:',  'LineWidth', 2.0);
-    
-    %hL = legend('measured SPD - predicted SPD', 'measured SPD - measured SPDmin', 'measured SPD - measured SPDmax', 'Location', 'SouthWest');
-    %set(hL, 'FontSize', 12, 'FontName', 'Menlo');
-    %legend boxoff;
     set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)],'YLim', [-5 5], 'XTick', [300:25:800]);
     set(gca, 'FontSize', 12);
     xlabel('wavelength (nm)', 'FontSize', 14, 'FontWeight', 'bold');
@@ -605,7 +692,6 @@ function plotSummarySubFrame(refActivation, interactingActivation, wavelengthAxi
     
     text(385, 4.7, sprintf('reference   band  settings: %2.2f', referenceSettingsValue), 'Color', [1.0 0.3 0.3], 'FontName', 'Menlo', 'FontSize', 12);
     text(385, 4.2, sprintf('interacting band(s) settings: %2.2f', interactingSettingsValue), 'Color', [0.3 0.3 1.0],'FontName', 'Menlo', 'FontSize', 12);
-    %text(385, 3.7, sprintf('residualSPD: max = %2.2f mW, mean = %2.2f mW', maxResidualSPD, meanResidualSPD), 'Color', [0.3 0.3 0.3],'FontName', 'Menlo', 'FontSize', 14);
     drawnow;
     
 end
@@ -617,22 +703,22 @@ function plotFrame(axesStruct, refActivation, interactingActivation, wavelengthA
         % plot the previous gamma curves in black
         for k = 1:numel(theOldGammas)
             aGamma = theOldGammas{k};
-            plot(axesStruct.gammaAxes, [0 aGamma.gammaIn],  [0 aGamma.gammaOut], '-', 'Color', [0.4 0.4 0.4 0.5], 'LineWidth', 1);
-            if (k == 1)
-                hold(axesStruct.gammaAxes, 'on')
-            end
+            gammaOut(k,:) = [0 aGamma.gammaOut];
+            gammaIn = [0 aGamma.gammaIn];
         end
+        plot(axesStruct.gammaAxes, gammaIn,  gammaOut, '-', 'Color', [0.4 0.4 0.4 0.5], 'LineWidth', 1);
+        hold(axesStruct.gammaAxes, 'on')
     end
     plot(axesStruct.gammaAxes, [0 theGamma.gammaIn(1:refSettingsIndex)],  [0 theGamma.gammaOut(1:refSettingsIndex)], 'rs-', 'Color', [1.0 0.0 0.0], 'MarkerSize', 8, 'MarkerFaceColor', [1 0.7 0.7], 'LineWidth', 1);
     if (refSettingsIndex == numel(theGamma.gammaIn))
         hold(axesStruct.gammaAxes, 'off')
     end
-    
+
     set(axesStruct.gammaAxes, 'XLim', [0 1], 'YLim', [0 1.0], 'XTick', 0:0.2:1.0, 'YTick', 0:0.2:1.0, 'XTickLabel', sprintf('%0.1f\n', 0:0.2:1.0), 'YTickLabel', sprintf('%0.1f\n', 0:0.2:1.0), 'FontSize', 14);
     grid(axesStruct.gammaAxes, 'on');
     box(axesStruct.gammaAxes, 'off');
-    xlabel(axesStruct.gammaAxes, 'settings value', 'FontSize', 14, 'FontWeight', 'bold');
-    ylabel(axesStruct.gammaAxes, 'gamma out', 'FontSize', 14, 'FontWeight', 'bold');
+    xlabel(axesStruct.gammaAxes, 'settings value', 'FontSize', 16, 'FontWeight', 'bold');
+    ylabel(axesStruct.gammaAxes, 'gamma out', 'FontSize', 16, 'FontWeight', 'bold');
     
     % The activation pattern on top-left
     bar(axesStruct.activationAxes, 1:numel(refActivation), refActivation, 1.0, 'FaceColor', [1.0 0.75 0.75], 'EdgeColor', [1 0 0], 'EdgeAlpha', 0.5, 'LineWidth', 1.5);
@@ -640,10 +726,10 @@ function plotFrame(axesStruct, refActivation, interactingActivation, wavelengthA
     bar(axesStruct.activationAxes, 1:numel(interactingActivation), interactingActivation, 1.0, 'FaceColor', [0.75 0.75 1.0], 'EdgeColor', [0 0 1], 'EdgeAlpha', 0.7, 'LineWidth', 1.5);
     hold(axesStruct.activationAxes, 'off')
     set(axesStruct.activationAxes, 'YLim', [0 1.0], 'XLim', [0 numel(refActivation)+1]);
-    hL = legend(axesStruct.activationAxes, {'reference band', 'interacting band(s)'}, 'Location', 'SouthWest');
+    hL = legend(axesStruct.activationAxes, {'reference band', 'interacting band(s)'}, 'Location', 'NorthOutside', 'Orientation', 'Horizontal');
     legend boxoff;
     set(hL, 'FontSize', 14, 'FontName', 'Menlo');
-    set(axesStruct.activationAxes, 'FontSize', 14, 'YLim', [0 1.05], 'XLim', [0 numel(interactingActivation)+1]);
+    set(axesStruct.activationAxes, 'FontSize', 14, 'YLim', [0 1.0], 'XLim', [0 numel(interactingActivation)+1]);
     xlabel(axesStruct.activationAxes,'band no', 'FontSize', 16, 'FontWeight', 'bold');
     ylabel(axesStruct.activationAxes,'settings value', 'FontSize', 16, 'FontWeight', 'bold');
     box(axesStruct.activationAxes, 'off');
@@ -699,8 +785,7 @@ function plotFrame(axesStruct, refActivation, interactingActivation, wavelengthA
      grid(axesStruct.comboSPDAxes, 'on');
      box(axesStruct.comboSPDAxes, 'off');
 % 
-%     % The residual (measured - predicted combo SPDs) on bottom-right
-    
+    % The residual (measured - predicted combo SPDs) on bottom-right
     allLegends = {};
     for k = 1:size(measuredComboAllSPDs,2)
          allLegends{k} = sprintf('measured SPDmean - measuredSPD(#%d)\n', k);
@@ -745,13 +830,19 @@ function measureData(rootDir, Svector, radiometerType)
     % Reference band: One, at the center of the band range
     referenceBands = round(nPrimariesNum/2);
     
-    setType = 'combinatorialFull';
+    % Bands that are constant across all conditions
+    steadyBands = [];
+    steadyBandSettings = [];
+    
+    setType = 'wigglySpectrumVariation1';
+    %setType = 'combinatorialFull';
     %setType = 'combinatorialSmall';
     %setType = 'slidingInteraction';
     
     % How many times to repeat each measurement
     nRepeats = 6;
-            
+           
+        
     if (strcmp(setType, 'slidingInteraction'))
         % Measure at these levels
         interactingBandSettingsLevels = [0.25 0.50 0.75 1.0];
@@ -786,49 +877,48 @@ function measureData(rootDir, Svector, radiometerType)
         if (strcmp(interactingBandLocation, 'BilateralToReferenceBand'))
             % Measure interactions with bands around the reference band
             % 2 band patterns
-            pattern0 = [ 3  4];
-            pattern1 = [ 1  2];
-            pattern2 = [-2 -1];
-            pattern3 = [-4 -3];
+            p0 = [ 3  4];
+            p1 = [ 1  2];
+            p2 = [-2 -1];
+            p3 = [-4 -3];
             
             % 3 band patterns
-            pattern0 = [ 4  5  6];
-            pattern1 = [ 1  2  3];
-            pattern2 = [-3 -2 -1];
-            pattern3 = [-6 -5 -4];
+            p0 = [ 4  5  6];
+            p1 = [ 1  2  3];
+            p2 = [-3 -2 -1];
+            p3 = [-6 -5 -4];
             
         elseif (strcmp(interactingBandLocation, 'UnilateralToReferenceBand'))
             % OR Measure interactions with bands to the right of the reference band
             % 2 band patterns
-            pattern0 = [7 8];
-            pattern1 = [5 6];  
-            pattern2 = [3 4];
-            pattern3 = [1 2];
+            p0 = [7 8];
+            p1 = [5 6];  
+            p2 = [3 4];
+            p3 = [1 2];
             
             % 3 band patterns
-            pattern0 = [10 11 12];
-            pattern1 = [7 8 9];  
-            pattern2 = [4 5 6];
-            pattern3 = [1 2 3];
-            
+            p0 = [10 11 12];
+            p1 = [7 8 9];  
+            p2 = [4 5 6];
+            p3 = [1 2 3];
         end
         
         interactingBands = { ...
-             [                                       pattern0(:) ]; ...
-             [pattern3(:)                                        ]; ...
-             [                           pattern1(:)             ]; ...
-             [              pattern2(:)                          ]; ...
-             [pattern3(:)                            pattern0(:) ]; ...
-             [pattern3(:)   pattern2(:)                          ]; ...
-             [                           pattern1(:) pattern0(:) ]; ...
-             [              pattern2(:)  pattern1(:)             ]; ...
-             [              pattern2(:)  pattern1(:) pattern0(:) ]; ...
-             [pattern3(:)   pattern2(:)  pattern1(:)             ]; ...
-             [pattern3(:)   pattern2(:)  pattern1(:) pattern0(:) ]; ...
-             [              pattern2(:)              pattern0(:) ]; ...
-             [pattern3(:)                pattern1(:)             ]; ...
-             [pattern3(:)                pattern1(:) pattern0(:) ]; ...
-             [pattern3(:)   pattern2(:)              pattern0(:) ]; ...
+             [                     p0(:) ]; ...
+             [p3(:)                      ]; ...
+             [              p1(:)        ]; ...
+             [       p2(:)               ]; ...
+             [p3(:)                p0(:) ]; ...
+             [p3(:)  p2(:)               ]; ...
+             [              p1(:)  p0(:) ]; ...
+             [       p2(:)  p1(:)        ]; ...
+             [       p2(:)  p1(:)  p0(:) ]; ...
+             [p3(:)  p2(:)  p1(:)        ]; ...
+             [p3(:)  p2(:)  p1(:)  p0(:) ]; ...
+             [       p2(:)         p0(:) ]; ...
+             [p3(:)         p1(:)        ]; ...
+             [p3(:)         p1(:)  p0(:) ]; ...
+             [p3(:)  p2(:)         p0(:) ]; ...
             };
  
     elseif (strcmp(setType, 'combinatorialSmall'));
@@ -845,6 +935,43 @@ function measureData(rootDir, Svector, radiometerType)
             [pattern1(:)            ]; ...
             [pattern1(:) pattern0(:)]; ...
             };
+        
+    elseif strcmp(setType, 'wigglySpectrumVariation1');
+        
+        referenceBands = 25;  % gamma will be measured for band# 25 for all conditions
+        nGammaLevels = 20;
+        referenceBandSettingsLevels = linspace(1.0/nGammaLevels, 1.0, nGammaLevels);
+        
+        pattern0 = [1 2 3 4 5 6 7];
+        pattern1 = pattern0 + 8;
+        pattern2 = pattern1 + 8;
+        pattern3 = pattern2 + 8;
+        pattern4 = pattern0 - 8;
+        pattern5 = pattern4 - 8;
+        pattern6 = pattern5 - 8;  
+        
+        interactingBands = { ...
+            [                                                                        pattern3(:)]; ...
+            [pattern6(:)                                                                        ]; ...
+            [                                                            pattern2(:)            ]; ...
+            [            pattern5(:)                                                            ]; ...
+            [                                                pattern1(:)                        ]; ...
+            [                        pattern4(:)                                                ]; ...
+            [                                    pattern0(:)                                    ]; ...
+            [                        pattern4(:) pattern0(:)                                    ]; ...
+            [                        pattern4(:) pattern0(:) pattern1(:)                        ]; ...
+            [            pattern5(:) pattern4(:) pattern0(:) pattern1(:)                        ]; ...
+            [            pattern5(:) pattern4(:) pattern0(:) pattern1(:) pattern2(:)            ]; ...
+            [pattern6(:) pattern5(:) pattern4(:) pattern0(:) pattern1(:) pattern2(:)            ]; ...
+            [pattern6(:) pattern5(:) pattern4(:) pattern0(:) pattern1(:) pattern2(:) pattern3(:)]; ...
+            [pattern6(:) pattern5(:) pattern4(:) pattern0(:) pattern1(:) pattern2(:) pattern3(:)] ...
+        };
+        
+        interactingBandSettingsLevels = [0.1 0.3 0.5 0.7 0.9];
+
+        % these bands will have steady settings across all conditions (except the dark SPD)
+        steadyBands = referenceBands + [8 -8 16 -16 24 -24];
+        steadyBandSettings = 0.8 * ones(numel(steadyBands),1);
     end
     
     
@@ -880,6 +1007,9 @@ function measureData(rootDir, Svector, radiometerType)
                     activation = zeros(nPrimariesNum,1);
                     activation(interactingBand) = interactingBandSettings;
                     activation(referenceBand) = referenceBandSettings;
+                    if (~isempty(steadyBands))
+                        activation(steadyBands) = steadyBandSettings;
+                    end
                     data{stimPattern} = struct(...
                         'spdType', spdType, ...
                         'activation', activation, ...
@@ -896,6 +1026,9 @@ function measureData(rootDir, Svector, radiometerType)
                         stimPattern = stimPattern + 1;
                         activation = zeros(nPrimariesNum,1);
                         activation(interactingBand) = interactingBandSettings;
+                        if (~isempty(steadyBands))
+                            activation(steadyBands) = steadyBandSettings;
+                        end
                         data{stimPattern} = struct(...
                             'spdType', spdType, ...
                             'activation', activation, ...
@@ -915,6 +1048,9 @@ function measureData(rootDir, Svector, radiometerType)
             stimPattern = stimPattern + 1;
             activation = zeros(nPrimariesNum,1);
             activation(referenceBand) = referenceBandSettings;
+            if (~isempty(steadyBands))
+               activation(steadyBands) = steadyBandSettings;
+            end
             data{stimPattern} = struct(...
                         'spdType', spdType, ...
                         'activation', activation, ...
@@ -942,8 +1078,8 @@ function measureData(rootDir, Svector, radiometerType)
     ylabel('spectrum no');
     set(gca, 'CLim', [0 1], 'YLim', [0 nSpectraMeasured+1]);
     title('primary values');
-    colormap(gray);
-    
+    colormap(gray(1024));
+    disp('Hit enter to continue');
     pause
     
     spectroRadiometerOBJ = [];
