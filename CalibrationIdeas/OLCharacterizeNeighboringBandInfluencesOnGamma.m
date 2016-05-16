@@ -840,8 +840,9 @@ function measureData(rootDir, Svector, radiometerType)
     %setType = 'slidingInteraction';
     
     % How many times to repeat each measurement
-    nRepeats = 6;  
-        
+    nRepeats = 2;  
+    warmUpRepeats = 20;
+    
     if (strcmp(setType, 'slidingInteraction'))
         % Measure at these levels
         interactingBandSettingsLevels = [0.25 0.50 0.75 1.0];
@@ -991,6 +992,40 @@ function measureData(rootDir, Svector, radiometerType)
         'measuredSPD', [] ....
     ); 
 
+    % add temporal stability gauge #1 SPD
+    spdType = 'temporalStabilityGauge1SPD';
+    stimPattern = stimPattern + 1;
+    activation = round(rand(nPrimariesNum,1)*100)/100;
+    activation(activation == 0) = 0.05;
+    data{stimPattern} = struct(...
+        'spdType', spdType, ...
+        'activation', activation, ...
+        'referenceBandIndex', [], ...
+        'interactingBandsIndex', [], ...
+        'referenceBandSettingsIndex', 0, ...
+        'interactingBandSettingsIndex', 0, ...
+        'measurementTime', [], ...
+        'measuredSPD', [] ....
+    ); 
+    
+    % add temporal stability gauge #1 SPD
+    spdType = 'temporalStabilityGauge2SPD';
+    stimPattern = stimPattern + 1;
+    data{stimPattern} = struct(...
+        'spdType', spdType, ...
+        'activation', 1-activation, ...
+        'referenceBandIndex', [], ...
+        'interactingBandsIndex', [], ...
+        'referenceBandSettingsIndex', 0, ...
+        'interactingBandSettingsIndex', 0, ...
+        'measurementTime', [], ...
+        'measuredSPD', [] ....
+    ); 
+
+    % new data set for warming up data consisting of the 2 temporal
+    % stability gauge SPDs
+    warmUpData = data{2:3};
+
     for referenceBandIndex = 1:numel(referenceBands)
         referenceBand = referenceBands(referenceBandIndex);
         for referenceBandSettingsIndex = 1:numel(referenceBandSettingsLevels)
@@ -1093,6 +1128,28 @@ function measureData(rootDir, Svector, radiometerType)
         % Get handle to OneLight
         ol = OneLight;
 
+        % Do the warming up data collection to allow for the unit to warm up
+        for repeatIndex = 1:warmUpRepeats
+           for stimPattern = numel(warmUpData)
+                settingsValues  = warmUpData{stimPattern}.activation;
+                [starts,stops] = OLSettingsToStartsStops(cal,settingsValues);
+                measurement = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, Svector, meterToggle, nAverage);
+                warmUpData{stimPattern}.measuredSPD(:, repeatIndex)     = measurement.pr650.spectrum;
+                warmUpData{stimPattern}.measurementTime(:, repeatIndex) = measurement.pr650.time(1);
+                warmUpData{stimPattern}.repeatIndex = repeatIndex;
+                
+                subplot('Position', [0.51 0.04 0.45 0.47]);
+                bar(settingsValues, 1, 'FaceColor', [0.9 0.8 0.3]);
+                set(gca, 'YLim', [0 1.05], 'XLim', [0 nPrimariesNum+1], 'XTick', [], 'YTick', []);
+                subplot('Position', [0.51 0.52 0.45 0.47]);
+                plot(SToWls(Svector), measurement.pr650.spectrum, 'r-', 'LineWidth', 2.0);
+                set(gca, 'XTick', [], 'YTick', []);
+                title('warm up data (pattern: %d, repeat %d)', stimPattern, repeatIndex)
+                drawnow;
+           end
+        end
+        
+                
         % Do all the measurements
         for repeatIndex = 1:nRepeats
          
@@ -1141,7 +1198,7 @@ function measureData(rootDir, Svector, radiometerType)
         
         % Save data
         filename = fullfile(rootDir,sprintf('NeighboringBandInfluencesOnReferenceGamma_%s_%s.mat', cal.describe.calType, datestr(now, 'dd-mmm-yyyy_HH_MM_SS')));
-        save(filename, 'data', 'Svector', 'setType', 'steadyBands', 'steadyBandSettingsLevels', 'interactingBandSettingsLevels', 'referenceBandSettingsLevels', 'referenceBands', 'interactingBands', 'nRepeats', 'randomizedSpectraIndices', 'cal', '-v7.3');
+        save(filename, 'data', 'nRepeats', 'warmUpData', 'warmUpRepeats', 'Svector', 'setType', 'steadyBands', 'steadyBandSettingsLevels', 'interactingBandSettingsLevels', 'referenceBandSettingsLevels', 'referenceBands', 'interactingBands', 'randomizedSpectraIndices', 'cal', '-v7.3');
         fprintf('Data saved in ''%s''. \n', filename); 
         SendEmail(emailRecipient, 'OneLight Calibration Complete', 'Finished!');
         
