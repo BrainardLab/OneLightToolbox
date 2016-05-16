@@ -1024,8 +1024,9 @@ function measureData(rootDir, Svector, radiometerType)
 
     % new data set for warming up data consisting of the 2 temporal
     % stability gauge SPDs
-    warmUpData = data{2:3};
-
+    warmUpData{1} = data{2};
+    warmUpData{2} = data{3};
+    
     for referenceBandIndex = 1:numel(referenceBands)
         referenceBand = referenceBands(referenceBandIndex);
         for referenceBandSettingsIndex = 1:numel(referenceBandSettingsLevels)
@@ -1118,19 +1119,24 @@ function measureData(rootDir, Svector, radiometerType)
     spectroRadiometerOBJ = [];
     ol = [];
     
+    hFig = figure(2); set(hFig, 'Position', [10 10 1500 970], 'Color', [0 0 0]);
+    clf;
+            
     try
         meterToggle = [1 0];
         od = [];
         nAverage = 1;
         
         spectroRadiometerOBJ = initRadiometerObject(radiometerType);
+        pause(0.2);
         
         % Get handle to OneLight
         ol = OneLight;
 
         % Do the warming up data collection to allow for the unit to warm up
         for repeatIndex = 1:warmUpRepeats
-           for stimPattern = numel(warmUpData)
+           for stimPattern = 1:numel(warmUpData)
+
                 settingsValues  = warmUpData{stimPattern}.activation;
                 [starts,stops] = OLSettingsToStartsStops(cal,settingsValues);
                 measurement = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, Svector, meterToggle, nAverage);
@@ -1138,18 +1144,17 @@ function measureData(rootDir, Svector, radiometerType)
                 warmUpData{stimPattern}.measurementTime(:, repeatIndex) = measurement.pr650.time(1);
                 warmUpData{stimPattern}.repeatIndex = repeatIndex;
                 
-                subplot('Position', [0.51 0.04 0.45 0.47]);
-                bar(settingsValues, 1, 'FaceColor', [0.9 0.8 0.3]);
-                set(gca, 'YLim', [0 1.05], 'XLim', [0 nPrimariesNum+1], 'XTick', [], 'YTick', []);
-                subplot('Position', [0.51 0.52 0.45 0.47]);
-                plot(SToWls(Svector), measurement.pr650.spectrum, 'r-', 'LineWidth', 2.0);
+                subplot('Position', [0.51 0.03 0.45 0.47]);
+                bar(settingsValues, 1, 'FaceColor', [0.9 0.8 0.3], 'Color', [0 0 0]);
+                set(gca, 'YLim', [0 1.05], 'XLim', [0 nPrimariesNum+1], 'XTick', [], 'YTick', [], 'Color', [0 0 0]);
+                subplot('Position', [0.51 0.52 0.45 0.46]);
+                plot(SToWls(Svector), measurement.pr650.spectrum, 'c-', 'LineWidth', 2.0);
                 set(gca, 'XTick', [], 'YTick', []);
-                title('warm up data (pattern: %d, repeat %d)', stimPattern, repeatIndex)
+                title(sprintf('warm up data (pattern: %d, repeat %d)', stimPattern, repeatIndex), 'Color', [1 1 1])
                 drawnow;
            end
         end
         
-                
         % Do all the measurements
         for repeatIndex = 1:nRepeats
          
@@ -1157,9 +1162,8 @@ function measureData(rootDir, Svector, radiometerType)
             randomizedSpectraIndices(repeatIndex,:) = randperm(nSpectraMeasured); 
             
             % Show randomized stimulation sequence
-            hFig = figure(2); set(hFig, 'Position', [10 10 1500 970]);
-            clf;
-            subplot('Position', [0.03 0.04 0.45 0.95]);
+            
+            subplot('Position', [0.03 0.03 0.45 0.95]);
             pcolor(1:nPrimariesNum, 1:nSpectraMeasured, retrieveActivationSequence(data, squeeze(randomizedSpectraIndices(repeatIndex,:))));
             hold on
             xlabel('primary no');
@@ -1170,7 +1174,7 @@ function measureData(rootDir, Svector, radiometerType)
             for spectrumIter = 1:nSpectraMeasured
                 
                 % Show where in the stimulation sequence we are right now.
-                subplot('Position', [0.03 0.04 0.45 0.95]);
+                subplot('Position', [0.03 0.03 0.45 0.95]);
                 plot([1 nPrimariesNum], (spectrumIter+0.5)*[1 1], 'g-');
                 drawnow;
                 
@@ -1187,11 +1191,12 @@ function measureData(rootDir, Svector, radiometerType)
                 data{spectrumIndex}.repeatIndex = repeatIndex;
                 
                 subplot('Position', [0.51 0.04 0.45 0.47]);
-                bar(settingsValues, 1, 'FaceColor', [0.9 0.8 0.3]);
-                set(gca, 'YLim', [0 1.05], 'XLim', [0 nPrimariesNum+1], 'XTick', [], 'YTick', []);
-                subplot('Position', [0.51 0.52 0.45 0.47]);
-                plot(SToWls(Svector), measurement.pr650.spectrum, 'r-', 'LineWidth', 2.0);
+                bar(settingsValues, 1, 'FaceColor', [0.9 0.8 0.3], 'Color', [0 0 0]);
+                set(gca, 'YLim', [0 1.05], 'XLim', [0 nPrimariesNum+1], 'XTick', [], 'YTick', [], 'Color', [0 0 0]);
+                subplot('Position', [0.51 0.52 0.45 0.46]);
+                plot(SToWls(Svector), measurement.pr650.spectrum, 'c-', 'LineWidth', 2.0);
                 set(gca, 'XTick', [], 'YTick', []);
+                title(sprintf('warm up data (pattern: %d, repeat %d)', spectrumIter, repeatIndex), 'Color', [1 1 1])
                 drawnow;
             end  % spectrumIter
         end % repeatIndex
