@@ -92,12 +92,36 @@ function [data, allTimes] = doLinearDriftCorrection(uncorrectedData, nRepeats)
     
 end
 
+
+function [data, measurementTimes] = doLinearDriftCorrection2(warmUpData, warmUpRepeats, uncorrectedData, nRepeats)
+    data = uncorrectedData;
+    nSpectraMeasured = numel(data);
+    allTimes = zeros(nRepeats*nSpectraMeasured,1);
+    
+end
+
+
+
 function analyzeData(rootDir)
 
     [fileName, pathName] = uigetfile('*.mat', 'Select a file to analyze', rootDir);
-    load(fileName, 'data', 'Svector', 'interactingBandSettingsLevels', 'referenceBandSettingsLevels', 'referenceBands', 'interactingBands', 'nRepeats', 'randomizedSpectraIndices', 'cal');
+    load(fileName, 'data',  'nRepeats', 'Svector', 'interactingBandSettingsLevels', 'referenceBandSettingsLevels', 'referenceBands', 'interactingBands', 'randomizedSpectraIndices', 'cal');
     
-    [data, measurementTimes] = doLinearDriftCorrection(data, nRepeats);
+    s = whos('-file', fileName);
+    fileContainsWarmUpData = false;
+    for k = 1:numel(s)
+        if(strcmp(s(k).name, 'warmUpData'))
+            fileContainsWarmUpData = true;
+        end
+    end
+    
+    if (fileContainsWarmUpData)
+        load(fileName,'warmUpData', 'warmUpRepeats');
+        core.analyzeWarmUpData(warmUpData, warmUpRepeats);
+        [data, measurementTimes] = doLinearDriftCorrection2(warmUpData, warmUpRepeats, data, nRepeats);
+    else
+        [data, measurementTimes] = doLinearDriftCorrection(data, nRepeats);
+    end
     
     nSpectraMeasured = numel(data);
     fprintf('There are %d distinct spectra measured (each measured %d times). \n', nSpectraMeasured, nRepeats);
