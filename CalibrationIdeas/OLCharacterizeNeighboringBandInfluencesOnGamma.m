@@ -1108,6 +1108,7 @@ function measureData(rootDir, Svector, radiometerType)
         end
         
         randomizedSpectraIndices = [];
+        repeatIndex = 0;
         
         % Do all the measurements
         for repeatIndex = 1:nRepeats
@@ -1161,8 +1162,9 @@ function measureData(rootDir, Svector, radiometerType)
         end % repeatIndex
         
         % Save data
+        status = 'Completed successfully';
         filename = fullfile(rootDir,sprintf('NeighboringBandInfluencesOnReferenceGamma_%s_%s.mat', cal.describe.calType, datestr(now, 'dd-mmm-yyyy_HH_MM_SS')));
-        save(filename, 'data', 'nRepeats', 'warmUpData', 'warmUpRepeats', 'Svector', 'setType', 'steadyBands', 'steadyBandSettingsLevels', 'interactingBandSettingsLevels', 'referenceBandSettingsLevels', 'referenceBands', 'interactingBands', 'randomizedSpectraIndices', 'cal', '-v7.3');
+        save(filename, 'status', 'data', 'nRepeats', 'warmUpData', 'warmUpRepeats', 'Svector', 'setType', 'steadyBands', 'steadyBandSettingsLevels', 'interactingBandSettingsLevels', 'referenceBandSettingsLevels', 'referenceBands', 'interactingBands', 'randomizedSpectraIndices', 'cal', '-v7.3');
         fprintf('Data saved in ''%s''. \n', filename); 
         SendEmail(emailRecipient, 'OneLight Calibration Complete', 'Finished!');
         
@@ -1180,8 +1182,9 @@ function measureData(rootDir, Svector, radiometerType)
         end
         
         % Attempt to save any data
+        status = sprintf('Failed during repeat: %d (Error message: %s).\nAttempted to save any data.', repeatIndex, err.message);
         filename = fullfile(rootDir,sprintf('NeighboringBandInfluencesOnReferenceGamma_%s_%s.mat', cal.describe.calType, datestr(now, 'dd-mmm-yyyy_HH_MM_SS')));
-        save(filename, 'data', 'nRepeats', 'warmUpData', 'warmUpRepeats', 'Svector', 'setType', 'steadyBands', 'steadyBandSettingsLevels', 'interactingBandSettingsLevels', 'referenceBandSettingsLevels', 'referenceBands', 'interactingBands', 'randomizedSpectraIndices', 'cal', '-v7.3');
+        save(filename, 'status', 'data', 'nRepeats', 'warmUpData', 'warmUpRepeats', 'Svector', 'setType', 'steadyBands', 'steadyBandSettingsLevels', 'interactingBandSettingsLevels', 'referenceBandSettingsLevels', 'referenceBands', 'interactingBands', 'randomizedSpectraIndices', 'cal', '-v7.3');
         fprintf('Data saved in ''%s''. \n', filename); 
         
         SendEmail(emailRecipient, 'OneLight Calibration Failed', ...
