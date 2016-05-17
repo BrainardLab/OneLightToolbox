@@ -55,7 +55,14 @@ if (nargin <= 7 | isempty(nAverage))
     nAverage = 1;
 end
 
+OneLightStateVars = {'LampCurrent', 'CurrentMonitor', 'VoltageMonitor', 'FanSpeed'};
+ 
 if ~isempty(ol)
+    % capture OneLightState before measurement
+    for varIter = 1:numel(OneLightStateVars)
+        eval(sprintf('meas.oneLightState1.%s = ol.%s;', OneLightStateVars{varIter}, OneLightStateVars{varIter}));
+    end
+
     % Set the mirrors.
     ol.setMirrors(starts, stops);
     
@@ -91,6 +98,11 @@ else
     meas.pr650 = [];
 end
 
+% capture OneLightState after PR650 measurement
+for varIter = 1:numel(OneLightStateVars)
+        eval(sprintf('meas.oneLightState2.%s = ol.%s;', OneLightStateVars{varIter}, OneLightStateVars{varIter}));
+end
+    
 % Take a reading with the OmniDriver.
 if meterToggle(2)
     radMeasAvg = 0;
@@ -114,4 +126,9 @@ if meterToggle(2)
 else
     meas.omni = [];
     omniSpectrumSaturated = [];
+end
+
+% capture OneLightState after omni measurement
+for varIter = 1:numel(OneLightStateVars)
+        eval(sprintf('meas.oneLightState3.%s = ol.%s;', OneLightStateVars{varIter}, OneLightStateVars{varIter}));
 end

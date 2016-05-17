@@ -864,8 +864,8 @@ function measureData(rootDir, Svector, radiometerType)
     %setType = 'slidingInteraction';
     
     % How many times to repeat each measurement
-    nRepeats = 2;  
-    warmUpRepeats = 20;
+    nRepeats = GetWithDefault('Enter number of stimulus repeats (nRepeats): ', 6);  
+    warmUpRepeats = 50;
     
     if (strcmp(setType, 'slidingInteraction'))
         % Measure at these levels
@@ -1020,7 +1020,7 @@ function measureData(rootDir, Svector, radiometerType)
     spdType = 'temporalStabilityGauge1SPD';
     stimPattern = stimPattern + 1;
     activation = round(rand(nPrimariesNum,1)*100)/100;
-    activation(activation == 0) = 0.05;
+    activation(activation < 0.05) = 0.05;
     data{stimPattern} = struct(...
         'spdType', spdType, ...
         'activation', activation, ...
@@ -1164,20 +1164,24 @@ function measureData(rootDir, Svector, radiometerType)
                 settingsValues  = warmUpData{stimPattern}.activation;
                 [starts,stops] = OLSettingsToStartsStops(cal,settingsValues);
                 measurement = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, Svector, meterToggle, nAverage);
+                warmUpData{stimPattern}.oneLightStateBeforeStimOnset{repeatIndex}    = measurement.oneLightState1;
+                warmUpData{stimPattern}.oneLightStateAfterMeasurement{repeatIndex}    = measurement.oneLightState2;
                 warmUpData{stimPattern}.measuredSPD(:, repeatIndex)     = measurement.pr650.spectrum;
                 warmUpData{stimPattern}.measurementTime(:, repeatIndex) = measurement.pr650.time(1);
                 warmUpData{stimPattern}.repeatIndex = repeatIndex;
                 
                 subplot('Position', [0.51 0.03 0.45 0.47]);
-                bar(settingsValues, 1, 'FaceColor', [0.9 0.8 0.3], 'Color', [0 0 0]);
+                bar(settingsValues, 1, 'FaceColor', [0.3 0.8 0.9]);
                 set(gca, 'YLim', [0 1.05], 'XLim', [0 nPrimariesNum+1], 'XTick', [], 'YTick', [], 'Color', [0 0 0]);
-                subplot('Position', [0.51 0.52 0.45 0.46]);
-                plot(SToWls(Svector), measurement.pr650.spectrum, 'c-', 'LineWidth', 2.0);
-                set(gca, 'XTick', [], 'YTick', []);
-                title(sprintf('warm up data (pattern: %d, repeat %d)', stimPattern, repeatIndex), 'Color', [1 1 1])
+                subplot('Position', [0.51 0.52 0.45 0.44]);
+                plot(SToWls(Svector), measurement.pr650.spectrum, 'g-', 'LineWidth', 2.0);
+                set(gca, 'XTick', [], 'YTick', [], 'Color', [0 0 0]);
+                title(sprintf('warm up data (pattern: %d, repeat %d)', stimPattern, repeatIndex), 'Color', [1 1 1], 'FontSize', 14, 'FontName', 'Menlo')
                 drawnow;
            end
         end
+        
+        randomizedSpectraIndices = [];
         
         % Do all the measurements
         for repeatIndex = 1:nRepeats
@@ -1210,6 +1214,8 @@ function measureData(rootDir, Svector, radiometerType)
                 settingsValues  = data{spectrumIndex}.activation;
                 [starts,stops] = OLSettingsToStartsStops(cal,settingsValues);
                 measurement = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, Svector, meterToggle, nAverage);
+                data{spectrumIndex}.oneLightStateBeforeStimOnset{repeatIndex}  = measurement.oneLightState1;
+                data{spectrumIndex}.oneLightStateAfterMeasurement{repeatIndex} = measurement.oneLightState2;
                 data{spectrumIndex}.measuredSPD(:, repeatIndex)     = measurement.pr650.spectrum;
                 data{spectrumIndex}.measurementTime(:, repeatIndex) = measurement.pr650.time(1);
                 data{spectrumIndex}.repeatIndex = repeatIndex;
@@ -1217,10 +1223,10 @@ function measureData(rootDir, Svector, radiometerType)
                 subplot('Position', [0.51 0.04 0.45 0.47]);
                 bar(settingsValues, 1, 'FaceColor', [0.9 0.8 0.3], 'Color', [0 0 0]);
                 set(gca, 'YLim', [0 1.05], 'XLim', [0 nPrimariesNum+1], 'XTick', [], 'YTick', [], 'Color', [0 0 0]);
-                subplot('Position', [0.51 0.52 0.45 0.46]);
-                plot(SToWls(Svector), measurement.pr650.spectrum, 'c-', 'LineWidth', 2.0);
-                set(gca, 'XTick', [], 'YTick', []);
-                title(sprintf('warm up data (pattern: %d, repeat %d)', spectrumIter, repeatIndex), 'Color', [1 1 1])
+                subplot('Position', [0.51 0.52 0.45 0.44]);
+                plot(SToWls(Svector), measurement.pr650.spectrum, 'g-', 'LineWidth', 2.0);
+                set(gca, 'XTick', [], 'YTick', [], 'Color', [0 0 0]);
+                title(sprintf('warm up data (pattern: %d, repeat %d)', spectrumIter, repeatIndex), 'Color', [1 1 1], 'FontSize', 14, 'FontName', 'Menlo')
                 drawnow;
             end  % spectrumIter
         end % repeatIndex
