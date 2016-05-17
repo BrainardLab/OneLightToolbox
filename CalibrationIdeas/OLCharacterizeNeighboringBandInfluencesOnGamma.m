@@ -1186,6 +1186,9 @@ function measureData(rootDir, Svector, radiometerType)
         % Do all the measurements
         for repeatIndex = 1:nRepeats
          
+            SendEmail(emailRecipient, 'OLCharacterizeNeighboringBandInfluencesOnGamma', ...
+                sprintf('Started iteration: %d of %d', repeatIndex, nRepeats));
+        
             % Randomize presentation sequence
             randomizedSpectraIndices(repeatIndex,:) = randperm(nSpectraMeasured); 
             
