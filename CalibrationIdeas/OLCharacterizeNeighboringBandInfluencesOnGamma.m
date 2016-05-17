@@ -900,14 +900,22 @@ function measureData(rootDir, Svector, radiometerType)
     fprintf('There will be %d distinct spectra measured (%d reps). \n', nSpectraMeasured, nRepeats);
     
     % Plot the activations (before randomization)
-    hFig = figure(1); clf; set(hFig, 'Position', [1 1 573 1290]);
-    subplot('Position', [0.04 0.04 0.95 0.95]);
-    pcolor(1:nPrimariesNum, 1:nSpectraMeasured, Core.retrieveActivationSequence(data, 1:nSpectraMeasured));
-    xlabel('primary no');
-    ylabel('spectrum no');
-    set(gca, 'CLim', [0 1], 'YLim', [0 nSpectraMeasured+1]);
-    title('primary values');
-    colormap(gray(1024));
+    nn = floor(nSpectraMeasured/10);
+    for k = 1:11
+        hFig = figure(1+k); clf; set(hFig, 'Position', [1+k*100 1 573 1290]);
+        subplot('Position', [0.04 0.04 0.95 0.95]);
+        stimIndices = (k-1)*nn + (1:nn);
+        stimIndices = stimIndices(stimIndices <= nSpectraMeasured);
+        if (~isempty(stimIndices))
+            pcolor(1:nPrimariesNum, stimIndices, Core.retrieveActivationSequence(data, stimIndices));
+            xlabel('primary no');
+            ylabel('spectrum no');
+            set(gca, 'CLim', [0 1], 'YLim', [stimIndices(1) stimIndices(end)]);
+            title('primary values');
+            colormap(gray(1024));
+        end
+    end
+    
     disp('Hit enter to continue');
     pause
     
