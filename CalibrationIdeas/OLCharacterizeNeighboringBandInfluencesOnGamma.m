@@ -765,8 +765,9 @@ end
 
 function measureData(rootDir, Svector, radiometerType)
 
+    
     % check that hardware is responding
-    checkHardware();
+    checkHardware(radiometerType);
     
     % Ask for email recipient
     emailRecipient = GetWithDefault('Send status email to','cottaris@psych.upenn.edu');
@@ -1149,12 +1150,12 @@ function measureData(rootDir, Svector, radiometerType)
                 data{spectrumIndex}.repeatIndex = repeatIndex;
                 
                 subplot('Position', [0.51 0.04 0.45 0.47]);
-                bar(settingsValues, 1, 'FaceColor', [0.9 0.8 0.3], 'Color', [0 0 0]);
+                bar(settingsValues, 1, 'FaceColor', [0.9 0.8 0.3]);
                 set(gca, 'YLim', [0 1.05], 'XLim', [0 nPrimariesNum+1], 'XTick', [], 'YTick', [], 'Color', [0 0 0]);
                 subplot('Position', [0.51 0.52 0.45 0.44]);
                 plot(SToWls(Svector), measurement.pr650.spectrum, 'g-', 'LineWidth', 2.0);
                 set(gca, 'XTick', [], 'YTick', [], 'Color', [0 0 0]);
-                title(sprintf('warm up data (pattern: %d, repeat %d)', spectrumIter, repeatIndex), 'Color', [1 1 1], 'FontSize', 14, 'FontName', 'Menlo')
+                title(sprintf('pattern: %d, repeat %d', spectrumIter, repeatIndex), 'Color', [1 1 1], 'FontSize', 14, 'FontName', 'Menlo')
                 drawnow;
             end  % spectrumIter
         end % repeatIndex
@@ -1177,6 +1178,11 @@ function measureData(rootDir, Svector, radiometerType)
             % Shutdown spectroradiometer
             spectroRadiometerOBJ.shutDown();
         end
+        
+        % Attempt to save any data
+        filename = fullfile(rootDir,sprintf('NeighboringBandInfluencesOnReferenceGamma_%s_%s.mat', cal.describe.calType, datestr(now, 'dd-mmm-yyyy_HH_MM_SS')));
+        save(filename, 'data', 'nRepeats', 'warmUpData', 'warmUpRepeats', 'Svector', 'setType', 'steadyBands', 'steadyBandSettingsLevels', 'interactingBandSettingsLevels', 'referenceBandSettingsLevels', 'referenceBands', 'interactingBands', 'randomizedSpectraIndices', 'cal', '-v7.3');
+        fprintf('Data saved in ''%s''. \n', filename); 
         
         SendEmail(emailRecipient, 'OneLight Calibration Failed', ...
             ['Calibration failed with the following error' err.message]);
@@ -1203,16 +1209,16 @@ function activationSequence = retrieveActivationSequence(data, presentationIndic
     end
 end
 
-function checkHardware()
+function checkHardware(radiometerType)
 
     spectroRadiometerOBJ = [];
     ol = [];
     
-    clear classes
+   
     pause(1.0);
     
     try
-        spectroRadiometerOBJ = initRadiometerObject();
+        spectroRadiometerOBJ = initRadiometerObject(radiometerType);
 
         spectroRadiometerOBJ.shutDown();
         fprintf('PR670 is good!\n');

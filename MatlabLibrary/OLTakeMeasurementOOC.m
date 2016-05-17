@@ -55,7 +55,7 @@ if (nargin <= 7 | isempty(nAverage))
     nAverage = 1;
 end
 
-OneLightStateVars = {'LampCurrent', 'CurrentMonitor', 'VoltageMonitor', 'FanSpeed'};
+OneLightStateVars = {'LampStatus', 'LampCurrent', 'CurrentMonitor', 'VoltageMonitor', 'FanSpeed'};
  
 if ~isempty(ol)
     % capture OneLightState before measurement
