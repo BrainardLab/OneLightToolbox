@@ -30,15 +30,35 @@ end
 function analyzeData(rootDir)
 
     [fileName, pathName] = uigetfile('*.mat', 'Select a file to analyze', rootDir);
-    load(fileName, 'data',  'nRepeats', 'Svector', 'interactingBandSettingsLevels', 'referenceBandSettingsLevels', 'referenceBands', 'interactingBands', 'randomizedSpectraIndices', 'cal');
+    load(fileName, 'data',  'nRepeats', 'Svector', 'setType', 'interactingBandSettingsLevels', 'referenceBandSettingsLevels', 'referenceBands', 'interactingBands', 'randomizedSpectraIndices', 'cal');
+    
+    
     
     s = whos('-file', fileName);
     fileContainsWarmUpData = false;
+    fileContainsSteadyBandsData = false;
+    
     for k = 1:numel(s)
         if(strcmp(s(k).name, 'warmUpData'))
             fileContainsWarmUpData = true;
         end
+        if (strcmp(s(k).name, 'steadyBands'))
+            fileContainsSteadyBandsData = true;
+        end
     end
+    
+    if (fileContainsSteadyBandsData)
+        load(fileName,'steadyBands', 'steadyBandSettingsLevels');
+        nPrimariesNum = numel(data{1}.activation);
+        steadyBandActivation = zeros(nPrimariesNum,1);
+        steadyBandActivation(steadyBands) = steadyBandSettingsLevels;
+    else
+        steadyBands = [];
+        steadyBandSettingsLevels = [];
+        nPrimariesNum = numel(data{1}.activation);
+        steadyBandActivation = zeros(nPrimariesNum,1);
+    end
+    
     
     if (fileContainsWarmUpData)
         load(fileName,'warmUpData', 'warmUpRepeats');
@@ -49,7 +69,7 @@ function analyzeData(rootDir)
     end
     
     nSpectraMeasured = numel(data);
-    nPrimariesNum = numel(data{1}.activation);
+    
     wavelengthAxis = SToWls(Svector);
     nSpectralSamples = numel(wavelengthAxis);
     
@@ -59,7 +79,7 @@ function analyzeData(rootDir)
     % stimulation patterns
     [referenceBandData, interactingBandData, comboBandData, ...
         allSingletonSPDrKeys, allSingletonSPDiKeys,allComboKeys, ...
-        darkSPD, darkSPDrange] = Core.parseData(data, referenceBands, referenceBandSettingsLevels, interactingBands, interactingBandSettingsLevels);
+        darkSPD, darkSPDrange, steadyBandsOnlySPD, steadyBandsOnlySPDrange] = Core.parseData(data, referenceBands, referenceBandSettingsLevels, interactingBands, interactingBandSettingsLevels);
 
     % Subtract darkSPD from the interacting band data
     interactingBandData = Core.subtractDarkSPD(interactingBandData, darkSPD);
@@ -68,51 +88,55 @@ function analyzeData(rootDir)
     referenceBandData = Core.subtractDarkSPD(referenceBandData, darkSPD);
     
     % Compute combo predictions
-    [comboBandData, maxSPD] = Core.computeComboPredictions(comboBandData, referenceBandData, interactingBandData, darkSPD);
+    [comboBandData, maxSPD] = Core.computeComboPredictions(comboBandData, referenceBandData, interactingBandData, steadyBandsOnlySPD, darkSPD);
+    
+    % Compute gamma of the reference band, by subtracting the comboBandSPD from the interactingBand SPD
+    effectiveSPDcomputationMethod = 'Combo - Interacting';
+    referenceBandGammaData1 = Core.computeReferenceBandGammaCurves(effectiveSPDcomputationMethod, comboBandData, referenceBandData, interactingBandData, steadyBandsOnlySPD, steadyBandActivation, darkSPD);
+    
+    effectiveSPDcomputationMethod = 'Reference - Steady';
+    referenceBandGammaData2 = Core.computeReferenceBandGammaCurves(effectiveSPDcomputationMethod, comboBandData, referenceBandData, interactingBandData, steadyBandsOnlySPD, steadyBandActivation, darkSPD);
+    
+    figure(997);
+    clf;
+    gammaKeys = keys(referenceBandGammaData1);
+    for keyIndex = 1:numel(gammaKeys)
+        key = gammaKeys{keyIndex};
+        subplot(6, round(numel(gammaKeys)/6)+1, keyIndex);
+        theGamma = referenceBandGammaData1(key);
+        plot(theGamma.settingsValue, theGamma.primaryOut, 'ks-');
+        set(gca, 'YLim', [0 1], 'XLim', [0 1]);
+        title(key)
+        drawnow;
+    end % keyIndex
+    
+    figure(998);
+    clf;
+    gammaKeys = keys(referenceBandGammaData1);
+    for keyIndex = 1:numel(gammaKeys)
+        key = gammaKeys{keyIndex};
+        theGamma = referenceBandGammaData1(key);
+        hold on
+        plot(theGamma.settingsValue, theGamma.primaryOut, 'k-');
+        set(gca, 'YLim', [0 1], 'XLim', [0 1]);
+        drawnow;
+    end % keyIndex
     
     
-    % Compute gamma functions for all effective backgrounds (i.e.,
-    % interacting band spatial configs & settings)
-    gamma = containers.Map();
-    selectKeys = keys(comboBandData);
-    for keyIndex = 1:numel(selectKeys)
-        key = selectKeys{keyIndex};
-        s = comboBandData(key);
-        interactingS = interactingBandData(s.interactingBandKey);
-        backgroundConditionKey = sprintf('interactingBandsSettingsIndex: %d, interactingBandsIndex: %d', interactingS.settingsIndex, interactingS.interactingBandsIndex);
-        gamma(backgroundConditionKey) = struct(...
-            'backgroundSubtractedSPD',[], ...
-            'gammaIn', [], ...
-            'gammaOut', [] ...
-            );
-    end
+    figure(999);
+    clf;
+    gammaKeys = keys(referenceBandGammaData2);
+    for keyIndex = 1:numel(gammaKeys)
+        key = gammaKeys{keyIndex};
+        subplot(1, numel(gammaKeys), keyIndex);
+        theGamma = referenceBandGammaData2(key);
+        plot(theGamma.settingsValue, theGamma.primaryOut, 'ks-');
+        set(gca, 'YLim', [0 1], 'XLim', [0 1]);
+        title(key)
+        drawnow;
+    end % keyIndex
     
-    for keyIndex = 1:numel(selectKeys)
-        key = selectKeys{keyIndex};
-        s = comboBandData(key);
-        refS = referenceBandData(s.referenceBandKey);
-        interactingS = interactingBandData(s.interactingBandKey);
-        backgroundConditionKey = sprintf('interactingBandsSettingsIndex: %d, interactingBandsIndex: %d', interactingS.settingsIndex, interactingS.interactingBandsIndex);
-        theGamma = gamma(backgroundConditionKey);
-        theGamma.backgroundSubtractedSPD(refS.settingsIndex,:) = (s.meanSPD - darkSPD) - interactingS.meanSPD;
-        theGamma.gammaIn(refS.settingsIndex) = refS.settingsValue;
-        gamma(backgroundConditionKey) = theGamma;
-     end
-    
-     gammaKeys = keys(gamma);
-     for keyIndex = 1:numel(gammaKeys)
-         theGamma = gamma(gammaKeys{keyIndex});
-         maxSettingsSPD = squeeze(theGamma.backgroundSubtractedSPD(end,:));
-         for settingsIndex = 1:size(theGamma.backgroundSubtractedSPD,1)
-            theGamma.gammaOut(settingsIndex) = squeeze(maxSettingsSPD)' \ squeeze(theGamma.backgroundSubtractedSPD(settingsIndex,:))';
-         end
-         gamma(gammaKeys{keyIndex}) = theGamma;
-         figure(100);
-         plot(theGamma.gammaIn, theGamma.gammaOut, 'ks-');
-         title(gammaKeys{keyIndex});
-     end
-     
-     
+    pause;
     
     % Plotting
     % plot in milliWatts
@@ -750,7 +774,6 @@ function measureData(rootDir, Svector, radiometerType)
         steadyBands = referenceBands + [8 -8 16 -16 24 -24];
         steadyBandSettingsLevels = 0.8 * ones(numel(steadyBands),1);
     end
-    
     
     stimPattern = 0;
     

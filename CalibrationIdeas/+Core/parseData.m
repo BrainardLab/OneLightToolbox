@@ -1,6 +1,6 @@
 function [referenceBandData, interactingBandData, comboBandData, ...
     allSingletonSPDrKeys, allSingletonSPDiKeys,allComboKeys, ...
-    darkSPD, darkSPDrange] = parseData(data, referenceBands, referenceBandSettingsLevels, interactingBands, interactingBandSettingsLevels)
+    darkSPD, darkSPDrange, steadyBandsOnlySPD, steadyBandsOnlySPDrange] = parseData(data, referenceBands, referenceBandSettingsLevels, interactingBands, interactingBandSettingsLevels)
 
     interactingBandData = containers.Map;
     referenceBandData = containers.Map;
@@ -48,6 +48,7 @@ function [referenceBandData, interactingBandData, comboBandData, ...
             'allSPDtimes',           squeeze(data{spectrumIndex}.measurementTime(1, :)), ...
             'allSPDmaxDeviationsFromMean', [] ...
             );
+        
         spdType = data{spectrumIndex}.spdType;
         switch (spdType)
             
@@ -62,21 +63,26 @@ function [referenceBandData, interactingBandData, comboBandData, ...
                 key = sprintf('activationIndex: %d, bands: %s', interactingBandSettingsIndex, interactingBandsString);
                 
                 % add to dictionary
-                allSingletonSPDiKeys{numel(allSingletonSPDiKeys)+1} = key;
                 interactingBandData(key) = dataStruct;
+                
+                % Sort keys
+                allSingletonSPDiKeys{numel(allSingletonSPDiKeys)+1} = key; 
                 
             case 'singletonSPDr'
                 % add spdType-specific data
                 dataStruct.settingsValue = referenceBandSettingsLevels(data{spectrumIndex}.referenceBandSettingsIndex);
                 dataStruct.settingsIndex = data{spectrumIndex}.referenceBandSettingsIndex;
+                dataStruct.referenceBandIndex = data{spectrumIndex}.referenceBandIndex;
                 
                 % Generate dictionary key
                 referenceBandsString = sprintf('%d \n', theReferenceBand);
                 key = sprintf('activationIndex: %d, bands: %s', referenceBandSettingsIndex, referenceBandsString);
                 
                 % Add to dictionary
-                allSingletonSPDrKeys{numel(allSingletonSPDrKeys)+1} = key;
                 referenceBandData(key) = dataStruct;
+                
+                % Sort keys
+                allSingletonSPDrKeys{numel(allSingletonSPDrKeys)+1} = key;
             
             case 'comboSPD'
                 % Get interacting bands for this combo
@@ -94,24 +100,41 @@ function [referenceBandData, interactingBandData, comboBandData, ...
                 % Generate dictionary key
                 key = sprintf('activationIndices: [Reference=%d, Interacting=%d], Reference bands:%s Interacting bands:%s', referenceBandSettingsIndex, interactingBandSettingsIndex, referenceBandsString, interactingBandsString);
       
-                % Add to dictionary with an indxes so we get gamma data for each condition
+                % Add to dictionary
+                comboBandData(key) = dataStruct;
+                
+                % Sort keys so we get gamma data for each condition
                 comboKeyIndex = (referenceBandIndex-1) * (numel(interactingBands)) * (numel(interactingBandSettingsLevels)) * (numel(referenceBandSettingsLevels)) + ...
                             (interactingBandsIndex-1) * (numel(interactingBandSettingsLevels)) * (numel(referenceBandSettingsLevels)) + ...
                             (interactingBandSettingsIndex-1) * numel(referenceBandSettingsLevels) + referenceBandSettingsIndex;
-                allComboKeys{comboKeyIndex} = key;
-                comboBandData(key) = dataStruct;
+                allComboKeys{comboKeyIndex} = key; 
+                
+            case 'steadyBandsOnly'
+                steadyBandsOnlySPD = data{spectrumIndex}.meanSPD;
+                steadyBandsOnlySPDrange(1,:) = data{spectrumIndex}.minSPD;
+                steadyBandsOnlySPDrange(2,:) = data{spectrumIndex}.maxSPD;
+                
+            case 'dark'
+                darkSPD = data{spectrumIndex}.meanSPD;
+                darkSPDrange(1,:) = data{spectrumIndex}.minSPD;
+                darkSPDrange(2,:) = data{spectrumIndex}.maxSPD;
                 
             case 'temporalStabilityGauge1SPD'
                 ; % do nothing 
                 
             case 'temporalStabilityGauge2SPD'
                 ; % do nothing 
-                
-            case 'dark'
-                darkSPD = data{spectrumIndex}.meanSPD;
-                darkSPDrange(1,:) = data{spectrumIndex}.minSPD;
-                darkSPDrange(2,:) = data{spectrumIndex}.maxSPD;
         end % switch
         
     end % spectrumIndex
+    
+    if (~exist('steadyBandsOnlySPD', 'var'))
+        fprintf(2,'Did not find ''steadyBandsOnly'' spd data. Using all zeros. PLEASE CHECK YOUR PROGRAM TO MAKE SURE THERE IS NO STEADY BANDS INDEED.\n');
+        fprintf(2,'Hit enter to continue\n');
+        pause;
+        steadyBandsOnlySPD = darkSPD*0;
+        steadyBandsOnlySPDrange(1,:) = steadyBandsOnlySPD;
+        steadyBandsOnlySPDrange(2,:) = steadyBandsOnlySPD;
+    end
+    
 end
