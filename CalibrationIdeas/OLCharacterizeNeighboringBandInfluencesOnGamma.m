@@ -29,12 +29,11 @@ end
 
 function analyzeData(rootDir)
 
-    [fileName, pathName] = uigetfile('*.mat', 'Select a file to analyze', rootDir);
-    load(fileName, 'data',  'nRepeats', 'Svector', 'setType', 'interactingBandSettingsLevels', 'referenceBandSettingsLevels', 'referenceBands', 'interactingBands', 'randomizedSpectraIndices', 'cal');
-    
-    
-    
-    s = whos('-file', fileName);
+    % ============================== Load data ============================
+    [fileName, pathName] = uigetfile('*.mat', 'Select a file to analyze', fullfile(rootDir, 'Data'));
+    load(fullfile(pathName,fileName), 'data',  'nRepeats', 'Svector', 'setType', 'interactingBandSettingsLevels', 'referenceBandSettingsLevels', 'referenceBands', 'interactingBands', 'randomizedSpectraIndices', 'cal');
+
+    s = whos('-file', fullfile(pathName,fileName));
     fileContainsWarmUpData = false;
     fileContainsSteadyBandsData = false;
     
@@ -48,7 +47,7 @@ function analyzeData(rootDir)
     end
     
     if (fileContainsSteadyBandsData)
-        load(fileName,'steadyBands', 'steadyBandSettingsLevels');
+        load(fullfile(pathName,fileName),'steadyBands', 'steadyBandSettingsLevels');
         nPrimariesNum = numel(data{1}.activation);
         steadyBandActivation = zeros(nPrimariesNum,1);
         steadyBandActivation(steadyBands) = steadyBandSettingsLevels;
@@ -60,23 +59,21 @@ function analyzeData(rootDir)
     end
     
     
+    % ================= Do Linear Drift Correction =========================
     if (fileContainsWarmUpData)
-        load(fileName,'warmUpData', 'warmUpRepeats');
-        %Core.analyzeWarmUpData(warmUpData, warmUpRepeats)
-        [data, measurementTimes] = Core.doLinearDriftCorrectionWithWarpUpData(warmUpData, warmUpRepeats, data, nRepeats);
+        load(fullfile(pathName,fileName),'warmUpData', 'warmUpRepeats');
+        Core.analyzeWarmUpData(warmUpData, warmUpRepeats)
+        [data, measurementTimes] = Core.doLinearDriftCorrectionUsingMultipleMeasurements(data, nRepeats);
     else
         [data, measurementTimes] = Core.doLinearDriftCorrection(data, nRepeats);
     end
     
-    nSpectraMeasured = numel(data);
-    
-    wavelengthAxis = SToWls(Svector);
-    nSpectralSamples = numel(wavelengthAxis);
-    
+    % ================= Show stimulation patterns =========================
     Core.showActivationSequences(randomizedSpectraIndices, data);
     
-    % Parse the data and generate separate dictionaries for different
-    % stimulation patterns
+    
+    % === Parse the data to generate separate dictionaries for different
+    % === stimulation patterns
     [referenceBandData, interactingBandData, comboBandData, ...
         allSingletonSPDrKeys, allSingletonSPDiKeys,allComboKeys, ...
         darkSPD, darkSPDrange, steadyBandsOnlySPD, steadyBandsOnlySPDrange] = Core.parseData(data, referenceBands, referenceBandSettingsLevels, interactingBands, interactingBandSettingsLevels);
@@ -91,52 +88,25 @@ function analyzeData(rootDir)
     [comboBandData, maxSPD] = Core.computeComboPredictions(comboBandData, referenceBandData, interactingBandData, steadyBandsOnlySPD, darkSPD);
     
     % Compute gamma of the reference band, by subtracting the comboBandSPD from the interactingBand SPD
-    effectiveSPDcomputationMethod = 'Combo - Interacting';
+    effectiveSPDcomputationMethod = 'Reference - Steady';
     referenceBandGammaData1 = Core.computeReferenceBandGammaCurves(effectiveSPDcomputationMethod, comboBandData, referenceBandData, interactingBandData, steadyBandsOnlySPD, steadyBandActivation, darkSPD);
     
-    effectiveSPDcomputationMethod = 'Reference - Steady';
+    effectiveSPDcomputationMethod = 'Combo - Interacting';
     referenceBandGammaData2 = Core.computeReferenceBandGammaCurves(effectiveSPDcomputationMethod, comboBandData, referenceBandData, interactingBandData, steadyBandsOnlySPD, steadyBandActivation, darkSPD);
     
-    figure(997);
-    clf;
-    gammaKeys = keys(referenceBandGammaData1);
-    for keyIndex = 1:numel(gammaKeys)
-        key = gammaKeys{keyIndex};
-        subplot(6, round(numel(gammaKeys)/6)+1, keyIndex);
-        theGamma = referenceBandGammaData1(key);
-        plot(theGamma.settingsValue, theGamma.primaryOut, 'ks-');
-        set(gca, 'YLim', [0 1], 'XLim', [0 1]);
-        title(key)
-        drawnow;
-    end % keyIndex
+   
+    % =========================== Plot gamma data =========================
+    wavelengthAxis = SToWls(Svector);
+    Core.plotGammaSet(rootDir, referenceBandGammaData1, referenceBandGammaData2, wavelengthAxis);
+    pause
+        
+    nSpectraMeasured = numel(data);
     
-    figure(998);
-    clf;
-    gammaKeys = keys(referenceBandGammaData1);
-    for keyIndex = 1:numel(gammaKeys)
-        key = gammaKeys{keyIndex};
-        theGamma = referenceBandGammaData1(key);
-        hold on
-        plot(theGamma.settingsValue, theGamma.primaryOut, 'k-');
-        set(gca, 'YLim', [0 1], 'XLim', [0 1]);
-        drawnow;
-    end % keyIndex
+   
+    nSpectralSamples = numel(wavelengthAxis);
     
     
-    figure(999);
-    clf;
-    gammaKeys = keys(referenceBandGammaData2);
-    for keyIndex = 1:numel(gammaKeys)
-        key = gammaKeys{keyIndex};
-        subplot(1, numel(gammaKeys), keyIndex);
-        theGamma = referenceBandGammaData2(key);
-        plot(theGamma.settingsValue, theGamma.primaryOut, 'ks-');
-        set(gca, 'YLim', [0 1], 'XLim', [0 1]);
-        title(key)
-        drawnow;
-    end % keyIndex
     
-    pause;
     
     % Plotting
     % plot in milliWatts

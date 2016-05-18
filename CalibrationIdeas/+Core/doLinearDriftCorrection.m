@@ -36,6 +36,7 @@ function [data, allTimes] = doLinearDriftCorrection(uncorrectedData, nRepeats)
         end
     end
     
+    
     plotScalingExample = false;
     if (plotScalingExample)
         t = sort(allTimes);
@@ -46,7 +47,6 @@ function [data, allTimes] = doLinearDriftCorrection(uncorrectedData, nRepeats)
         tt = t((t>=t0) & (t <=t1));
         plot(tt, returnScaleFactor(tt), 'rs');
         drawnow;
-
 
         figure(2); clf
         subplot(1,2,1);
