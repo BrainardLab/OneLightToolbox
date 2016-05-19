@@ -623,7 +623,8 @@ function measureData(rootDir, Svector, radiometerType, setType)
         meterToggle = [1 0];
         od = [];
         nAverage = 1;
-        
+        randomizedSpectraIndices = [];
+         
         spectroRadiometerOBJ = Measure.initRadiometerObject(radiometerType);
         pause(0.2);
         
@@ -658,7 +659,7 @@ function measureData(rootDir, Svector, radiometerType, setType)
         end
         
         nSpectraMeasured = numel(data);
-        randomizedSpectraIndices = [];
+       
         repeatIndex = 0;
         
         % Do all the measurements
