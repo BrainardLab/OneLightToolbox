@@ -636,8 +636,10 @@ function measureData(rootDir, Svector, radiometerType, setType)
         
         % Do the warming up data collection to allow for the unit to warm up
         for repeatIndex = 1:warmUpRepeats
-           for stimPattern = 1:numel(warmUpData)
+           randomizedPatternIndices(repeatIndex,:) = randperm(numel(warmUpData)); 
+           for stimPatternIter = 1:numel(warmUpData)
 
+                stimPattern = randomizedPatternIndices(repeatIndex,stimPatternIter);
                 settingsValues  = warmUpData{stimPattern}.activation;
                 [starts,stops] = OLSettingsToStartsStops(cal,settingsValues);
                 measurement = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, Svector, meterToggle, nAverage);
