@@ -20,7 +20,13 @@ function OLCharacterizeNeighboringBandInfluencesOnGamma
             otherwise
                 error('Unknown radiometer type: ''%s''.', radiometerType)
         end
-        measureData(rootDir, Svector, radiometerType);
+        
+        stimulusSetType = 'warmUpDataOnly';
+        %stimulusSetType = 'wigglySpectrumVariation1';
+        %stimulusSetType = 'combinatorialFull';
+        %stimulusSetType = 'combinatorialSmall';
+        %stimulusSetType = 'slidingInteraction';
+        measureData(rootDir, Svector, radiometerType, stimulusSetType);
     else
         analyzeData(rootDir);
     end
@@ -46,15 +52,15 @@ function analyzeData(rootDir)
         end
     end
     
+    nPrimariesNum = numel(data{1}.activation);
+    
     if (fileContainsSteadyBandsData)
         load(fullfile(pathName,fileName),'steadyBands', 'steadyBandSettingsLevels');
-        nPrimariesNum = numel(data{1}.activation);
         steadyBandActivation = zeros(nPrimariesNum,1);
         steadyBandActivation(steadyBands) = steadyBandSettingsLevels;
     else
         steadyBands = [];
         steadyBandSettingsLevels = [];
-        nPrimariesNum = numel(data{1}.activation);
         steadyBandActivation = zeros(nPrimariesNum,1);
     end
     
@@ -68,12 +74,17 @@ function analyzeData(rootDir)
         [data, measurementTimes] = Core.doLinearDriftCorrection(data, nRepeats);
     end
     
+    
+    if (strcmp(setType, 'warmUpDataOnly'))
+        return;
+    end
+    
+    
     % ================= Show stimulation patterns =========================
     Core.showActivationSequences(randomizedSpectraIndices, data);
     
     
-    % === Parse the data to generate separate dictionaries for different
-    % === stimulation patterns
+    % === Parse the data to generate separate dictionaries for different stimulation patterns
     [referenceBandData, interactingBandData, comboBandData, ...
         allSingletonSPDrKeys, allSingletonSPDiKeys,allComboKeys, ...
         darkSPD, darkSPDrange, steadyBandsOnlySPD, steadyBandsOnlySPDrange] = Core.parseData(data, referenceBands, referenceBandSettingsLevels, interactingBands, interactingBandSettingsLevels);
@@ -94,15 +105,18 @@ function analyzeData(rootDir)
     effectiveSPDcomputationMethod = 'Combo - Interacting';
     referenceBandGammaData2 = Core.computeReferenceBandGammaCurves(effectiveSPDcomputationMethod, comboBandData, referenceBandData, interactingBandData, steadyBandsOnlySPD, steadyBandActivation, darkSPD);
     
-   
-    % =========================== Plot gamma data =========================
+    
     wavelengthAxis = SToWls(Svector);
+    % =========================== Plot SPD variability =========================
+    Core.plotSPDvariability(rootDir, comboBandData, referenceBandData, interactingBandData, nPrimariesNum, wavelengthAxis);
+    
+    % =========================== Plot gamma data =========================
     Core.plotGammaSet(rootDir, referenceBandGammaData1, referenceBandGammaData2, wavelengthAxis);
+    
+    
     pause
         
     nSpectraMeasured = numel(data);
-    
-   
     nSpectralSamples = numel(wavelengthAxis);
     
     
@@ -584,351 +598,41 @@ function plotFrame(axesStruct, refActivation, interactingActivation, wavelengthA
 end
 
 
-function measureData(rootDir, Svector, radiometerType)
-
+function measureData(rootDir, Svector, radiometerType, setType)
     
     % check that hardware is responding
-    checkHardware(radiometerType);
+    Measure.checkHardware(radiometerType);
     
     % Ask for email recipient
     emailRecipient = GetWithDefault('Send status email to','cottaris@psych.upenn.edu');
     
     % Import a calibration 
     cal = OLGetCalibrationStructure;
-    
     nPrimariesNum = cal.describe.numWavelengthBands;
-    
-    % Reference band: One, at the center of the band range
-    referenceBands = round(nPrimariesNum/2);
-    
-    % Bands that are constant across all conditions
-    steadyBands = [];
-    steadyBandSettingsLevels = [];
-    
-    setType = 'wigglySpectrumVariation1';
-    %setType = 'combinatorialFull';
-    %setType = 'combinatorialSmall';
-    %setType = 'slidingInteraction';
-    
-    % How many times to repeat each measurement
-    nRepeats = GetWithDefault('Enter number of stimulus repeats (nRepeats): ', 6);  
-    warmUpRepeats = 50;
-    
-    if (strcmp(setType, 'slidingInteraction'))
-        % Measure at these levels
-        interactingBandSettingsLevels = [0.25 0.50 0.75 1.0];
-        nGammaLevels = 16;
-        referenceBandSettingsLevels = linspace(1.0/nGammaLevels, 1.0, nGammaLevels);
-        
-       % pattern = [1 2 3 4];
-        pattern = [1 2 3];
-       % pattern = [1 2];
-        interactingBands = {};
-        
-        k = 0;
-        while (max(referenceBands) + max(pattern) < 56)
-            k = k + 1;
-            interactingBands{k} = pattern;
-            pattern = pattern + numel(pattern);
-        end
-        max(max(referenceBands) + max(pattern))
-        if (max(max(referenceBands) + max(pattern)) > 56)
-            interactingBands = interactingBands(1:(numel(interactingBands)-1));
-        end
-        
-    elseif (strcmp(setType, 'combinatorialFull'))
-        % Measure at these levels
-        interactingBandSettingsLevels = [0.33 0.66 1.0];
-        nGammaLevels = 20;
-        referenceBandSettingsLevels = linspace(1.0/nGammaLevels, 1.0, nGammaLevels);
-    
-        interactingBandLocation = 'BilateralToReferenceBand';
-        %interactingBandLocation = 'UnilateralToReferenceBand';
-        
-        if (strcmp(interactingBandLocation, 'BilateralToReferenceBand'))
-            % Measure interactions with bands around the reference band
-            % 2 band patterns
-            p0 = [ 3  4];
-            p1 = [ 1  2];
-            p2 = [-2 -1];
-            p3 = [-4 -3];
-            
-            % 3 band patterns
-            p0 = [ 4  5  6];
-            p1 = [ 1  2  3];
-            p2 = [-3 -2 -1];
-            p3 = [-6 -5 -4];
-            
-        elseif (strcmp(interactingBandLocation, 'UnilateralToReferenceBand'))
-            % OR Measure interactions with bands to the right of the reference band
-            % 2 band patterns
-            p0 = [7 8];
-            p1 = [5 6];  
-            p2 = [3 4];
-            p3 = [1 2];
-            
-            % 3 band patterns
-            p0 = [10 11 12];
-            p1 = [7 8 9];  
-            p2 = [4 5 6];
-            p3 = [1 2 3];
-        end
-        
-        interactingBands = { ...
-             [                     p0(:) ]; ...
-             [p3(:)                      ]; ...
-             [              p1(:)        ]; ...
-             [       p2(:)               ]; ...
-             [p3(:)                p0(:) ]; ...
-             [p3(:)  p2(:)               ]; ...
-             [              p1(:)  p0(:) ]; ...
-             [       p2(:)  p1(:)        ]; ...
-             [       p2(:)  p1(:)  p0(:) ]; ...
-             [p3(:)  p2(:)  p1(:)        ]; ...
-             [p3(:)  p2(:)  p1(:)  p0(:) ]; ...
-             [       p2(:)         p0(:) ]; ...
-             [p3(:)         p1(:)        ]; ...
-             [p3(:)         p1(:)  p0(:) ]; ...
-             [p3(:)  p2(:)         p0(:) ]; ...
-            };
- 
-    elseif (strcmp(setType, 'combinatorialSmall'));
-        % Measure at these levels
-        interactingBandSettingsLevels = [0.4 0.8];
-        nGammaLevels = 6;
-        referenceBandSettingsLevels = linspace(1.0/nGammaLevels, 1.0, nGammaLevels);
-    
-        % Measure interactions at these bands around the reference band
-        pattern0 = [1 2 3 4];
-        pattern1 = [-4 -3 -2 -1];
-        interactingBands = { ...
-            [            pattern0(:)]; ...
-            [pattern1(:)            ]; ...
-            [pattern1(:) pattern0(:)]; ...
-            };
-        
-    elseif strcmp(setType, 'wigglySpectrumVariation1');
-        
-        referenceBands = 25;  % gamma will be measured for band# 25 for all conditions
-        nGammaLevels = 20;
-        referenceBandSettingsLevels = linspace(1.0/nGammaLevels, 1.0, nGammaLevels);
-        
-        pattern0 = [1 2 3 4 5 6 7];
-        pattern1 = pattern0 + 8;
-        pattern2 = pattern1 + 8;
-        pattern3 = pattern2 + 8;
-        pattern4 = pattern0 - 8;
-        pattern5 = pattern4 - 8;
-        pattern6 = pattern5 - 8;  
-        
-        interactingBands = { ...
-            [                                                                        pattern3(:)]; ...
-            [pattern6(:)                                                                        ]; ...
-            [                                                            pattern2(:)            ]; ...
-            [            pattern5(:)                                                            ]; ...
-            [                                                pattern1(:)                        ]; ...
-            [                        pattern4(:)                                                ]; ...
-            [                                    pattern0(:)                                    ]; ...
-            [                        pattern4(:) pattern0(:)                                    ]; ...
-            [                        pattern4(:) pattern0(:) pattern1(:)                        ]; ...
-            [            pattern5(:) pattern4(:) pattern0(:) pattern1(:)                        ]; ...
-            [            pattern5(:) pattern4(:) pattern0(:) pattern1(:) pattern2(:)            ]; ...
-            [pattern6(:) pattern5(:) pattern4(:) pattern0(:) pattern1(:) pattern2(:)            ]; ...
-            [pattern6(:) pattern5(:) pattern4(:) pattern0(:) pattern1(:) pattern2(:) pattern3(:)]; ...
-            [pattern6(:) pattern5(:) pattern4(:) pattern0(:) pattern1(:) pattern2(:) pattern3(:)] ...
-        };
-        
-        interactingBandSettingsLevels = [0.1 0.3 0.5 0.7 0.9];
 
-        % these bands will have steady settings across all conditions (except the dark SPD)
-        steadyBands = referenceBands + [8 -8 16 -16 24 -24];
-        steadyBandSettingsLevels = 0.8 * ones(numel(steadyBands),1);
-    end
+    [ warmUpData, data, warmUpRepeats, nRepeats, ...
+      referenceBands, referenceBandSettingsLevels, ...
+      interactingBands, interactingBandSettingsLevels, ...
+      steadyBands, steadyBandSettingsLevels ] = Measure.configExperiment(setType, nPrimariesNum);
     
-    stimPattern = 0;
+  
+    disp('Hit enter to continue'); pause
     
-    % add dark SPD
-    spdType =  'dark';
-    stimPattern = stimPattern + 1;
-    activation = zeros(nPrimariesNum,1);
-    data{stimPattern} = struct(...
-        'spdType', spdType, ...
-        'activation', activation, ...
-        'referenceBandIndex', [], ...
-        'interactingBandsIndex', [], ...
-        'referenceBandSettingsIndex', 0, ...
-        'interactingBandSettingsIndex', 0, ...
-        'measurementTime', [], ...
-        'measuredSPD', [] ....
-    ); 
-
-    % add temporal stability gauge #1 SPD
-    spdType = 'temporalStabilityGauge1SPD';
-    stimPattern = stimPattern + 1;
-    activation = round(rand(nPrimariesNum,1)*100)/100;
-    activation(activation < 0.05) = 0.05;
-    data{stimPattern} = struct(...
-        'spdType', spdType, ...
-        'activation', activation, ...
-        'referenceBandIndex', [], ...
-        'interactingBandsIndex', [], ...
-        'referenceBandSettingsIndex', 0, ...
-        'interactingBandSettingsIndex', 0, ...
-        'measurementTime', [], ...
-        'measuredSPD', [] ....
-    ); 
-    
-    % add temporal stability gauge #1 SPD
-    spdType = 'temporalStabilityGauge2SPD';
-    stimPattern = stimPattern + 1;
-    data{stimPattern} = struct(...
-        'spdType', spdType, ...
-        'activation', 1-activation, ...
-        'referenceBandIndex', [], ...
-        'interactingBandsIndex', [], ...
-        'referenceBandSettingsIndex', 0, ...
-        'interactingBandSettingsIndex', 0, ...
-        'measurementTime', [], ...
-        'measuredSPD', [] ....
-    ); 
-
-    % new data set for warming up data consisting of the 2 temporal
-    % stability gauge SPDs
-    warmUpData{1} = data{2};
-    warmUpData{2} = data{3};
-    
-    % if we have steady bands add an SPD with those bands only activated
-    if (~isempty(steadyBands))
-        spdType = 'steadyBandsOnly';
-        stimPattern = stimPattern + 1;
-        activation = zeros(nPrimariesNum,1);
-        activation(steadyBands) = steadyBandSettingsLevels;
-        data{stimPattern} = struct(...
-            'spdType', spdType, ...
-            'activation', activation, ...
-            'referenceBandIndex', [], ...
-            'interactingBandsIndex', [], ...
-            'referenceBandSettingsIndex', 0, ...
-            'interactingBandSettingsIndex', 0, ...
-            'measurementTime', [], ...
-            'measuredSPD', [] ....
-        );
-    end
-    
-    for referenceBandIndex = 1:numel(referenceBands)
-        referenceBand = referenceBands(referenceBandIndex);
-        for referenceBandSettingsIndex = 1:numel(referenceBandSettingsLevels)
-            referenceBandSettings = referenceBandSettingsLevels(referenceBandSettingsIndex);
-            
-            for interactingBandIndex = 1:numel(interactingBands)
-                interactingBand = referenceBand + interactingBands{interactingBandIndex};
-                for interactingBandSettingsIndex = 1:numel(interactingBandSettingsLevels)
-                    interactingBandSettings = interactingBandSettingsLevels(interactingBandSettingsIndex);
-                    
-                    spdType = 'comboSPD';
-                    stimPattern = stimPattern + 1;
-                    activation = zeros(nPrimariesNum,1);
-                    activation(interactingBand) = interactingBandSettings;
-                    activation(referenceBand) = referenceBandSettings;
-                    if (~isempty(steadyBands))
-                        activation(steadyBands) = steadyBandSettingsLevels;
-                    end
-                    data{stimPattern} = struct(...
-                        'spdType', spdType, ...
-                        'activation', activation, ...
-                        'referenceBandIndex', referenceBandIndex, ...
-                        'interactingBandsIndex', interactingBandIndex, ...
-                        'referenceBandSettingsIndex', referenceBandSettingsIndex, ...
-                        'interactingBandSettingsIndex', interactingBandSettingsIndex, ...
-                        'measurementTime', [], ...
-                        'measuredSPD', [] ....
-                    );
-                
-                    if (referenceBandSettingsIndex == 1)
-                        spdType = 'singletonSPDi';
-                        stimPattern = stimPattern + 1;
-                        activation = zeros(nPrimariesNum,1);
-                        activation(interactingBand) = interactingBandSettings;
-                        if (~isempty(steadyBands))
-                            activation(steadyBands) = steadyBandSettingsLevels;
-                        end
-                        data{stimPattern} = struct(...
-                            'spdType', spdType, ...
-                            'activation', activation, ...
-                            'referenceBandIndex', referenceBandIndex, ...
-                            'interactingBandsIndex', interactingBandIndex, ...
-                            'referenceBandSettingsIndex', 0, ...
-                            'interactingBandSettingsIndex', interactingBandSettingsIndex, ...
-                            'measurementTime', [], ...
-                            'measuredSPD', [] ....
-                        );
-                    end
-                    
-                end % for interactingBandSettingsIndex 
-            end % interactingBandIndex
-            
-            spdType = 'singletonSPDr';
-            stimPattern = stimPattern + 1;
-            activation = zeros(nPrimariesNum,1);
-            activation(referenceBand) = referenceBandSettings;
-            if (~isempty(steadyBands))
-               activation(steadyBands) = steadyBandSettingsLevels;
-            end
-            data{stimPattern} = struct(...
-                        'spdType', spdType, ...
-                        'activation', activation, ...
-                        'referenceBandIndex', referenceBandIndex, ...
-                        'interactingBandsIndex', [], ...
-                        'referenceBandSettingsIndex', referenceBandSettingsIndex, ...
-                        'interactingBandSettingsIndex', 0, ...
-                        'measurementTime', [], ...
-                        'measuredSPD', [] ....
-                    );
-                
-        end % referenceBandSettingsIndex
-    end % referenceBandIndex
-    
-
-    nSpectraMeasured = numel(data);
-    fprintf('There will be %d distinct spectra measured (%d reps). \n', nSpectraMeasured, nRepeats);
-    
-    % Plot the activations (before randomization)
-    nn = floor(nSpectraMeasured/10);
-    for k = 1:11
-        hFig = figure(1+k); clf; set(hFig, 'Position', [1+k*100 1 573 1290]);
-        subplot('Position', [0.04 0.04 0.95 0.95]);
-        stimIndices = (k-1)*nn + (1:nn);
-        stimIndices = stimIndices(stimIndices <= nSpectraMeasured);
-        if (~isempty(stimIndices))
-            pcolor(1:nPrimariesNum, stimIndices, Core.retrieveActivationSequence(data, stimIndices));
-            xlabel('primary no');
-            ylabel('spectrum no');
-            set(gca, 'CLim', [0 1], 'YLim', [stimIndices(1) stimIndices(end)]);
-            title('primary values');
-            colormap(gray(1024));
-        end
-    end
-    
-    disp('Hit enter to continue');
-    pause
-    
-    spectroRadiometerOBJ = [];
-    ol = [];
-    
-    hFig = figure(2); set(hFig, 'Position', [10 10 1500 970], 'Color', [0 0 0]);
-    clf;
-            
+    spectroRadiometerOBJ = []; ol = [];
     try
         meterToggle = [1 0];
         od = [];
         nAverage = 1;
         
-        spectroRadiometerOBJ = initRadiometerObject(radiometerType);
+        spectroRadiometerOBJ = Measure.initRadiometerObject(radiometerType);
         pause(0.2);
         
         % Get handle to OneLight
         ol = OneLight;
 
+        % Prepare figure to show progress
+        hFig = figure(2); set(hFig, 'Position', [10 10 1500 970], 'Color', [0 0 0]); clf;
+        
         % Do the warming up data collection to allow for the unit to warm up
         for repeatIndex = 1:warmUpRepeats
            for stimPattern = 1:numel(warmUpData)
@@ -948,11 +652,12 @@ function measureData(rootDir, Svector, radiometerType)
                 subplot('Position', [0.51 0.52 0.45 0.44]);
                 plot(SToWls(Svector), measurement.pr650.spectrum, 'g-', 'LineWidth', 2.0);
                 set(gca, 'XTick', [], 'YTick', [], 'Color', [0 0 0]);
-                title(sprintf('warm up data (pattern: %d, repeat %d)', stimPattern, repeatIndex), 'Color', [1 1 1], 'FontSize', 14, 'FontName', 'Menlo')
+                title(sprintf('warm up data (pattern: %d, repeat %d/%d)', stimPattern, repeatIndex, warmUpRepeats), 'Color', [1 1 1], 'FontSize', 14, 'FontName', 'Menlo')
                 drawnow;
            end
         end
         
+        nSpectraMeasured = numel(data);
         randomizedSpectraIndices = [];
         repeatIndex = 0;
         
@@ -1010,7 +715,8 @@ function measureData(rootDir, Svector, radiometerType)
         % Save data
         status = 'Completed successfully';
         filename = fullfile(rootDir,sprintf('NeighboringBandInfluencesOnReferenceGamma_%s_%s.mat', cal.describe.calType, datestr(now, 'dd-mmm-yyyy_HH_MM_SS')));
-        save(filename, 'status', 'data', 'nRepeats', 'warmUpData', 'warmUpRepeats', 'Svector', 'setType', 'steadyBands', 'steadyBandSettingsLevels', 'interactingBandSettingsLevels', 'referenceBandSettingsLevels', 'referenceBands', 'interactingBands', 'randomizedSpectraIndices', 'cal', '-v7.3');
+        save(filename, 'status', 'data', 'nRepeats', 'warmUpData', 'warmUpRepeats', 'Svector', 'setType', ...
+            'steadyBands', 'steadyBandSettingsLevels', 'interactingBandSettingsLevels', 'referenceBandSettingsLevels', 'referenceBands', 'interactingBands', 'randomizedSpectraIndices', 'cal', '-v7.3');
         fprintf('Data saved in ''%s''. \n', filename); 
         SendEmail(emailRecipient, 'OneLight Calibration Complete', 'Finished!');
         
@@ -1044,89 +750,4 @@ function measureData(rootDir, Svector, radiometerType)
         keyboard;
         rethrow(e);
     end
-end
-
-
-
-
-
-
-
-function checkHardware(radiometerType)
-
-    spectroRadiometerOBJ = [];
-    ol = [];
-
-    pause(1.0);
-    
-    try
-        spectroRadiometerOBJ = initRadiometerObject(radiometerType);
-
-        spectroRadiometerOBJ.shutDown();
-        fprintf('PR670 is good!\n');
-        pause(0.5);
-        
-        ol = OneLight;
-        fprintf('One Light is good!\n');
-        fprintf('Hit enter to continue  ');
-        pause
-        
-    catch err
-        
-        if (~isempty(spectroRadiometerOBJ))
-            % Shutdown spectroradiometer
-            spectroRadiometerOBJ.shutDown();
-        end
-        
-        rethrow(err);
-        
-    end
-    
-end
-
-
-function spectroRadiometerOBJ = initRadiometerObject(radiometerType)
-
-    spectroRadiometerOBJ = [];
-    
-    switch (radiometerType)
-        case 'PR-650'
-            cal.describe.meterTypeNum = 1;
-            cal.describe.S = [380 4 101];
-            nAverage = 1;
-            cal.describe.gammaNumberWlUseIndices = 3;
-            
-            % Instantiate a PR650 object
-            spectroRadiometerOBJ  = PR650dev(...
-                'verbosity',        1, ...       % 1 -> minimum verbosity
-                'devicePortString', [] ...       % empty -> automatic port detection)
-            );
-            spectroRadiometerOBJ.setOptions('syncMode', 'OFF');
-            
-        case 'PR-670',
-            cal.describe.meterTypeNum = 5;
-            cal.describe.S = [380 2 201];
-            nAverage = 1;
-            cal.describe.gammaNumberWlUseIndices = 5;
-            
-            % Instantiate a PR670 object
-            spectroRadiometerOBJ  = PR670dev(...
-                'verbosity',        1, ...       % 1 -> minimum verbosity
-                'devicePortString', [] ...       % empty -> automatic port detection)
-            );
-        
-            % Set options Options available for PR670:
-            spectroRadiometerOBJ.setOptions(...
-                'verbosity',        1, ...
-                'syncMode',         'OFF', ...      % choose from 'OFF', 'AUTO', [20 400];        
-                'cyclesToAverage',  1, ...          % choose any integer in range [1 99]
-                'sensitivityMode',  'EXTENDED', ... % choose between 'STANDARD' and 'EXTENDED'.  'STANDARD': (exposure range: 6 - 6,000 msec, 'EXTENDED': exposure range: 6 - 30,000 msec
-                'exposureTime',     'ADAPTIVE', ... % choose between 'ADAPTIVE' (for adaptive exposure), or a value in the range [6 6000] for 'STANDARD' sensitivity mode, or a value in the range [6 30000] for the 'EXTENDED' sensitivity mode
-                'apertureSize',     '1 DEG' ...   % choose between '1 DEG', '1/2 DEG', '1/4 DEG', '1/8 DEG'
-            );
-
-        otherwise,
-            error('Unknown meter type');
-    end
-    
 end
