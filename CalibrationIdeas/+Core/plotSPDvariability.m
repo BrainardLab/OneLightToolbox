@@ -1,19 +1,68 @@
-function plotSPDvariability(rootDir, comboBandData, referenceBandData, interactingBandData, nPrimariesNum, wavelengthAxis)
+function plotSPDvariability(rootDir, allComboKeys, comboBandData, referenceBandData, interactingBandData, nPrimariesNum, wavelengthAxis)
 
         
-    [comboActivation, comboSPDstdMean, comboSPDstdMax, residualsFromComboSPDmean, comboActivations, sortedKeys] = computeSPDstdStats(comboBandData, []);
+    [comboActivation, comboSPDstdMean, comboSPDstdMax, residualsFromComboSPDmean, comboActivations] = computeSPDstdStats(comboBandData, allComboKeys);
     
-    for keyIndex = 1:numel(sortedKeys)
-        theComboBandData = comboBandData(sortedKeys{keyIndex});
+    for keyIndex = 1:numel(allComboKeys)
+        theComboBandData = comboBandData(allComboKeys{keyIndex});
         referenceKeysCorrespondingToSortedComboKeys{keyIndex} = theComboBandData.referenceBandKey;
         interactingKeysCorrespondingToSortedComboKeys{keyIndex} = theComboBandData.interactingBandKey;
     end
 
-    [referenceActivation, referenceSPDstdMean, referenceSPDstdMax, residualsFromReferenceSPDmean, referenceActivations, ~] = computeSPDstdStats(referenceBandData, referenceKeysCorrespondingToSortedComboKeys);
-    [interactingActivation, interactingSPDstdMean, interactingSPDstdMax, residualsFromInteractingSPDmean, interactingActivations, ~] = computeSPDstdStats(interactingBandData, interactingKeysCorrespondingToSortedComboKeys);
+    [referenceActivation, referenceSPDstdMean, referenceSPDstdMax, residualsFromReferenceSPDmean, referenceActivations] = computeSPDstdStats(referenceBandData, referenceKeysCorrespondingToSortedComboKeys);
+    [interactingActivation, interactingSPDstdMean, interactingSPDstdMax, residualsFromInteractingSPDmean, interactingActivations] = computeSPDstdStats(interactingBandData, interactingKeysCorrespondingToSortedComboKeys);
     
     nRepeats = size(residualsFromComboSPDmean,2);
     repeatColors = jet(nRepeats);
+    
+    for keyIndex = 1:size(residualsFromComboSPDmean,1)
+        totalComboActivation(keyIndex) = sum(squeeze(comboActivations(keyIndex,:)));
+        totalReferenceActivation(keyIndex) = sum(squeeze(referenceActivations(keyIndex,:)));
+        totalInteractingActivation(keyIndex) = sum(squeeze(interactingActivations(keyIndex,:)));
+        for repeatIndex = 1:nRepeats
+            meanComboResidual(keyIndex, repeatIndex) = mean(abs(squeeze(residualsFromComboSPDmean(keyIndex,repeatIndex,:))));
+            meanReferenceResidual(keyIndex, repeatIndex) = mean(abs(squeeze(residualsFromReferenceSPDmean(keyIndex,repeatIndex,:))));
+            meanInteactingResidual(keyIndex, repeatIndex) = mean(abs(squeeze(residualsFromInteractingSPDmean(keyIndex,repeatIndex,:))));
+            maxComboResidual(keyIndex, repeatIndex) = max(abs(squeeze(residualsFromComboSPDmean(keyIndex,repeatIndex,:))));
+            maxReferenceResidual(keyIndex, repeatIndex) = max(abs(squeeze(residualsFromReferenceSPDmean(keyIndex,repeatIndex,:))));
+            maxInteactingResidual(keyIndex, repeatIndex) = max(abs(squeeze(residualsFromInteractingSPDmean(keyIndex,repeatIndex,:))));
+            
+        end
+    end
+    
+    
+    hFig = figure(111);clf; set(hFig, 'Color', [1 1 1], 'Position', [1 1 1900 920]);
+    subplot('Position', [0.05 0.05 0.45 0.94]);
+    plot(totalComboActivation, meanComboResidual, 'ks', 'MarkerSize', 6, 'MarkerFaceColor', [0.7 0.7 0.7], 'MarkerEdgeColor', [0.1 0.1 0.1]);
+    hold on
+    plot(totalReferenceActivation, meanReferenceResidual, 'gs', 'MarkerSize', 4, 'MarkerFaceColor', [0.1 0.2 0.2]);
+    plot(totalInteractingActivation, meanInteactingResidual, 'ms', 'MarkerSize', 6, 'MarkerFaceColor', [1.0 0.1 0.3], 'MarkerEdgeColor', [0.2 0.1 0.2]);
+    hold off
+    set(gca, 'XLim', [4 50]);
+    
+    set(gca, 'XLim', [4 50], 'FontSize', 14);
+    xlabel('total activation (settings)', 'FontSize', 16, 'FontWeight', 'bold');
+    ylabel('mean diff power (mWatts)', 'FontSize', 16, 'FontWeight', 'bold');
+    grid on; box on;
+
+    subplot('Position', [0.54 0.05 0.45 0.94]);
+    plot(totalComboActivation, maxComboResidual, 'ks', 'MarkerSize', 6, 'MarkerFaceColor', [0.7 0.7 0.7], 'MarkerEdgeColor', [0.1 0.1 0.1]);
+    hold on
+    plot(totalReferenceActivation, maxReferenceResidual, 'gs', 'MarkerSize', 4, 'MarkerFaceColor', [0.1 0.2 0.2]);
+    plot(totalInteractingActivation, maxInteactingResidual, 'ms', 'MarkerSize', 6, 'MarkerFaceColor', [1.0 0.1 0.3], 'MarkerEdgeColor', [0.2 0.1 0.2]);
+    hold off
+    set(gca, 'XLim', [4 50]);
+    
+    set(gca, 'XLim', [4 50], 'FontSize', 14);
+    xlabel('total activation (settings)', 'FontSize', 16, 'FontWeight', 'bold');
+    ylabel('max diff power (mWatts)', 'FontSize', 16, 'FontWeight', 'bold');
+    grid on; box on;
+    
+    drawnow
+    NicePlot.exportFigToPNG('ActivationVsResidual.png', hFig,300);
+    pause
+    
+    
     
     hFig = figure(112); clf;
     set(hFig, 'Color', [1 1 1], 'Position', [1 1 1900 920]);
@@ -124,61 +173,16 @@ function plotSPDvariability(rootDir, comboBandData, referenceBandData, interacti
         writerObj.close();
     end
     
-    pause
-    
-    figure(111); clf;
-    
-    for k = 1:2
-        subplot(2,1,k);
-        if (k == 1)
-            comboSPDdata = comboSPDstdMean;
-            interactingSPDdata = interactingSPDstdMean;
-            referenceSPDdata = referenceSPDstdMean;
-        else
-            comboSPDdata = comboSPDstdMax;
-            interactingSPDdata = interactingSPDstdMax;
-            referenceSPDdata = referenceSPDstdMax;
-        end
-        
-        plot(comboActivation, comboSPDdata, 'cs', 'MarkerSize', 4, 'MarkerFaceColor', [0.7 0.7 0.7]);
-        hold on;
-        plot(interactingActivation, interactingSPDdata, 'ks', 'MarkerSize', 4, 'MarkerFaceColor', [0 0 0]);
-        plot(referenceActivation, referenceSPDdata, 'rs', 'MarkerSize', 4, 'MarkerFaceColor', [1.0 0.0 0.0]);
-        hL = legend({'combo SPD', 'interacting bands SPD', 'reference band SPD'});
-        set(hL, 'FontSize', 14, 'FontName', 'Menlo')
-        set(gca, 'XLim', [0 nPrimariesNum], 'FontSize', 14)
-        xlabel('total settings activation', 'FontSize', 16, 'FontWeight', 'bold');
-        if (k == 1)
-            ylabel('mean of SPD std (mWatts)', 'FontSize', 16, 'FontWeight', 'bold');
-        else
-            ylabel('max of SPD std (mWatts)', 'FontSize', 16, 'FontWeight', 'bold');
-        end
-    end
-    
-    pause
-            
 end
 
 
-function [activation, SPDstdMean, SPDstdMax, residualSPDsFromMean, activations, sortedKeys] = computeSPDstdStats(data, sortedKeys)
-    
-    if (isempty(sortedKeys))
-        theKeys = keys(data);
-        for keyIndex = 1:numel(theKeys)
-            key = theKeys{keyIndex};
-            dataStruct = data(key);
-            totalActivation(keyIndex) = sum(dataStruct.activation);
-        end
-        [~,idx] = sort(totalActivation);
-        sortedKeys = {theKeys{idx}};
-    end
-
-    theKeys = keys(data);
+function [activation, SPDstdMean, SPDstdMax, residualSPDsFromMean, activations] = computeSPDstdStats(data, theKeys)
+   
     dataStruct = data(theKeys{1});
     repeatsNum = size(dataStruct.allSPDresidualsFromMean,2);
     spdGain = 1000;
-    for keyIndex = 1:numel(sortedKeys)
-        key = sortedKeys{keyIndex};
+    for keyIndex = 1:numel(theKeys)
+        key = theKeys{keyIndex};
         dataStruct = data(key);
         activation(keyIndex) = sum(dataStruct.activation);
         SPDstdMean(keyIndex) = spdGain * mean(dataStruct.stdSPD);
