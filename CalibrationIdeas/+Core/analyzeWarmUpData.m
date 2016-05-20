@@ -1,72 +1,125 @@
-function analyzeWarmUpData(warmUpData, warmUpRepeats)
+function analyzeWarmUpData(warmUpData, warmUpRepeats, completionStatus, wavelengthAxis)
 
-    for stimPattern = 1:numel(warmUpData)
+    stimPatternsNum = numel(warmUpData);
+    for stimPattern = 1:stimPatternsNum
+        % Check completion status
+        if (strfind(completionStatus, 'Failed'))
+            [~, completedRepeats] = size(warmUpData{stimPattern}.measuredSPD);
+            warmUpRepeats = completedRepeats-1;
+        end
+        
         lastWarmUpSPD(stimPattern,:) = warmUpData{stimPattern}.measuredSPD(:, warmUpRepeats);
+        firstWarmUpSPD(stimPattern,:) = warmUpData{stimPattern}.measuredSPD(:, 1);
+        a = squeeze(lastWarmUpSPD(stimPattern,:));
+        indices = find(a > 0.1*max(a));
+        validSPDindices{stimPattern} = indices;
     end
 
+
+    
     for repeatIndex = 1:warmUpRepeats
-        for stimPattern = 1:numel(warmUpData)
+        for stimPattern = 1:stimPatternsNum
             theLastSPD = (lastWarmUpSPD(stimPattern,:))';
+            theFirstSPD = (firstWarmUpSPD(stimPattern,:))';
             theSPD = squeeze(warmUpData{stimPattern}.measuredSPD(:, repeatIndex));
-            scaling(stimPattern,repeatIndex) = theSPD \ theLastSPD;
-            diffs(stimPattern,repeatIndex) = max(abs(theSPD - theLastSPD));
-            measurementTimes(stimPattern, repeatIndex)      = warmUpData{stimPattern}.measurementTime(1, repeatIndex);
-            lampCurrentBefore(stimPattern, repeatIndex)     = warmUpData{stimPattern}.oneLightStateBeforeStimOnset{repeatIndex}.LampCurrent;
-            lampCurrentAfter(stimPattern, repeatIndex)      = warmUpData{stimPattern}.oneLightStateAfterMeasurement{repeatIndex}.LampCurrent;
-            currentMonitorBefore(stimPattern, repeatIndex)  = warmUpData{stimPattern}.oneLightStateBeforeStimOnset{repeatIndex}.CurrentMonitor;
-            currentMonitorAfter(stimPattern, repeatIndex)   = warmUpData{stimPattern}.oneLightStateAfterMeasurement{repeatIndex}.CurrentMonitor;
-            voltageMonitorBefore(stimPattern, repeatIndex)  = warmUpData{stimPattern}.oneLightStateBeforeStimOnset{repeatIndex}.VoltageMonitor;
-            voltageMonitorAfter(stimPattern, repeatIndex)   = warmUpData{stimPattern}.oneLightStateAfterMeasurement{repeatIndex}.VoltageMonitor;
+            
+            a = theSPD(validSPDindices{stimPattern});
+            b = theLastSPD(validSPDindices{stimPattern});
+            scaling(stimPattern,repeatIndex) = a \ b;
+            
+            a = theFirstSPD(validSPDindices{stimPattern});
+            fullLengthScaling = a\b;
+            
+            warmUpData{stimPattern}.scaledSPD(:, repeatIndex) = warmUpData{stimPattern}.measuredSPD(:, repeatIndex) * fullLengthScaling;
+            
+            measurementTimes(stimPattern, repeatIndex) = warmUpData{stimPattern}.measurementTime(1, repeatIndex);
+%             lampCurrentBefore(stimPattern, repeatIndex)     = warmUpData{stimPattern}.oneLightStateBeforeStimOnset{repeatIndex}.LampCurrent;
+%             lampCurrentAfter(stimPattern, repeatIndex)      = warmUpData{stimPattern}.oneLightStateAfterMeasurement{repeatIndex}.LampCurrent;
+%             currentMonitorBefore(stimPattern, repeatIndex)  = warmUpData{stimPattern}.oneLightStateBeforeStimOnset{repeatIndex}.CurrentMonitor;
+%             currentMonitorAfter(stimPattern, repeatIndex)   = warmUpData{stimPattern}.oneLightStateAfterMeasurement{repeatIndex}.CurrentMonitor;
+%             voltageMonitorBefore(stimPattern, repeatIndex)  = warmUpData{stimPattern}.oneLightStateBeforeStimOnset{repeatIndex}.VoltageMonitor;
+%             voltageMonitorAfter(stimPattern, repeatIndex)   = warmUpData{stimPattern}.oneLightStateAfterMeasurement{repeatIndex}.VoltageMonitor;
         end
     end
 
+    subplotPosVectors = NicePlot.getSubPlotPosVectors(...
+                   'rowsNum', stimPatternsNum/2, ...
+                   'colsNum', 3, ...
+                   'heightMargin',   0.02, ...
+                   'widthMargin',    0.02, ...
+                   'leftMargin',     0.02, ...
+                   'rightMargin',    0.001, ...
+                   'bottomMargin',   0.02, ...
+                   'topMargin',      0.00);
+               
     hFig = figure(1); clf;
-    set(hFig, 'Name', 'Initial warm up data', 'Position', [100 100 1173 633]);
-    
-    subplot(2,2,1);
-    t1 = squeeze(measurementTimes(1,:));
-    t1 = t1 - t1(1);
-    t2 = squeeze(measurementTimes(2,:));
-    t2 = t2 - t2(1);
-    plot(t1, scaling(1,:), 'rs-');
-    hold on;
-    plot(t2, scaling(2,:), 'bs-');
-    set(gca, 'YLim', 1 + 0.05*[-1 1]);
-    hold off;
-    ylabel('SPD \\ SPD(last)');
-    xlabel('measurement time (seconds)');
-    legend('stimPattern1', 'stimPattern2');
-    
-    subplot(2,2,2);
-    plot(t1, 1000*diffs(1,:), 'rs-');
-    hold on;
-    plot(t2, 1000*diffs(2,:), 'bs-');
-    set(gca, 'YLim', 1.0 + 1.0*[-1 1]);
-    ylabel('diff SPD (mWatts)');
-    xlabel('measurement time (seconds)');
-    hold off;
-    title('max(abs(SPD - SPD(last)))')
-    legend('stimPattern1', 'stimPattern2');
+    gainSPD = 1000;
+    for stimPattern = 1:stimPatternsNum
+        row = floor((stimPattern-1)/2)+1;
+        col = mod(stimPattern-1,2)+1;
+        subplot('Position', subplotPosVectors(row,col).v);
+        hold on
+        meanSPD = mean(warmUpData{stimPattern}.scaledSPD,2);
+        minSPD = meanSPD - min(warmUpData{stimPattern}.scaledSPD, [], 2);
+        maxSPD = meanSPD - max(warmUpData{stimPattern}.scaledSPD, [], 2);
+        
+        stdSPD = std(warmUpData{stimPattern}.scaledSPD,0, 2);
+        plot(wavelengthAxis, gainSPD * stdSPD, 'k-', 'LineWidth', 2.0);
+        plot(wavelengthAxis, -gainSPD * stdSPD, 'k-', 'LineWidth', 2.0);
+        hold on;
+        plot(wavelengthAxis, gainSPD * minSPD, 'r-', 'LineWidth', 2.0);
+        plot(wavelengthAxis, gainSPD * maxSPD, 'b-', 'LineWidth', 2.0);
+        
+%         for repeatIndex = 1:warmUpRepeats
+%             plot(wavelengthAxis, gainSPD * squeeze(squeeze(warmUpData{stimPattern}.scaledSPD(:, repeatIndex)-meanSPD)), 'k-');
+%         end
+        set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)], 'YLim', [-2 2])
+    end
+    pause;
     
     
-    subplot(2,2,3);
-    t = measurementTimes;
-    t = t - min(measurementTimes(:));
-    plot(t, lampCurrentBefore, 'gs');
-    hold on;
-    plot(t, lampCurrentAfter, 'ms');
-    hold off;
-    title('lamp current')
-    legend({'lamp current before stimonset', 'lamp current after measurement'});
+    stimPatternColors = jet(stimPatternsNum);
+    hFig = figure(2); clf; 
+    timeWindowInMinutes = 120.0;
+    timeStepInMinutes = 2;
+    currentTime = 0;
+    yRange = [min(scaling(:)) max(scaling(:))];
+    clear 'indices'
     
-    subplot(2,2,4);
-    plot(t, currentMonitorBefore, 'gs');
-    hold on;
-    plot(t, currentMonitorAfter,  'ms');
-    plot(t, voltageMonitorBefore, 'gs');
-    plot(t, voltageMonitorAfter,  'ms');
-    hold off;
-    title('current and voltage monitors')
-    legend({'current before stimonset', 'current after measurement', 'voltage before stimonset', 'voltage after measurement'});
+    while (currentTime+timeWindowInMinutes < (max(measurementTimes(:)) - min(measurementTimes(:)))/60)
+        
+        subplot(1,5,1:2);
+        for stimPattern = 1:stimPatternsNum
+            relativeTimeAxis = (measurementTimes(stimPattern,:) - measurementTimes(stimPattern,1))/60;
+            indices{stimPattern} = find(relativeTimeAxis <= currentTime + timeWindowInMinutes);
+            plot(relativeTimeAxis(indices{stimPattern}), squeeze(scaling(stimPattern,indices{stimPattern})), '.-', 'Color', squeeze(stimPatternColors(stimPattern,:)), 'LineWidth', 2.0);
+            if (stimPattern == 1)
+                hold on
+            end
+        end
+        hold off;
+        
+        set(gca, 'XLim', currentTime + [0 timeWindowInMinutes], 'YLim', yRange)
+        xlabel('time (minutes)')
+        ylabel('SPD scaling factor');
+        
+        subplot(1,5,3:5);
+        for stimPattern = 1:stimPatternsNum
+            relativeTimeAxis = (measurementTimes(stimPattern,:) - measurementTimes(stimPattern,1))/60;
+            k = indices{stimPattern};
+            plot(relativeTimeAxis(1:k(end)), squeeze(scaling(stimPattern,1:k(end))), '.-', 'Color', squeeze(stimPatternColors(stimPattern,:)), 'LineWidth', 2.0);
+            if (stimPattern == 1)
+                hold on;
+            end
+        end
+        hold off;
+        set(gca, 'XLim', [0 max(measurementTimes(:)) - min(measurementTimes(:))]/60, 'YLim', yRange)
+        xlabel('time (minutes)')
+        
+        drawnow;
+        currentTime = currentTime + timeStepInMinutes;
+    end
+    
+
     pause
 end
