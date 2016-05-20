@@ -66,10 +66,12 @@ function analyzeData(rootDir)
     end
     
     
+    wavelengthAxis = SToWls(Svector);
+    
     % ================= Do Linear Drift Correction =========================
     if (fileContainsWarmUpData)
         load(fullfile(pathName,fileName),'warmUpData', 'warmUpRepeats');
-        Core.analyzeWarmUpData(warmUpData, warmUpRepeats, completionStatus)
+        Core.analyzeWarmUpData(warmUpData, warmUpRepeats, completionStatus, wavelengthAxis)
         [data, measurementTimes] = Core.doLinearDriftCorrectionUsingMultipleMeasurements(data, nRepeats);
     else
         [data, measurementTimes] = Core.doLinearDriftCorrection(data, nRepeats);
@@ -107,7 +109,7 @@ function analyzeData(rootDir)
     referenceBandGammaData2 = Core.computeReferenceBandGammaCurves(effectiveSPDcomputationMethod, comboBandData, referenceBandData, interactingBandData, steadyBandsOnlySPD, steadyBandActivation, darkSPD);
     
     
-    wavelengthAxis = SToWls(Svector);
+    
     % =========================== Plot SPD variability =========================
     Core.plotSPDvariability(rootDir, allComboKeys, comboBandData, referenceBandData, interactingBandData, nPrimariesNum, wavelengthAxis);
     
