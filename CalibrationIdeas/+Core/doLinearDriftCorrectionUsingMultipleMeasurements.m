@@ -64,7 +64,7 @@ function [data, allTimes] = doLinearDriftCorrectionUsingMultipleMeasurements(unc
             s2(k) = scalingFactor2(timeOfMeasurement);
             s3(k) = pieceWiseLinearScalings1(k);
             s4(k) = pieceWiseLinearScalings2(k);
-            scalingFactor = s3(k);
+            scalingFactor = s3(k); % 1.0; % s3(k);
             data{spectrumIter}.measuredSPD(:, repeatIndex) = scalingFactor * data{spectrumIter}.measuredSPD(:, repeatIndex);
             fprintf('Scaling spectrum %d (repeat: %d) by %2.4f\n', spectrumIter, repeatIndex, scalingFactor);
         end

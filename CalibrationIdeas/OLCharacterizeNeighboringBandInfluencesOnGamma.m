@@ -108,7 +108,7 @@ function analyzeData(rootDir)
     
     wavelengthAxis = SToWls(Svector);
     % =========================== Plot SPD variability =========================
-    Core.plotSPDvariability(rootDir, comboBandData, referenceBandData, interactingBandData, nPrimariesNum, wavelengthAxis);
+    Core.plotSPDvariability(rootDir, allComboKeys, comboBandData, referenceBandData, interactingBandData, nPrimariesNum, wavelengthAxis);
     
     % =========================== Plot gamma data =========================
     Core.plotGammaSet(rootDir, referenceBandGammaData1, referenceBandGammaData2, wavelengthAxis);
