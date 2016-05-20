@@ -402,6 +402,37 @@ try
         end
     end
     
+    
+    % Take another full on measurement.
+    fprintf('- Taking full on measurement...');
+    theSettings = ones(nPrimaries,1);
+    [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
+    measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
+    
+    currentFullOnMeasurementNum = size(cal.raw.fullOn,2)+1;
+    cal.raw.fullOn(:,currentFullOnMeasurementNum) = measTemp.pr650.spectrum;
+    cal.raw.t.fullOn(:,currentFullOnMeasurementNum) = measTemp.pr650.time(1);
+    if (meterToggle(2))
+        cal.raw.omniDriver.fullOnMeas(:,currentFullOnMeasurementNum) = measTemp.omni.spectrum;
+    end
+    fprintf('Done\n');
+    
+    
+    % Take another half on measurement.
+    fprintf('- Taking half on measurement...');
+    theSettings = 0.5*ones(nPrimaries,1);
+    [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
+    measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
+
+    currentHalfOnMeasurementNum = size(cal.raw.halfOnMeas,2)+1;
+    cal.raw.halfOnMeas(:,currentHalfOnMeasurementNum) = measTemp.pr650.spectrum;
+    cal.raw.t.halfOnMeas(:,currentHalfOnMeasurementNum) = measTemp.pr650.time(1);
+    if (meterToggle(2))
+        cal.raw.omniDriver.halfOnMeas(:,currentHalfOnMeasurementNum) = measTemp.omni.spectrum;
+    end
+    fprintf('Done\n');
+    
+    
     % Store some measurement parameters.
     cal.describe.durationMinutes = (GetSecs - startCal)/60;
     cal.describe.date = datestr(now);
@@ -427,6 +458,7 @@ try
             gammaMeasIter = 1:cal.describe.nGammaBands;
         end
 
+        
         for i = gammaMeasIter
             fprintf('\n*** Gamma measurements on gamma band set %d of %d ***\n\n', i, cal.describe.nGammaBands);
             
@@ -444,6 +476,36 @@ try
                 gammaLevelsIter = 1:cal.describe.nGammaLevels;
             end
             
+            % Take another half on measurement.
+            fprintf('- Taking half on measurement...');
+            theSettings = 0.5*ones(nPrimaries,1);
+            [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
+            measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
+
+            currentHalfOnMeasurementNum = size(cal.raw.halfOnMeas,2)+1;
+            cal.raw.halfOnMeas(:,currentHalfOnMeasurementNum) = measTemp.pr650.spectrum;
+            cal.raw.t.halfOnMeas(:,currentHalfOnMeasurementNum) = measTemp.pr650.time(1);
+            if (meterToggle(2))
+                cal.raw.omniDriver.halfOnMeas(:,currentHalfOnMeasurementNum) = measTemp.omni.spectrum;
+            end
+            fprintf('Done\n');
+    
+    
+            % Take another full on measurement.
+            fprintf('- Taking full on measurement...');
+            theSettings = ones(nPrimaries,1);
+            [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
+            measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
+
+            currentFullOnMeasurementNum = size(cal.raw.fullOn,2)+1;
+            cal.raw.fullOn(:,currentFullOnMeasurementNum) = measTemp.pr650.spectrum;
+            cal.raw.t.fullOn(:,currentFullOnMeasurementNum) = measTemp.pr650.time(1);
+            if (meterToggle(2))
+                cal.raw.omniDriver.fullOnMeas(:,currentFullOnMeasurementNum) = measTemp.omni.spectrum;
+            end
+            fprintf('Done\n');
+    
+    
             % If we're specifying the background, we need a measurement of that
             % background but with the settings for the specified gamma band set
             % to zero.  This is then used to subtract off the background from
@@ -483,6 +545,37 @@ try
             end
         end
     end
+    
+    
+    % Take another half on measurement.
+    fprintf('- Taking half on measurement...');
+    theSettings = 0.5*ones(nPrimaries,1);
+    [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
+    measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
+
+    currentHalfOnMeasurementNum = size(cal.raw.halfOnMeas,2)+1;
+    cal.raw.halfOnMeas(:,currentHalfOnMeasurementNum) = measTemp.pr650.spectrum;
+    cal.raw.t.halfOnMeas(:,currentHalfOnMeasurementNum) = measTemp.pr650.time(1);
+    if (meterToggle(2))
+        cal.raw.omniDriver.halfOnMeas(:,currentHalfOnMeasurementNum) = measTemp.omni.spectrum;
+    end
+    fprintf('Done\n');
+    
+    
+    % Take another full on measurement.
+    fprintf('- Taking full on measurement...');
+    theSettings = ones(nPrimaries,1);
+    [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
+    measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
+    
+    currentFullOnMeasurementNum = size(cal.raw.fullOn,2)+1;
+    cal.raw.fullOn(:,currentFullOnMeasurementNum) = measTemp.pr650.spectrum;
+    cal.raw.t.fullOn(:,currentFullOnMeasurementNum) = measTemp.pr650.time(1);
+    if (meterToggle(2))
+        cal.raw.omniDriver.fullOnMeas(:,currentFullOnMeasurementNum) = measTemp.omni.spectrum;
+    end
+    fprintf('Done\n');
+    
     
     % Now we'll do an independence test on the same column sets from the
     % gamma measurements.  Even when we use an effective background for
@@ -610,27 +703,31 @@ try
     end
     fprintf('Done\n');
     
-    % Take a half on on measurement.
+    % Take another half on measurement.
     fprintf('- Taking half on measurement...');
     theSettings = 0.5*ones(nPrimaries,1);
     [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
     measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
-    cal.raw.halfOnMeas(:,2) = measTemp.pr650.spectrum;
-    cal.raw.t.halfOnMeas(:,2) = measTemp.pr650.time(1);
+
+    currentHalfOnMeasurementNum = size(cal.raw.halfOnMeas,2)+1;
+    cal.raw.halfOnMeas(:,currentHalfOnMeasurementNum) = measTemp.pr650.spectrum;
+    cal.raw.t.halfOnMeas(:,currentHalfOnMeasurementNum) = measTemp.pr650.time(1);
     if (meterToggle(2))
-        cal.raw.omniDriver.halfOnMeas(:,1) = measTemp.omni.spectrum;
+        cal.raw.omniDriver.halfOnMeas(:,currentHalfOnMeasurementNum) = measTemp.omni.spectrum;
     end
     fprintf('Done\n');
     
-    % Take a full on on measurement.
+    % Take another full on measurement.
     fprintf('- Taking full on measurement...');
     theSettings = ones(nPrimaries,1);
     [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
     measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
-    cal.raw.fullOn(:,2) = measTemp.pr650.spectrum;
-    cal.raw.t.fullOn(:,2) = measTemp.pr650.time(1);
+    
+    currentFullOnMeasurementNum = size(cal.raw.fullOn,2)+1;
+    cal.raw.fullOn(:,currentFullOnMeasurementNum) = measTemp.pr650.spectrum;
+    cal.raw.t.fullOn(:,currentFullOnMeasurementNum) = measTemp.pr650.time(1);
     if (meterToggle(2))
-        cal.raw.omniDriver.fullOnMeas(:,2) = measTemp.omni.spectrum;
+        cal.raw.omniDriver.fullOnMeas(:,currentFullOnMeasurementNum) = measTemp.omni.spectrum;
     end
     fprintf('Done\n');
     
