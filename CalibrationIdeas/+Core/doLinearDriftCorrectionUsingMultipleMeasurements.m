@@ -39,9 +39,9 @@ function [data, allTimes] = doLinearDriftCorrectionUsingMultipleMeasurements(unc
     lastTemporalStabilityGauge2MeasTime = temporalStabilityGauge2Times(nRepeats);
     
     
-    % find the scaling factor based on points that are > 5% of the peak SPD
-    indices1 = find(lastTemporalStabilityGauge1SPD > max(lastTemporalStabilityGauge1SPD)*0.1);
-    indices2 = find(lastTemporalStabilityGauge2SPD > max(lastTemporalStabilityGauge2SPD)*0.1);
+    % find the scaling factor based on points that are > 20% of the peak SPD
+    indices1 = find(lastTemporalStabilityGauge1SPD > max(lastTemporalStabilityGauge1SPD)*0.2);
+    indices2 = find(lastTemporalStabilityGauge2SPD > max(lastTemporalStabilityGauge2SPD)*0.2);
     
     for repeatIndex = 1:nRepeats
         scaling(1,repeatIndex) = squeeze(temporalStabilityGauge1SPDs(indices1, repeatIndex)) \ lastTemporalStabilityGauge1SPD(indices1);

@@ -260,6 +260,7 @@ function plotGammaSet(rootDir, gammaSet1, gammaSet2, wavelengthAxis)
             if (generateVideo)
                 writerObj.writeVideo(getframe(hFig));
             end
+            pause
         end
     end
     

@@ -89,7 +89,7 @@ function gamma = computeReferenceBandGammaCurves(effectiveSPDcomputationMethod, 
         
         maxSettingsMeanSPD = squeeze(theGamma.effectiveMeanSPD(end,:));
         a = reshape(maxSettingsMeanSPD, [numel(maxSettingsMeanSPD) 1]);
-        indices = find(a > 0.1*max(a));
+        indices = find(a > 0.2*max(a));
         
         for settingsIndex = 1:size(theGamma.effectiveMeanSPD,1)
             theSettingsMeanSPD = squeeze(theGamma.effectiveMeanSPD(settingsIndex,:));
