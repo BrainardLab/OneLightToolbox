@@ -38,11 +38,12 @@ function analyzeData(rootDir)
 
     % ============================== Load data ============================
     [fileName, pathName] = uigetfile('*.mat', 'Select a file to analyze', fullfile(rootDir, 'Data'));
-    load(fullfile(pathName,fileName), 'data',  'nRepeats', 'Svector', 'setType', 'interactingBandSettingsLevels', 'referenceBandSettingsLevels', 'referenceBands', 'interactingBands', 'randomizedSpectraIndices', 'cal');
+    load(fullfile(pathName,fileName), 'status', 'data',  'nRepeats', 'Svector', 'setType', 'interactingBandSettingsLevels', 'referenceBandSettingsLevels', 'referenceBands', 'interactingBands', 'randomizedSpectraIndices', 'cal');
 
     s = whos('-file', fullfile(pathName,fileName));
     fileContainsWarmUpData = false;
     fileContainsSteadyBandsData = false;
+    completionStatus = status;
     
     for k = 1:numel(s)
         if(strcmp(s(k).name, 'warmUpData'))
@@ -66,10 +67,12 @@ function analyzeData(rootDir)
     end
     
     
+    wavelengthAxis = SToWls(Svector);
+    
     % ================= Do Linear Drift Correction =========================
     if (fileContainsWarmUpData)
         load(fullfile(pathName,fileName),'warmUpData', 'warmUpRepeats');
-        Core.analyzeWarmUpData(warmUpData, warmUpRepeats)
+        Core.analyzeWarmUpData(warmUpData, warmUpRepeats, completionStatus, wavelengthAxis)
         [data, measurementTimes] = Core.doLinearDriftCorrectionUsingMultipleMeasurements(data, nRepeats);
     else
         [data, measurementTimes] = Core.doLinearDriftCorrection(data, nRepeats);
@@ -107,7 +110,7 @@ function analyzeData(rootDir)
     referenceBandGammaData2 = Core.computeReferenceBandGammaCurves(effectiveSPDcomputationMethod, comboBandData, referenceBandData, interactingBandData, steadyBandsOnlySPD, steadyBandActivation, darkSPD);
     
     
-    wavelengthAxis = SToWls(Svector);
+    
     % =========================== Plot SPD variability =========================
     Core.plotSPDvariability(rootDir, allComboKeys, comboBandData, referenceBandData, interactingBandData, nPrimariesNum, wavelengthAxis);
     
