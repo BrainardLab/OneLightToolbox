@@ -1,4 +1,4 @@
-function [data, allTimes] = doLinearDriftCorrectionUsingMultipleMeasurements(uncorrectedData, nRepeats)
+function [data, allTimes] = doLinearDriftCorrectionUsingMultipleMeasurements(uncorrectedData, nRepeats, wavelengthAxis)
     
     data = uncorrectedData;
     nSpectraMeasured = numel(data);
@@ -24,6 +24,7 @@ function [data, allTimes] = doLinearDriftCorrectionUsingMultipleMeasurements(unc
         end
     end
     
+
     for spectrumIter = 1:nSpectraMeasured
         for repeatIndex = 1:nRepeats
             measurementTimes((spectrumIter-1)*nRepeats+repeatIndex) = squeeze(data{spectrumIter}.measurementTime(1, repeatIndex));
@@ -32,20 +33,27 @@ function [data, allTimes] = doLinearDriftCorrectionUsingMultipleMeasurements(unc
     
     [pieceWiseLinearScalings1, pieceWiseLinearScalings2] = piecewiseLinearScalingFactor(temporalStabilityGauge1Times, temporalStabilityGauge1SPDs, temporalStabilityGauge2Times, temporalStabilityGauge2SPDs, measurementTimes);
     
-    lastTemporalStabilityGauge1SPD = (temporalStabilityGauge1SPDs(:,nRepeats));
-    lastTemporalStabilityGauge2SPD = (temporalStabilityGauge2SPDs(:,nRepeats));
+    lastTemporalStabilityGauge1SPD = squeeze(temporalStabilityGauge1SPDs(:,nRepeats));
+    lastTemporalStabilityGauge2SPD = squeeze(temporalStabilityGauge2SPDs(:,nRepeats));
     
     lastTemporalStabilityGauge1MeasTime = temporalStabilityGauge1Times(nRepeats);
     lastTemporalStabilityGauge2MeasTime = temporalStabilityGauge2Times(nRepeats);
     
     
     % find the scaling factor based on points that are > 20% of the peak SPD
-    indices1 = find(lastTemporalStabilityGauge1SPD > max(lastTemporalStabilityGauge1SPD)*0.2);
-    indices2 = find(lastTemporalStabilityGauge2SPD > max(lastTemporalStabilityGauge2SPD)*0.2);
+    indices1 = find(lastTemporalStabilityGauge1SPD > max(lastTemporalStabilityGauge1SPD)*0.1);
+    indices2 = find(lastTemporalStabilityGauge2SPD > max(lastTemporalStabilityGauge2SPD)*0.1);
+    
+    size(lastTemporalStabilityGauge1SPD)
+    size(wavelengthAxis)
+    indices = find( ...
+            (lastTemporalStabilityGauge1SPD > max(lastTemporalStabilityGauge1SPD(:))*0.1) & ...
+            ((wavelengthAxis >= 420) & (wavelengthAxis <= 700)) ...
+        );
     
     for repeatIndex = 1:nRepeats
-        scaling(1,repeatIndex) = squeeze(temporalStabilityGauge1SPDs(indices1, repeatIndex)) \ lastTemporalStabilityGauge1SPD(indices1);
-        scaling(2,repeatIndex) = squeeze(temporalStabilityGauge2SPDs(indices2, repeatIndex)) \ lastTemporalStabilityGauge2SPD(indices2);
+        scaling(1,repeatIndex) = squeeze(temporalStabilityGauge1SPDs(indices, repeatIndex)) \ lastTemporalStabilityGauge1SPD(indices);
+        scaling(2,repeatIndex) = squeeze(temporalStabilityGauge2SPDs(indices, repeatIndex)) \ lastTemporalStabilityGauge2SPD(indices);
     end
 
     repeatIndex = 1;
@@ -64,7 +72,7 @@ function [data, allTimes] = doLinearDriftCorrectionUsingMultipleMeasurements(unc
             s2(k) = scalingFactor2(timeOfMeasurement);
             s3(k) = pieceWiseLinearScalings1(k);
             s4(k) = pieceWiseLinearScalings2(k);
-            scalingFactor = s3(k); % 1.0; % s3(k);
+            scalingFactor = s1(k); % 1.0; % s3(k);
             data{spectrumIter}.measuredSPD(:, repeatIndex) = scalingFactor * data{spectrumIter}.measuredSPD(:, repeatIndex);
             fprintf('Scaling spectrum %d (repeat: %d) by %2.4f\n', spectrumIter, repeatIndex, scalingFactor);
         end

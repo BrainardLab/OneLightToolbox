@@ -75,51 +75,23 @@ function analyzeWarmUpData(warmUpData, warmUpRepeats, completionStatus, waveleng
 %         end
         set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)], 'YLim', [-2 2])
     end
-    pause;
+    drawnow;
+
     
-    
-    stimPatternColors = jet(stimPatternsNum);
     hFig = figure(2); clf; 
-    timeWindowInMinutes = 120.0;
-    timeStepInMinutes = 2;
-    currentTime = 0;
     yRange = [min(scaling(:)) max(scaling(:))];
-    clear 'indices'
-    
-    while (currentTime+timeWindowInMinutes < (max(measurementTimes(:)) - min(measurementTimes(:)))/60)
-        
-        subplot(1,5,1:2);
-        for stimPattern = 1:stimPatternsNum
+    stimPatternColors = jet(stimPatternsNum);
+    for stimPattern = 1:stimPatternsNum
             relativeTimeAxis = (measurementTimes(stimPattern,:) - measurementTimes(stimPattern,1))/60;
-            indices{stimPattern} = find(relativeTimeAxis <= currentTime + timeWindowInMinutes);
-            plot(relativeTimeAxis(indices{stimPattern}), squeeze(scaling(stimPattern,indices{stimPattern})), '.-', 'Color', squeeze(stimPatternColors(stimPattern,:)), 'LineWidth', 2.0);
-            if (stimPattern == 1)
-                hold on
-            end
-        end
-        hold off;
-        
-        set(gca, 'XLim', currentTime + [0 timeWindowInMinutes], 'YLim', yRange)
-        xlabel('time (minutes)')
-        ylabel('SPD scaling factor');
-        
-        subplot(1,5,3:5);
-        for stimPattern = 1:stimPatternsNum
-            relativeTimeAxis = (measurementTimes(stimPattern,:) - measurementTimes(stimPattern,1))/60;
-            k = indices{stimPattern};
-            plot(relativeTimeAxis(1:k(end)), squeeze(scaling(stimPattern,1:k(end))), '.-', 'Color', squeeze(stimPatternColors(stimPattern,:)), 'LineWidth', 2.0);
+            plot(relativeTimeAxis, squeeze(scaling(stimPattern,:)), '-', 'Color', squeeze(stimPatternColors(stimPattern,:)), 'LineWidth', 2.0);
             if (stimPattern == 1)
                 hold on;
             end
-        end
-        hold off;
-        set(gca, 'XLim', [0 max(measurementTimes(:)) - min(measurementTimes(:))]/60, 'YLim', yRange)
-        xlabel('time (minutes)')
-        
-        drawnow;
-        currentTime = currentTime + timeStepInMinutes;
     end
-    
+    hold off;
+    set(gca, 'XLim', [0 max(measurementTimes(:)) - min(measurementTimes(:))]/60, 'YLim', yRange)
+    xlabel('time (minutes)')
 
-    pause
+
+ 
 end

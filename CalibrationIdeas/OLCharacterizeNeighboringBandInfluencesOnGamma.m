@@ -72,51 +72,57 @@ function analyzeData(rootDir)
     % ================= Do Linear Drift Correction =========================
     if (fileContainsWarmUpData)
         load(fullfile(pathName,fileName),'warmUpData', 'warmUpRepeats');
-        Core.analyzeWarmUpData(warmUpData, warmUpRepeats, completionStatus, wavelengthAxis)
-        [data, measurementTimes] = Core.doLinearDriftCorrectionUsingMultipleMeasurements(data, nRepeats);
+        Core.analyzeWarmUpData(warmUpData, warmUpRepeats, completionStatus, wavelengthAxis);
+        if (strcmp(setType, 'warmUpDataOnly'))
+            return;
+        end
+        [data, measurementTimes] = Core.doLinearDriftCorrectionUsingMultipleMeasurements(data, nRepeats, wavelengthAxis);
     else
         [data, measurementTimes] = Core.doLinearDriftCorrection(data, nRepeats);
     end
     
     
-    if (strcmp(setType, 'warmUpDataOnly'))
-        return;
+    % ================= Show stimulation patterns =========================
+    %Core.showActivationSequences(randomizedSpectraIndices, data);
+    
+    if (strcmp(setType, 'wigglySpectrumVariation2'))
+        Core.parseWiggly2Data(data, nRepeats, wavelengthAxis);
+    else
+        % === Parse the data to generate separate dictionaries for different stimulation patterns
+        [referenceBandData, interactingBandData, comboBandData, ...
+            allSingletonSPDrKeys, allSingletonSPDiKeys,allComboKeys, ...
+            darkSPD, darkSPDrange, steadyBandsOnlySPD, steadyBandsOnlySPDrange] = Core.parseData(data, referenceBands, referenceBandSettingsLevels, interactingBands, interactingBandSettingsLevels);
+
+        fprintf('Found %d singleton reference spectra\n', numel(allSingletonSPDrKeys));
+        fprintf('Found %d singleton interacting spectra\n', numel(allSingletonSPDiKeys));
+        fprintf('Found %d combo spectra\n', numel(allComboKeys));
+    
+        % Subtract darkSPD from the interacting band data
+        interactingBandData = Core.subtractDarkSPD(interactingBandData, darkSPD);
+
+        % Subtract darkSPD from the reference band data
+        referenceBandData = Core.subtractDarkSPD(referenceBandData, darkSPD);
+
+        % Compute combo predictions
+        [comboBandData, maxSPD] = Core.computeComboPredictions(comboBandData, referenceBandData, interactingBandData, steadyBandsOnlySPD, darkSPD);
+
+        % Compute gamma of the reference band, by subtracting the comboBandSPD from the interactingBand SPD
+        effectiveSPDcomputationMethod = 'Reference - Steady';
+        referenceBandGammaData1 = Core.computeReferenceBandGammaCurves(effectiveSPDcomputationMethod, comboBandData, referenceBandData, interactingBandData, steadyBandsOnlySPD, steadyBandActivation, darkSPD);
+
+        effectiveSPDcomputationMethod = 'Combo - Interacting';
+        referenceBandGammaData2 = Core.computeReferenceBandGammaCurves(effectiveSPDcomputationMethod, comboBandData, referenceBandData, interactingBandData, steadyBandsOnlySPD, steadyBandActivation, darkSPD);
+
+
+
+        % =========================== Plot SPD variability =========================
+        Core.plotSPDvariability(rootDir, allComboKeys, comboBandData, referenceBandData, interactingBandData, nPrimariesNum, wavelengthAxis);
+
+        % =========================== Plot gamma data =========================
+        Core.plotGammaSet(rootDir, referenceBandGammaData1, referenceBandGammaData2, wavelengthAxis);
     end
     
-    
-    % ================= Show stimulation patterns =========================
-    Core.showActivationSequences(randomizedSpectraIndices, data);
-    
-    
-    % === Parse the data to generate separate dictionaries for different stimulation patterns
-    [referenceBandData, interactingBandData, comboBandData, ...
-        allSingletonSPDrKeys, allSingletonSPDiKeys,allComboKeys, ...
-        darkSPD, darkSPDrange, steadyBandsOnlySPD, steadyBandsOnlySPDrange] = Core.parseData(data, referenceBands, referenceBandSettingsLevels, interactingBands, interactingBandSettingsLevels);
-
-    % Subtract darkSPD from the interacting band data
-    interactingBandData = Core.subtractDarkSPD(interactingBandData, darkSPD);
-    
-    % Subtract darkSPD from the reference band data
-    referenceBandData = Core.subtractDarkSPD(referenceBandData, darkSPD);
-    
-    % Compute combo predictions
-    [comboBandData, maxSPD] = Core.computeComboPredictions(comboBandData, referenceBandData, interactingBandData, steadyBandsOnlySPD, darkSPD);
-    
-    % Compute gamma of the reference band, by subtracting the comboBandSPD from the interactingBand SPD
-    effectiveSPDcomputationMethod = 'Reference - Steady';
-    referenceBandGammaData1 = Core.computeReferenceBandGammaCurves(effectiveSPDcomputationMethod, comboBandData, referenceBandData, interactingBandData, steadyBandsOnlySPD, steadyBandActivation, darkSPD);
-    
-    effectiveSPDcomputationMethod = 'Combo - Interacting';
-    referenceBandGammaData2 = Core.computeReferenceBandGammaCurves(effectiveSPDcomputationMethod, comboBandData, referenceBandData, interactingBandData, steadyBandsOnlySPD, steadyBandActivation, darkSPD);
-    
-    
-    
-    % =========================== Plot SPD variability =========================
-    Core.plotSPDvariability(rootDir, allComboKeys, comboBandData, referenceBandData, interactingBandData, nPrimariesNum, wavelengthAxis);
-    
-    % =========================== Plot gamma data =========================
-    Core.plotGammaSet(rootDir, referenceBandGammaData1, referenceBandGammaData2, wavelengthAxis);
-    
+    return
     
     pause
         
