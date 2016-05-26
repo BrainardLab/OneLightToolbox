@@ -86,7 +86,6 @@ function parseWiggly2Data(data, nRepeats, wavelengthAxis)
    iter = 0;
    repeatsToUse = 10;
    for iter1 = 1:repeatsToUse
-       iter1
    for iter2 = 1:repeatsToUse
    for iter3 = 1:repeatsToUse
    for iter4 = 1:repeatsToUse
