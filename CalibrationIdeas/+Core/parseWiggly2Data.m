@@ -27,12 +27,152 @@ function parseWiggly2Data(data, nRepeats, wavelengthAxis)
         data{spectrumIndex}.minSPD  = min(data{spectrumIndex}.measuredSPD, [], 2);
         
         % compute max over all reps
-        data{spectrumIndex}.maxSPD  = max(data{spectrumIndex}.measuredSPD, [], 2);
-        
+        data{spectrumIndex}.maxSPD  = max(data{spectrumIndex}.measuredSPD, [], 2); 
     end
     
-    spdGain = 1000;
     
+    % Compute predictions
+    figure(1); clf
+    for spectrumIndex = 1:nSpectraMeasured
+        % average over all reps
+        subplot(6,4, spectrumIndex);
+        bar(1:56, data{spectrumIndex}.activation);
+        set(gca, 'XLim', [0 57], 'YLim', [0 1]);
+        title(sprintf('%d\n', spectrumIndex));
+        drawnow;
+    end
+    
+   steadyBandsSpectrumIndex = 4;
+   steadyBandsSpectrum = data{steadyBandsSpectrumIndex}.meanSPD;
+   combo1SpectrumIndex = 16;
+   combo1Component1SpectrumIndex = 6;
+   combo1Component2SpectrumIndex = 12;
+   combo{1}.SpectrumPrediction = data{combo1Component1SpectrumIndex}.meanSPD + data{combo1Component2SpectrumIndex}.meanSPD - data{steadyBandsSpectrumIndex}.meanSPD;
+   combo{1}.SpectrumPredictionStDev = max([data{combo1Component1SpectrumIndex}.stdSPD'; data{combo1Component2SpectrumIndex}.stdSPD'; data{steadyBandsSpectrumIndex}.stdSPD'], [], 1);
+   combo{1}.Spectrum = data{combo1SpectrumIndex}.meanSPD;
+   combo{1}.SpectrumStDev = data{combo1SpectrumIndex}.stdSPD;
+   combo{1}.Activation = data{combo1SpectrumIndex}.activation;
+   
+   combo2SpectrumIndex = 14;
+   combo2Component1SpectrumIndex = 8;
+   combo2Component2SpectrumIndex = 10;
+   combo{2}.SpectrumPrediction = data{combo2Component1SpectrumIndex}.meanSPD + data{combo2Component2SpectrumIndex}.meanSPD - steadyBandsSpectrum;
+   combo{2}.SpectrumPredictionStDev = max([data{combo2Component1SpectrumIndex}.stdSPD'; data{combo2Component2SpectrumIndex}.stdSPD'; data{steadyBandsSpectrumIndex}.stdSPD'], [], 1);
+   combo{2}.Spectrum = data{combo2SpectrumIndex}.meanSPD;
+   combo{2}.SpectrumStDev = data{combo2SpectrumIndex}.stdSPD;
+   combo{2}.Activation = data{combo2SpectrumIndex}.activation;
+   
+   combo3SpectrumIndex = 15;
+   combo3Component1SpectrumIndex = 5;
+   combo3Component2SpectrumIndex = 11;
+   combo{3}.SpectrumPrediction = data{combo3Component1SpectrumIndex}.meanSPD + data{combo3Component2SpectrumIndex}.meanSPD - steadyBandsSpectrum;
+   combo{3}.SpectrumPredictionStDev = max([data{combo3Component1SpectrumIndex}.stdSPD'; data{combo3Component2SpectrumIndex}.stdSPD'; data{steadyBandsSpectrumIndex}.stdSPD'], [], 1);
+   combo{3}.Spectrum = data{combo3SpectrumIndex}.meanSPD;
+   combo{3}.SpectrumStDev = data{combo3SpectrumIndex}.stdSPD;
+   combo{3}.Activation = data{combo3SpectrumIndex}.activation;
+   
+   combo4SpectrumIndex = 13;
+   combo4Component1SpectrumIndex = 9;
+   combo4Component2SpectrumIndex = 7;
+   combo{4}.SpectrumPrediction = data{combo4Component1SpectrumIndex}.meanSPD + data{combo4Component2SpectrumIndex}.meanSPD - steadyBandsSpectrum;
+   combo{4}.SpectrumPredictionStDev = max([data{combo4Component1SpectrumIndex}.stdSPD'; data{combo4Component2SpectrumIndex}.stdSPD'; data{steadyBandsSpectrumIndex}.stdSPD'], [], 1);
+   combo{4}.Spectrum = data{combo4SpectrumIndex}.meanSPD;
+   combo{4}.SpectrumStDev = data{combo4SpectrumIndex}.stdSPD;
+   combo{4}.Activation = data{combo4SpectrumIndex}.activation;
+   
+  
+   
+   
+   iter = 0;
+   repeatsToUse = 10;
+   for iter1 = 1:repeatsToUse
+       iter1
+   for iter2 = 1:repeatsToUse
+   for iter3 = 1:repeatsToUse
+   for iter4 = 1:repeatsToUse
+            iter = iter + 1;
+            combo{1}.SpectrumResiduals(:,iter) = data{combo1Component1SpectrumIndex}.measuredSPD(:, iter1) + data{combo1Component2SpectrumIndex}.measuredSPD(:, iter2) - data{steadyBandsSpectrumIndex}.measuredSPD(:, iter3) - data{combo1SpectrumIndex}.measuredSPD(:, iter4);
+            combo{2}.SpectrumResiduals(:,iter) = data{combo2Component1SpectrumIndex}.measuredSPD(:, iter1) + data{combo2Component2SpectrumIndex}.measuredSPD(:, iter2) - data{steadyBandsSpectrumIndex}.measuredSPD(:, iter3) - data{combo2SpectrumIndex}.measuredSPD(:, iter4);
+            combo{3}.SpectrumResiduals(:,iter) = data{combo3Component1SpectrumIndex}.measuredSPD(:, iter1) + data{combo3Component2SpectrumIndex}.measuredSPD(:, iter2) - data{steadyBandsSpectrumIndex}.measuredSPD(:, iter3) - data{combo3SpectrumIndex}.measuredSPD(:, iter4);
+            combo{4}.SpectrumResiduals(:,iter) = data{combo4Component1SpectrumIndex}.measuredSPD(:, iter1) + data{combo4Component2SpectrumIndex}.measuredSPD(:, iter2) - data{steadyBandsSpectrumIndex}.measuredSPD(:, iter3) - data{combo4SpectrumIndex}.measuredSPD(:, iter4);
+   end
+   end
+   end
+   end
+   
+   
+   spdGain = 1000;
+   spectralPeaks = [422 468 516 564 608 654 700 746];
+   
+   rowsNum = 4;
+   colsNum = 4;
+   subplotPosVectors = NicePlot.getSubPlotPosVectors(...
+                   'rowsNum', rowsNum, ...
+                   'colsNum', colsNum, ...
+                   'heightMargin',   0.05, ...
+                   'widthMargin',    0.04, ...
+                   'leftMargin',     0.01, ...
+                   'rightMargin',    0.000, ...
+                   'bottomMargin',   0.05, ...
+                   'topMargin',      0.01);
+               
+   hFig = figure(2); clf; set(hFig, 'Position', [10 10 2210 1140], 'Color', [1 1 1]);
+   for comboIndex = 1:numel(combo)
+       
+        subplot('Position', subplotPosVectors(comboIndex,1).v);
+        bar(1:numel(combo{comboIndex}.Activation), combo{comboIndex}.Activation, 1, 'FaceColor', [0.7 0.7 0.7], 'EdgeColor', [0 0 0], 'LineWidth', 2.0)
+        set(gca, 'XLim', [0 numel(combo{comboIndex}.Activation)+1], 'YLim', [0 1.00], 'XTick', [], 'YTick', []);
+        set(gca, 'FontSize', 14);
+        box off;
+        
+        subplot('Position', subplotPosVectors(comboIndex,2).v);
+        plot(wavelengthAxis, spdGain*combo{comboIndex}.Spectrum, 'r-', 'LineWidth', 2.0);
+        hold on;
+        plot(wavelengthAxis, spdGain*(100*combo{comboIndex}.SpectrumStDev), 'b-', 'LineWidth', 1.0);
+        hL = legend({'mean', '100*st.dev.'}, 'Location', 'NorthEast');
+        set(hL, 'FontSize', 14, 'FontName', 'Menlo');
+        for k = 1:numel(spectralPeaks)
+                plot(spectralPeaks(k)*[1 1], [-100 100], 'k-');
+        end
+        hold off
+        set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)], 'YLim', [0 70], 'XTick', spectralPeaks);
+        set(gca, 'FontSize', 14);
+        title('measured SPD');
+        
+        subplot('Position', subplotPosVectors(comboIndex,3).v);
+        plot(wavelengthAxis, spdGain*combo{comboIndex}.SpectrumPrediction, 'r-', 'LineWidth', 2.0);
+        hold on;
+        plot(wavelengthAxis, spdGain*(100*combo{comboIndex}.SpectrumPredictionStDev), 'b-', 'LineWidth', 1.0);
+        hL = legend({'mean', '100*st.dev.'}, 'Location', 'NorthEast');
+        set(hL, 'FontSize', 14, 'FontName', 'Menlo');
+        for k = 1:numel(spectralPeaks)
+                plot(spectralPeaks(k)*[1 1], [-100 100], 'k-');
+        end
+        hold off
+        set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)], 'YLim', [0 70], 'XTick', spectralPeaks, 'YTickLabel', {});
+        set(gca, 'FontSize', 14);
+        title('predicted SPD');
+        
+        subplot('Position', subplotPosVectors(comboIndex,4).v);
+        plot(wavelengthAxis, spdGain*combo{comboIndex}.SpectrumResiduals, 'k-', 'Color', [0.6 0.6 0.6]);
+        hold on;
+        plot(wavelengthAxis, spdGain*(combo{comboIndex}.SpectrumPrediction-combo{comboIndex}.Spectrum), 'r-', 'LineWidth', 2.0);
+        
+        for k = 1:numel(spectralPeaks)
+                plot(spectralPeaks(k)*[1 1], [-100 100], 'k-');
+        end
+        hold off
+        set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)], 'YLim', 0.5*[-1 1], 'YTick', (-0.5:0.1:0.5));
+        set(gca, 'FontSize', 14);
+        title('residual SPD', 'FontSize', 14);
+        
+        drawnow;
+    end
+    pause;
+    
+    
+    
+
     rowsNum = 4;
     colsNum = 4;
     subplotPosVectors = NicePlot.getSubPlotPosVectors(...
@@ -80,7 +220,7 @@ function parseWiggly2Data(data, nRepeats, wavelengthAxis)
         
         
         
-        spectralPeaks = [422 468 516 564 608 654 700 746];
+        
         indices = find( ...
             data{spectrumIndex}.meanSPD > 0.10*max(data{spectrumIndex}.meanSPD) & ...
             ((wavelengthAxis >= 420) & (wavelengthAxis <= 700)) ...
@@ -92,9 +232,12 @@ function parseWiggly2Data(data, nRepeats, wavelengthAxis)
         referenceSPD = data{spectrumIndex}.meanSPD;
         referenceSPDtitle = 'SPD(ref) = mean over all iterations';
             
-        referenceSPD = squeeze(data{spectrumIndex}.measuredSPD(:,1));
-        referenceSPDtitle = 'SPD(ref) = first iteration';
+        %referenceSPD = squeeze(data{spectrumIndex}.measuredSPD(:,1));
+        %referenceSPDtitle = 'SPD(ref) = first iteration';
             
+        referenceSPD = squeeze(data{spectrumIndex}.measuredSPD(:,nRepeats));
+        referenceSPDtitle = 'SPD(ref) = last iteration';
+        
         maxSPDref = spdGain*(max(referenceSPD));
             
         for repeatIndex = 1:nRepeats
@@ -114,7 +257,6 @@ function parseWiggly2Data(data, nRepeats, wavelengthAxis)
                 maxSPDiter = 1;
             end
             ratioGain  = 1000.0 * maxSPDiter/50;
-            
             
             subplot('Position', subplotPosVectors(1,1).v);
             incRatios = find(log(SPDratios) > 0);
