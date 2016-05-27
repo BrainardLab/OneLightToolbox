@@ -82,17 +82,25 @@ if meterToggle(1)
         end
         
         % ORIGINAL: [radMeas, qual] = MeasSpd(S,prWhichMeter,'off');
+        theTime = mglGetSecs;
         radMeas = prOBJ.measure('userS', S);
 
         assert(prOBJ.measurementQuality == 0 || prOBJ.measurementQuality == -8, 'OLCalibrate:MeasSpd:LightSpectrum', 'Radiometer returned a quality code of %d', prOBJ.measurementQuality);
         if verboseInfo
             fprintf('- [%s] Done with PR-6XX measurement...\n', datestr(now));
         end
+        
+        if (i == 1)
+            meas.pr650.allSpectra = zeros(nAverage, numel(radMeas));
+            meas.pr650.allSpectraTimes = zeros(nAverage);
+        end
+        meas.pr650.allSpectraTimes = theTime;
+        meas.pr650.allSpectra(i,:) = radMeas;
         radMeasAvg = radMeasAvg + radMeas;
     end
     radMeasAvg = radMeasAvg/nAverage;
     meas.pr650.spectrum = radMeasAvg;
-    meas.pr650.time(2) = mglGetSecs;
+    meas.pr650.time(2) = theTime;
     meas.pr650.S = S;
 else
     meas.pr650 = [];

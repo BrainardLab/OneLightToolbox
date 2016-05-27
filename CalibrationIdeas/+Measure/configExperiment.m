@@ -3,7 +3,7 @@ function [warmUpData, data, warmUpRepeats, nRepeats, ...
     steadyBands, steadyBandSettingsLevels] = configExperiment(setType, nPrimariesNum)
 
     % How many times to repeat each measurement
-    if (strcmp(setType, 'warmUpDataOnly'))
+    if (strcmp(setType, 'warmUpDataOnly')) || (strcmp(setType, 'fastFullON'))
         nRepeats = 0;  
         warmUpRepeats = GetWithDefault('Enter number of warm-up repeats: ', 100);
     else
@@ -179,6 +179,8 @@ function [warmUpData, data, warmUpRepeats, nRepeats, ...
         steadyBands = referenceBands + [8 -8 16 0 -16 24 -24];
         steadyBandSettingsLevels = ones(numel(steadyBands),1);
         
+    elseif (strcmp(setType, 'warmUpDataOnly')) || (strcmp(setType, 'fastFullON'))
+        ; % do nothing
     else
         error('Unknown stimulus set: ''%s''\n', setType);
     end
@@ -262,7 +264,6 @@ function [warmUpData, data, warmUpRepeats, nRepeats, ...
             'measurementTime', [], ...
             'measuredSPD', [] ....
         ); 
-    
     end
     
     
@@ -403,6 +404,24 @@ function [warmUpData, data, warmUpRepeats, nRepeats, ...
         end % referenceBandIndex
     end % Gamma experiment
 
+    if (strcmp(setType, 'fastFullON'))
+        
+        spdType =  sprintf('FastFullON');
+        stimPattern = 1;
+        warmUpData{stimPattern} = struct(...
+                'spdType', spdType, ...
+                'activation', ones(nPrimariesNum,1), ...
+                'referenceBandIndex', [], ...
+                'interactingBandsIndex', [], ...
+                'referenceBandSettingsIndex', 0, ...
+                'interactingBandSettingsIndex', 0, ...
+                'measurementTime', [], ...
+                'measuredSPD', [] ....
+            );
+        data = warmUpData;
+    end
+    
+    
     nSpectraMeasured = numel(data);
     fprintf('There will be %d distinct spectra measured (%d reps). \n', nSpectraMeasured, nRepeats);
     

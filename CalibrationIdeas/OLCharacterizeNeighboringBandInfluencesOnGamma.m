@@ -24,6 +24,7 @@ function OLCharacterizeNeighboringBandInfluencesOnGamma
         %stimulusSetType = 'warmUpDataOnly';
         %stimulusSetType = 'wigglySpectrumVariation1';
         stimulusSetType = 'wigglySpectrumVariation2';
+        stimulusSetType = 'fastFullON';
         %stimulusSetType = 'combinatorialFull';
         %stimulusSetType = 'combinatorialSmall';
         %stimulusSetType = 'slidingInteraction';
@@ -444,7 +445,7 @@ function measureData(rootDir, Svector, radiometerType, setType)
     try
         meterToggle = [1 0];
         od = [];
-        nAverage = 1;
+        nAverage = GetWithDefault('nAverage',1);
         randomizedSpectraIndices = [];
          
         spectroRadiometerOBJ = Measure.initRadiometerObject(radiometerType);
@@ -467,6 +468,7 @@ function measureData(rootDir, Svector, radiometerType, setType)
                 measurement = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, Svector, meterToggle, nAverage);
                 warmUpData{stimPattern}.oneLightStateBeforeStimOnset{repeatIndex}  = measurement.oneLightState1;
                 warmUpData{stimPattern}.oneLightStateAfterMeasurement{repeatIndex} = measurement.oneLightState2;
+                warmUpData{stimPattern}.measuredSPDallSpectraToBeAveraged(repeatIndex,:,:) = meas.pr650.allSpectra;
                 warmUpData{stimPattern}.measuredSPD(:, repeatIndex)     = measurement.pr650.spectrum;
                 warmUpData{stimPattern}.measurementTime(:, repeatIndex) = measurement.pr650.time(1);
                 warmUpData{stimPattern}.repeatIndex = repeatIndex;
