@@ -422,7 +422,7 @@ function [warmUpData, data, warmUpRepeats, nRepeats, ...
     end
     
     if (strcmp(setType, 'combFunctionTest'))   
-        combPatternComponents = 25 + [8 -8 16 -16 24 -24];
+        combPatternComponents = 25 + [8 -8 16 0 -16 24 -24];
         
         warmUpData = {};
         stimPattern = 1;
