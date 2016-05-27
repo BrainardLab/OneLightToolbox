@@ -23,8 +23,9 @@ function OLCharacterizeNeighboringBandInfluencesOnGamma
         
         %stimulusSetType = 'warmUpDataOnly';
         %stimulusSetType = 'wigglySpectrumVariation1';
-        stimulusSetType = 'wigglySpectrumVariation2';
+        %stimulusSetType = 'wigglySpectrumVariation2';
         stimulusSetType = 'fastFullON';
+        stimulusSetType = 'combFunctionTest';
         %stimulusSetType = 'combinatorialFull';
         %stimulusSetType = 'combinatorialSmall';
         %stimulusSetType = 'slidingInteraction';
