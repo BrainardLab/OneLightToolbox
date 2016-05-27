@@ -75,7 +75,7 @@ function analyzeData(rootDir)
     
     if (strcmp(setType, 'fastFullON'))
         load(fullfile(pathName,fileName),'warmUpData', 'warmUpRepeats');
-        Core.parseFastFullONData(warmUpData, warmUpRepeats, wavelengthAxis);
+        Core.parseFastFullONData(warmUpData, wavelengthAxis);
         return
     end
      
