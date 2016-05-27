@@ -116,5 +116,6 @@ classdef OLCalibrationTypes
         BoxBTestOOCalibration('OLBoxBTestOOCalibration');
         BoxDTestOOCalibration('OLBoxDTestOOCalibration');
         BoxDRandomizedLongCableAEyePiece2_ND06('OLBoxDRandomizedLongCableAEyePiece2_ND06');
+        BoxARandomizedLongCableCStubby1_ND00('OLBoxARandomizedLongCableCStubby1_ND00');
     end
 end
