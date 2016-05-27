@@ -468,7 +468,8 @@ function measureData(rootDir, Svector, radiometerType, setType)
                 measurement = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, Svector, meterToggle, nAverage);
                 warmUpData{stimPattern}.oneLightStateBeforeStimOnset{repeatIndex}  = measurement.oneLightState1;
                 warmUpData{stimPattern}.oneLightStateAfterMeasurement{repeatIndex} = measurement.oneLightState2;
-                warmUpData{stimPattern}.measuredSPDallSpectraToBeAveraged(repeatIndex,:,:) = meas.pr650.allSpectra;
+                warmUpData{stimPattern}.measuredSPDallSpectraToBeAveraged(repeatIndex,:,:) = measurement.pr650.allSpectra;
+                warmUpData{stimPattern}.measuredSPDallSpectraToBeAveragedTimes(repeatIndex,:) = measurement.pr650.allSpectraTimes;
                 warmUpData{stimPattern}.measuredSPD(:, repeatIndex)     = measurement.pr650.spectrum;
                 warmUpData{stimPattern}.measurementTime(:, repeatIndex) = measurement.pr650.time(1);
                 warmUpData{stimPattern}.repeatIndex = repeatIndex;
