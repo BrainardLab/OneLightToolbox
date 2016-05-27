@@ -94,7 +94,7 @@ if meterToggle(1)
             meas.pr650.allSpectra = zeros(nAverage, numel(radMeas));
             meas.pr650.allSpectraTimes = zeros(nAverage);
         else
-            printf('\n%d/%d averages', i, nAverage);
+            fprintf('\n%d/%d averages', i, nAverage);
         end
         meas.pr650.allSpectraTimes(i) = theTime;
         meas.pr650.allSpectra(i,:) = radMeas;
