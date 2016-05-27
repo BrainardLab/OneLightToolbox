@@ -30,6 +30,9 @@ function parseWiggly2Data(data, nRepeats, wavelengthAxis)
         data{spectrumIndex}.maxSPD  = max(data{spectrumIndex}.measuredSPD, [], 2); 
     end
     
+   spdGain = 1000;
+   spectralPeaks = [422 468 516 564 608 654 700 746];
+   
     
     % Compute predictions
     figure(1); clf
@@ -41,9 +44,12 @@ function parseWiggly2Data(data, nRepeats, wavelengthAxis)
         title(sprintf('%d\n', spectrumIndex));
         drawnow;
     end
-    
+   
+   
+   
    steadyBandsSpectrumIndex = 4;
    steadyBandsSpectrum = data{steadyBandsSpectrumIndex}.meanSPD;
+   steadyBandsSingleTrialSpecta = data{steadyBandsSpectrumIndex}.measuredSPD;
    combo1SpectrumIndex = 16;
    combo1Component1SpectrumIndex = 6;
    combo1Component2SpectrumIndex = 12;
@@ -52,6 +58,50 @@ function parseWiggly2Data(data, nRepeats, wavelengthAxis)
    combo{1}.Spectrum = data{combo1SpectrumIndex}.meanSPD;
    combo{1}.SpectrumStDev = data{combo1SpectrumIndex}.stdSPD;
    combo{1}.Activation = data{combo1SpectrumIndex}.activation;
+   
+   fullOnSpectrumIndex = 2;
+   steadyBandsFilter = steadyBandsSpectrum / max(steadyBandsSpectrum);
+   for iter = 1:nRepeats 
+       %fullONnoise = squeeze(data{fullOnSpectrumIndex}.measuredSPD(:, iter)) - data{fullOnSpectrumIndex}.meanSPD;
+       steadyBandsSingleTrialSpectaFromFullOnSingleTrialSpectra(:,iter) = sqrt(squeeze(data{fullOnSpectrumIndex}.measuredSPD(:, iter)) .* steadyBandsFilter);
+   end
+   % scale to same max as steadyBandsSingleTrialSpecta
+   scalingFactor = max(steadyBandsSingleTrialSpecta(:)) / max(steadyBandsSingleTrialSpectaFromFullOnSingleTrialSpectra(:))
+   steadyBandsSingleTrialSpectaFromFullOnSingleTrialSpectra = steadyBandsSingleTrialSpectaFromFullOnSingleTrialSpectra * scalingFactor;
+   hFig = figure(2); clf; set(hFig, 'Position', [10 10 2210 1140], 'Color', [1 1 1]);
+   subplotPosVectors = NicePlot.getSubPlotPosVectors(...
+                   'rowsNum', 2, ...
+                   'colsNum', 2, ...
+                   'heightMargin',   0.05, ...
+                   'widthMargin',    0.04, ...
+                   'leftMargin',     0.01, ...
+                   'rightMargin',    0.000, ...
+                   'bottomMargin',   0.05, ...
+                   'topMargin',      0.01);
+               
+   subplot('Position', subplotPosVectors(1,1).v);            
+   plot(wavelengthAxis, spdGain*steadyBandsSingleTrialSpectaFromFullOnSingleTrialSpectra, 'k-');
+               
+   subplot('Position', subplotPosVectors(1,2).v);            
+   plot(wavelengthAxis, spdGain*steadyBandsSingleTrialSpecta, 'k-');
+   
+   subplot('Position', subplotPosVectors(2,1).v);
+   % diffs from first repetition
+   diffs = bsxfun(@minus, steadyBandsSingleTrialSpecta, data{steadyBandsSpectrumIndex}.measuredSPD(:,1));
+   plot(wavelengthAxis, spdGain*diffs, 'k-', 'Color', [0.6 0.6 0.6]);
+   hold on;
+   plot(wavelengthAxis, spdGain*mean(diffs,2), 'r-');
+   set(gca, 'YLim', 0.5*[-1 1], 'XLim', [wavelengthAxis(1) wavelengthAxis(end)]);
+   
+   subplot('Position', subplotPosVectors(2,2).v);
+   diffsPrediction = bsxfun(@minus, steadyBandsSingleTrialSpectaFromFullOnSingleTrialSpectra, data{steadyBandsSpectrumIndex}.measuredSPD(:,1));
+   max(abs(diffsPrediction(:)))
+   plot(wavelengthAxis,spdGain*diffsPrediction, 'k-', 'Color', [0.6 0.6 0.6]);
+   hold on;
+   plot(wavelengthAxis, spdGain*mean(diffsPrediction,2), 'r-');
+   set(gca, 'YLim', 0.5*[-1 1], 'XLim', [wavelengthAxis(1) wavelengthAxis(end)]);
+   pause
+               
    
    combo2SpectrumIndex = 14;
    combo2Component1SpectrumIndex = 8;
@@ -100,8 +150,7 @@ function parseWiggly2Data(data, nRepeats, wavelengthAxis)
    end
    
    
-   spdGain = 1000;
-   spectralPeaks = [422 468 516 564 608 654 700 746];
+   
    
    rowsNum = 4;
    colsNum = 4;
@@ -115,7 +164,7 @@ function parseWiggly2Data(data, nRepeats, wavelengthAxis)
                    'bottomMargin',   0.05, ...
                    'topMargin',      0.01);
                
-   hFig = figure(2); clf; set(hFig, 'Position', [10 10 2210 1140], 'Color', [1 1 1]);
+   hFig = figure(3); clf; set(hFig, 'Position', [10 10 2210 1140], 'Color', [1 1 1]);
    for comboIndex = 1:numel(combo)
        
         subplot('Position', subplotPosVectors(comboIndex,1).v);

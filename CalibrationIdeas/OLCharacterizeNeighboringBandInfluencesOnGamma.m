@@ -40,7 +40,7 @@ function analyzeData(rootDir)
     % ============================== Load data ============================
     [fileName, pathName] = uigetfile('*.mat', 'Select a file to analyze', fullfile(rootDir, 'Data'));
     load(fullfile(pathName,fileName), 'status', 'data',  'nRepeats', 'Svector', 'setType', 'interactingBandSettingsLevels', 'referenceBandSettingsLevels', 'referenceBands', 'interactingBands', 'randomizedSpectraIndices', 'cal');
-
+    
     s = whos('-file', fullfile(pathName,fileName));
     fileContainsWarmUpData = false;
     fileContainsSteadyBandsData = false;
@@ -56,6 +56,8 @@ function analyzeData(rootDir)
     end
     
     nPrimariesNum = numel(data{1}.activation);
+    fileContainsWarmUpData = false
+    fileContainsSteadyBandsData = false
     
     if (fileContainsSteadyBandsData)
         load(fullfile(pathName,fileName),'steadyBands', 'steadyBandSettingsLevels');
@@ -70,6 +72,13 @@ function analyzeData(rootDir)
     
     wavelengthAxis = SToWls(Svector);
     
+    
+    if (strcmp(setType, 'fastFullON'))
+        load(fullfile(pathName,fileName),'warmUpData', 'warmUpRepeats');
+        Core.parseFastFullONData(warmUpData, warmUpRepeats, wavelengthAxis);
+        return
+    end
+     
     % ================= Do Linear Drift Correction =========================
     if (fileContainsWarmUpData)
         load(fullfile(pathName,fileName),'warmUpData', 'warmUpRepeats');
