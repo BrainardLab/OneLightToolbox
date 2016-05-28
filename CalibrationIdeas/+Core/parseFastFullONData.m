@@ -9,6 +9,32 @@ function parseFastFullONData(data, wavelengthAxis)
     timeAxis = data{stimPattern}.measuredSPDallSpectraToBeAveragedTimes(passIter, averageIter);
     spectroTemporalResponse = squeeze(data{stimPattern}.measuredSPDallSpectraToBeAveraged(passIter, averageIter,:));
     
+    
+    t = find(timeAxis > 254.2);
+    t = t(1);
+    s0 = (squeeze(spectroTemporalResponse(t(1),:)))';
+    s1 = (squeeze(spectroTemporalResponse(end,:)))';
+    t0 = timeAxis(t(1))
+    t1 = timeAxis(end)
+    indices = find( ...
+            (s1 > max(s1)*0.1) & ...
+            ((wavelengthAxis >= 420) & (wavelengthAxis <= 700)) ...
+        );
+    s0 = s0(indices);
+    s1 = s1(indices);
+    
+    repeatIndex = 1;
+    dt1 = t1-t0;
+    s = s0 \ s1;
+    scalingFactor = @(t) 1./((1-(1-s)*((t-t0)./dt1)));
+   
+    size(spectroTemporalResponse)
+    for k = 1:size(spectroTemporalResponse,1)
+        spectroTemporalResponseScaled(k,:) = spectroTemporalResponse(k,:) / scalingFactor(timeAxis(k));
+    end
+    size(spectroTemporalResponseScaled)
+    pause
+    
     diffTimeAxis = diff(timeAxis);
     samplingInterval = min(diffTimeAxis);
     uniformTimeAxis = timeAxis(1):samplingInterval:timeAxis(end);
@@ -17,25 +43,36 @@ function parseFastFullONData(data, wavelengthAxis)
         uniformTimeAxisSpectroTemporalResponse(:,bandNo) = interp1(timeAxis, squeeze(spectroTemporalResponse(:,bandNo)), uniformTimeAxis, 'linear');
     end
     
+    spectroTemporalResponseScaled = spectroTemporalResponseScaled';
     spectroTemporalResponse = spectroTemporalResponse';
     uniformTimeAxisSpectroTemporalResponse = uniformTimeAxisSpectroTemporalResponse';
     
     
     spdGain = 1000;
     figure(1)
-    subplot(2,1,1);
-    imagesc(timeAxis, wavelengthAxis, spdGain*spectroTemporalResponse);
+    subplot(3,1,1);
+    imagesc(timeAxis/60, wavelengthAxis, spdGain*spectroTemporalResponse);
     set(gca, 'XLim', [timeAxis(1) timeAxis(end)]);
     colorbar
     
-    subplot(2,1,2);
-    imagesc(uniformTimeAxis, wavelengthAxis, spdGain*uniformTimeAxisSpectroTemporalResponse);
+    subplot(3,1,2);
+    imagesc(uniformTimeAxis/60, wavelengthAxis, spdGain*uniformTimeAxisSpectroTemporalResponse);
     set(gca, 'XLim', [timeAxis(1) timeAxis(end)]);
     colorbar
     colormap(gray(1024));
+    
+    subplot(3,1,3);
+    size(timeAxis)
+    size(spectroTemporalResponseScaled)
+    plot(timeAxis/60, spdGain*spectroTemporalResponseScaled(30,:), 'rs-');
+    hold on
+    plot(uniformTimeAxis/60, spdGain*uniformTimeAxisSpectroTemporalResponse(30,:), 'ks-');
+    hold off;
+
+    xlabel('time (minutes)');
     drawnow
     
-
+    pause
     
     
     t0 = (max(uniformTimeAxis)-min(uniformTimeAxis))/2 + min(uniformTimeAxis);
