@@ -51,7 +51,7 @@ function parseFastFullONData(data, wavelengthAxis)
                    'widthMargin',    0.02, ...
                    'leftMargin',     0.05, ...
                    'rightMargin',    0.000, ...
-                   'bottomMargin',   0.03, ...
+                   'bottomMargin',   0.04, ...
                    'topMargin',      0.01);
    
     generateVideo = true;
@@ -64,7 +64,9 @@ function parseFastFullONData(data, wavelengthAxis)
         writerObj.open();
     end
         
-    hFig = figure(5); clf; set(hFig, 'Position', [1 1 1780 1260]);    
+    hFig = figure(5); clf; 
+    set(hFig, 'Position', [10 10 1700 1200]);  
+    
     for bandIndex =  1 : size(spectroTemporalResponse,2)
         pos = subplotPosVectors(1,1).v;
         subplot('Position', [pos(1) pos(2) 2*pos(3) pos(4)]);
@@ -133,6 +135,7 @@ function parseFastFullONData(data, wavelengthAxis)
             hL = legend({'mean amplitude', '95% conf interval', '5% conf interval', '1 cycle/total duration'});
             set(hL, 'FontName', 'Menlo');
             drawnow;
+            
             if (generateVideo)
                 writerObj.writeVideo(getframe(hFig));
             end
