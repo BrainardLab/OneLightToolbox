@@ -80,6 +80,13 @@ function analyzeData(rootDir)
         return
     end
      
+    if (strcmp(setType, 'combFunctionTest'))
+        whos('-file',fullfile(pathName,fileName))
+        load(fullfile(pathName,fileName),'warmUpData', 'warmUpRepeats');
+        Core.parseCombFunctionData(warmUpData, wavelengthAxis);
+        return
+    end
+    
     % ================= Do Linear Drift Correction =========================
     if (fileContainsWarmUpData)
         load(fullfile(pathName,fileName),'warmUpData', 'warmUpRepeats');
