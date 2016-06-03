@@ -40,25 +40,32 @@ function plotTimeCourseOfAllWavelengths(wavelengthAxis, warmUpData)
     times = zeros(1, totalTimeBins);
     amplitudes = zeros(wavesNum, totalTimeBins);
     
-    
-    indices = find((wavelengthAxis > 400) & (wavelengthAxis < 750));
-    wavelengthAxis = wavelengthAxis(indices);
-    
+   
+    spectralPeaks = [422 468 516 564 608 654 700 746];
     stimPatternOrder = 1:numel(warmUpData)-1;
     stimPatternOrder = [1 2 2+5 2+3 2+6 2+4 2+2 2+7 2+1];
     
     spdGain = 1000;
+    for stimPattern = 1:numel(warmUpData)
+        warmUpData{stimPattern}.measuredSPD = warmUpData{stimPattern}.measuredSPD * spdGain;
+    end
     
     subplotPosVectors = NicePlot.getSubPlotPosVectors(...
            'rowsNum', numel(stimPatternOrder), ...
-           'colsNum', 3, ...
-           'heightMargin',   0.03, ...
-           'widthMargin',    0.04, ...
-           'leftMargin',     0.05, ...
+           'colsNum', 5, ...
+           'heightMargin',   0.01, ...
+           'widthMargin',    0.03, ...
+           'leftMargin',     0.002, ...
            'rightMargin',    0.000, ...
            'bottomMargin',   0.03, ...
            'topMargin',      0.01);
        
+    videoFilename = 'all2.m4v';
+    writerObj = VideoWriter(videoFilename, 'MPEG-4'); % H264 format
+    writerObj.FrameRate = 15; 
+    writerObj.Quality = 100;
+    writerObj.open();
+    
     for bandIndex = 1:numel(wavelengthAxis)
         hFig = figure(100); clf; 
         set(hFig, 'Position', [1 1 1420 1290], 'Color', [1 1 1]);
@@ -67,57 +74,71 @@ function plotTimeCourseOfAllWavelengths(wavelengthAxis, warmUpData)
             subplot('Position', subplotPosVectors(stimPatternOrder(stimPattern),1).v);
             bar(1:numel(warmUpData{stimPattern+1}.activation), warmUpData{stimPattern+1}.activation, 1);
             set(gca, 'XColor', [1 1 1], 'YColor', [1 1 1]);
+            title('primary activation');
             
-            subplot('Position', subplotPosVectors(stimPatternOrder(stimPattern),2).v);
-            meanSPD = spdGain * squeeze(mean(warmUpData{stimPattern+1}.measuredSPD(indices,:),2));
+            pos = subplotPosVectors(stimPatternOrder(stimPattern),2).v;
+            subplot('Position', [pos(1) pos(2) 2.1*pos(3) pos(4)]);
+            meanSPD = squeeze(mean(warmUpData{stimPattern+1}.measuredSPD,2));
+            stdSPD = squeeze(std(warmUpData{stimPattern+1}.measuredSPD,0,2));
+            
             if (stimPattern < 3)
                 maxMeanSPD = max(meanSPD);
             else
                 maxMeanSPD = 4.5;
             end
           
-            plot(wavelengthAxis, meanSPD, 'b-', 'LineWidth', 2.0);
-            hold on;
+            
+            %plot(wavelengthAxis, 10*bsxfun(@minus, warmUpData{stimPattern+1}.measuredSPD, meanSPD), 'k-', 'Color', [0.6 0.6 0.6], 'LineWidth', 1.0);
+            %hold on
+            plot(wavelengthAxis, meanSPD, 'm-', 'LineWidth', 2.0);
+            hold on
+            plot(wavelengthAxis, 100*stdSPD, 'k-', 'LineWidth', 1.0);
+            
             plot(wavelengthAxis(bandIndex)*[1 1], [0 maxMeanSPD], 'k-', 'LineWidth', 1.5);
             plot(wavelengthAxis(bandIndex), meanSPD(bandIndex), 'ro', 'MarkerSize', 12, 'MarkerFaceColor', [1.0 0.5 0.5]);
+            hL = legend({'mean', '100*std'});
+            
             hold off;
-            set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)], 'YLim', [0 maxMeanSPD], 'XTick', (300:50:900));
+            set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)], 'YLim', maxMeanSPD*[-0.1 1], 'XTick', (300:50:900), 'YTick', spectralPeaks, 'FontSize', 14);
             if (stimPattern == 4)
-                ylabel('power (mWatts)');
+                ylabel('power (mWatts)', 'FontSize', 16, 'FontWeight', 'bold');
             end
             if (stimPatternOrder(stimPattern) == numel(warmUpData)-1)
-                xlabel('wavelength (nm)'); 
+                xlabel('wavelength (nm)', 'FontSize', 16, 'FontWeight', 'bold'); 
             else
                 set(gca, 'XTickLabel', {});
             end
             box off; grid on;
             
-            subplot('Position', subplotPosVectors(stimPatternOrder(stimPattern),3).v);
+            
+            pos = subplotPosVectors(stimPatternOrder(stimPattern),4).v;
+            subplot('Position', [pos(1) pos(2) 2.1*pos(3) pos(4)]);
             bandTraceAcrossTime = squeeze(warmUpData{stimPattern+1}.measuredSPD(bandIndex,:));
-            plot(warmUpData{stimPattern+1}.measurementTime, spdGain*(bandTraceAcrossTime-mean(bandTraceAcrossTime)), 'r-', 'LineWidth', 2.0);
+            plot(warmUpData{stimPattern+1}.measurementTime, (bandTraceAcrossTime-mean(bandTraceAcrossTime)), 'r-', 'LineWidth', 2.0);
             hold on
             plot(warmUpData{stimPattern+1}.measurementTime, 0*(bandTraceAcrossTime-mean(bandTraceAcrossTime)), 'k-', 'LineWidth', 1.0);
             hold off;
             
-            set(gca, 'YLim', 0.1*[-1 1], 'XLim', [0 max(warmUpData{1}.measurementTime)], 'YTick', [-0.1 0 0.1]);
+            set(gca, 'YLim', 0.1*[-1 1], 'XLim', [0 max(warmUpData{1}.measurementTime)], 'YTick', [-0.1 0 0.1], 'FontSize', 14);
             
             if (stimPattern == 1)
                 title(sprintf('%d nm', wavelengthAxis(bandIndex)));
             end
             if (stimPattern == 4)
-                ylabel('amplitude - meanAcrossTime(amplitude)');
+                ylabel('diff power (mWatts)', 'FontSize', 16, 'FontWeight', 'bold');
             end
             if (stimPatternOrder(stimPattern) == numel(warmUpData)-1)
-                xlabel('time (minutes)'); 
+                xlabel('time (minutes)', 'FontSize', 16, 'FontWeight', 'bold'); 
             end
             box off; grid on;
             
         end
         
         drawnow;
+        writerObj.writeVideo(getframe(hFig)); 
     end
 
-    
+    writerObj.close();
     
 end
 
