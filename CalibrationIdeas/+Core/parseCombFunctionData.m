@@ -1,9 +1,14 @@
 function parseCombFunctionData(warmUpData, wavelengthAxis)
    
+    load T_cones_ss2;
+    load 'T_melanopsin'
+    T_cones      = SplineCmf(S_cones_ss2,  T_cones_ss2,  WlsToS(wavelengthAxis));
+    T_melanopsin = SplineCmf(S_melanopsin, T_melanopsin, WlsToS(wavelengthAxis));
+    
     [warmUpData, warmUpDataUncorrected] = correctForLinearDrift(warmUpData, wavelengthAxis);
     warmUpData = subtractDarkSPD(warmUpData);
     
-    plotTimeCourseOfAllWavelengths(wavelengthAxis, warmUpData);
+    %plotTimeCourseOfAllWavelengths(wavelengthAxis, T_cones, T_melanopsin, warmUpData);
     
     meanFullOnSPD = mean(warmUpData{2}.measuredSPD,2);
     fullOnResiduals = bsxfun(@minus, warmUpData{2}.measuredSPD, meanFullOnSPD);
@@ -31,7 +36,7 @@ function parseCombFunctionData(warmUpData, wavelengthAxis)
 end
 
 
-function plotTimeCourseOfAllWavelengths(wavelengthAxis, warmUpData)
+function plotTimeCourseOfAllWavelengths(wavelengthAxis, T_cones, T_melanopsin, warmUpData)
     
     stimPattern = 1;
     [wavesNum, repeatsNum] = size(warmUpData{stimPattern}.measuredSPD);
@@ -53,11 +58,11 @@ function plotTimeCourseOfAllWavelengths(wavelengthAxis, warmUpData)
     subplotPosVectors = NicePlot.getSubPlotPosVectors(...
            'rowsNum', numel(stimPatternOrder), ...
            'colsNum', 5, ...
-           'heightMargin',   0.01, ...
+           'heightMargin',   0.005, ...
            'widthMargin',    0.03, ...
            'leftMargin',     0.002, ...
            'rightMargin',    0.000, ...
-           'bottomMargin',   0.03, ...
+           'bottomMargin',   0.04, ...
            'topMargin',      0.01);
        
     videoFilename = 'all2.m4v';
@@ -66,18 +71,35 @@ function plotTimeCourseOfAllWavelengths(wavelengthAxis, warmUpData)
     writerObj.Quality = 100;
     writerObj.open();
     
+    hFig = figure(100); clf; 
+    set(hFig, 'Position', [1 100 1700 1360], 'Color', [1 1 1]); % , 'MenuBar', 'none');
+    
+    
+    wavelengthAxisRange = [420 740];
+    indices = find(wavelengthAxis>wavelengthAxisRange(1) & wavelengthAxis<wavelengthAxisRange(2));
+    wavelengthAxis = wavelengthAxis(indices);
+    T_melanopsin = T_melanopsin(indices);
+    T_cones = T_cones(:,indices);
+    
+    
+    
+    for stimPattern = 1:numel(warmUpData)
+        warmUpData{stimPattern}.measuredSPD = warmUpData{stimPattern}.measuredSPD(indices,:);
+    end
+    
     for bandIndex = 1:numel(wavelengthAxis)
-        hFig = figure(100); clf; 
-        set(hFig, 'Position', [1 1 1420 1290], 'Color', [1 1 1]);
+        
         for stimPattern = 1:numel(warmUpData)-1
             
             subplot('Position', subplotPosVectors(stimPatternOrder(stimPattern),1).v);
             bar(1:numel(warmUpData{stimPattern+1}.activation), warmUpData{stimPattern+1}.activation, 1);
             set(gca, 'XColor', [1 1 1], 'YColor', [1 1 1]);
-            title('primary activation');
+            if (stimPattern == 1)
+                title('primary activation');
+            end
             
             pos = subplotPosVectors(stimPatternOrder(stimPattern),2).v;
-            subplot('Position', [pos(1) pos(2) 2.1*pos(3) pos(4)]);
+            subplot('Position', [pos(1)-0.015 pos(2) 3.3*pos(3) pos(4)]);
             meanSPD = squeeze(mean(warmUpData{stimPattern+1}.measuredSPD,2));
             stdSPD = squeeze(std(warmUpData{stimPattern+1}.measuredSPD,0,2));
             
@@ -88,18 +110,23 @@ function plotTimeCourseOfAllWavelengths(wavelengthAxis, warmUpData)
             end
           
             
-            %plot(wavelengthAxis, 10*bsxfun(@minus, warmUpData{stimPattern+1}.measuredSPD, meanSPD), 'k-', 'Color', [0.6 0.6 0.6], 'LineWidth', 1.0);
-            %hold on
-            plot(wavelengthAxis, meanSPD, 'm-', 'LineWidth', 2.0);
+            
+            plot(wavelengthAxis, meanSPD, 'k-', 'LineWidth', 2.0);
             hold on
-            plot(wavelengthAxis, 100*stdSPD, 'k-', 'LineWidth', 1.0);
+            plot(wavelengthAxis, 100*stdSPD, 'r-', 'LineWidth', 2.0);
+            plot(wavelengthAxis, 10*bsxfun(@minus, warmUpData{stimPattern+1}.measuredSPD, meanSPD), 'k-', 'Color', [0.6 0.6 0.6], 'LineWidth', 1.0);
+%             plot(wavelengthAxis, T_melanopsin/max(T_melanopsin)*maxMeanSPD, 'b-', 'LineWidth', 2.0);
+%             plot(wavelengthAxis, T_cones(1,:)/max(T_cones(1,:))*maxMeanSPD, 'r-', 'Color', [1.0, 0.4 0.6], 'LineWidth', 2.0);
+%             plot(wavelengthAxis, T_cones(2,:)/max(T_cones(2,:))*maxMeanSPD, 'r-', 'Color', [0.4, 1.0 0.6], 'LineWidth', 2.0);
+%             plot(wavelengthAxis, T_cones(3,:)/max(T_cones(3,:))*maxMeanSPD, 'r-', 'Color', [0.4, 0.3 1.0], 'LineWidth', 2.0);
             
-            plot(wavelengthAxis(bandIndex)*[1 1], [0 maxMeanSPD], 'k-', 'LineWidth', 1.5);
-            plot(wavelengthAxis(bandIndex), meanSPD(bandIndex), 'ro', 'MarkerSize', 12, 'MarkerFaceColor', [1.0 0.5 0.5]);
+            plot(wavelengthAxis(bandIndex)*[1 1], [0 maxMeanSPD], 'b-', 'LineWidth', 1.5);
+            plot(wavelengthAxis(bandIndex), 100*stdSPD(bandIndex), 'bo', 'MarkerSize', 8, 'MarkerFaceColor', [0.5 0.5 1.0]);
+            text(wavelengthAxis(bandIndex)+5, maxMeanSPD, sprintf('%d nm', wavelengthAxis(bandIndex)), 'FontSize', 12, 'Color', 'b');
+            
             hL = legend({'mean', '100*std'});
-            
             hold off;
-            set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)], 'YLim', maxMeanSPD*[-0.1 1], 'XTick', (300:50:900), 'YTick', spectralPeaks, 'FontSize', 14);
+            set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)], 'YLim', maxMeanSPD*[-0.1 1], 'XTick', (300:50:900), 'XTick', spectralPeaks, 'FontSize', 14);
             if (stimPattern == 4)
                 ylabel('power (mWatts)', 'FontSize', 16, 'FontWeight', 'bold');
             end
@@ -110,16 +137,14 @@ function plotTimeCourseOfAllWavelengths(wavelengthAxis, warmUpData)
             end
             box off; grid on;
             
-            
-            pos = subplotPosVectors(stimPatternOrder(stimPattern),4).v;
-            subplot('Position', [pos(1) pos(2) 2.1*pos(3) pos(4)]);
+            subplot('Position', subplotPosVectors(stimPatternOrder(stimPattern),5).v);
             bandTraceAcrossTime = squeeze(warmUpData{stimPattern+1}.measuredSPD(bandIndex,:));
-            plot(warmUpData{stimPattern+1}.measurementTime, (bandTraceAcrossTime-mean(bandTraceAcrossTime)), 'r-', 'LineWidth', 2.0);
+            plot(warmUpData{stimPattern+1}.measurementTime, (bandTraceAcrossTime-mean(bandTraceAcrossTime)), 'r-', 'LineWidth', 2.0, 'Color', [0.3 0.3 1.0]);
             hold on
             plot(warmUpData{stimPattern+1}.measurementTime, 0*(bandTraceAcrossTime-mean(bandTraceAcrossTime)), 'k-', 'LineWidth', 1.0);
             hold off;
             
-            set(gca, 'YLim', 0.1*[-1 1], 'XLim', [0 max(warmUpData{1}.measurementTime)], 'YTick', [-0.1 0 0.1], 'FontSize', 14);
+            set(gca, 'YLim', 0.11*[-1 1], 'XLim', [0 max(warmUpData{1}.measurementTime)], 'XTick', (0:120:1000), 'YTick', [-0.1 0 0.1], 'FontSize', 14);
             
             if (stimPattern == 1)
                 title(sprintf('%d nm', wavelengthAxis(bandIndex)));
@@ -129,6 +154,8 @@ function plotTimeCourseOfAllWavelengths(wavelengthAxis, warmUpData)
             end
             if (stimPatternOrder(stimPattern) == numel(warmUpData)-1)
                 xlabel('time (minutes)', 'FontSize', 16, 'FontWeight', 'bold'); 
+            else
+                set(gca, 'XTickLabel', {});
             end
             box off; grid on;
             
@@ -156,22 +183,20 @@ function makeVideo(wavelengthAxis, wavelengthRange, predictedResiduals, measured
            'topMargin',      0.01);
        
     colors = jet(9);
+    spdGain = 1000;
     for repeatIndex = 1:size(measuredResiduals,3)
         for stimPattern = 1:8
             row = 1;
+            subplot('Position', subplotPosVectors(1,1).v);
+            
             if (stimPattern == 1)
-                col = 1;
                 theColor = [1.0 0.2 0.2 1.0];
+                plot(wavelengthAxis, spdGain*squeeze(predictedResiduals(stimPattern,:,:)), 'k-',  'Color', [0.6 0.6 0.6], 'LineWidth', 1.0); hold on;
             else
                 theColor = squeeze(colors(stimPattern,:));
-                col = 1;
             end
-            subplot('Position', subplotPosVectors(row,col).v);
-            
-            plot(wavelengthAxis, 1000*squeeze(predictedResiduals(stimPattern,:,:)), 'k-',  'Color', [0.6 0.6 0.6], 'LineWidth', 1.0); hold on;
-            plot(wavelengthAxis, 1000*squeeze(measuredResiduals(stimPattern,:,repeatIndex)), 'k-', 'LineWidth', 5);
-            plot(wavelengthAxis, 1000*squeeze(measuredResiduals(stimPattern,:,repeatIndex)), '-', 'LineWidth', 3, 'Color', theColor);
-            
+            plot(wavelengthAxis, spdGain*squeeze(measuredResiduals(stimPattern,:,repeatIndex)), 'k-', 'LineWidth', 5);
+            plot(wavelengthAxis, spdGain*squeeze(measuredResiduals(stimPattern,:,repeatIndex)), '-', 'LineWidth', 3, 'Color', theColor);
             if (stimPattern == 8)
                 hold off;
             end
