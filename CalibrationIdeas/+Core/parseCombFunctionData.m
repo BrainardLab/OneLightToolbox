@@ -1,14 +1,20 @@
 function parseCombFunctionData(warmUpData, wavelengthAxis)
-   
-    load T_cones_ss2;
-    load 'T_melanopsin'
-    T_cones      = SplineCmf(S_cones_ss2,  T_cones_ss2,  WlsToS(wavelengthAxis));
-    T_melanopsin = SplineCmf(S_melanopsin, T_melanopsin, WlsToS(wavelengthAxis));
+ 
+    [warmUpDataCorrected, ~] = correctForLinearDrift(warmUpData, wavelengthAxis);
+    darkSPD = mean(warmUpDataCorrected{1}.measuredSPD,2);
+    
+    %fitData(warmUpDataCorrected, wavelengthAxis, darkSPD );
+    %return;
+    
+%     load T_cones_ss2;
+%     load 'T_melanopsin'
+%     T_cones      = SplineCmf(S_cones_ss2,  T_cones_ss2,  WlsToS(wavelengthAxis));
+%     T_melanopsin = SplineCmf(S_melanopsin, T_melanopsin, WlsToS(wavelengthAxis));
     
     [warmUpData, warmUpDataUncorrected] = correctForLinearDrift(warmUpData, wavelengthAxis);
     warmUpData = subtractDarkSPD(warmUpData);
     
-    %plotTimeCourseOfAllWavelengths(wavelengthAxis, T_cones, T_melanopsin, warmUpData);
+    plotTimeCourseOfAllWavelengths(wavelengthAxis, warmUpData);
     
     meanFullOnSPD = mean(warmUpData{2}.measuredSPD,2);
     fullOnResiduals = bsxfun(@minus, warmUpData{2}.measuredSPD, meanFullOnSPD);
@@ -29,14 +35,275 @@ function parseCombFunctionData(warmUpData, wavelengthAxis)
     writerObj.open();
     
     hFig = figure(1); clf;
-    wavelengthRange = [380 720];
-    set(hFig, 'Color', [1 1 1], 'Position', [1 1 1760 1160]);
+    wavelengthRange = [400 720];
+    set(hFig, 'Color', [1 1 1], 'Position', [1 1 1024 768]);
     makeVideo(wavelengthAxis, wavelengthRange, predictedResiduals, measuredResiduals, measuredResidualsTimes, hFig, writerObj);
     writerObj.close();
 end
 
+function fitData(warmUpData, wavelengthAxis, darkSPD)
+    stimPattern = 7;
+    % subtract darkSPD
+    darkSubtractedSPD = bsxfun(@minus, warmUpData{stimPattern}.measuredSPD, darkSPD);
+    measuredSPDmWatts = 1000*darkSubtractedSPD;
+    measuredSPDmWatts = measuredSPDmWatts / max(measuredSPDmWatts(:));
+    
+    measurementTimeMinutes = warmUpData{stimPattern}.measurementTime;
+    measurementTimeMinutes = measurementTimeMinutes-measurementTimeMinutes(1);
+    primarySPD = squeeze(mean(measuredSPDmWatts,2));
+    firstMeasurementSPD = squeeze(measuredSPDmWatts(:,1));
+    [maxPrimary,peakWavelengthIndex] = max(primarySPD);
+    [~,leftSideWavelengthIndex] = min(abs(primarySPD(1:peakWavelengthIndex)-maxPrimary/2));
+    [~,rightSideWavelengthIndex] = min(abs(primarySPD(peakWavelengthIndex:end)-maxPrimary/2));
+    rightSideWavelengthIndex = rightSideWavelengthIndex + (peakWavelengthIndex-1);
+    peakTrace = measuredSPDmWatts(peakWavelengthIndex,:);
+    leftSideTrace = measuredSPDmWatts(leftSideWavelengthIndex,:);
+    rightSideTrace = measuredSPDmWatts(rightSideWavelengthIndex,:);
+    
+    extraPoints = 6;
+    dataIndicesToFit = leftSideWavelengthIndex-extraPoints  : rightSideWavelengthIndex+extraPoints
+    
+    
+    visualizedWavelengthRange = [540 590]; % wavelengthAxis(peakWavelengthIndex) + [-25 25];
+    measurementTimeRange = [0 max(measurementTimeMinutes)];
+    
+    if (1==2)
+    hFig = figure(3); 
+    set(hFig, 'Color', [1 1 1], 'Position', [1 1 1024 768], 'MenuBar', 'none');
+    
+    writerObj = VideoWriter('TimeSeriesAnimation.m4v', 'MPEG-4'); % H264 format
+    writerObj.FrameRate = 15; 
+    writerObj.Quality = 100;
+    writerObj.open();
+    
+    subplotPosVectors = NicePlot.getSubPlotPosVectors(...
+           'rowsNum', 2, ...
+           'colsNum', 2, ...
+           'heightMargin',   0.05, ...
+           'widthMargin',    0.06, ...
+           'leftMargin',     0.05, ...
+           'rightMargin',    0.000, ...
+           'bottomMargin',   0.06, ...
+           'topMargin',      0.01);
+       
+    
+    
+    for tBin = 1:numel(measurementTimeMinutes)
+        clf;
+        
+        pos = subplotPosVectors(2,1).v;
+        subplot('Position', [pos(1) pos(2) pos(3) pos(4)*2.1]);
+        hold on
+        plot(wavelengthAxis, measuredSPDmWatts(:,tBin), 'k-', 'Color', [0.0 0.0 0], 'LineWidth', 3.0);
+        plot(wavelengthAxis(dataIndicesToFit), measuredSPDmWatts(dataIndicesToFit,tBin), 'ko', 'MarkerSize', 16, 'MarkerFaceColor', [0.6 0.6 0.6]);
+        plot(wavelengthAxis(leftSideWavelengthIndex), measuredSPDmWatts(leftSideWavelengthIndex,tBin), 'ro', 'MarkerSize', 16, 'MarkerFaceColor', [1.0 0.6 0.6]);
+        plot(wavelengthAxis(rightSideWavelengthIndex), measuredSPDmWatts(rightSideWavelengthIndex,tBin), 'bo', 'MarkerSize', 16, 'MarkerFaceColor', [0.6 0.6 1.0]);
+        plot(wavelengthAxis(peakWavelengthIndex)*[1 1], [0 maxPrimary*1.1], 'k--', 'LineWidth', 2.0);
+        plot(wavelengthAxis(leftSideWavelengthIndex)*[1 1], [0 maxPrimary*1.1], 'r--', 'LineWidth', 2.0);
+        plot(wavelengthAxis(rightSideWavelengthIndex)*[1 1], [0 maxPrimary*1.1], 'b--', 'LineWidth', 2.0);
+        set(gca, 'XLim', visualizedWavelengthRange, 'YLim', [0 1], 'FontSize', 16);
+        text(542, 0.95, sprintf('t: %2.1fmin', measurementTimeMinutes(tBin)), 'FontSize', 16, 'FontName', 'Menlo');
+        box off; grid on;
+        xlabel('wavelength (nm)', 'FontSize', 18, 'FontWeight', 'bold');
+        ylabel('power', 'FontSize', 18, 'FontWeight', 'bold');
+        
+        
+        subplot('Position', subplotPosVectors(1,2).v);
+        plot(measurementTimeMinutes(1:tBin), peakTrace(1:tBin), 'k-', 'LineWidth', 3.0); hold on;
+        plot(measurementTimeMinutes(1:tBin), leftSideTrace(1:tBin), 'r-', 'LineWidth', 3.0); hold on;
+        plot(measurementTimeMinutes(1:tBin), rightSideTrace(1:tBin), 'b-', 'LineWidth', 3.0); hold on;
+        set(gca, 'XLim', measurementTimeRange, 'YLim', [0 1], 'FontSize', 16);
+        box off; grid on;
+        %xlabel('time (mins)', 'FontSize', 18, 'FontWeight', 'bold');
+        ylabel('power', 'FontSize', 18, 'FontWeight', 'bold');
+        
+        subplot('Position', subplotPosVectors(2,2).v);
+        plot(measurementTimeMinutes(1:tBin), peakTrace(1:tBin)-mean(peakTrace), 'k-', 'LineWidth', 3.0); hold on;
+        plot(measurementTimeMinutes(1:tBin), leftSideTrace(1:tBin)-mean(leftSideTrace), 'r-', 'LineWidth', 3.0); hold on;
+        plot(measurementTimeMinutes(1:tBin), rightSideTrace(1:tBin)-mean(rightSideTrace), 'b-', 'LineWidth', 3.0); hold on;
+        yTicks = -0.05:0.01:0.05;
+        set(gca, 'XLim', measurementTimeRange, 'YLim', 0.021*[-1 1], 'FontSize', 16, 'YTick', yTicks, 'YTickLabel', sprintf('%0.2f\n', yTicks));
+        box off; grid on;
+        xlabel('time (mins)', 'FontSize', 18, 'FontWeight', 'bold');
+        ylabel('diff power', 'FontSize', 18, 'FontWeight', 'bold');
+        
+        
+        drawnow;
+        writerObj.writeVideo(getframe(hFig));
+    end
+    writerObj.close();
+    
+    NicePlot.exportFigToPDF('Fitting.pdf', hFig,300); 
+     
+end
 
-function plotTimeCourseOfAllWavelengths(wavelengthAxis, T_cones, T_melanopsin, warmUpData)
+
+    hFig = figure(10); clf; 
+    set(hFig, 'Color', [1 1 1], 'Position', [1 100 860 950]);
+    subplot('position', [0.06 0.06 0.920 0.925]);
+    %plot(wavelengthAxis, primarySPD, 'k-', 'LineWidth', 2.0); hold on;
+    %plot(wavelengthAxis, firstMeasurementSPD, 'r-', 'LineWidth', 4.0); hold on;
+    wavelengthAxis(dataIndicesToFit)
+    firstMeasurementSPD(dataIndicesToFit)
+    size(wavelengthAxis(dataIndicesToFit))
+    size(firstMeasurementSPD(dataIndicesToFit))
+    plot(wavelengthAxis(dataIndicesToFit), firstMeasurementSPD(dataIndicesToFit), 'ko', 'MarkerSize', 20, 'MarkerFaceColor', [0.8 0.8 0.8]);
+    hold on
+    visualizedWavelengthRange
+    set(gca, 'XLim', visualizedWavelengthRange, 'FontSize', 18);
+    xlabel('wavelength (nm)', 'FontSize', 20, 'FontWeight', 'bold');
+    ylabel('power', 'FontSize', 20, 'FontWeight', 'bold');
+    
+    xData = wavelengthAxis(dataIndicesToFit);
+    
+    % Fit the first measurement
+    paramNames       = {'offset (mWatts)', 'gain (mWatts)', 'peak (nm)', 'left side sigma (nm)', 'right side sigma (nm)', 'exponent'};
+    initialParams    = [0   5  565  6.28   6.28   2];
+    paramLowerBounds =   [0   0  500  1   1 1.5];  % [0   0  500  6.28   6.28   2];
+    paramUpperBounds = [0  10  600  10  10 4]; % [0  10  600  6.28  6.28  2]; % 
+    firstMeasurementParams = fitGaussianToData(xData, firstMeasurementSPD(dataIndicesToFit), initialParams, paramLowerBounds, paramUpperBounds)
+    hiresWavelengthAxis = wavelengthAxis(1):0.05:wavelengthAxis(end);
+    plot(hiresWavelengthAxis, gaussianFilter(hiresWavelengthAxis', firstMeasurementParams), 'r-', 'LineWidth', 3.0);
+    set(gca, 'XLim', visualizedWavelengthRange, 'YLim', [0 1.05]);
+    box off;
+    grid on
+    NicePlot.exportFigToPDF('Fitting.pdf', hFig,300);
+    pause;
+    
+    
+    % Choose fixed params
+    paramTestLowerBounds = paramLowerBounds;
+    paramTestUpperBounds = paramUpperBounds;
+    fixedParamIndices = [1  3 4 5 6];  % Gain-only 
+    %fixedParamIndices = [1     4 5 6];  % Gain + peak only 
+    %fixedParamIndices = [1     3 4 5];  % Gain + exponent vary
+    %fixedParamIndices = [1];  % All vary (expect for offset)
+    for paramIndex = fixedParamIndices
+        paramTestLowerBounds(paramIndex) = firstMeasurementParams(paramIndex)-eps;
+        paramTestUpperBounds(paramIndex) = firstMeasurementParams(paramIndex)+eps;
+    end
+    
+    meanFilterParams = fitGaussianToData(xData, primarySPD(dataIndicesToFit), firstMeasurementParams, paramTestLowerBounds, paramTestUpperBounds);
+    for measurementIndex = 1:numel(measurementTimeMinutes)
+        yData = squeeze(measuredSPDmWatts(dataIndicesToFit, measurementIndex));
+        fittedParams(measurementIndex,:) = fitGaussianToData(xData, yData, firstMeasurementParams, paramTestLowerBounds, paramTestUpperBounds);
+        yDataPrediction = gaussianFilter(xData, squeeze(fittedParams(measurementIndex,:)));
+        residuals(measurementIndex,:) = yData-yDataPrediction;
+        errorSequence(measurementIndex) = sqrt(mean((squeeze(residuals(measurementIndex,:))).^2));
+    end
+    
+    hFig = figure(3); clf;
+    set(hFig, 'Color', [1 1 1], 'Position', [1 1 1024 768]);
+    subplot('Position', [0.05 0.05 0.94 0.94]);
+    plot(wavelengthAxis(dataIndicesToFit), 100*std(residuals, 0, 1), 'ro-', 'LineWidth', 2.0, 'MarkerSize', 14, 'MarkerFaceColor', [1.0 0.5 0.5]);
+    hold on
+    plot(wavelengthAxis(dataIndicesToFit), squeeze(measuredSPDmWatts(dataIndicesToFit, :)), 'k-', 'LineWidth', 2.0);
+    hL = legend({'100*std', 'measurements'});
+    set(hL, 'FontSize', 14, 'FontName', 'Menlo');
+    box off; grid on
+    set(gca, 'XLim', [wavelengthAxis(dataIndicesToFit(1)) wavelengthAxis(dataIndicesToFit(end))], 'FontSize', 14);
+    xlabel('wavelength (nm)', 'FontSize', 16,  'FontWeight', 'bold'); 
+    ylabel('power (mWatts)','FontSize', 16, 'FontWeight', 'bold');
+     NicePlot.exportFigToPDF('TimeSeriesParamResiduals.pdf', hFig,300);    
+
+    
+    hFig = figure(2);
+    set(hFig, 'Color', [1 1 1], 'Position', [1 1 1600 900]);
+    subplotPosVectors = NicePlot.getSubPlotPosVectors(...
+           'rowsNum', 2, ...
+           'colsNum', 3, ...
+           'heightMargin',   0.05, ...
+           'widthMargin',    0.05, ...
+           'leftMargin',     0.05, ...
+           'rightMargin',    0.000, ...
+           'bottomMargin',   0.05, ...
+           'topMargin',      0.01);
+       
+    for paramIndex = 1:6
+        row = floor((paramIndex-1)/3)+1;
+        col = mod(paramIndex-1,3) + 1;
+        subplot('Position', subplotPosVectors(row,col).v);
+        
+        if (paramIndex == 1)
+            plot(measurementTimeMinutes, errorSequence, 'bo-', 'MarkerSize', 8, 'MarkerFaceColor', [0.6 0.6 1.0]);
+            yLabelTitle = 'rms error (mWatts)';
+            YLims = [0.02 0.045]; YTicks = [0.02 :0.005 : 0.045];
+        else
+            paramTimeVariation = squeeze(fittedParams(:,paramIndex));
+            if (paramIndex == 3)
+                plot(measurementTimeMinutes, paramTimeVariation-meanFilterParams(3), 'bo-', 'MarkerSize', 8, 'MarkerFaceColor', [0.6 0.6 1.0]); hold on;
+                plot([measurementTimeMinutes(1) measurementTimeMinutes(end)], meanFilterParams(3)*[0 0], 'r--', 'LineWidth', 2.0);
+            else
+                plot(measurementTimeMinutes, paramTimeVariation, 'bo-', 'MarkerSize', 8, 'MarkerFaceColor', [0.6 0.6 1.0]); hold on;
+                plot([measurementTimeMinutes(1) measurementTimeMinutes(end)], meanFilterParams(paramIndex)*[1 1], 'r--', 'LineWidth', 2.0);
+            end
+            plot([measurementTimeMinutes(1) measurementTimeMinutes(end)], paramLowerBounds(paramIndex)*[1 1], 'c--', 'LineWidth', 2.0);
+            plot([measurementTimeMinutes(1) measurementTimeMinutes(end)], paramUpperBounds(paramIndex)*[1 1], 'b--', 'LineWidth', 2.0);
+            hold off
+            hL = legend({'time varying value', 'mean filter value'}, 'Location', 'NorthWest');
+            set(hL, 'FontName', 'Menlo', 'FontSize', 14);
+            yLabelTitle = paramNames{paramIndex};
+            YLims = [min(paramTimeVariation)-0.0001 max(paramTimeVariation)+0.0001];
+            switch paramNames{paramIndex}
+                case 'left side sigma (nm)'
+                    YLims = [6.9 7.0]; YTicks = [6.9:0.02:7.0];
+                case 'right side sigma (nm)'
+                    YLims = [6.9 7.0];  YTicks = [6.9:0.02:7.0];
+                case 'gain (mWatts)'
+                    YLims = [4.3 4.6]; YTicks = [4.3 : 0.05: 4.6];
+                case 'peak (nm)'
+                    YLims = [-0.15 0.15]; YTicks = [-0.15 : 0.05 : 0.15];
+                case 'exponent'
+                    YLims = [2.51 2.55]; YTicks = [2.51 : 0.01 : 2.55];
+            end
+        end
+        
+        measurementTimeMinutes
+        set(gca, 'XTick', (0:60:1000), 'XLim', [measurementTimeMinutes(1) measurementTimeMinutes(end)]);
+        set(gca, 'YLim', YLims, 'YTick', YTicks, 'YTickLabel', sprintf('%2.3f\n', YTicks), 'FontSize', 14);
+        if (row == 2)
+            xlabel('time (min)', 'FontSize', 16,  'FontWeight', 'bold'); 
+        end
+        ylabel(yLabelTitle,'FontSize', 16, 'FontWeight', 'bold');
+        
+        box off; grid on
+    end
+    
+    NicePlot.exportFigToPDF('TimeSeriesParamFits.pdf', hFig,300);
+    
+end
+
+function solution = fitGaussianToData(xData, yData, initialParams, paramLowerBounds, paramUpperBounds)
+    
+    Aeq = [];
+    beq = [];
+    A = [];
+    b = [];
+    solution = fmincon(@functionToMinimize, initialParams,A, b,Aeq,beq, paramLowerBounds, paramUpperBounds);
+    
+    function rmsResidual = functionToMinimize(params)
+        yfit = gaussianFilter(xData, params);
+        rmsResidual  = sum((yfit - yData) .^2);
+    end
+end
+
+function g = gaussianFilter(wavelength, params)
+    offset = params(1);
+    gain = params(2);
+    peakWavelength = params(3);
+    leftSigmaWavelength = params(4);
+    rightSigmaWavelength = params(5);
+    exponent = params(6);
+    leftIndices = find(wavelength < peakWavelength);
+    rightIndices = find(wavelength >= peakWavelength);
+    g1 = offset + gain*exp(-0.5*(abs((wavelength(leftIndices)-peakWavelength)/leftSigmaWavelength)).^exponent);    
+    g2 = offset + gain*exp(-0.5*(abs((wavelength(rightIndices)-peakWavelength)/rightSigmaWavelength)).^exponent);
+    g = cat(1, g1, g2);
+end
+    
+
+
+function plotTimeCourseOfAllWavelengths(wavelengthAxis, warmUpData)
     
     stimPattern = 1;
     [wavesNum, repeatsNum] = size(warmUpData{stimPattern}.measuredSPD);
@@ -49,21 +316,32 @@ function plotTimeCourseOfAllWavelengths(wavelengthAxis, T_cones, T_melanopsin, w
     spectralPeaks = [422 468 516 564 608 654 700 746];
     stimPatternOrder = 1:numel(warmUpData)-1;
     stimPatternOrder = [1 2 2+5 2+3 2+6 2+4 2+2 2+7 2+1];
+    stimPatternOrder = [1 2  2+3 2+6 2+4 2+2 2+7 ];
     
+    warmUpDataTmp = warmUpData;
+    warmUpData = {};
+    warmUpData{1} = warmUpDataTmp{1+1};
+    warmUpData{2} = warmUpDataTmp{2+1};
+    warmUpData{3} = warmUpDataTmp{7+1};
+    warmUpData{4} = warmUpDataTmp{4+1};
+    warmUpData{5} = warmUpDataTmp{6+1};
+    warmUpData{6} = warmUpDataTmp{3+1};
+    warmUpData{7} = warmUpDataTmp{5+1};
+      
     spdGain = 1000;
     for stimPattern = 1:numel(warmUpData)
         warmUpData{stimPattern}.measuredSPD = warmUpData{stimPattern}.measuredSPD * spdGain;
     end
     
     subplotPosVectors = NicePlot.getSubPlotPosVectors(...
-           'rowsNum', numel(stimPatternOrder), ...
+           'rowsNum', numel(warmUpData), ...
            'colsNum', 5, ...
            'heightMargin',   0.005, ...
            'widthMargin',    0.03, ...
            'leftMargin',     0.002, ...
            'rightMargin',    0.000, ...
-           'bottomMargin',   0.04, ...
-           'topMargin',      0.01);
+           'bottomMargin',   0.05, ...
+           'topMargin',      0.00);
        
     videoFilename = 'all2.m4v';
     writerObj = VideoWriter(videoFilename, 'MPEG-4'); % H264 format
@@ -72,16 +350,13 @@ function plotTimeCourseOfAllWavelengths(wavelengthAxis, T_cones, T_melanopsin, w
     writerObj.open();
     
     hFig = figure(100); clf; 
-    set(hFig, 'Position', [1 100 1700 1360], 'Color', [1 1 1]); % , 'MenuBar', 'none');
+    set(hFig, 'Position', [1 100 1200 950], 'Color', [1 1 1], 'MenuBar', 'none');
     
     
-    wavelengthAxisRange = [420 740];
+    wavelengthAxisRange = [440 680];
     indices = find(wavelengthAxis>wavelengthAxisRange(1) & wavelengthAxis<wavelengthAxisRange(2));
     wavelengthAxis = wavelengthAxis(indices);
-    T_melanopsin = T_melanopsin(indices);
-    T_cones = T_cones(:,indices);
-    
-    
+
     
     for stimPattern = 1:numel(warmUpData)
         warmUpData{stimPattern}.measuredSPD = warmUpData{stimPattern}.measuredSPD(indices,:);
@@ -89,75 +364,78 @@ function plotTimeCourseOfAllWavelengths(wavelengthAxis, T_cones, T_melanopsin, w
     
     for bandIndex = 1:numel(wavelengthAxis)
         
-        for stimPattern = 1:numel(warmUpData)-1
+        for stimPattern = 1:numel(stimPatternOrder)
             
-            subplot('Position', subplotPosVectors(stimPatternOrder(stimPattern),1).v);
-            bar(1:numel(warmUpData{stimPattern+1}.activation), warmUpData{stimPattern+1}.activation, 1);
+            pos = subplotPosVectors(stimPattern,1).v;
+            subplot('Position', [pos(1) pos(2) pos(3)*0.91 pos(4)]);
+            bar(1:numel(warmUpData{stimPattern}.activation), warmUpData{stimPattern}.activation, 1, 'FaceColor', [0.2 0.2 0.2], 'EdgeColor', 'none');
             set(gca, 'XColor', [1 1 1], 'YColor', [1 1 1]);
-            if (stimPattern == 1)
-                title('primary activation');
-            end
             
-            pos = subplotPosVectors(stimPatternOrder(stimPattern),2).v;
+            pos = subplotPosVectors(stimPattern,2).v;
             subplot('Position', [pos(1)-0.015 pos(2) 3.3*pos(3) pos(4)]);
-            meanSPD = squeeze(mean(warmUpData{stimPattern+1}.measuredSPD,2));
-            stdSPD = squeeze(std(warmUpData{stimPattern+1}.measuredSPD,0,2));
+            meanSPD = squeeze(mean(warmUpData{stimPattern}.measuredSPD,2));
+            stdSPD = squeeze(std(warmUpData{stimPattern}.measuredSPD,0,2));
             
+            maxMeanSPD = max(meanSPD);
             if (stimPattern < 3)
                 maxMeanSPD = max(meanSPD);
-            else
-                maxMeanSPD = 4.5;
-            end
+             else
+                 maxMeanSPD = 4.5;
+             end
           
             
             
-            plot(wavelengthAxis, meanSPD, 'k-', 'LineWidth', 2.0);
+            plot(wavelengthAxis, meanSPD, 'b-', 'LineWidth', 2.0);
             hold on
             plot(wavelengthAxis, 100*stdSPD, 'r-', 'LineWidth', 2.0);
-            plot(wavelengthAxis, 10*bsxfun(@minus, warmUpData{stimPattern+1}.measuredSPD, meanSPD), 'k-', 'Color', [0.6 0.6 0.6], 'LineWidth', 1.0);
+            plot(wavelengthAxis, 10*bsxfun(@minus, warmUpData{stimPattern}.measuredSPD, meanSPD), 'k-', 'Color', [0.6 0.6 0.6], 'LineWidth', 1.0);
 %             plot(wavelengthAxis, T_melanopsin/max(T_melanopsin)*maxMeanSPD, 'b-', 'LineWidth', 2.0);
 %             plot(wavelengthAxis, T_cones(1,:)/max(T_cones(1,:))*maxMeanSPD, 'r-', 'Color', [1.0, 0.4 0.6], 'LineWidth', 2.0);
 %             plot(wavelengthAxis, T_cones(2,:)/max(T_cones(2,:))*maxMeanSPD, 'r-', 'Color', [0.4, 1.0 0.6], 'LineWidth', 2.0);
 %             plot(wavelengthAxis, T_cones(3,:)/max(T_cones(3,:))*maxMeanSPD, 'r-', 'Color', [0.4, 0.3 1.0], 'LineWidth', 2.0);
             
-            plot(wavelengthAxis(bandIndex)*[1 1], [0 maxMeanSPD], 'b-', 'LineWidth', 1.5);
-            plot(wavelengthAxis(bandIndex), 100*stdSPD(bandIndex), 'bo', 'MarkerSize', 8, 'MarkerFaceColor', [0.5 0.5 1.0]);
-            text(wavelengthAxis(bandIndex)+5, maxMeanSPD, sprintf('%d nm', wavelengthAxis(bandIndex)), 'FontSize', 12, 'Color', 'b');
+            plot(wavelengthAxis(bandIndex)*[1 1], [0 maxMeanSPD*0.85], 'k-', 'LineWidth', 1.5);
+            plot(wavelengthAxis(bandIndex), meanSPD(bandIndex), 'ko', 'MarkerSize', 12, 'MarkerFaceColor', [0.8 0.8 1.0]);
+            text(wavelengthAxis(bandIndex)-5, maxMeanSPD*0.95, sprintf('%dnm', wavelengthAxis(bandIndex)), 'FontSize', 16, 'Color', [0.2 0.2 0.2]);
             
             hL = legend({'mean', '100*std'});
+            set(hL, 'FontSize', 16, 'FontName', 'Menlo', 'EdgeColor', 'none', 'Color', 'none');
+            
+
             hold off;
-            set(gca, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)], 'YLim', maxMeanSPD*[-0.1 1], 'XTick', (300:50:900), 'XTick', spectralPeaks, 'FontSize', 14);
+            set(gca, 'LineWidth', 2.0, 'XLim', [wavelengthAxis(1) wavelengthAxis(end)], 'YLim', maxMeanSPD*[-0.1 1], 'XTick', (300:50:900), 'XTick', spectralPeaks, 'FontSize', 16);
             if (stimPattern == 4)
-                ylabel('power (mWatts)', 'FontSize', 16, 'FontWeight', 'bold');
+                ylabel('power (mWatts)', 'FontSize', 20, 'FontWeight', 'bold');
             end
-            if (stimPatternOrder(stimPattern) == numel(warmUpData)-1)
-                xlabel('wavelength (nm)', 'FontSize', 16, 'FontWeight', 'bold'); 
+            if (stimPattern == numel(warmUpData))
+                xlabel('wavelength (nm)', 'FontSize', 20, 'FontWeight', 'bold'); 
             else
                 set(gca, 'XTickLabel', {});
+                if (stimPattern ~= 1)
+                    set(gca, 'YTickLabel', {});
+                end
             end
-            box off; grid on;
+            box off; grid off;
             
-            subplot('Position', subplotPosVectors(stimPatternOrder(stimPattern),5).v);
-            bandTraceAcrossTime = squeeze(warmUpData{stimPattern+1}.measuredSPD(bandIndex,:));
-            plot(warmUpData{stimPattern+1}.measurementTime, (bandTraceAcrossTime-mean(bandTraceAcrossTime)), 'r-', 'LineWidth', 2.0, 'Color', [0.3 0.3 1.0]);
+            subplot('Position', subplotPosVectors(stimPattern,5).v);
+            bandTraceAcrossTime = squeeze(warmUpData{stimPattern}.measuredSPD(bandIndex,:));
+            plot(warmUpData{stimPattern}.measurementTime, (bandTraceAcrossTime-mean(bandTraceAcrossTime)), 'b-', 'LineWidth', 2.0);
             hold on
-            plot(warmUpData{stimPattern+1}.measurementTime, 0*(bandTraceAcrossTime-mean(bandTraceAcrossTime)), 'k-', 'LineWidth', 1.0);
+            plot(warmUpData{stimPattern}.measurementTime, 0*(bandTraceAcrossTime-mean(bandTraceAcrossTime)), 'k-', 'LineWidth', 1.0);
             hold off;
+            yTicks = [-0.1 :0.05: 0.1];
+            set(gca, 'LineWidth', 2.0, 'YLim', 0.11*[-1 1], 'XLim', [0 max(warmUpData{1}.measurementTime)], 'XTick', (0:120:1000), 'YTick', yTicks, 'YTickLabel', sprintf('%0.2f\n', yTicks), 'FontSize', 16);
             
-            set(gca, 'YLim', 0.11*[-1 1], 'XLim', [0 max(warmUpData{1}.measurementTime)], 'XTick', (0:120:1000), 'YTick', [-0.1 0 0.1], 'FontSize', 14);
-            
-            if (stimPattern == 1)
-                title(sprintf('%d nm', wavelengthAxis(bandIndex)));
-            end
             if (stimPattern == 4)
-                ylabel('diff power (mWatts)', 'FontSize', 16, 'FontWeight', 'bold');
+                ylabel('diff power (mWatts)', 'FontSize', 20, 'FontWeight', 'bold');
             end
-            if (stimPatternOrder(stimPattern) == numel(warmUpData)-1)
-                xlabel('time (minutes)', 'FontSize', 16, 'FontWeight', 'bold'); 
+            if (stimPattern == numel(warmUpData))
+                xlabel('time (minutes)', 'FontSize', 20, 'FontWeight', 'bold'); 
             else
                 set(gca, 'XTickLabel', {});
+                set(gca, 'YTickLabel', {});
             end
-            box off; grid on;
+            box off; grid off;
             
         end
         
@@ -206,9 +484,9 @@ function makeVideo(wavelengthAxis, wavelengthRange, predictedResiduals, measured
             xlabel('wavelength (nm)', 'FontSize', 16, 'FontWeight', 'bold'); 
             
             box off; grid on
-            text(385, 0.096,  sprintf('predicted'), 'Color', [0.7 0.7 0.7], 'FontName', 'Menlo', 'FontSize', 16, 'BackgroundColor', [0.25 0.25 0.25]);
-            ycoord = 0.096 - (stimPattern)*0.004;
-            text(385, ycoord, sprintf('measured (trial %d, time: %02.2f minutes)', repeatIndex, measuredResidualsTimes(stimPattern,repeatIndex)), 'Color', theColor.^0.5, 'FontName', 'Menlo', 'FontSize', 16, 'BackgroundColor', [0.25 0.25 0.25]);
+            text(400, 0.099,  sprintf('predicted'), 'Color', [0.7 0.7 0.7], 'FontName', 'Menlo', 'FontSize', 16, 'BackgroundColor', [0.25 0.25 0.25]);
+            ycoord = 0.099 - (stimPattern)*0.006;
+            text(400, ycoord, sprintf('measured (trial %d, t: %02.2f min)', repeatIndex, measuredResidualsTimes(stimPattern,repeatIndex)), 'Color', theColor.^0.5, 'FontName', 'Menlo', 'FontSize', 16, 'BackgroundColor', [0.25 0.25 0.25]);
             
         end
         drawnow;
