@@ -159,7 +159,7 @@ try
             spectroRadiometerOBJ  = PR650dev(...
                 'verbosity',        1, ...       % 1 -> minimum verbosity
                 'devicePortString', [] ...       % empty -> automatic port detection)
-            );
+                );
             spectroRadiometerOBJ.setOptions('syncMode', 'OFF');
             
         case 'PR-670',
@@ -172,18 +172,18 @@ try
             spectroRadiometerOBJ  = PR670dev(...
                 'verbosity',        1, ...       % 1 -> minimum verbosity
                 'devicePortString', [] ...       % empty -> automatic port detection)
-            );
-        
+                );
+            
             % Set options Options available for PR670:
             spectroRadiometerOBJ.setOptions(...
                 'verbosity',        1, ...
-                'syncMode',         'OFF', ...      % choose from 'OFF', 'AUTO', [20 400];        
+                'syncMode',         'OFF', ...      % choose from 'OFF', 'AUTO', [20 400];
                 'cyclesToAverage',  1, ...          % choose any integer in range [1 99]
-                'sensitivityMode',  'EXTENDED', ... % choose between 'STANDARD' and 'EXTENDED'.  'STANDARD': (exposure range: 6 - 6,000 msec, 'EXTENDED': exposure range: 6 - 30,000 msec
+                'sensitivityMode',  'STANDARD', ... % choose between 'STANDARD' and 'EXTENDED'.  'STANDARD': (exposure range: 6 - 6,000 msec, 'EXTENDED': exposure range: 6 - 30,000 msec
                 'exposureTime',     'ADAPTIVE', ... % choose between 'ADAPTIVE' (for adaptive exposure), or a value in the range [6 6000] for 'STANDARD' sensitivity mode, or a value in the range [6 30000] for the 'EXTENDED' sensitivity mode
                 'apertureSize',     '1 DEG' ...   % choose between '1 DEG', '1/2 DEG', '1/4 DEG', '1/8 DEG'
-            );
-
+                );
+            
         otherwise,
             error('Unknown meter type');
     end
@@ -223,7 +223,7 @@ try
     if (cal.describe.specifiedBackground)
         cal.describe.specifiedBackgroundSettings = 0.5*ones(nPrimaries,1);
     end
-
+    
     % Find and set the optimal integration time.  Subtract off a couple
     % thousand microseconds just to give it a conservative value.
     ol.setAll(true);
@@ -258,7 +258,7 @@ try
     theSettings = 0.5*ones(nPrimaries,1);
     [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
     measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
-
+    
     cal.raw.halfOnMeas(:,1) = measTemp.pr650.spectrum;
     cal.raw.t.halfOnMeas(:,1) = measTemp.pr650.time(1);
     if (meterToggle(2))
@@ -280,6 +280,7 @@ try
     end
     fprintf('Done\n');
     
+    spectroRadiometerOBJ.setOptions('sensitivityMode', 'EXTENDED');
     % Take a dark measurement.  Use special case provided by OLSettingsToStartsStops
     % that turns all mirrors off.
     fprintf('- Measuring dark background...');
@@ -300,6 +301,7 @@ try
     cal.raw.darkMeasCheck(:,1) = spectroRadiometerOBJ.measure('userS', cal.describe.S); % MeasSpd(cal.describe.S,cal.describe.meterTypeNum,'off');
     cal.raw.t.darkMeasCheck(:,1) = mglGetSecs;
     fprintf('Done\n');
+    spectroRadiometerOBJ.setOptions('sensitivityMode', 'STANDARD');
     
     % Take a spcecified background measurement, if desired
     if (cal.describe.specifiedBackground)
@@ -423,7 +425,7 @@ try
     theSettings = 0.5*ones(nPrimaries,1);
     [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
     measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
-
+    
     currentHalfOnMeasurementNum = size(cal.raw.halfOnMeas,2)+1;
     cal.raw.halfOnMeas(:,currentHalfOnMeasurementNum) = measTemp.pr650.spectrum;
     cal.raw.t.halfOnMeas(:,currentHalfOnMeasurementNum) = measTemp.pr650.time(1);
@@ -441,23 +443,23 @@ try
     %
     % We do this for cal.describe.nGammaBands of the bands, at
     % cal.describe.nGammaLevels for each band.
-   
+    
     if (cal.describe.doGamma)
         fprintf('\n*** Gamma measurements ***\n\n');
-
+        
         cal.describe.gamma.gammaBands = round(linspace(1,cal.describe.numWavelengthBands,cal.describe.nGammaBands));
         cal.describe.gamma.gammaLevels = linspace(1/cal.describe.nGammaLevels,1,cal.describe.nGammaLevels);
         
         % Allocate some memory.
         cal.raw.gamma.cols = zeros(ol.NumCols, cal.describe.nGammaBands);
-       
+        
         % Make gand amma measurements for each band
         if cal.describe.randomizeGammaMeas
             gammaMeasIter = Shuffle(1:cal.describe.nGammaBands);
         else
             gammaMeasIter = 1:cal.describe.nGammaBands;
         end
-
+        
         
         for i = gammaMeasIter
             fprintf('\n*** Gamma measurements on gamma band set %d of %d ***\n\n', i, cal.describe.nGammaBands);
@@ -481,7 +483,7 @@ try
             theSettings = 0.5*ones(nPrimaries,1);
             [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
             measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
-
+            
             currentHalfOnMeasurementNum = size(cal.raw.halfOnMeas,2)+1;
             cal.raw.halfOnMeas(:,currentHalfOnMeasurementNum) = measTemp.pr650.spectrum;
             cal.raw.t.halfOnMeas(:,currentHalfOnMeasurementNum) = measTemp.pr650.time(1);
@@ -489,14 +491,14 @@ try
                 cal.raw.omniDriver.halfOnMeas(:,currentHalfOnMeasurementNum) = measTemp.omni.spectrum;
             end
             fprintf('Done\n');
-    
-    
+            
+            
             % Take another full on measurement.
             fprintf('- Taking full on measurement...');
             theSettings = ones(nPrimaries,1);
             [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
             measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
-
+            
             currentFullOnMeasurementNum = size(cal.raw.fullOn,2)+1;
             cal.raw.fullOn(:,currentFullOnMeasurementNum) = measTemp.pr650.spectrum;
             cal.raw.t.fullOn(:,currentFullOnMeasurementNum) = measTemp.pr650.time(1);
@@ -504,8 +506,8 @@ try
                 cal.raw.omniDriver.fullOnMeas(:,currentFullOnMeasurementNum) = measTemp.omni.spectrum;
             end
             fprintf('Done\n');
-    
-    
+            
+            
             % If we're specifying the background, we need a measurement of that
             % background but with the settings for the specified gamma band set
             % to zero.  This is then used to subtract off the background from
@@ -552,7 +554,7 @@ try
     theSettings = 0.5*ones(nPrimaries,1);
     [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
     measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
-
+    
     currentHalfOnMeasurementNum = size(cal.raw.halfOnMeas,2)+1;
     cal.raw.halfOnMeas(:,currentHalfOnMeasurementNum) = measTemp.pr650.spectrum;
     cal.raw.t.halfOnMeas(:,currentHalfOnMeasurementNum) = measTemp.pr650.time(1);
@@ -609,7 +611,7 @@ try
                 cal.raw.cols(e(1):e(2),i) = 1;
             end
         end
-
+        
         fprintf('\n*** Independence Test ***\n\n');
         
         % Store some measurement data regarding the independence test.
@@ -678,7 +680,8 @@ try
     
     % Take a dark measurement at the end.  Use special case provided by OLSettingsToStartsStops
     % that turns all mirrors off.
-    fprintf('- Measuring background...');
+    spectroRadiometerOBJ.setOptions('sensitivityMode', 'EXTENDED');
+    fprintf('- Measuring dark...');
     theSettings = 0*ones(nPrimaries,1);
     [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
     measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
@@ -688,6 +691,7 @@ try
         cal.raw.omniDriver.darkMeas(:,1) = measTemp.omni.spectrum;
     end
     fprintf('Done\n');
+    spectroRadiometerOBJ.setOptions('sensitivityMode', 'STANDARD');
     
     % Take a wiggly measurement.
     fprintf('- Taking wiggly measurement...');
@@ -708,7 +712,7 @@ try
     theSettings = 0.5*ones(nPrimaries,1);
     [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
     measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
-
+    
     currentHalfOnMeasurementNum = size(cal.raw.halfOnMeas,2)+1;
     cal.raw.halfOnMeas(:,currentHalfOnMeasurementNum) = measTemp.pr650.spectrum;
     cal.raw.t.halfOnMeas(:,currentHalfOnMeasurementNum) = measTemp.pr650.time(1);
