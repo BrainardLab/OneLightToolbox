@@ -106,9 +106,9 @@ function plotPredictions(obj, varargin)
     subplot('position', subplotPosVectors(1,1).v);
     
     hold on;
-    plot(obj.waveAxis, measuredSPDpreCalibration, 'r-', 'LineWidth', 4.0, 'Color', [1.0 0.4 0.4 0.5], 'DisplayName', 'preCalibration');
-    plot(obj.waveAxis, measuredSPDpostCalibration, 'b-', 'LineWidth', 4.0, 'Color', [0.4 0.4 1.0 0.5], 'DisplayName', 'postCalibration');
-    plot(obj.waveAxis, predictedSPD, 'k-', 'LineWidth', 1.0, 'DisplayName', 'predicted');
+    plot(obj.waveAxis, 1000*measuredSPDpreCalibration, 'r-', 'LineWidth', 4.0, 'Color', [1.0 0.4 0.4 1.0], 'DisplayName', 'preCalibration');
+    plot(obj.waveAxis, 1000*measuredSPDpostCalibration, 'b-', 'LineWidth', 4.0, 'Color', [0.4 0.4 1.0 1.0], 'DisplayName', 'postCalibration');
+    plot(obj.waveAxis, 1000*predictedSPD, 'k-', 'LineWidth', 1.0, 'DisplayName', 'predicted');
     
     % Finish plot  
     hL = legend('Location', 'NorthWest');
@@ -124,11 +124,11 @@ function plotPredictions(obj, varargin)
     
     
     subplot('position', subplotPosVectors(1,2).v);
-    plot(obj.waveAxis, predictedSPD-measuredSPDpreCalibration, 'r-', 'LineWidth', 2.0, 'Color', [1.0 0.4 0.4 0.5], 'DisplayName', 'predicted-preCalibration');
+    plot(obj.waveAxis, 1000*(predictedSPD-measuredSPDpreCalibration), 'r-', 'LineWidth', 4.0, 'Color', [1.0 0.4 0.4 1], 'DisplayName', 'predicted-preCalibration');
     hold on;
-    plot(obj.waveAxis, predictedSPD-measuredSPDpostCalibration, 'b-', 'LineWidth', 3.0, 'Color', [0.4 0.4 1.0 0.5], 'DisplayName', 'predicted-postCalibration');
+    plot(obj.waveAxis, 1000*(predictedSPD-measuredSPDpostCalibration), 'b-', 'LineWidth', 4.0, 'Color', [0.4 0.4 1.0 1], 'DisplayName', 'predicted-postCalibration');
     hold off;
-    set(gca, 'YLim', 1e-4*[-25 25]);
+    set(gca, 'YLim', 1e-1*[-25 25]);
     
     % Finish plot  
     hL = legend('Location', 'North', 'Orientation', 'horizontal');

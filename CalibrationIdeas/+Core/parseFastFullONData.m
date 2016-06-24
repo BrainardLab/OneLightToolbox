@@ -12,9 +12,12 @@ function parseFastFullONData(data, wavelengthAxis)
     spectroTemporalResponse = spdGain*squeeze(data{stimPattern}.measuredSPDallSpectraToBeAveraged(passIter, averageIter,:));
     
     % Plot raw data collecte
-    figNo = 1;
+    %figNo = 1;
     %plotData(figNo, timeAxisInMinutes, spectroTemporalResponse, 'SPD amplitude (mWatts)', 'Raw Measurement');
-
+    figNo = 2;
+    animateDataTimeSeries(figNo, timeAxisInMinutes, spectroTemporalResponse, 'SPD amplitude (mWatts)', 'Raw Measurement');
+    %pause;
+    
     % Resample raw data so that time samples are uniformly-spaced
     [timeAxisInMinutes, spectroTemporalResponse] = resampleUniformly(timeAxisInMinutes, spectroTemporalResponse);
     
@@ -35,16 +38,16 @@ function parseFastFullONData(data, wavelengthAxis)
     
     
     % Spectral analysis
-    fftN = 8192*4;
-    NW = 6;
+    fftN = 8192*8;
+    NW = 3;
     windowData = false;
-    [spectraLinearDriftCorrected, spectraLinearDriftUncorrected, spectraNoise, sineFreqInHz, ...
+    [spectraLinearDriftCorrected, spectraLinearDriftUncorrected, spectraNoise,  ...
         spectroTemporalNoiseZeroMean, spectroTemporalResponseZeroMean, spectroTemporalResponseLinearDriftUncorrectedZeroMean, spectroTemporalResponseZeroMeanTimeAxis, SlepianTapers, rawResponseRange, spectralAmplitudeRange, spectralAmplitudeRange2] = ...
         doSpectralAnalysis(timeAxisInMinutes, spectroTemporalResponse, spectroTemporalResponseLinearDriftUncorrected, fftN, NW, windowData);
     
     % Compute ranges
     frequencyRange = [spectraLinearDriftUncorrected{1}.frequencyAxis(1) spectraLinearDriftUncorrected{1}.frequencyAxis(end)];
-    timeRange = [timeAxisInMinutes(1)-40 timeAxisInMinutes(end)+40];
+    timeRange = [timeAxisInMinutes(1)-10 timeAxisInMinutes(end)+10];
    % timeRange = [spectroTemporalResponseZeroMeanTimeAxis(1) spectroTemporalResponseZeroMeanTimeAxis(end)];
     
    
@@ -55,38 +58,30 @@ function parseFastFullONData(data, wavelengthAxis)
         spectralEnergyNoise(bandIndex,:) = spectraNoise{bandIndex}.confidenceIntervals(:,2);
     end
     
-
+    indices = find(wavelengthAxis>400 & wavelengthAxis < 730);
+    wavelengthAxis = wavelengthAxis(indices);
+    spectralEnergy = spectralEnergy(indices,:);
+    spectralEnergy = spectralEnergy / max(spectralEnergy(:));
+    [m,idx] = max(spectralEnergy(:));
+    [peakWaveIndex, peakFreqIndex] = ind2sub(size(spectralEnergy), idx);
+    
     hFig = figure(10);clf;
-    set(hFig, 'Color', [1 1 1], 'Position', [1 1 1900 1300]);
-    subplot('Position', [0.03 0.53 0.96 0.45]);
-    pcolor(spectraLinearDriftCorrected{1}.frequencyAxis, 1:size(spectroTemporalResponse,2), spectralEnergy);
+    set(hFig, 'Color', [1 1 1], 'Position', [1 1 1550 1100]);
+    subplot('Position', [0.05 0.06 0.94 0.93]);
+    contourf(spectraLinearDriftCorrected{1}.frequencyAxis, wavelengthAxis, spectralEnergy, [0.0:0.1:1.0]);
     hold on;
-    plot(0.5*sineFreqInHz*[1 1]*1000, [1 size(spectroTemporalResponse,2)], 'b-', 'LineWidth', 1.5);
-    plot(1.0*sineFreqInHz*[1 1]*1000, [1 size(spectroTemporalResponse,2)], 'm-', 'LineWidth', 1.5);
-    plot(2.0*sineFreqInHz*[1 1]*1000, [1 size(spectroTemporalResponse,2)], 'r-', 'LineWidth', 1.5);
-    ylabel('band no', 'FontSize', 16, 'FontWeight', 'bold');
-    shading 'flat'
-    set(gca, 'XLim', frequencyRange, 'XScale', 'log', 'CLim', spectralAmplitudeRange2);
-    set(gca, 'FontSize', 14);       
-    box on; colorbar
-    title('drift corrected');
+    plot(spectraLinearDriftCorrected{1}.frequencyAxis, wavelengthAxis(1) + (0.0 + 0.35*squeeze(spectralEnergy(peakWaveIndex,:)))*(wavelengthAxis(end)-wavelengthAxis(1)), 'b-', 'LineWidth', 3);
+    %plot(spectraLinearDriftCorrected{1}.frequencyAxis(peakFreqIndex)*[1 1], [wavelengthAxis(1) wavelengthAxis(end)], 'b-', 'LineWidth', 2.0);
+    %plot([spectraLinearDriftCorrected{1}.frequencyAxis(2) spectraLinearDriftCorrected{1}.frequencyAxis(end)], wavelengthAxis(peakWaveIndex)*[1 1], 'b-', 'LineWidth', 2.0);
     
-    subplot('Position', [0.03 0.04 0.96 0.45]);
-    pcolor(spectraLinearDriftCorrected{1}.frequencyAxis, 1:size(spectroTemporalResponse,2), spectralEnergyNoise);
-    hold on;
-    plot(0.5*sineFreqInHz*[1 1]*1000, [1 size(spectroTemporalResponse,2)], 'b-', 'LineWidth', 1.5);
-    plot(1.0*sineFreqInHz*[1 1]*1000, [1 size(spectroTemporalResponse,2)], 'm-', 'LineWidth', 1.5);
-    plot(2.0*sineFreqInHz*[1 1]*1000, [1 size(spectroTemporalResponse,2)], 'r-', 'LineWidth', 1.5);
-    xlabel('frequency (milliHertz)', 'FontSize', 16, 'FontWeight', 'bold');
-    ylabel('band no', 'FontSize', 16, 'FontWeight', 'bold');
+    ylabel('wavelength (nm)', 'FontSize', 20, 'FontWeight', 'bold');
+    xlabel('frequency (cycles/hour)', 'FontSize', 20, 'FontWeight', 'bold');
     shading 'flat'
-    set(gca, 'XLim', frequencyRange, 'XScale', 'log', 'CLim', spectralAmplitudeRange2);
-    set(gca, 'FontSize', 14);       
-    box on; colorbar
-    title('noise - upper 99% confidence interval');
-
-    
-    colormap(gray(1024));
+    grid on
+    set(gca, 'XLim', frequencyRange, 'XScale', 'log', 'XTick', [0.1 0.2 0.3 0.6 1 2 3 6 10 20 30 60 100 200], 'XLim', [0.1 100], 'CLim', [0 1]);
+    set(gca, 'FontSize', 18); set(gca,'GridLineStyle','-')      
+    box on; 
+    colormap(1-gray(1024));
     
     
     if (windowData)
@@ -100,8 +95,8 @@ function parseFastFullONData(data, wavelengthAxis)
     
     
     subplotPosVectors = NicePlot.getSubPlotPosVectors(...
-                   'rowsNum', 3, ...
-                   'colsNum', 3, ...
+                   'rowsNum', 2, ...
+                   'colsNum', 2, ...
                    'heightMargin',   0.03, ...
                    'widthMargin',    0.015, ...
                    'leftMargin',     0.01, ...
@@ -127,45 +122,30 @@ function parseFastFullONData(data, wavelengthAxis)
     set(hFig, 'Position', [10 400 3760/2 2450/2], 'Color', [1 1 1], 'MenuBar', 'none');
     
     for bandIndex =  1 : size(spectroTemporalResponse,2)
-        
+
         pos = subplotPosVectors(1,1).v;
-        subplot('Position', [pos(1) pos(2) 2*pos(3) pos(4)]);
-            plot(spectroTemporalResponseZeroMeanTimeAxis, squeeze(spectroTemporalResponseLinearDriftUncorrectedZeroMean(:,bandIndex)), 'k-', 'LineWidth', 1.5);
-            hold on;
-            plot(spectroTemporalResponseZeroMeanTimeAxis, SlepianTapers, 'LineWidth', 1.0);
-            hold off;
-            set(gca, 'YLim', rawResponseRange, 'XLim', timeRange, 'XTickLabel', {}, 'YColor', 'none', 'XColor', 'none');
-            ylabel('Energy - mean(mWatts)', 'FontSize', 14, 'FontWeight', 'bold');
-            hL = legend(sprintf('band no %d (linear drift - uncorrected)', bandIndex));
-            set(hL, 'FontName', 'Menlo');
-            set(gca, 'FontSize', 14);
-            box off;
-            
-        pos = subplotPosVectors(2,1).v;
-        subplot('Position', [pos(1) pos(2) 2*pos(3) pos(4)]);
+        subplot('Position', pos);
             plot(spectroTemporalResponseZeroMeanTimeAxis, squeeze(spectroTemporalResponseZeroMean(:,bandIndex)), 'k-', 'LineWidth', 1.5);
             hold on;
-            plot(spectroTemporalResponseZeroMeanTimeAxis, SlepianTapers, 'LineWidth', 1.0);
+            %plot(spectroTemporalResponseZeroMeanTimeAxis, SlepianTapers, 'LineWidth', 1.0);
             hold off;
             set(gca, 'YLim', rawResponseRange, 'XLim', timeRange, 'XTickLabel', {}, 'YColor', 'none', 'XColor', 'none');
-            ylabel('Energy - mean (mWatts)', 'FontSize', 14, 'FontWeight', 'bold');
+            ylabel('Energy - mean (mWatts)', 'FontSize', 18, 'FontWeight', 'bold');
             hL = legend(sprintf('band no %d (linear drift - corrected)', bandIndex));
             set(hL, 'FontName', 'Menlo');
             set(gca, 'FontSize', 14);
             box off;
             
              
-        pos = subplotPosVectors(3,1).v;
-        subplot('Position', [pos(1) pos(2) 2*pos(3) pos(4)]);
-        size(spectroTemporalNoiseZeroMean)
-        size(spectroTemporalResponseZeroMeanTimeAxis)
+        pos = subplotPosVectors(2,1).v;
+        subplot('Position', pos);
             plot(spectroTemporalResponseZeroMeanTimeAxis, squeeze(spectroTemporalNoiseZeroMean(:,bandIndex)), 'k-', 'LineWidth', 1.5);
             hold on;
-            plot(spectroTemporalResponseZeroMeanTimeAxis, SlepianTapers, 'LineWidth', 1.0);
+            %plot(spectroTemporalResponseZeroMeanTimeAxis, SlepianTapers, 'LineWidth', 1.0);
             hold off;
             set(gca, 'YLim', rawResponseRange, 'XLim', timeRange, 'YColor', 'none');
-            xlabel('time (minutes)', 'FontSize', 14, 'FontWeight', 'bold'); 
-            ylabel('Energy - mean(mWatts)', 'FontSize', 14, 'FontWeight', 'bold');
+            xlabel('time (minutes)', 'FontSize', 16, 'FontWeight', 'bold'); 
+            ylabel('Energy - mean(mWatts)', 'FontSize', 18, 'FontWeight', 'bold');
             set(gca, 'FontSize', 14);
             hL = legend(sprintf('band no %d (random data)', bandIndex));
             box off;
@@ -173,57 +153,34 @@ function parseFastFullONData(data, wavelengthAxis)
             
              
           
-        pos = subplotPosVectors(1,3).v;
-        subplot('Position', pos);
-            plot(spectraLinearDriftUncorrected{bandIndex}.frequencyAxis, spectraLinearDriftUncorrected{bandIndex}.amplitude, 'k-', 'LineWidth', 2.0); 
-            hold on;
-            plot(spectraLinearDriftUncorrected{bandIndex}.frequencyAxis, spectraLinearDriftUncorrected{bandIndex}.confidenceIntervals, 'k--'); 
-            plot(0.5*sineFreqInHz*[1 1]*1000, spectralAmplitudeRange, 'b-', 'LineWidth', 1.5);
-            plot(1.0*sineFreqInHz*[1 1]*1000, spectralAmplitudeRange, 'm-', 'LineWidth', 1.5);
-            plot(2.0*sineFreqInHz*[1 1]*1000, spectralAmplitudeRange, 'r-', 'LineWidth', 1.5);
-            plot(spectraNoise{bandIndex}.frequencyAxis, spectraNoise{bandIndex}.confidenceIntervals(:,2), 'g-', 'LineWidth', 2.0, 'Color', [0 0.7 0.0]); 
-            hold off
-            set(gca, 'XLim', frequencyRange, 'XScale', 'log',  'YLim', spectralAmplitudeRange, 'XTickLabel', {} );
-            %set(gca, 'YScale', 'log');
-            set(gca, 'FontSize', 14);
-            hL = legend({'energy', '99% conf interval', '1% conf interval', '0.5 cycles/total duration', '1.0 cycles/total duration', '2.0 cycles/total duration', 'noise ceiling'});
-            set(hL, 'FontName', 'Menlo');
-            box off;
-            grid on
             
-         pos = subplotPosVectors(2,3).v;
+         pos = subplotPosVectors(1,2).v;
          subplot('Position', pos);
             plot(spectraLinearDriftCorrected{bandIndex}.frequencyAxis, spectraLinearDriftCorrected{bandIndex}.amplitude, 'k-', 'LineWidth', 2.0); 
             hold on;
             plot(spectraLinearDriftCorrected{bandIndex}.frequencyAxis, spectraLinearDriftCorrected{bandIndex}.confidenceIntervals, 'k--'); 
-            plot(0.5*sineFreqInHz*[1 1]*1000, spectralAmplitudeRange, 'b-', 'LineWidth', 1.5);
-            plot(1.0*sineFreqInHz*[1 1]*1000, spectralAmplitudeRange, 'm-', 'LineWidth', 1.5);
-            plot(2.0*sineFreqInHz*[1 1]*1000, spectralAmplitudeRange, 'r-', 'LineWidth', 1.5);
             plot(spectraNoise{bandIndex}.frequencyAxis, spectraNoise{bandIndex}.confidenceIntervals(:,2), 'g-', 'LineWidth', 2.0, 'Color', [0 0.7 0.0]); 
             hold off
             set(gca, 'XLim', frequencyRange, 'XScale', 'log', 'YLim', spectralAmplitudeRange2, 'XTickLabel', {});
             %set(gca, 'YScale', 'log');
-            set(gca, 'FontSize', 14);
-            hL = legend({'energy', '99% conf interval', '1% conf interval', '0.5 cycles/total duration', '1.0 cycles/total duration', '2.0 cycles/total duration', 'noise ceiling'});
+            set(gca, 'FontSize', 16);
+            hL = legend({'energy', '99% conf interval', '1% conf interval',  'noise ceiling'});
             set(hL, 'FontName', 'Menlo');
             box off;
             grid on
             
-         pos = subplotPosVectors(3,3).v;
+         pos = subplotPosVectors(2,2).v;
          subplot('Position', pos);
             plot(spectraNoise{bandIndex}.frequencyAxis, spectraNoise{bandIndex}.amplitude, 'k-', 'LineWidth', 2.0); 
             hold on;
             plot(spectraNoise{bandIndex}.frequencyAxis, spectraNoise{bandIndex}.confidenceIntervals, 'k--'); 
-            plot(0.5*sineFreqInHz*[1 1]*1000, spectralAmplitudeRange, 'b-', 'LineWidth', 1.5);
-            plot(1.0*sineFreqInHz*[1 1]*1000, spectralAmplitudeRange, 'm-', 'LineWidth', 1.5);
-            plot(2.0*sineFreqInHz*[1 1]*1000, spectralAmplitudeRange, 'r-', 'LineWidth', 1.5);
             plot(spectraNoise{bandIndex}.frequencyAxis, spectraNoise{bandIndex}.confidenceIntervals(:,2), 'g-', 'LineWidth', 2.0, 'Color', [0 0.7 0.0]); 
             hold off
-            xlabel('frequency (milli Hertz)', 'FontSize', 14, 'FontWeight', 'bold');
+            xlabel('frequency (cycles/hour)', 'FontSize', 18, 'FontWeight', 'bold');
             set(gca, 'XLim', frequencyRange, 'XScale', 'log', 'YLim', spectralAmplitudeRange2);
             %set(gca, 'YScale', 'log');
-            set(gca, 'FontSize', 14);
-            hL = legend({'energy', '99% conf interval', '1% conf interval', '0.5 cycles/total duration', '1.0 cycles/total duration', '2.0 cycles/total duration', 'noise ceiling'});
+            set(gca, 'FontSize', 16);
+            hL = legend({'energy', '99% conf interval', '1% conf interval',  'noise ceiling'});
             set(hL, 'FontName', 'Menlo');
             box off;
             grid on
@@ -242,7 +199,8 @@ function parseFastFullONData(data, wavelengthAxis)
 end
 
 
-function [spectra, spectraLinearDriftUncorrected, spectraNoise, sineFreqInHz, ...
+
+function [spectra, spectraLinearDriftUncorrected, spectraNoise, ...
     spectroTemporalNoiseZeroMean, spectroTemporalResponseZeroMean, spectroTemporalResponseLinearDriftUncorrectedZeroMean, spectroTemporalResponseZeroMeanTimeAxis, SlepianTapers, rawResponseRange, spectralAmplitudeRange, spectralAmplitudeRange2] = ...
     doSpectralAnalysis(timeAxisInMinutes, spectroTemporalResponse, spectroTemporalResponseLinearDriftUncorrected, fftN, NW, windowData)
 
@@ -255,8 +213,6 @@ function [spectra, spectraLinearDriftUncorrected, spectraNoise, sineFreqInHz, ..
     
     dtInSeconds = (timeAxisInMinutes(2)-timeAxisInMinutes(1))*60;
     maxFreq = 1.0/(2*dtInSeconds);
-    
-    sineFreqInHz = 1.0/(timeAxisInMinutes(end)*60);
     
     maxAmp = 0;
     maxAmp2 = 0;
@@ -316,8 +272,8 @@ function [spectra, spectraLinearDriftUncorrected, spectraNoise, sineFreqInHz, ..
             end
         end
         
-        % Frequency axis in milliHertz
-        freq = freq * 1000;
+        % Frequency axis in cycles/hour
+        freq = freq * 60*60;
         
         if (k == 1)
             spectraLinearDriftUncorrected{bandIndex}.amplitude = amp;
@@ -407,6 +363,54 @@ function [timeAxisInMinutes, spectroTemporalResponse] = queryUserWhetherToExcude
     timeAxisInMinutes = timeAxisInMinutes(t);
     spectroTemporalResponse = spectroTemporalResponse(t,:);
 end
+
+function animateDataTimeSeries(figNo, timeAxisInMinutes, spectroTemporalResponse, yLabelString, titleString)
+    hFig = figure(figNo); clf; set(hFig, 'Position', [1 1 1450 1200], 'Color', [1 1 1]);
+    set(hFig, 'MenuBar', 'none');
+    timeAxisInMinutes = timeAxisInMinutes - timeAxisInMinutes(1);
+    
+    % Open video stream
+
+    writerObj = VideoWriter('TimeSeriesAnimation.m4v', 'MPEG-4'); % H264 format
+    writerObj.FrameRate = 15; 
+    writerObj.Quality = 100;
+    writerObj.open();
+    
+    stepSize = 0.01;
+    tEnd = 3;
+    while tEnd < timeAxisInMinutes(end)
+    	tEnd = tEnd + stepSize;
+        if (stepSize < 0.02)
+            stepSize = stepSize*1.005;
+        elseif (stepSize < 0.03)
+            stepSize = stepSize*1.003;
+        else
+            stepSize = stepSize*1.0015;
+        end
+        
+
+        clf;
+        subplot('Position', [0.044 0.044 0.95 0.945]);
+        timeRange = [max([-timeAxisInMinutes(1)-0.1 tEnd-timeAxisInMinutes(end)]) tEnd+0.1];
+        lw = 8 - tEnd/timeAxisInMinutes(end)*4;
+        plot(timeAxisInMinutes, spectroTemporalResponse, '-', 'Color', [0.4 0.6 0.9 0.5], 'LineWidth', lw);
+        hold on
+        plot(timeAxisInMinutes, spectroTemporalResponse, 'k-', 'LineWidth', max([1 lw/3]));
+        hold off
+        amplitudeRange = [max([0 58-tEnd*0.4]) max(spectroTemporalResponse(:))];
+        YTicks = linspace(amplitudeRange(1), amplitudeRange(end), 10);
+        set(gca, 'LineWidth', 2.0, 'YLim', amplitudeRange, 'XLim', timeRange, 'FontSize', 18, 'YTick', YTicks, 'YTickLabel', sprintf('%2.1f\n', YTicks));
+        xlabel('time (min)', 'FontSize', 20, 'FontWeight', 'bold');
+        ylabel('power (mWatts)', 'FontSize', 20, 'FontWeight', 'bold');
+        drawnow;
+        writerObj.writeVideo(getframe(hFig));
+        
+    end
+    
+    writerObj.close();
+    
+end
+
 
 function plotData(figNo, timeAxisInMinutes, spectroTemporalResponse, yLabelString, titleString)
     hFig = figure(figNo); clf; set(hFig, 'Position', [1 1 2250 1300], 'Color', [1 1 1]);
