@@ -56,7 +56,7 @@ classdef OLCalibrationTypes
         %cal is for the AO Smilow setup. 
         %BoxALongCableCEyePiece2('OLBoxALongCableCEyePiece2');
         %BoxALongCableCEyePiece1_ND06('OLBoxALongCableCEyePiece1_ND06');
-        %BoxCLongCableBEyePiece1('OLBoxCLongCableBEyePiece1');
+        BoxCLongCableBEyePiece1('OLBoxCLongCableBEyePiece1');
         %BoxALongCableBEyePiece1('OLBoxALongCableBEyePiece1');
         %BoxCShortCableBEyePiece1_ND06('OLBoxCShortCableBEyePiece1_ND06');
         %BoxAShortCableBEyePiece2('OLBoxAShortCableBEyePiece2');
