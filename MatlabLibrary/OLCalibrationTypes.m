@@ -122,6 +122,5 @@ classdef OLCalibrationTypes
         BoxBRandomizedLongCableAEyePiece2_ND00('OLBoxBRandomizedLongCableAEyePiece2_ND00');
         BoxARandomizedLongCableBStubby1('OLBoxARandomizedLongCableBStubby1');
         BoxARandomizedLongCableBStubby1_ND03CassetteB('OLBoxARandomizedLongCableBStubby1_ND03CassetteB');
-        BoxBRandomizedLongCableAEyePiece2_ND00('OLBoxBRandomizedLongCableAEyePiece2_ND00');
     end
 end
