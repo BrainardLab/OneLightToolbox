@@ -56,7 +56,7 @@ classdef OLCalibrationTypes
         %cal is for the AO Smilow setup. 
         %BoxALongCableCEyePiece2('OLBoxALongCableCEyePiece2');
         %BoxALongCableCEyePiece1_ND06('OLBoxALongCableCEyePiece1_ND06');
-        %BoxCLongCableBEyePiece1('OLBoxCLongCableBEyePiece1');
+        BoxCLongCableBEyePiece1('OLBoxCLongCableBEyePiece1');
         %BoxALongCableBEyePiece1('OLBoxALongCableBEyePiece1');
         %BoxCShortCableBEyePiece1_ND06('OLBoxCShortCableBEyePiece1_ND06');
         %BoxAShortCableBEyePiece2('OLBoxAShortCableBEyePiece2');
@@ -119,6 +119,11 @@ classdef OLCalibrationTypes
         BoxARandomizedLongCableBStubby1_ND00('OLBoxARandomizedLongCableBStubby1_ND00');
         BoxDRandomizedLongCableAEyePiece2_ND07('OLBoxDRandomizedLongCableAEyePiece2_ND07');
         BoxDRandomizedLongCableAEyePiece2('OLBoxDRandomizedLongCableAEyePiece2');
+<<<<<<< HEAD
         BoxBRandomizedLongCableAEyePiece2_ND00('OLBoxBRandomizedLongCableAEyePiece2_ND00');
+=======
+        BoxARandomizedLongCableBStubby1('OLBoxARandomizedLongCableBStubby1');
+        BoxARandomizedLongCableBStubby1_ND03CassetteB('OLBoxARandomizedLongCableBStubby1_ND03CassetteB');
+>>>>>>> 7a416d305ac79db0d34d270b9f8aa1f5c1fae7bb
     end
 end
