@@ -28,7 +28,7 @@ function [cacheData, olCache, params, contrastVector] = OLReceptorIsolateFindIso
 % use in our (BrainardLab) experiments.
 baseDir = fileparts(fileparts(which('OLReceptorIsolateFindIsolatingPrimarySettings')));
 configDir = fullfile(baseDir, 'config', 'stimuli');
-cacheDir = fullfile(baseDir, 'cache', 'stimuli');
+cacheDir = fullfile(getpref('OneLight', 'cachePath'), 'stimuli');
 
 if ~isdir(cacheDir)
     mkdir(cacheDir);
