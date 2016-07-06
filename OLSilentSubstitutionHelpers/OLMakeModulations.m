@@ -33,7 +33,7 @@ function OLMakeModulations(configFileName, observerAgeInYears, calType, nullingI
 baseDir = '/Users/Shared/Matlab/Experiments/OneLight/OLFlickerSensitivity/code/';
 configDir = fullfile(baseDir, 'config', 'modulations');
 cacheDir = fullfile(baseDir, 'cache', 'stimuli');
-modulationDir = getpref('OneLight', 'modulationPath');
+cacheDir = fullfile(getpref('OneLight', 'cachePath'), 'stimuli');
 
 % Make sure the config file is a fully qualified name including the parent
 % path.
