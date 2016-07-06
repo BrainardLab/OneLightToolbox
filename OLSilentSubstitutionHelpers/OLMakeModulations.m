@@ -32,8 +32,11 @@ function OLMakeModulations(configFileName, observerAgeInYears, calType, nullingI
 % use in our (BrainardLab) experiments.
 baseDir = '/Users/Shared/Matlab/Experiments/OneLight/OLFlickerSensitivity/code/';
 configDir = fullfile(baseDir, 'config', 'modulations');
-cacheDir = fullfile(baseDir, 'cache', 'stimuli');
 cacheDir = fullfile(getpref('OneLight', 'cachePath'), 'stimuli');
+modulationDir = fullfile(getpref('OneLight', 'modulationPath'));
+
+[~, fileNameSave] = fileparts(configFileName);
+fileNameSave = [fileNameSave '.mat'];
 
 % Make sure the config file is a fully qualified name including the parent
 % path.
@@ -85,7 +88,7 @@ params.cacheData = cacheData;
 %% Store out the primaries from the cacheData into a cell.  The length of
 % cacheData corresponds to the number of different stimuli that are being
 % shown
-fprintf(['\n* Running precalculations for ' params.preCacheFile '\n']);
+fprintf(['\n* Running precalculations for ' fileNameSave '\n']);
 
 
 if isempty(strfind(params.direction, 'DoublePulse'));
@@ -117,7 +120,7 @@ if isempty(strfind(params.direction, 'DoublePulse'));
             otherwise
                 fprintf('**** NOT USING NULLED SETTINGS ****\n');
                 % Get the modulation primary
-                if strfind(params.preCacheFile, 'Background') % Background case
+                if strfind(fileNameSave, 'Background') % Background case
                     modulationPrimary = backgroundPrimary;
                 else
                     modulationPrimary = cacheData.modulationPrimarySignedPositive;
@@ -126,27 +129,27 @@ if isempty(strfind(params.direction, 'DoublePulse'));
         
         % Save to specific file
         params.observerAgeInYears = observerAgeInYears;
-        [~, fileName, fileSuffix] = fileparts(params.preCacheFile);
-        params.preCacheFile = [fileName '-' nullingID fileSuffix];
-        params.preCacheFileFull = [fileName '-' nullingID '-full' fileSuffix];
+        [~, fileName, fileSuffix] = fileparts(fileNameSave);
+        fileNameSave = [fileName '-' nullingID fileSuffix];
+        fileNameSaveFull = [fileName '-' nullingID '-full' fileSuffix];
         
     else
         
         % Get the modulation primary
-        if strfind(params.preCacheFile, 'Background') % Background case
+        if strfind(fileNameSave, 'Background') % Background case
             modulationPrimary = backgroundPrimary;
         else
             modulationPrimary = cacheData.modulationPrimarySignedPositive;
         end
         % Save to specific file
         params.observerAgeInYears = observerAgeInYears;
-        [~, fileName, fileSuffix] = fileparts(params.preCacheFile);
-        params.preCacheFile = [fileName '-' num2str(params.observerAgeInYears) fileSuffix];
-        params.preCacheFileFull = [fileName '-' num2str(params.observerAgeInYears) '-full' fileSuffix];
+        [~, fileName, fileSuffix] = fileparts(fileNameSave);
+        fileNameSave = [fileName '-' num2str(params.observerAgeInYears) fileSuffix];
+        fileNameSaveFull = [fileName '-' num2str(params.observerAgeInYears) '-full' fileSuffix];
     end
     
     % Set up a few flags here
-    [~, describe.modulationName] = fileparts(params.preCacheFile);
+    [~, describe.modulationName] = fileparts(fileNameSave);
     describe.direction = params.direction;
     describe.date = datestr(now);
     describe.cal = params.oneLightCal;
@@ -275,7 +278,7 @@ modulationObj.describe = describe;
 modulationObj.waveform = waveform;
 modulationObj.params = params;
 
-fprintf(['* Saving full pre-calculated settings to ' params.preCacheFile '\n']);
-save(fullfile(params.modulationDir, params.preCacheFile), 'modulationObj', '-v7.3');
+fprintf(['* Saving full pre-calculated settings to ' fileNameSave '\n']);
+save(fullfile(params.modulationDir, fileNameSave), 'modulationObj', '-v7.3');
 fprintf('  - Done.\n');
 params = [];
