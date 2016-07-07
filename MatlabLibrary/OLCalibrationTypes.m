@@ -16,5 +16,9 @@ classdef OLCalibrationTypes
     
     enumeration
         BoxDRandomizedLongCableAEyePiece2_ND06('OLBoxDRandomizedLongCableAEyePiece2_ND06');
+        BoxBRandomizedLongCableBStubby1_ND10('BoxBRandomizedLongCableBStubby1_ND10');
+        
+        
+        
     end
 end
