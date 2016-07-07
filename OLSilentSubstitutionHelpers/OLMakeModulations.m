@@ -279,6 +279,6 @@ modulationObj.waveform = waveform;
 modulationObj.params = params;
 
 fprintf(['* Saving full pre-calculated settings to ' fileNameSave '\n']);
-save(fullfile(params.modulationDir, fileNameSave), 'modulationObj', '-v7.3');
+save(fullfile(modulationDir, fileNameSave), 'modulationObj', '-v7.3');
 fprintf('  - Done.\n');
 params = [];
