@@ -51,6 +51,9 @@ function [results, validationDir, validationPath, openSpectroRadiometerOBJ] = OL
 % 7/06/16  npc      Adapted to use PR650dev/PR670dev objects
 tic;
 
+
+
+
 % Parse the input
 p = inputParser;
 p.addOptional('ReferenceMode', true, @islogical);
@@ -70,12 +73,16 @@ p.parse(varargin{:});
 describe = p.Results;
 powerLevels = describe.powerLevels;
 
+% All variables assigned in the following if (isempty(..)) block (except spectroRadiometerOBJ) must be declared as persistent
+persistent S
+persistent nAverage
+persistent theMeterTypeID
 if (isempty(spectroRadiometerOBJ))
     % Open up the radiometer if this is the first cache file we validate
     try
         switch (meterType)
             case 'PR-650',
-                meterType = 1;
+                theMeterTypeID = 1;
                 S = [380 4 101];
                 nAverage = 1;
 
@@ -87,8 +94,7 @@ if (isempty(spectroRadiometerOBJ))
                     spectroRadiometerOBJ.setOptions('syncMode', 'OFF');
 
             case 'PR-670',
-                whichMeter = 'PR-670';
-                meterType = 5;
+                theMeterTypeID = 5;
                 S = [380 2 201];
                 nAverage = 1;
 
@@ -114,17 +120,15 @@ if (isempty(spectroRadiometerOBJ))
     catch err
         if (~isempty(spectroRadiometerOBJ))
             spectroRadiometerOBJ.shutDown();
+            openSpectroRadiometerOBJ = [];
         end
         SendEmail(emailRecipient, 'OLValidateCacheFileOOC Failed', ...
             ['Calibration failed with the following error' 10 err.message]);
         keyboard;
         rethrow(err);
     end
-else
-    openSpectroRadiometerOBJ = spectroRadiometerOBJ;
 end
-
-        
+openSpectroRadiometerOBJ = spectroRadiometerOBJ;
 
 
 % Force the file to be an absolute path instead of a relative one.  We do
@@ -295,6 +299,7 @@ try
     end
     
     if describe.WigglyMeas
+        fprintf('- Wiggly measurement \n');
         theWigglySettings = 0.1*ones(cal.describe.numWavelengthBands,1);
         theWigglySettings(2:8:end) = 0.8;
         [starts,stops] = OLSettingsToStartsStops(cal,theWigglySettings);
@@ -412,6 +417,7 @@ try
     if (spectroRadiometerOBJWillShutdownAfterMeasurement)
         if (~isempty(spectroRadiometerOBJ))
             spectroRadiometerOBJ.shutDown();
+            openSpectroRadiometerOBJ = [];
         end
     end
     
@@ -429,7 +435,7 @@ try
     results.describe.stopMeas = stopMeas;
     results.describe.calibrationType = char(OLCalibrationTypes.(selectedCalType));
     results.describe.referenceMode = describe.ReferenceMode;
-    results.describe.meterType = meterType;
+    results.describe.meterType = theMeterTypeID;
     results.describe.meterToggle = meterToggle;
     results.describe.REFERENCE_OBSERVER_AGE = describe.REFERENCE_OBSERVER_AGE;
     results.describe.S = S;
@@ -455,6 +461,11 @@ try
     %SendEmail(emailRecipient, ['[OL] ' cacheFileName '/Validation done'], 'Validation successfully');
     toc;
 catch e
+    if (~isempty(spectroRadiometerOBJ))
+       spectroRadiometerOBJ.shutDown();
+       openSpectroRadiometerOBJ = [];
+    end
+        
     %SendEmail(emailRecipient, ['[OL] ' cacheFileName '/Validation failed'], e.message);
     rethrow(e)
 end
