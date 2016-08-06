@@ -462,14 +462,9 @@ try
     validationPath = fullfile(validationDir, resultsFileName);
     
     % Check if we want to do splatter calculations
-    OLAnalyzeValidationReceptorIsolate(validationPath, 'short');
-    %
-    %     if describe.CALCULATE_SPLATTER
-    %         OLAnalyzeValidationReceptorIsolate(validationPath, 'full');
-    %     end
-    %
-    % Let me know it's done.
-    %SendEmail(emailRecipient, ['[OL] ' cacheFileName '/Validation done'], 'Validation successfully');
+    try
+        OLAnalyzeValidationReceptorIsolate(validationPath, 'short');
+    end
     toc;
 catch e
     if (~isempty(spectroRadiometerOBJ))
