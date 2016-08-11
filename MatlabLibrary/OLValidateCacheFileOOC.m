@@ -51,9 +51,6 @@ function [results, validationDir, validationPath, openSpectroRadiometerOBJ] = OL
 % 7/06/16  npc      Adapted to use PR650dev/PR670dev objects
 tic;
 
-
-
-
 % Parse the input
 p = inputParser;
 p.addOptional('ReferenceMode', true, @islogical);
@@ -68,10 +65,15 @@ p.addOptional('REFERENCE_OBSERVER_AGE', 32, @isscalar);
 p.addOptional('selectedCalType', [], @isstr);
 p.addOptional('CALCULATE_SPLATTER', true, @islogical);
 p.addOptional('powerLevels', 32, @isnumeric);
+p.addOptional('outDir', [], @isstr);
 
 p.parse(varargin{:});
 describe = p.Results;
 powerLevels = describe.powerLevels;
+
+if isempty(emailRecipient)
+    emailRecipient = GetWithDefault('Send status email to','igdalova@mail.med.upenn.edu');
+end
 
 % All variables assigned in the following if (isempty(..)) block (except spectroRadiometerOBJ) must be declared as persistent
 persistent S
@@ -85,38 +87,38 @@ if (isempty(spectroRadiometerOBJ))
                 theMeterTypeID = 1;
                 S = [380 4 101];
                 nAverage = 1;
-
+                
                 % Instantiate a PR650 object
-                    spectroRadiometerOBJ  = PR650dev(...
-                        'verbosity',        1, ...       % 1 -> minimum verbosity
-                        'devicePortString', [] ...       % empty -> automatic port detection)
-                        );
-                    spectroRadiometerOBJ.setOptions('syncMode', 'OFF');
-
+                spectroRadiometerOBJ  = PR650dev(...
+                    'verbosity',        1, ...       % 1 -> minimum verbosity
+                    'devicePortString', [] ...       % empty -> automatic port detection)
+                    );
+                spectroRadiometerOBJ.setOptions('syncMode', 'OFF');
+                
             case 'PR-670',
                 theMeterTypeID = 5;
                 S = [380 2 201];
                 nAverage = 1;
-
+                
                 % Instantiate a PR670 object
-                    spectroRadiometerOBJ  = PR670dev(...
-                        'verbosity',        1, ...       % 1 -> minimum verbosity
-                        'devicePortString', [] ...       % empty -> automatic port detection)
-                        );
-
-                    % Set options Options available for PR670:
-                    spectroRadiometerOBJ.setOptions(...
-                        'verbosity',        1, ...
-                        'syncMode',         'OFF', ...      % choose from 'OFF', 'AUTO', [20 400];
-                        'cyclesToAverage',  1, ...          % choose any integer in range [1 99]
-                        'sensitivityMode',  'EXTENDED', ... % choose between 'STANDARD' and 'EXTENDED'.  'STANDARD': (exposure range: 6 - 6,000 msec, 'EXTENDED': exposure range: 6 - 30,000 msec
-                        'exposureTime',     'ADAPTIVE', ... % choose between 'ADAPTIVE' (for adaptive exposure), or a value in the range [6 6000] for 'STANDARD' sensitivity mode, or a value in the range [6 30000] for the 'EXTENDED' sensitivity mode
-                        'apertureSize',     '1 DEG' ...   % choose between '1 DEG', '1/2 DEG', '1/4 DEG', '1/8 DEG'
-                        );
+                spectroRadiometerOBJ  = PR670dev(...
+                    'verbosity',        1, ...       % 1 -> minimum verbosity
+                    'devicePortString', [] ...       % empty -> automatic port detection)
+                    );
+                
+                % Set options Options available for PR670:
+                spectroRadiometerOBJ.setOptions(...
+                    'verbosity',        1, ...
+                    'syncMode',         'OFF', ...      % choose from 'OFF', 'AUTO', [20 400];
+                    'cyclesToAverage',  1, ...          % choose any integer in range [1 99]
+                    'sensitivityMode',  'STANDARD', ... % choose between 'STANDARD' and 'EXTENDED'.  'STANDARD': (exposure range: 6 - 6,000 msec, 'EXTENDED': exposure range: 6 - 30,000 msec
+                    'exposureTime',     'ADAPTIVE', ... % choose between 'ADAPTIVE' (for adaptive exposure), or a value in the range [6 6000] for 'STANDARD' sensitivity mode, or a value in the range [6 30000] for the 'EXTENDED' sensitivity mode
+                    'apertureSize',     '1 DEG' ...   % choose between '1 DEG', '1/2 DEG', '1/4 DEG', '1/8 DEG'
+                    );
             otherwise,
                 error('Unknown meter type');
         end
-
+        
     catch err
         if (~isempty(spectroRadiometerOBJ))
             spectroRadiometerOBJ.shutDown();
@@ -199,16 +201,25 @@ end
 cal = LoadCalFile(OLCalibrationTypes.(selectedCalType).CalFileName);
 
 % Pull out the file name
+cacheFileNameFull = cacheFileName;
 [~, cacheFileName] = fileparts(cacheFileName);
 
 % We also create a folder hierarchy, in which we store validations.
 % Identified by measurement.
 validationDate = datestr(now);
 validationTime = GetSecs;
-validationDir = fullfile(cacheDir, cacheFileName, char(cal.describe.calType), strrep(strrep(cal.describe.date, ' ', '_'), ':', '_'), 'validation', strrep(strrep(validationDate, ' ', '_'), ':', '_'));
+if isempty(describe.outDir)
+    validationDir = fullfile(cacheDir, cacheFileName, char(cal.describe.calType), strrep(strrep(cal.describe.date, ' ', '_'), ':', '_'), 'validation', strrep(strrep(validationDate, ' ', '_'), ':', '_'));
+else
+    
+    validationDir = fullfile(describe.outDir, cacheFileName, strrep(strrep(validationDate, ' ', '_'), ':', '_'));
+end
 if ~exist(validationDir)
     mkdir(validationDir);
 end
+
+% Copy the cache file
+copyfile(cacheFileNameFull, fullfile(describe.outDir, [cacheFileName '.mat']));
 
 %% Determine which meters to measure with
 % It is probably a safe assumption that we will not validate a cache file
@@ -451,21 +462,16 @@ try
     validationPath = fullfile(validationDir, resultsFileName);
     
     % Check if we want to do splatter calculations
-     OLAnalyzeValidationReceptorIsolate(validationPath, 'short');
-%     
-%     if describe.CALCULATE_SPLATTER
-%         OLAnalyzeValidationReceptorIsolate(validationPath, 'full');
-%     end
-%     
-    % Let me know it's done.
-    %SendEmail(emailRecipient, ['[OL] ' cacheFileName '/Validation done'], 'Validation successfully');
+    try
+        OLAnalyzeValidationReceptorIsolate(validationPath, 'short');
+    end
     toc;
 catch e
     if (~isempty(spectroRadiometerOBJ))
-       spectroRadiometerOBJ.shutDown();
-       openSpectroRadiometerOBJ = [];
+        spectroRadiometerOBJ.shutDown();
+        openSpectroRadiometerOBJ = [];
     end
-        
+    
     %SendEmail(emailRecipient, ['[OL] ' cacheFileName '/Validation failed'], e.message);
     rethrow(e)
 end
