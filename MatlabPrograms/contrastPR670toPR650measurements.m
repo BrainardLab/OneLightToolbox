@@ -1,10 +1,11 @@
 function contrastPR670toPR650measurements
 
     PR650port = '/dev/cu.USA19H142P1.1';
-    PR670port = '/dev/tty.usbmodem1421';
+    PR670port = '/dev/cu.usbmodem1461';
+    %PR670port = '/dev/tty.usbmodem1461';
     
     spectroRadiometerPR670dev = [];
-    skipPR670 = true;
+    skipPR670 = false;
         if (~skipPR670)
         try
             % Instantiate a PR670 object
@@ -97,11 +98,12 @@ function contrastPR670toPR650measurements
     clf;
     hold on;
     if (~isempty(PR670SPDs))
-        stem(wavelengthAxis, PR670SPDs, 'r');
+        stem(wavelengthAxis, PR670SPDs, 'r', 'filled');
     end
     if (~isempty(PR650SPDs))
-        stem(wavelengthAxis, PR650SPDs, 'm');
+        stem(wavelengthAxis, PR650SPDs, 'b', 'filled');
     end
+    legend('PR670', 'PR650');
     drawnow;
     
     % Shutdown devices
