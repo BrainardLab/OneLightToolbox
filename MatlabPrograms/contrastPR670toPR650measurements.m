@@ -1,8 +1,8 @@
 function contrastPR670toPR650measurements
 
-    PR650port = '/dev/cu.USA19H142P1.1';
-    PR670port = '/dev/cu.usbmodem1461';
-    %PR670port = '/dev/tty.usbmodem1461';
+    PR650port = '/dev/cu.USA19H5d1P1.1';
+    PR670port = '/dev/cu.usbmodem3a21';
+
     
     spectroRadiometerPR670dev = [];
     skipPR670 = false;
