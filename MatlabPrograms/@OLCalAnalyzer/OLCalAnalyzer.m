@@ -28,6 +28,7 @@ classdef OLCalAnalyzer < handle
         
         % Initializer options
         refitGammaTablesUsingLinearInterpolation
+        forceOLInitCal
     end
     
     properties (Access = private)
@@ -55,6 +56,7 @@ classdef OLCalAnalyzer < handle
             % Parse optional arguments
             parser = inputParser;
             parser.addParameter('refitGammaTablesUsingLinearInterpolation', defaultRefitGammaTablesUsingLinearInterpolation, @islogical);
+            parser.addParameter('forceOLInitCal', false, @islogical);
             %Execute the parser
             parser.parse(varargin{:});
             % Create a standard Matlab structure from the parser results.

@@ -11,11 +11,13 @@ function importCalData(obj)
     if (obj.refitGammaTablesUsingLinearInterpolation)
         cal.describe.gammaFitType = 'linearinterpolation';
         cal = OLInitCal(cal);
+    else
+        if ((~isfield(cal.describe,'specifiedBackground')) || (obj.forceOLInitCal))
+            cal = OLInitCal(cal);
+        end
     end
     
-    if (~isfield(cal.describe,'specifiedBackground'))
-        cal = OLInitCal(cal);
-    end
+    
     if (cal.describe.useOmni)
         error('We do not use the omni for calibration.')
     end
