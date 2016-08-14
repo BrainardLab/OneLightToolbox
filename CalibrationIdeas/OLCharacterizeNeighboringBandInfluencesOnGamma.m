@@ -5,7 +5,8 @@ function OLCharacterizeNeighboringBandInfluencesOnGamma
 %
 % 5/10/16  npc  Wrote it.
 %
-
+    clear all;
+    
     [rootDir,~] = fileparts(which(mfilename()));
     cd(rootDir);
     
@@ -25,7 +26,7 @@ function OLCharacterizeNeighboringBandInfluencesOnGamma
         %stimulusSetType = 'wigglySpectrumVariation1';
         %stimulusSetType = 'wigglySpectrumVariation2';
         stimulusSetType = 'fastFullON';
-        stimulusSetType = 'combFunctionTest';
+        %stimulusSetType = 'combFunctionTest';
         %stimulusSetType = 'combinatorialFull';
         %stimulusSetType = 'combinatorialSmall';
         %stimulusSetType = 'slidingInteraction';
@@ -556,7 +557,7 @@ function measureData(rootDir, Svector, radiometerType, setType)
         
         % Save data
         status = 'Completed successfully';
-        filename = fullfile(rootDir,sprintf('NeighboringBandInfluencesOnReferenceGamma_%s_%s.mat', cal.describe.calType, datestr(now, 'dd-mmm-yyyy_HH_MM_SS')));
+        filename = fullfile(rootDir,sprintf('NeighboringBandInfluencesOnReferenceGamma_%s_%s.mat', 'dummy', datestr(now, 'dd-mmm-yyyy_HH_MM_SS')));
         save(filename, 'status', 'data', 'nRepeats', 'warmUpData', 'warmUpRepeats', 'Svector', 'setType', ...
             'steadyBands', 'steadyBandSettingsLevels', 'interactingBandSettingsLevels', 'referenceBandSettingsLevels', 'referenceBands', 'interactingBands', 'randomizedSpectraIndices', 'cal', '-v7.3');
         fprintf('Data saved in ''%s''. \n', filename); 
@@ -577,7 +578,7 @@ function measureData(rootDir, Svector, radiometerType, setType)
         
         % Attempt to save any data
         status = sprintf('Failed during repeat: %d (Error message: %s).\nAttempted to save any data.', repeatIndex, err.message);
-        filename = fullfile(rootDir,sprintf('NeighboringBandInfluencesOnReferenceGamma_%s_%s.mat', cal.describe.calType, datestr(now, 'dd-mmm-yyyy_HH_MM_SS')));
+        filename = fullfile(rootDir,sprintf('NeighboringBandInfluencesOnReferenceGamma_%s_%s.mat', 'dummy', datestr(now, 'dd-mmm-yyyy_HH_MM_SS')));
         save(filename, 'status', 'data', 'nRepeats', 'warmUpData', 'warmUpRepeats', 'Svector', 'setType', 'steadyBands', 'steadyBandSettingsLevels', 'interactingBandSettingsLevels', 'referenceBandSettingsLevels', 'referenceBands', 'interactingBands', 'randomizedSpectraIndices', 'cal', '-v7.3');
         fprintf('Data saved in ''%s''. \n', filename); 
         
