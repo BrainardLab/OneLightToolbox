@@ -1,15 +1,15 @@
 function OLCalibrateWithStateTrackingOOC
-% OLCalibrateWithTrackingOOC - Calibrates the OneLight device, while
+% OLCalibrateWithStateTrackingOOC - Calibrates the OneLight device, while
 % tracking its state (power fluctuations and spectral shifts) 
 %
 % Syntax:
-% OLCalibrateWithTrackingOOC
+% OLCalibrateWithStateTrackingOOC
 %
 % Description:
-% Calibrates a OneLight device using a PR-6xx radiometer and the OneLight
-% supplied spectrometer (OmniDriver) while tracking for changes in 
-% (a) the total power emitted and the bulb, and
-% (b) spectral shifts of the bulb.
+% Calibrates a OneLight device using a PR-6xx radiometer aor the OneLight
+% supplied spectrometer (OmniDriver) while tracking for changes in: 
+%   (a) the total power emitted and the bulb, and
+%   (b) spectral shifts of the bulb.
 %
 % 3/29/13  dhb  Added cautionary note about changing stepSize to not equal
 %               bandWidth, and set it directly to be the same as bandWidth
