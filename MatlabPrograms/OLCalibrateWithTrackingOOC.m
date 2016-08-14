@@ -109,6 +109,9 @@ function OLCalibrateWithTrackingOOC
         end
         cal.describe.nGammaFitLevels = 1024;
     
+        fprintf('During development we set gamma Bands to 2 only so we can go faster.\n');
+        cal.describe.nGammaBands = 2;
+        
         % Randomize measurements. If this flag is set, the measurements
         % will be done in random order. We do this to counter systematic device
         % drift.
