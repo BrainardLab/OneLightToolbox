@@ -7,9 +7,9 @@ function OLCalibrateWithTrackingOOC
 %
 % Description:
 % Calibrates a OneLight device using a PR-6xx radiometer and the OneLight
-% supplied spectrometer (OmniDriver).  The goal is to bypass the
-% several pieces of hardware and mathematics used by the software supplied
-% by the OneLight people.
+% supplied spectrometer (OmniDriver) while tracking for changes in 
+% (a) the total power emitted and the bulb, and
+% (b) spectral shifts of the bulb.
 %
 % 3/29/13  dhb  Added cautionary note about changing stepSize to not equal
 %               bandWidth, and set it directly to be the same as bandWidth
@@ -41,7 +41,8 @@ function OLCalibrateWithTrackingOOC
 %                 save before call to init, because there will probably be bugs.
 % 4/15/16  npc  Adapted to use PR650dev/PR670dev objects
 % 8/13/16  npc  Proceduralized all the measurement code
-%               Added stimuli for tracking power fluctuations and spectral shifts
+%               Added stimuli for tracking power fluctuations and spectral
+%               shifts of the OneLight bulb
 
     spectroRadiometerOBJ = [];
 
@@ -237,7 +238,7 @@ function OLCalibrateWithTrackingOOC
         % Define the state tracking stimulus settings
         cal.describe.stateTracking.stimSettings.powerFluctuationsStim = ones(nPrimaries,1);
         cal.describe.stateTracking.stimSettings.spectralShiftsStim = zeros(nPrimaries,1);
-        cal.describe.stateTracking.stimSettings.spectralShiftsStim(2:8:end) = 1.0;
+        cal.describe.stateTracking.stimSettings.spectralShiftsStim(2:10:end) = 1.0;
         
 
         % Find and set the optimal integration time.  Subtract off a couple
@@ -416,6 +417,9 @@ function OLCalibrateWithTrackingOOC
         % Take another full on measurement.
         fullMeasurementIndex = size(cal.raw.fullOn,2)+1;
         cal = TakeFullOnMeasurement(fullMeasurementIndex, cal, nPrimaries, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
+    
+        % Take a final set of state measurements
+        cal = TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
     
         % Store the type of calibration and unique calibration ID
         cal.describe.calType = selectedCalType;

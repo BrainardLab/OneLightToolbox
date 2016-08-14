@@ -101,14 +101,27 @@ cal.computed.pr650S = cal.describe.S;
 cal.computed.pr650Wls = SToWls(cal.computed.pr650S);
 cal.computed.commonWls = cal.computed.pr650Wls;
 
-% Figure out the scalar to correct for the linear drift
+% Figure out the scalar to correct for the device drift
 if cal.describe.correctLinearDrift
-    fullOn0 = cal.raw.fullOn(:,1);
-    fullOn1 = cal.raw.fullOn(:,2);
-    s = fullOn0 \ fullOn1;
-    t0 = cal.raw.t.fullOn(1);
-    t1 = cal.raw.t.fullOn(2);
-    returnScaleFactor = @(t) 1./((1-(1-s)*((t-t0)./(t1-t0))));
+    % Check whether we tracked system state (i.e., calibrating via OLCalibrateWithTrackingOOC
+    if (isfield(cal.describe, 'stateTracking'))
+        % compute a piecewise linear scale factor function based on
+        % cal.raw.powerFluctuationMeas.measSpd
+        stateMeasurementsNum = size(cal.raw.powerFluctuationMeas.measSpd,2);
+        
+        % For now just return constant 1
+        returnScaleFactor = @(t) 1;
+        
+        % Also generate a figure showing the power and spectral stability over time
+        
+    else
+        fullOn0 = cal.raw.fullOn(:,1);
+        fullOn1 = cal.raw.fullOn(:,end);
+        s = fullOn0 \ fullOn1;
+        t0 = cal.raw.t.fullOn(1);
+        t1 = cal.raw.t.fullOn(end);
+        returnScaleFactor = @(t) 1./((1-(1-s)*((t-t0)./(t1-t0))));
+    end
 else
     returnScaleFactor = @(t) 1;
 end
