@@ -1,4 +1,4 @@
-function OLCalibrateWithTrackingOOC
+function OLCalibrateWithStateTrackingOOC
 % OLCalibrateWithTrackingOOC - Calibrates the OneLight device, while
 % tracking its state (power fluctuations and spectral shifts) 
 %
@@ -133,7 +133,7 @@ function OLCalibrateWithTrackingOOC
         % Specify how often (every how many stimuli) to gauge the system state 
         % In other words when to insert the power fluctuation and the spectral
         % shift gauge stimuli
-        cal.describe.stateTracking.calibrationStimInterval = 10;
+        cal.describe.stateTracking.calibrationStimInterval = 5;
         cal.describe.stateTracking.calibrationStimIndex = 0;
         cal.describe.stateTracking.stateMeasurementIndex = 0;
         
@@ -149,7 +149,7 @@ function OLCalibrateWithTrackingOOC
         cal.describe.doIndependence = true;
 
         % Call save
-        cal.describe.extraSave = true;
+        cal.describe.extraSave = false;
     
         % Don't use omni.
         % First entry is PR-6xx and is always true.
