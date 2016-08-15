@@ -1,13 +1,9 @@
-function OLAnalyzeCalOOC
+function OLAnalyzeCalOOCOLD
 
     calAnalyzer = OLCalAnalyzer(...
         'refitGammaTablesUsingLinearInterpolation', false, ...
         'forceOLInitCal', true);
-    
-    calAnalyzer.generateDriftAnalysisPlots();
-    
-    return;
-    
+   
     plotCompositeMeasurents = false;
     plotSampledSpectra = ~true;
     plotFullSpectra = ~true;

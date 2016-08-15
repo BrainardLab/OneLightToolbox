@@ -42,7 +42,6 @@ classdef OLCalAnalyzer < handle
         figsList
         
         summaryTableFigure
-        summaryTable
     end
     
     
@@ -51,11 +50,9 @@ classdef OLCalAnalyzer < handle
         % Constructor
         function obj = OLCalAnalyzer(varargin)
             
-            defaultRefitGammaTablesUsingLinearInterpolation = false;
-            
             % Parse optional arguments
             parser = inputParser;
-            parser.addParameter('refitGammaTablesUsingLinearInterpolation', defaultRefitGammaTablesUsingLinearInterpolation, @islogical);
+            parser.addParameter('refitGammaTablesUsingLinearInterpolation', false, @islogical);
             parser.addParameter('forceOLInitCal', false, @islogical);
             %Execute the parser
             parser.parse(varargin{:});
@@ -67,12 +64,9 @@ classdef OLCalAnalyzer < handle
             end
             
             obj.init();
-            
             obj.importCalData();
             obj.importResources();
-            
-            obj.initSummaryTable();
-            obj.updateSummaryTable();
+            obj.generateSummaryData();
         end
         
         % Method to plot various SPDs
