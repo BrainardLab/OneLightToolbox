@@ -287,6 +287,7 @@ function solution = fitGaussianToData(xData, yData, initialParams, paramLowerBou
     end
 end
 
+% Modified Gaussian function
 function g = gaussianFilter(wavelength, params)
     offset = params(1);
     gain = params(2);
