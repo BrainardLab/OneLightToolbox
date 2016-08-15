@@ -47,7 +47,7 @@ function cal = OLInitCal(calFileName, varargin)
 %              Have inline function returnScaleFactor return 1 if
 %                cal.describe.correctForDrift is false, and then get rid of
 %                all the other conditionals on this variable.
-% 8/14/16 npc  Added piecewide linear drift correction in cases where the
+% 8/14/16 npc  Added piecewise linear drift correction in cases where the
 %              cal file contains state tracking data (i.e., measured via
 %              OLCalibrateWithStateTrackingOOC.m)
 
@@ -115,50 +115,17 @@ function cal = OLInitCal(calFileName, varargin)
         t0 = cal.raw.t.fullOn(1);
         t1 = cal.raw.t.fullOn(end);
         returnScaleFactor = @(t) 1./((1-(1-s)*((t-t0)./(t1-t0))));
-
+        cal.computed.returnScaleFactor = returnScaleFactor;
+        
         % Check whether we tracked system state (i.e., calibrating via OLCalibrateWithTrackingOOC
         if (isfield(cal.describe, 'stateTracking'))
 
-            % test at a fine time axis, every dt seconds
-            dt = 5.0;
-            tInterp = cal.raw.powerFluctuationMeas.t(1):dt:cal.raw.powerFluctuationMeas.t(end);
-
-            hFig = figure(2);  clf;
-            set(hFig, 'Position', [10 10 1200 600]);
-            subplot('Position', [0.07 0.08 0.92 0.91]);
-            timeAxis = (tInterp - tInterp(1))/60;
-            plot(timeAxis, returnScaleFactor(tInterp), 'ko-', 'LineWidth', 1.5, 'MarkerSize', 8, 'MarkerFaceColor', [0.5 0.5 0.5]);
-
             % Over-write original scale factor with one based on tracking data
+            cal.computed.returnScaleFactorOLD = returnScaleFactor;
             returnScaleFactor = @(t) piecewiseLinearScaleFactorFromStateTrackingData(t);
-            
-            hold on;
-            plot(timeAxis, returnScaleFactor(tInterp), 'ro-', 'LineWidth', 1.5, 'MarkerSize', 8, 'MarkerFaceColor', [1.0 0.8 0.8]);
-            hL = legend('original correction (2 points)', 'correction by tracking state over time');
-            set(hL, 'Orientation', 'Horizontal', 'Location', 'NorthOutside', 'FontSize', 16);
-            set(gca, 'FontSize', 14);
-            xlabel('Time (minutes)', 'FontSize', 16, 'FontWeight', 'bold');
-            ylabel('Drift correction', 'FontSize', 16, 'FontWeight', 'bold');
-            
-            % Also generate a figure showing the power and spectral stability over time
-            figure(3); clf; hold on;
-            spectralAxis = SToWls(cal.describe.S);
-            diffSpectraInMilliWatts = 1000*bsxfun(@minus, cal.raw.spectralShiftsMeas.measSpd, cal.raw.spectralShiftsMeas.measSpd(:,1));
-            cmap = 0.7*jet(size(cal.raw.spectralShiftsMeas.measSpd,2));
-            legends = {};
-            for stateMeasIndex = 1:size(cal.raw.spectralShiftsMeas.measSpd,2)
-                plot(spectralAxis, diffSpectraInMilliWatts (:,stateMeasIndex), 'k-', 'Color', cmap(stateMeasIndex,:), 'LineWidth', 1.5);
-                legends{numel(legends)+1} = sprintf('t = %2.2f mins', (cal.raw.spectralShiftsMeas.t(stateMeasIndex) - cal.raw.spectralShiftsMeas.t(1))/60);
-            end
-            hL = legend(legends);
-            set(hL, 'Orientation', 'Vertical', 'Location', 'WestOutside', 'FontSize', 12)
-            drawnow;
-            
-            
-            pause
-        end
-    end
-
+            cal.computed.returnScaleFactor = returnScaleFactor;
+        end %  if (isfield(cal.describe, 'stateTracking'))
+    end  % if cal.describe.correctLinearDrift
 
     % Get data
     cal.computed.D = cal.raw.cols;
