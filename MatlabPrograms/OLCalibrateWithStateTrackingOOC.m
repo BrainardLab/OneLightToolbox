@@ -113,8 +113,8 @@ function OLCalibrateWithStateTrackingOOC
         cal.describe.nGammaLevels = 24;
         
         % ------------------------------- TEMPORARY -----------------------
-        fprintf('During development we set gamma levels to 6 only so we can go faster.\n');
-        cal.describe.nGammaLevels = 6;
+        %fprintf('During development we set gamma levels to 6 only so we can go faster.\n');
+        %cal.describe.nGammaLevels = 6;
         % ------------------------------- TEMPORARY -----------------------
         
         
