@@ -43,39 +43,44 @@ function generateSpectralShiftPlots(obj)
     set(hFig6, 'Position', [10 10 1260 1100], 'Color', [1 1 1]);
     fig6Legends = {};
     
-    
+    % rawData
+    % theSPDs = cal.raw.spectralShiftsMeas.measSpd;
+        
+    % drift corrected data
+    theSPDs = cal.driftCorrected.spectralShiftsMeas.measSpd;
+        
     % Fit each of the combPeaks separately
     for peakIndex = 1:numel(combPeaks)
         peak = combPeaks(peakIndex);
-    
+        
         % Adjust the peak if needed
         stateMeasIndex = 1;
         dataIndicesToFit = sort(find(abs(spectralAxis - peak) <= 15));
-        [maxComb,idx] = max(cal.raw.spectralShiftsMeas.measSpd(dataIndicesToFit, stateMeasIndex));
+        [maxComb,idx] = max(theSPDs(dataIndicesToFit, stateMeasIndex));
         peak = spectralAxis(dataIndicesToFit(idx));
         % Add legend
         fig6Legends{peakIndex} = sprintf('peak at %d nm', peak);
 
     
-        dataIndicesToFit2 = find(cal.raw.spectralShiftsMeas.measSpd(dataIndicesToFit, stateMeasIndex) > 0.1*maxComb);
+        dataIndicesToFit2 = find(theSPDs(dataIndicesToFit, stateMeasIndex) > 0.1*maxComb);
         dataIndicesToFit = dataIndicesToFit(dataIndicesToFit2);
     
         xData = spectralAxis(dataIndicesToFit);
         xDataHiRes = (xData(1):0.2:xData(end))';
     
-        for stateMeasIndex = 1:size(cal.raw.spectralShiftsMeas.measSpd,2)
+        for stateMeasIndex = 1:size(theSPDs,2)
             initialParams    = [0   5  peak     6.28   6.28  2.0];
             paramLowerBounds = [0   0  peak-20  1.00   1.00  1.5]; 
             paramUpperBounds = [0  10  peak+20 10.00  10.00  4.0];
-            d(peakIndex, stateMeasIndex).yData = 1000*cal.raw.spectralShiftsMeas.measSpd(dataIndicesToFit, stateMeasIndex);  % in milliWatts
+            d(peakIndex, stateMeasIndex).yData = 1000*theSPDs(dataIndicesToFit, stateMeasIndex);  % in milliWatts
             d(peakIndex, stateMeasIndex).fitParams = fitGaussianToData(xData, d(peakIndex, stateMeasIndex).yData, initialParams, paramLowerBounds, paramUpperBounds);
             d(peakIndex, stateMeasIndex).yDataHiRes = twoSidedExponential(xDataHiRes, d(peakIndex, stateMeasIndex).fitParams);
         end
     
         hFig = figure(5 + 100*(peakIndex-1)); clf;
         set(hFig, 'Position', [10 10 1400 1000], 'Color', [1 1 1]);
-        rowsNum = round(sqrt(size(cal.raw.spectralShiftsMeas.measSpd,2))*0.7);
-        colsNum = ceil(size(cal.raw.spectralShiftsMeas.measSpd,2) / rowsNum);
+        rowsNum = round(sqrt(size(theSPDs,2))*0.7);
+        colsNum = ceil(size(theSPDs,2) / rowsNum);
         subplotPosVectors = NicePlot.getSubPlotPosVectors(...
                'rowsNum', rowsNum, ...
                'colsNum', colsNum, ...
@@ -88,7 +93,7 @@ function generateSpectralShiftPlots(obj)
 
         YLims = [min(d(peakIndex, stateMeasIndex).yData(:)) 1.05*max(d(peakIndex, stateMeasIndex).yData(:))];
     
-        for stateMeasIndex = 1:size(cal.raw.spectralShiftsMeas.measSpd,2)
+        for stateMeasIndex = 1:size(theSPDs,2)
             rowIndex = floor((stateMeasIndex-1)/colsNum)+1;
             colIndex = mod(stateMeasIndex-1, colsNum) + 1;
             subplot('Position', subplotPosVectors(rowIndex, colIndex).v);
@@ -109,12 +114,12 @@ function generateSpectralShiftPlots(obj)
         figure(hFig6);
         % The gain time series
         paramIndex = 2;
-        for stateMeasIndex = 1:size(cal.raw.spectralShiftsMeas.measSpd,2)
+        for stateMeasIndex = 1:size(theSPDs,2)
             paramTimeSeries(stateMeasIndex) = d(peakIndex, stateMeasIndex).fitParams(paramIndex) / d(peakIndex, 1).fitParams(paramIndex);
         end
         subplot('Position', subplotPosVectors2(1,1).v);
         hold on
-        plot(1:size(cal.raw.spectralShiftsMeas.measSpd,2), paramTimeSeries, 'ko-', 'Color', 0.5*squeeze(cmap(peakIndex,:)), 'MarkerSize', 12, 'MarkerFaceColor', squeeze(cmap(peakIndex,:)), 'LineWidth', 1);
+        plot(1:size(theSPDs,2), paramTimeSeries, 'ko-', 'Color', 0.5*squeeze(cmap(peakIndex,:)), 'MarkerSize', 12, 'MarkerFaceColor', squeeze(cmap(peakIndex,:)), 'LineWidth', 1);
         set(gca, 'FontSize', 14);
         ylabel(sprintf('%s (ratio)', paramNames{paramIndex}), 'FontSize', 16, 'FontWeight', 'bold');
         xlabel('measurement index', 'FontSize', 16, 'FontWeight', 'bold');
@@ -125,12 +130,12 @@ function generateSpectralShiftPlots(obj)
     
         % The peak time series
         paramIndex = 3;
-        for stateMeasIndex = 1:size(cal.raw.spectralShiftsMeas.measSpd,2)
+        for stateMeasIndex = 1:size(theSPDs,2)
             paramTimeSeries(stateMeasIndex) = d(peakIndex, stateMeasIndex).fitParams(paramIndex) - d(peakIndex, 1).fitParams(paramIndex);
         end
         subplot('Position', subplotPosVectors2(1,2).v);
         hold on
-        plot(1:size(cal.raw.spectralShiftsMeas.measSpd,2), paramTimeSeries, 'ko-', 'MarkerSize', 12, 'Color', 0.5*squeeze(cmap(peakIndex,:)), 'MarkerFaceColor', squeeze(cmap(peakIndex,:)), 'LineWidth', 1);
+        plot(1:size(theSPDs,2), paramTimeSeries, 'ko-', 'MarkerSize', 12, 'Color', 0.5*squeeze(cmap(peakIndex,:)), 'MarkerFaceColor', squeeze(cmap(peakIndex,:)), 'LineWidth', 1);
         set(gca, 'FontSize', 14);
         ylabel(sprintf('%s (differential)', paramNames{paramIndex}), 'FontSize', 16, 'FontWeight', 'bold');
         xlabel('measurement index', 'FontSize', 16, 'FontWeight', 'bold');
@@ -138,14 +143,14 @@ function generateSpectralShiftPlots(obj)
     
         % The left/right sigmas series
         paramIndex = 4;
-        for stateMeasIndex = 1:size(cal.raw.spectralShiftsMeas.measSpd,2)
+        for stateMeasIndex = 1:size(theSPDs,2)
             paramTimeSeries1(stateMeasIndex) = d(peakIndex, stateMeasIndex).fitParams(paramIndex);
             paramTimeSeries2(stateMeasIndex) = d(peakIndex, stateMeasIndex).fitParams(paramIndex+1);
         end
         subplot('Position', subplotPosVectors2(2,1).v);
         hold on
-        plot(1:size(cal.raw.spectralShiftsMeas.measSpd,2), paramTimeSeries1, 'ko-', 'MarkerSize', 12, 'Color', 0.5*squeeze(cmap(peakIndex,:)), 'MarkerFaceColor', squeeze(cmap(peakIndex,:)), 'LineWidth', 1);
-        plot(1:size(cal.raw.spectralShiftsMeas.measSpd,2), paramTimeSeries2, 'ks-', 'MarkerSize', 12, 'Color', 0.5*squeeze(cmap(peakIndex,:)), 'MarkerFaceColor', squeeze(cmap(peakIndex,:)), 'LineWidth', 1);
+        plot(1:size(theSPDs,2), paramTimeSeries1, 'ko-', 'MarkerSize', 12, 'Color', 0.5*squeeze(cmap(peakIndex,:)), 'MarkerFaceColor', squeeze(cmap(peakIndex,:)), 'LineWidth', 1);
+        plot(1:size(theSPDs,2), paramTimeSeries2, 'ks-', 'MarkerSize', 12, 'Color', 0.5*squeeze(cmap(peakIndex,:)), 'MarkerFaceColor', squeeze(cmap(peakIndex,:)), 'LineWidth', 1);
         set(gca, 'FontSize', 14);
         ylabel(sprintf('%s/%s', paramNames{4}, paramNames{5}), 'FontSize', 16, 'FontWeight', 'bold');
         xlabel('measurement index', 'FontSize', 16, 'FontWeight', 'bold');
@@ -153,12 +158,12 @@ function generateSpectralShiftPlots(obj)
     
         % The exponent time series
         paramIndex = 6;
-        for stateMeasIndex = 1:size(cal.raw.spectralShiftsMeas.measSpd,2)
+        for stateMeasIndex = 1:size(theSPDs,2)
             paramTimeSeries(stateMeasIndex) = d(peakIndex, stateMeasIndex).fitParams(paramIndex);
         end
         subplot('Position', subplotPosVectors2(2,2).v);
         hold on
-        plot(1:size(cal.raw.spectralShiftsMeas.measSpd,2), paramTimeSeries, 'ko-', 'MarkerSize', 12, 'Color', 0.5*squeeze(cmap(peakIndex,:)), 'MarkerFaceColor', squeeze(cmap(peakIndex,:)), 'LineWidth', 1);
+        plot(1:size(theSPDs,2), paramTimeSeries, 'ko-', 'MarkerSize', 12, 'Color', 0.5*squeeze(cmap(peakIndex,:)), 'MarkerFaceColor', squeeze(cmap(peakIndex,:)), 'LineWidth', 1);
         set(gca, 'FontSize', 14);
         ylabel(paramNames{paramIndex}, 'FontSize', 16, 'FontWeight', 'bold');
         xlabel('measurement index', 'FontSize', 16, 'FontWeight', 'bold');
@@ -213,7 +218,10 @@ function generateDriftCorrectedStateMeasurementPlots(obj)
         cal.driftCorrected.spectralShiftsMeas.measSpd(:, stateMeasIndex) = ...
             bsxfun(@times, cal.raw.spectralShiftsMeas.measSpd(:, stateMeasIndex), cal.computed.returnScaleFactor(cal.raw.spectralShiftsMeas.t(:, stateMeasIndex)));
     end
-       
+    
+    % Update the object's copy
+    obj.cal = cal;
+    
     spectralLims = [spectralAxis(1) spectralAxis(end)];
     spectralLims = [450 700];
     powerLims = max(cal.raw.powerFluctuationMeas.measSpd(:))*[0.5 1.02];
