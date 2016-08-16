@@ -110,13 +110,7 @@ function OLCalibrateWithStateTrackingOOC
         cal.describe.nGammaFitLevels = 1024;
     
         % Levels at which to measure the gamma function
-        cal.describe.nGammaLevels = 24;
-        
-        % ------------------------------- TEMPORARY -----------------------
-        %fprintf('During development we set gamma levels to 6 only so we can go faster.\n');
-        %cal.describe.nGammaLevels = 6;
-        % ------------------------------- TEMPORARY -----------------------
-        
+        cal.describe.nGammaLevels = 24;   
         
         % Randomize measurements. If this flag is set, the measurements
         % will be done in random order. We do this to counter systematic device
