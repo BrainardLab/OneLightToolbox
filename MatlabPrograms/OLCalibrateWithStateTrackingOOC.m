@@ -110,7 +110,7 @@ function OLCalibrateWithStateTrackingOOC
         cal.describe.nGammaFitLevels = 1024;
     
         % Levels at which to measure the gamma function
-        cal.describe.nGammaLevels = 24;
+        cal.describe.nGammaLevels = 4;
         
         % ------------------------------- TEMPORARY -----------------------
         %fprintf('During development we set gamma levels to 6 only so we can go faster.\n');
@@ -459,7 +459,7 @@ function OLCalibrateWithStateTrackingOOC
         fprintf('\n<strong>Calibration Complete</strong>\n\n');
 
         % Shutdown the PR670/650
-        spectroRadiometerOBJspectroRadiometerOBJ.shutDown();
+        spectroRadiometerOBJ.shutDown();
         
         % Send email that we are done
         SendEmail(emailRecipient, 'OneLight Calibration Complete', ...
