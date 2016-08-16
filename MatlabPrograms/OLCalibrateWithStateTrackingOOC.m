@@ -426,6 +426,7 @@ function OLCalibrateWithStateTrackingOOC
         % Take a final set of state measurements
         cal = TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
     
+        
         % Store the type of calibration and unique calibration ID
         cal.describe.calType = selectedCalType;
         cal.describe.calID = OLGetCalID(cal);
@@ -454,8 +455,13 @@ function OLCalibrateWithStateTrackingOOC
             SaveCalFile(cal, fullfile(oneLightCalSubdir,selectedCalType.CalFileName));
         end
     
+        % Notify user we are done
         fprintf('\n<strong>Calibration Complete</strong>\n\n');
 
+        % Shutdown the PR670/650
+        spectroRadiometerOBJspectroRadiometerOBJ.shutDown();
+        
+        % Send email that we are done
         SendEmail(emailRecipient, 'OneLight Calibration Complete', ...
             'Finished!');
     catch e
