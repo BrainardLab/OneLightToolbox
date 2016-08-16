@@ -110,7 +110,7 @@ function OLCalibrateWithStateTrackingOOC
         cal.describe.nGammaFitLevels = 1024;
     
         % Levels at which to measure the gamma function
-        cal.describe.nGammaLevels = 4;
+        cal.describe.nGammaLevels = 24;
         
         % ------------------------------- TEMPORARY -----------------------
         %fprintf('During development we set gamma levels to 6 only so we can go faster.\n');
