@@ -244,6 +244,12 @@ function OLCalibrateWithStateTrackingOOC
         % thousand microseconds just to give it a conservative value.
         ol.setAll(true);
 
+        % Ask for a keypress to start the warming up phase.
+        input(sprintf('<strong>Press return to enter the OneLight warmup loop</strong>\n'));
+        % dont take any measurements [false false]
+        warmpUpMeterToggle = [false false];
+        OLWarmUpOOC(cal, ol, od, spectroRadiometerOBJ, warmpUpMeterToggle);
+        
         % Ask for a keypress to continue.
         input(sprintf('<strong>Press return to pause 10s then continue with the calibration</strong>\n'));
         pause(10);
