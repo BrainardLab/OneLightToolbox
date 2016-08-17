@@ -19,7 +19,7 @@ function OLWarmUpOOC(cal, ol, od, spectroRadiometerOBJ, meterToggle)
         [starts,stops] = OLSettingsToStartsStops(cal,theWarmUpSettings(:,warmUpStimIndex));
         measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
         if (~isempty(measTemp.pr650))
-            figure(1);
+            figure(1); clf;
             plot(SToWls(cal.describe.S), measTemp.pr650.spectrum, 'k-');
             drawnow;
         end
