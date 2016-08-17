@@ -34,8 +34,8 @@ function OLWarmUpOOC(cal, ol, od, spectroRadiometerOBJ, meterToggle)
             end % switch
         else
             stimPresentations = stimPresentations + 1;
-            fprintf('OneLight has been warming up for %2.1f minutes (%d stimuli). Enter q to exit the loop.\n', toc, stimPresentations);
-            pause(0.2);
+            fprintf('OneLight has been warming up for %2.1f minutes (%d stimuli). Enter q to exit the loop.\n', toc/60, stimPresentations);
+            pause(0.1);
         end
     end  % whileKeepLooping
     fprintf('\n');
