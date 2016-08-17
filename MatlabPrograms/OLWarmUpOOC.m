@@ -3,13 +3,13 @@ function OLWarmUpOOC(cal, ol, od, spectroRadiometerOBJ, meterToggle)
     nPrimaries = cal.describe.numWavelengthBands;
     nAverage = 1;
     
-    theWarmUpSettings = zeros(nPrimaries, nPrimaries+1);
+    theWarmUpSettings = zeros(nPrimaries, 3);
     warmUpStimIndex = 1;
     theWarmUpSettings(:,warmUpStimIndex) = ones(nPrimaries,1);
-    for k = 1:nPrimaries
-        warmUpStimIndex = warmUpStimIndex + 1;
-        theWarmUpSettings(k,warmUpStimIndex) = 1;
-    end
+    warmUpStimIndex = 2;
+    theWarmUpSettings(1:2:nPrimaries,warmUpStimIndex) = 1;
+    warmUpStimIndex = 3;
+    theWarmUpSettings(2:2:nPrimaries,warmUpStimIndex) = 1;
     
     warmUpStimIndex = 0; stimPresentations = 0;
     keepLooping = true; tic;
