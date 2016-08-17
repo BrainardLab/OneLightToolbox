@@ -318,10 +318,12 @@ function generateScalingFactorPlots(obj)
     set(hFig, 'Position', [10 10 1200 600]);
     subplot('Position', [0.07 0.08 0.92 0.91]);
     timeAxis = (tInterp - tInterp(1))/60;
-    plot(timeAxis, cal.computed.returnScaleFactorOLD(tInterp), 'ko-', 'LineWidth', 1.5, 'MarkerSize', 8, 'MarkerFaceColor', [0.5 0.5 0.5]);
+    plot(timeAxis, cal.computed.returnScaleFactorOLD(tInterp), 'k-', 'LineWidth', 1.5, 'MarkerSize', 8, 'MarkerFaceColor', [0.5 0.5 0.5]);
 
     hold on;
-    plot(timeAxis, cal.computed.returnScaleFactor(tInterp), 'ro-', 'LineWidth', 1.5, 'MarkerSize', 8, 'MarkerFaceColor', [1.0 0.8 0.8]);
+    plot(timeAxis, cal.computed.returnScaleFactor(tInterp), 'r-', 'LineWidth', 1.5, 'MarkerSize', 8, 'MarkerFaceColor', [1.0 0.8 0.8]);
+    rawData = rawScaleFactorsFromStateTrackingData(cal);
+    plot((rawData.x - tInterp(1))/60, rawData.y, 'rs');
     hL = legend('original correction (2 points)', 'correction by tracking state over time');
     set(hL, 'Orientation', 'Horizontal', 'Location', 'NorthOutside', 'FontSize', 16);
     set(gca, 'FontSize', 14);
@@ -340,3 +342,45 @@ function generateScalingFactorPlots(obj)
     set(hL, 'Orientation', 'Vertical', 'Location', 'WestOutside', 'FontSize', 12)
     drawnow;
 end
+
+% Nested function computing scale factor based on state tracking measurements
+function rawData = rawScaleFactorsFromStateTrackingData(cal)
+    wavelengthIndices = find(cal.raw.fullOn(:,end) > 0.2*max(cal.raw.fullOn(:)));
+    stateMeasurementsNum = size(cal.raw.powerFluctuationMeas.measSpd,2);
+    meas0 = cal.raw.powerFluctuationMeas.measSpd(wavelengthIndices,1);
+    figure(222);
+    clf;
+    for k = 1:3
+        subplot(1,3,k);
+        plot(1:numel(wavelengthIndices), meas0, 'k-');
+        hold on;
+        meas1 = cal.raw.powerFluctuationMeas.measSpd(wavelengthIndices,1+k);
+        plot(1:numel(wavelengthIndices), meas1, 'r-');
+        legend({'1', sprintf('%d', 1+k)});
+    end
+    drawnow;
+    
+    figure(223);
+    clf;
+    meas0 = cal.raw.spectralShiftsMeas.measSpd(wavelengthIndices,1);
+    for k = 1:3
+        subplot(1,3,k);
+        plot(1:numel(wavelengthIndices), meas0, 'k-');
+        hold on;
+        meas1 = cal.raw.spectralShiftsMeas.measSpd(wavelengthIndices,1+k);
+        plot(1:numel(wavelengthIndices), meas1, 'r-');
+        legend({'1', sprintf('%d', 1+k)});
+    end
+    drawnow;
+    pause
+    
+    
+    meas0 = cal.raw.powerFluctuationMeas.measSpd(wavelengthIndices,1);
+    for stateMeasurementIndex = 1:stateMeasurementsNum
+        y(stateMeasurementIndex) = 1.0 ./ (meas0 \ cal.raw.powerFluctuationMeas.measSpd(wavelengthIndices,stateMeasurementIndex));
+    end
+    x = cal.raw.powerFluctuationMeas.t;
+    rawData.x = x;
+    rawData.y = y;
+end
+    
