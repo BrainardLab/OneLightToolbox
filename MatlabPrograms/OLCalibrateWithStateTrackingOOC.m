@@ -43,7 +43,9 @@ function OLCalibrateWithStateTrackingOOC
 % 8/13/16  npc  Proceduralized all the measurement code
 %               Added stimuli for tracking power fluctuations and spectral
 %               shifts of the OneLight bulb
-
+% 8/17/16  npc  Added 'warming-up' stimuli right before the calibration
+%               to see if this eliminates the large initial drift correction
+%
     spectroRadiometerOBJ = [];
 
     try
@@ -245,6 +247,7 @@ function OLCalibrateWithStateTrackingOOC
         ol.setAll(true);
 
         % Ask for a keypress to start the warming up phase.
+        % We hope this will will decrease the large initial drift correction
         input(sprintf('<strong>Press return to enter the OneLight warmup loop</strong>\n'));
         % don't take any measurements [false false]
         % warmpUpMeterToggle = [false false];
