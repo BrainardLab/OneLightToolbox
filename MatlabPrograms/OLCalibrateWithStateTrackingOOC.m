@@ -246,8 +246,10 @@ function OLCalibrateWithStateTrackingOOC
 
         % Ask for a keypress to start the warming up phase.
         input(sprintf('<strong>Press return to enter the OneLight warmup loop</strong>\n'));
-        % dont take any measurements [false false]
-        warmpUpMeterToggle = [false false];
+        % don't take any measurements [false false]
+        % warmpUpMeterToggle = [false false];
+        % take measurements
+        warmpUpMeterToggle = [1 cal.describe.useOmni];
         OLWarmUpOOC(cal, ol, od, spectroRadiometerOBJ, warmpUpMeterToggle);
         
         % Ask for a keypress to continue.
