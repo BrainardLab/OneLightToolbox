@@ -1,10 +1,13 @@
 function generateDriftAnalysisPlots(obj)
   
     cal = obj.cal;
-    if (isfield(cal.computed, 'returnScaleFactor'))
+    if (isfield(cal.raw, 'spectralShiftsMeas'))
         generateScalingFactorPlots(obj);
+        pause
         generateDriftCorrectedStateMeasurementPlots(obj);
+        pause
         generateSpectralShiftPlots(obj);
+        pause
     end
     
 end
@@ -105,9 +108,9 @@ function generateSpectralShiftPlots(obj)
                 set(gca, 'XTickLabel', {});
             end
             title(sprintf('measurement %d', stateMeasIndex));
+            drawnow;
         end
-        drawnow;
-    
+            
     
         
         % Update figure 6
@@ -179,7 +182,10 @@ function solution = fitGaussianToData(xData, yData, initialParams, paramLowerBou
     beq = [];
     A = [];
     b = [];
-    solution = fmincon(@functionToMinimize, initialParams,A, b,Aeq,beq, paramLowerBounds, paramUpperBounds);
+    nonlcon = [];
+    options = optimoptions('fmincon');
+    options = optimset('Display', 'off');
+    solution = fmincon(@functionToMinimize, initialParams,A, b,Aeq,beq, paramLowerBounds, paramUpperBounds, nonlcon, options);
     
     function rmsResidual = functionToMinimize(params)
         yfit = twoSidedExponential(xData, params);
@@ -309,6 +315,7 @@ function generateScalingFactorPlots(obj)
     cal = obj.cal;
     spectralAxis = SToWls(cal.describe.S);
     cmap = 0.7*jet(size(cal.raw.spectralShiftsMeas.measSpd,2));
+    rawData = rawScaleFactorsFromStateTrackingData(cal);
     
     % test at a fine time axis, every dt seconds
     dt = 5.0;
@@ -322,7 +329,6 @@ function generateScalingFactorPlots(obj)
 
     hold on;
     plot(timeAxis, cal.computed.returnScaleFactor(tInterp), 'r-', 'LineWidth', 1.5, 'MarkerSize', 8, 'MarkerFaceColor', [1.0 0.8 0.8]);
-    rawData = rawScaleFactorsFromStateTrackingData(cal);
     plot((rawData.x - tInterp(1))/60, rawData.y, 'rs');
     hL = legend('original correction (2 points)', 'correction by tracking state over time');
     set(hL, 'Orientation', 'Horizontal', 'Location', 'NorthOutside', 'FontSize', 16);
@@ -372,9 +378,7 @@ function rawData = rawScaleFactorsFromStateTrackingData(cal)
         legend({'1', sprintf('%d', 1+k)});
     end
     drawnow;
-    pause
-    
-    
+ 
     meas0 = cal.raw.powerFluctuationMeas.measSpd(wavelengthIndices,1);
     for stateMeasurementIndex = 1:stateMeasurementsNum
         y(stateMeasurementIndex) = 1.0 ./ (meas0 \ cal.raw.powerFluctuationMeas.measSpd(wavelengthIndices,stateMeasurementIndex));

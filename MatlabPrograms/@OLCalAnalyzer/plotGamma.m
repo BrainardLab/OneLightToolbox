@@ -143,6 +143,8 @@ function plotGamma(obj, varargin)
     drawnow;
     
 
+    genVideo = false;
+    if (genVideo)
     % Generate ratios video
     
     % Open video stream
@@ -239,6 +241,7 @@ function plotGamma(obj, varargin)
     end
     % Close video stream
     writerObj.close();
+    end % genVideo
     
     
     % Plot ratios figures

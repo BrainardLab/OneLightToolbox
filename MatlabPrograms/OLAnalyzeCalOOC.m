@@ -6,23 +6,23 @@ function OLAnalyzeCalOOC
     
     calAnalyzer.generateDriftAnalysisPlots();
     
-    return;
     
-    plotCompositeMeasurents = false;
-    plotSampledSpectra = ~true;
-    plotFullSpectra = ~true;
-    plotGammaSPDs = ~true;
+    plotCompositeMeasurents = true;
+    plotSampledSpectra = true;
+    plotFullSpectra = true;
+    plotGammaSPDs = true;
     plotGammaTables = true;
-    plotPredictions = ~true;
+    plotPredictions = true;
     
     
     if (plotCompositeMeasurents)
         % Plot dark, half-on, and full-on raw measurements
         spdType = 'raw';
         calAnalyzer.plotSPD(spdType, 'darkMeas'); 
-        %calAnalyzer.plotSPD(spdType, 'halfOnMeas');
-        %calAnalyzer.plotSPD(spdType, 'fullOn');
+        calAnalyzer.plotSPD(spdType, 'halfOnMeas');
+        calAnalyzer.plotSPD(spdType, 'fullOn');
     end
+    pause
     
     if (plotSampledSpectra)
         % Bands for which to plot spectral measurements
@@ -40,7 +40,7 @@ function OLAnalyzeCalOOC
             calAnalyzer.plotSPD(spdType, 'effectiveBgMeas', 'bandIndicesToPlot', whichBandIndicesToPlot);
         end
     end
-    
+    pause
     if (plotFullSpectra)
         % Full set of spectral measurements
 %         for bandIndex = 1:calAnalyzer.cal.describe.numWavelengthBands
@@ -54,18 +54,21 @@ function OLAnalyzeCalOOC
         spdType = 'raw';
         calAnalyzer.plotSPD(spdType, 'lightMeas', 'bandIndicesToPlot', []);
     end
+    pause
     
     if (plotGammaSPDs)
         % SPDs at different gamma values
         gammaSPDType = 'raw';
         calAnalyzer.plotGammaSPD(gammaSPDType, 'rad');
     end
+    pause
     
     if (plotGammaTables)
         % Two views of the measured and fitted gamma tables
         gammaType = 'computed';
         calAnalyzer.plotGamma(gammaType);
     end
+    pause
     
     if (plotPredictions)
         spdType = 'raw';
@@ -74,7 +77,7 @@ function OLAnalyzeCalOOC
         calAnalyzer.plotPredictions(spdType, 'fullOn');
         calAnalyzer.plotPredictions(spdType, 'wigglyMeas');
     end
-    
+    pause
     
     if (calAnalyzer.cal.describe.specifiedBackground)
         fprintf('Specified background figure, how repeatable - NOT IMPLEMENTED YET\n');
