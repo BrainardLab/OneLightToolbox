@@ -2,7 +2,10 @@ function generateDriftAnalysisPlots(obj)
   
     cal = obj.cal;
     if (isfield(cal.raw, 'spectralShiftsMeas'))
-        generateScalingFactorPlots(obj);
+        computeDriftCorrectedStateMeasurements(obj)
+        spectralShiftCorrection = computeSpectralShiftCorrectedStateMeasurements(obj);
+        pause
+        generateScalingFactorPlots(obj, spectralShiftCorrection);
         pause
         generateDriftCorrectedStateMeasurementPlots(obj);
         pause
@@ -19,7 +22,7 @@ function generateSpectralShiftPlots(obj)
     spectralAxis = SToWls(cal.describe.S);
     
     % Peaks of the comb function
-    combPeaks = [480 540 596 652]; 
+    combPeaks = [480 540 596 652]+10; 
          
     paramNames = {...
         'offset (mWatts)', ...
@@ -51,7 +54,7 @@ function generateSpectralShiftPlots(obj)
         
     % drift corrected data
     theSPDs = cal.driftCorrected.spectralShiftsMeas.measSpd;
-        
+    
     % Fit each of the combPeaks separately
     for peakIndex = 1:numel(combPeaks)
         peak = combPeaks(peakIndex);
@@ -207,13 +210,13 @@ function g = twoSidedExponential(wavelength, params)
     g = cat(1, g1, g2);
 end
 
-function generateDriftCorrectedStateMeasurementPlots(obj)
+
+
+
+function computeDriftCorrectedStateMeasurements(obj)
 
     cal = obj.cal;
-    spectralAxis = SToWls(cal.describe.S);
-    cmap = 0.7*jet(size(cal.raw.spectralShiftsMeas.measSpd,2));
     
-    % Compute drift corrected state measurements
     for stateMeasIndex = 1:size(cal.raw.spectralShiftsMeas.measSpd,2)-1
         cal.driftCorrectedOLD.powerFluctuationMeas.measSpd(:, stateMeasIndex) = ...
             bsxfun(@times, cal.raw.powerFluctuationMeas.measSpd(:, stateMeasIndex), cal.computed.returnScaleFactorOLD(cal.raw.powerFluctuationMeas.t(:, stateMeasIndex)));
@@ -227,6 +230,114 @@ function generateDriftCorrectedStateMeasurementPlots(obj)
     
     % Update the object's copy
     obj.cal = cal;
+end
+
+
+function spectralShiftCorrection = computeSpectralShiftCorrectedStateMeasurements(obj)
+    cal = obj.cal;
+    spectralAxis = SToWls(cal.describe.S);
+    
+    for stateMeasIndex = 1:size(cal.raw.spectralShiftsMeas.measSpd,2)-1
+        
+        [spectralShifts(:, stateMeasIndex), refPeaks] = computeSpectralShifts(cal.driftCorrected.spectralShiftsMeas.measSpd(:, stateMeasIndex), ...
+            cal.driftCorrected.spectralShiftsMeas.measSpd(:, 1), spectralAxis);
+        
+        % Apply spectral shift correction
+        spectralShiftCorrection.amplitudes(stateMeasIndex) = -median(squeeze(spectralShifts(:, stateMeasIndex)));
+        spectralShiftCorrection.times(stateMeasIndex) = cal.raw.spectralShiftsMeas.t(:, stateMeasIndex);
+    end
+    
+    figure(1122); clf; legends = {}; cmap = colormap(lines(size(spectralShifts,1)));
+    for k = 1:size(spectralShifts,1)
+        plot(spectralShifts(k,:), 'k-', 'LineWidth', 1.5, 'Color', squeeze(cmap(k,:))); hold on;
+        legends{numel(legends)+1} = sprintf('%2.1fnm shift',refPeaks(k));
+    end
+    plot(spectralShiftCorrection.amplitudes, 'k--', 'LineWidth', 1.5);
+    legends{numel(legends)+1} = 'median shift (correction applied)';
+    legend(legends);
+    % Update the object's copy
+    obj.cal = cal;
+end
+
+function shiftedSpd = applySpectalShiftCorrection(theSpd, spectralShiftCorrection, spectralAxis)
+    xData = spectralAxis;
+    
+    % Upsample
+    dX = 0.01;
+    xDataHiRes = (xData(1):dX:xData(end));
+    
+    % Interpolate
+    theHiResSpd = interp1(xData, squeeze(theSpd), xDataHiRes, 'spline');
+    
+    % Shift
+    shiftBinsNum = sign(spectralShiftCorrection) * round(abs(spectralShiftCorrection)/dX);
+    shiftedSpd = circshift(theHiResSpd, shiftBinsNum, 2);
+    if (shiftBinsNum>=0)
+        shiftedSpd(1:shiftBinsNum) = 0;
+    else
+        shiftedSpd(end:end+shiftBinsNum+1) = 0;
+    end
+    
+    % back to original sampling
+    shiftedSpd = interp1(xDataHiRes, shiftedSpd, xData);
+end
+
+function [spectralShifts, refPeaks] = computeSpectralShifts(theSPD, theReferenceSPD, spectralAxis)
+    % Peaks of the comb function
+    combPeaks = [480 540 596 652]+10; 
+    
+    paramNames = {...
+        'offset (mWatts)', ...
+        'gain (mWatts)', ...
+        'peak (nm)', ...
+        'left side sigma (nm)', ...
+        'right side sigma (nm)', ...
+        'exponent'};
+    
+    % Fit each of the combPeaks separately
+    for peakIndex = 1:numel(combPeaks)
+        
+        % nominal peak
+        peak = combPeaks(peakIndex);
+        
+        % Find exact peak
+        dataIndicesToFit = sort(find(abs(spectralAxis - peak) <= 15));
+        [maxComb,idx] = max(theReferenceSPD(dataIndicesToFit));
+        peak = spectralAxis(dataIndicesToFit(idx));
+        refPeaks(peakIndex) = peak;
+        
+        % Select spectral region to fit
+        dataIndicesToFit = sort(find(abs(spectralAxis - peak) <= 15));
+        dataIndicesToFit = dataIndicesToFit(find(theReferenceSPD(dataIndicesToFit) > 0.1*maxComb));
+        
+        xData = spectralAxis(dataIndicesToFit);
+        xDataHiRes = (xData(1):0.1:xData(end))';
+        
+        initialParams    = [0   5  peak     6.28   6.28  2.0];
+        paramLowerBounds = [0   0  peak-20  1.00   1.00  1.5]; 
+        paramUpperBounds = [0  10  peak+20 10.00  10.00  4.0];
+        
+        % Fit the reference SPD peak
+        spdData = 1000*theReferenceSPD(dataIndicesToFit);  % in milliWatts
+        fitParams = fitGaussianToData(xData, spdData, initialParams, paramLowerBounds, paramUpperBounds);
+        refPeak(peakIndex) = fitParams(3);
+        
+        % Fit the current SPD peak
+        spdData = 1000*theSPD(dataIndicesToFit);  % in milliWatts
+        fitParams = fitGaussianToData(xData, spdData, initialParams, paramLowerBounds, paramUpperBounds);
+        currentPeak(peakIndex) = fitParams(3);
+        
+        spectralShifts(peakIndex) = currentPeak(peakIndex) - refPeak(peakIndex);
+    end % peakIndex
+
+end
+
+
+function generateDriftCorrectedStateMeasurementPlots(obj)
+
+    cal = obj.cal;
+    spectralAxis = SToWls(cal.describe.S);
+    cmap = 0.7*jet(size(cal.raw.spectralShiftsMeas.measSpd,2));
     
     spectralLims = [spectralAxis(1) spectralAxis(end)];
     spectralLims = [450 700];
@@ -310,7 +421,7 @@ function generateDriftCorrectedStateMeasurementPlots(obj)
             
 end
 
-function generateScalingFactorPlots(obj)
+function generateScalingFactorPlots(obj, spectralShiftCorrection)
 
     cal = obj.cal;
     spectralAxis = SToWls(cal.describe.S);
@@ -337,15 +448,46 @@ function generateScalingFactorPlots(obj)
     ylabel('Drift correction', 'FontSize', 16, 'FontWeight', 'bold');
 
     % Also generate a figure showing the power and spectral stability over time
-    figure(2); clf; hold on;
-    diffSpectraInMilliWatts = 1000*bsxfun(@minus, cal.raw.spectralShiftsMeas.measSpd, cal.raw.spectralShiftsMeas.measSpd(:,1));
+    figure(2); clf; 
+    subplot(1,2,1);
+    hold on;
     legends = {};
+    referenceSpd = cal.raw.spectralShiftsMeas.measSpd(:,1);
+    diffSpectraInMilliWatts = 1000*bsxfun(@minus, cal.raw.spectralShiftsMeas.measSpd, referenceSpd);
+    Ylim = max(abs(diffSpectraInMilliWatts(:)))*[-1 1];
     for stateMeasIndex = 1:size(cal.raw.spectralShiftsMeas.measSpd,2)
         plot(spectralAxis, diffSpectraInMilliWatts (:,stateMeasIndex), 'k-', 'Color', cmap(stateMeasIndex,:), 'LineWidth', 1.5);
         legends{numel(legends)+1} = sprintf('t = %2.2f mins', (cal.raw.spectralShiftsMeas.t(stateMeasIndex) - cal.raw.spectralShiftsMeas.t(1))/60);
     end
+    set(gca, 'YLim', Ylim);
+    ylabel('raw spd - reference spd');
+    title('raw data');
     hL = legend(legends);
     set(hL, 'Orientation', 'Vertical', 'Location', 'WestOutside', 'FontSize', 12)
+    
+    subplot(1,2,2);
+    hold on;
+    for stateMeasIndex = 1:size(cal.raw.spectralShiftsMeas.measSpd,2)-1
+        
+        % Find closest state measurement index
+        theMeasurementTime = cal.raw.spectralShiftsMeas.t(:, stateMeasIndex);
+        [~,closestStateMeasIndex] = min(abs(spectralShiftCorrection.times - theMeasurementTime));
+        [closestStateMeasIndex stateMeasIndex spectralShiftCorrection.amplitudes(closestStateMeasIndex)]
+        % Shift according to that index
+ 
+        spectralShiftCorrectedSpd = applySpectalShiftCorrection(cal.driftCorrected.spectralShiftsMeas.measSpd(:, stateMeasIndex), ...
+            spectralShiftCorrection.amplitudes(closestStateMeasIndex), spectralAxis);
+        
+        diffSpectraInMilliWatts = 1000*(spectralShiftCorrectedSpd - referenceSpd);
+        plot(spectralAxis, diffSpectraInMilliWatts, 'k-', 'Color', cmap(stateMeasIndex,:), 'LineWidth', 1.5);
+        legends{numel(legends)+1} = sprintf('t = %2.2f mins', (cal.raw.spectralShiftsMeas.t(stateMeasIndex) - cal.raw.spectralShiftsMeas.t(1))/60);
+    end
+    ylabel('spectral shift corrected spd - reference spd');
+    title('spectral shift corrected data');
+    set(gca, 'YLim', Ylim);
+    hL = legend(legends);
+    set(hL, 'Orientation', 'Vertical', 'Location', 'WestOutside', 'FontSize', 12)
+    
     drawnow;
 end
 
