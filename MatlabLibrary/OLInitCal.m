@@ -47,10 +47,12 @@ function cal = OLInitCal(calFileName, varargin)
 %              Have inline function returnScaleFactor return 1 if
 %                cal.describe.correctForDrift is false, and then get rid of
 %                all the other conditionals on this variable.
-% 8/14/16 npc  Added piecewise linear drift correction in cases where the
-%              cal file contains state tracking data (i.e., measured via
+% 8/14/16 npc  Added piecewise linear drift correction for calfiles that
+%              contain state tracking data (i.e., measured via
 %              OLCalibrateWithStateTrackingOOC.m)
-
+% 8/22/16 npc  Added spectral shift correction for for calfiles that
+%              contain state tracking data (i.e., measured via
+%              OLCalibrateWithStateTrackingOOC.m)
 
     % Check for the number of arguments.
     error(nargchk(1, Inf, nargin));
