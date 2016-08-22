@@ -1,3 +1,11 @@
+% OLApplySpectralShiftCorrection - Apply spectral shift correction to theSPD based on its time of measurement for the particular cal.
+%
+% Syntax:
+% spectralShiftCorrectedSPD = OLApplySpectralShiftCorrection(cal, theSpd, theTimeOfMeasurement)
+%
+% 8/22/16   npc     Wrote it.
+%
+
 function spectralShiftCorrectedSPD = OLApplySpectralShiftCorrection(cal, theSpd, theTimeOfMeasurement)
     
     [~,closestStateMeasIndex] = min(abs(cal.computed.spectralShiftCorrection.times - theTimeOfMeasurement));    
