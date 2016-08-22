@@ -50,5 +50,5 @@ config = [ ...
     ];
 
 %% Write the config to a JSON file.
-configPath = 'OneLight.json';
+configPath = 'OneLightConfig.json';
 tbWriteConfig(config, 'configPath', configPath);
