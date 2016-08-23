@@ -233,9 +233,11 @@ function cal = OLInitCal(calFileName, varargin)
         if (size(cal.raw.gamma.rad(k).meas,2) ~= cal.describe.nGammaLevels)
             error('Mismatch between specified number of gamma levels and size of measurement array');
         end    
+        
         for i = 1:cal.describe.nGammaLevels
             cal.computed.gammaData1{k}(i) = gammaMeas{k}(cal.describe.minWlIndex(k):cal.describe.maxWlIndex(k),end)\ ...
                 gammaMeas{k}(cal.describe.minWlIndex(k):cal.describe.maxWlIndex(k),i); %#ok<*AGROW>
+            
         end
     end
 
@@ -305,9 +307,14 @@ function spectralShiftCorrectedSPDs = computeSpectralShiftCorrectedSPDs(cal, the
     spectralShiftCorrectedSPDs = theSPDs;
     
     if (isfield(cal.describe, 'stateTracking'))
+        spectralAxis = SToWls(cal.describe.S);
         measurementsNum = size(theSPDs,2);
         for measIndex = 1:measurementsNum
-            spectralShiftCorrectedSPDs(:,measIndex) = OLApplySpectralShiftCorrection(cal, theSPDs(:, measIndex), theTimesOfMeasurements(1,measIndex));
+            
+            [~,closestStateMeasIndex] = min(abs(cal.computed.spectralShiftCorrection.times - theTimesOfMeasurements(1,measIndex)));    
+            spectralShiftCorrection = cal.computed.spectralShiftCorrection.amplitudes(closestStateMeasIndex);
+    
+            spectralShiftCorrectedSPDs(:,measIndex) = OLApplySpectralShiftCorrection(theSPDs(:, measIndex), spectralShiftCorrection, spectralAxis);
         end
     end
 end
