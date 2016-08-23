@@ -12,7 +12,7 @@ fullOnCal = cal.raw.fullOn(:, 1);
 fullOnNew = cals{end}.fullOnMeas.meas.pr650.spectrum;
 scaleFactor = fullOnNew \ fullOnCal;
 
-% Extract the relevants pectra
+% Extract the relevant spectra
 bgSpdPred = cals{end}.modulationBGMeas.predictedSpd-cal.computed.pr650MeanDark;
 bgSpdMeasUnscaled = cals{end}.modulationBGMeas.meas.pr650.spectrum-cals{end}.offMeas.meas.pr650.spectrum;
 modSpdPred = cals{end}.modulationMaxMeas.predictedSpd-cal.computed.pr650MeanDark;
@@ -160,25 +160,30 @@ modSettingsInferred = OLPrimaryToSettings(cal, modPrimaryInferred);
 modSettingsNominal = OLPrimaryToSettings(cal, modPrimaryNominal);
 axLim = [-0.01 1.01];
 
-for ii = 1:NGammaBands
-    theFig = figure;
-    plot(cal.computed.gammaInput, cal.computed.gammaTableAvg, '-k'); hold on;
-    plot(cal.computed.gammaInputRaw, cal.computed.gammaTableMeasuredBands(:, ii), 'ok', 'MarkerFaceColor', 'k');
-    h1 = plot(bgSettingsNominal(theGammaBands(ii)), bgPrimaryNominal(theGammaBands(ii)), 'sk', 'MarkerFaceColor', 'r');
-    h2 = plot(bgSettingsInferred(theGammaBands(ii)), bgPrimaryInferred(theGammaBands(ii)), 'ok', 'MarkerFaceColor', 'r');
-    h3 = plot(modSettingsNominal(theGammaBands(ii)), modPrimaryNominal(theGammaBands(ii)), 'sk', 'MarkerFaceColor', 'g');
-    h4 = plot(modSettingsInferred(theGammaBands(ii)), modPrimaryInferred(theGammaBands(ii)), 'ok', 'MarkerFaceColor', 'g');
-    title(['Primary ' num2str(theGammaBands(ii))]);
-    xlim(axLim); ylim(axLim);
-    xlabel('Input (settings)');
-    ylabel('Output (primary)');
-    legend([h1 h2 h3 h4], 'BG_{Nominal}', 'BG_{Inferred}', 'Mod_{Nominal}', 'Mod_{Inferred}', 'Location', 'NorthWest'); legend boxoff;
-    pbaspect([1 1 1]);
-    box off;
-    set(gca, 'TickDir', 'out');
-    set(theFig, 'PaperPosition', [0 0 4 4]);
-    set(theFig, 'PaperSize', [4 4]);
-    saveas(theFig, ['~/Desktop/gamma' num2str(theGammaBands(ii), '%02.f') '.png'], 'png');
-    close(theFig);
-end
-close all;
+% for ii = 1:NGammaBands
+%     theFig = figure;
+%     plot(cal.computed.gammaInput, cal.computed.gammaTableAvg, '-k'); hold on;
+%     plot(cal.computed.gammaInputRaw, cal.computed.gammaTableMeasuredBands(:, ii), 'ok', 'MarkerFaceColor', 'k');
+%     h1 = plot(bgSettingsNominal(theGammaBands(ii)), bgPrimaryNominal(theGammaBands(ii)), 'sk', 'MarkerFaceColor', 'r');
+%     h2 = plot(bgSettingsInferred(theGammaBands(ii)), bgPrimaryInferred(theGammaBands(ii)), 'ok', 'MarkerFaceColor', 'r');
+%     h3 = plot(modSettingsNominal(theGammaBands(ii)), modPrimaryNominal(theGammaBands(ii)), 'sk', 'MarkerFaceColor', 'g');
+%     h4 = plot(modSettingsInferred(theGammaBands(ii)), modPrimaryInferred(theGammaBands(ii)), 'ok', 'MarkerFaceColor', 'g');
+%     title(['Primary ' num2str(theGammaBands(ii))]);
+%     xlim(axLim); ylim(axLim);
+%     xlabel('Input (settings)');
+%     ylabel('Output (primary)');
+%     legend([h1 h2 h3 h4], 'BG_{Nominal}', 'BG_{Inferred}', 'Mod_{Nominal}', 'Mod_{Inferred}', 'Location', 'NorthWest'); legend boxoff;
+%     pbaspect([1 1 1]);
+%     box off;
+%     set(gca, 'TickDir', 'out');
+%     set(theFig, 'PaperPosition', [0 0 4 4]);
+%     set(theFig, 'PaperSize', [4 4]);
+%     saveas(theFig, ['~/Desktop/gamma' num2str(theGammaBands(ii), '%02.f') '.png'], 'png');
+%     close(theFig);
+% end
+% close all;
+
+%% Re-run the prediction after correcting wl shift
+bgSpd = OLPrimaryToSpd(cal, bgPrimaryNominal);
+
+cal_corr = OLInitCal(cal)
