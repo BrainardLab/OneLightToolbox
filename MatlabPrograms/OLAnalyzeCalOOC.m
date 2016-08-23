@@ -9,13 +9,11 @@ function OLAnalyzeCalOOC
     plotSampledSpectra = ~true;
     plotFullSpectra = ~true;
     plotGammaSPDs = ~true;
-    plotGammaTables = ~true;
+    plotGammaTables = true;
     plotPredictions = ~true;
-    plotAdditivityCheck = true;
+    plotAdditivityCheck = ~true;
     
-    if (plotAdditivityCheck)
-        calAnalyzer.plotAdditivityCheck();
-    end
+
     
     if (plotDriftAnalysis)
         calAnalyzer.generateDriftAnalysisPlots();
@@ -94,7 +92,11 @@ function OLAnalyzeCalOOC
         calAnalyzer.plotPredictions(spdType, 'wigglyMeas');
     end
     
+    if (plotAdditivityCheck)
+        calAnalyzer.plotAdditivityCheck();
+    end
     
+        
     if (calAnalyzer.cal.describe.specifiedBackground)
         fprintf('Specified background figure, how repeatable - NOT IMPLEMENTED YET\n');
     end
