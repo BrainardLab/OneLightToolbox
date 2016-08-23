@@ -184,6 +184,37 @@ axLim = [-0.01 1.01];
 % close all;
 
 %% Re-run the prediction after correcting wl shift
-bgSpd = OLPrimaryToSpd(cal, bgPrimaryNominal);
-
+% Correct cal
 cal_corr = OLInitCal(cal)
+
+% Get the predictions
+bgSpdOrig = OLPrimaryToSpd(cal, bgPrimaryNominal);
+bgSpdCorr = OLPrimaryToSpd(cal_corr, bgPrimaryNominal);
+bgSpdValid = cals{end}.modulationBGMeas.meas.pr650.spectrum;
+modSpdOrig = OLPrimaryToSpd(cal, modPrimaryNominal);
+modSpdCorr = OLPrimaryToSpd(cal_corr, modPrimaryNominal);
+modSpdValid = cals{end}.modulationMaxMeas.meas.pr650.spectrum;
+%%
+subplot(2, 1, 1);
+h1 = plot(wls, bgSpdOrig, '-b'); hold on
+h2 = plot(wls, bgSpdCorr, '-r');
+h3 = plot(wls, bgSpdValid, '-k');
+pbaspect([1 1 1]);
+xlabel('Wavelength [nm]'); ylabel('Power');
+set(gca, 'TickDir', 'out');
+legend([h1 h2 h3], 'Pred_{original}', 'Pred_{corrected}', 'Validated', 'Location', 'Northwest');
+legend boxoff;
+title('Background');
+
+subplot(2, 1, 2);
+plot(wls, modSpdOrig, '-b'); hold on
+plot(wls, modSpdCorr, '-r');
+plot(wls, modSpdValid, '-k');
+pbaspect([1 1 1]);
+xlabel('Wavelength [nm]'); ylabel('Power');
+set(gca, 'TickDir', 'out');
+title('Modulation');
+
+set(gcf, 'PaperPosition', [0 0 5 8]);
+set(gcf, 'PaperSize', [5 8]);
+saveas(gcf, '~/Desktop/OrigVsCorrCal.pdf', 'pdf');
