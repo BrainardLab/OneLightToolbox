@@ -40,7 +40,6 @@ spectraCompFig = figure;
 subplot(2, 3, 1);
 plot(wls, bgSpdPred, '-k'); hold on;
 plot(wls, bgSpdMeas, '-r');
-%plot(wls, bgSpdMeasUnscaled, '--r');
 xlabel('Wavelength [nm]'); ylabel('Power'); pbaspect([1 1 1]); set(gca, 'TickDir', 'out');
 xlim([380 780]);
 title('Spectra');
@@ -48,7 +47,6 @@ title('Spectra');
 subplot(2, 3, 2);
 plot(wls, bgSpdPred-bgSpdMeas, '-r'); hold on;
 plot([380 780], [0 0], '-k');
-%plot(wls, modSpdMeasUnscaled, '--r');
 xlabel('Wavelength [nm]'); ylabel('\DeltaPower (pred-meas)'); pbaspect([1 1 1]); set(gca, 'TickDir', 'out');
 xlim([380 780]);
 title('Spectral difference');
@@ -64,14 +62,12 @@ title('Predicted vs. measured');
 subplot(2, 3, 4);
 plot(wls, modSpdPred, '-k'); hold on;
 plot(wls, modSpdMeas, '-r');
-%plot(wls, modSpdMeasUnscaled, '--r');
 xlabel('Wavelength [nm]'); ylabel('Power'); pbaspect([1 1 1]); set(gca, 'TickDir', 'out');
 xlim([380 780]);
 
 subplot(2, 3, 5);
 plot(wls, modSpdPred-modSpdMeas, '-r'); hold on;
 plot([380 780], [0 0], '-k');
-%plot(wls, modSpdMeasUnscaled, '--r');
 xlabel('Wavelength [nm]'); ylabel('\DeltaPower (pred-meas)'); pbaspect([1 1 1]); set(gca, 'TickDir', 'out');
 xlim([380 780]);
 
@@ -82,8 +78,8 @@ xlim(axLim); ylim(axLim);
 xlabel('log predicted spectrum'); ylabel('log measured spectrum'); pbaspect([1 1 1]); set(gca, 'TickDir', 'out');
 plot(axLim, axLim, '-k');
 
-set(spectraCompFig, 'PaperPosition', [0 0 16 6]);
-set(spectraCompFig, 'PaperSize', [16 6]);
+set(spectraCompFig, 'PaperPosition', [0 0 12 6]);
+set(spectraCompFig, 'PaperSize', [12 6]);
 saveas(spectraCompFig, '~/Desktop/spectraComp.pdf', 'pdf');
 
 % Figure for inferred primaries
@@ -105,6 +101,7 @@ plot(theGammaBands, bgPrimaryNominal(theGammaBands)-bgPrimaryInferred(theGammaBa
 xlim([0 NPrimaries+1]);
 xlabel('Primary'); ylabel('\DeltaWeight (meas-inferred)');
 pbaspect([1 1 1]); set(gca, 'TickDir', 'out');
+title('Difference weights');
 
 subplot(2, 4, 3);
 plot(wls, bgSpdMeas, '-k'); hold on;
@@ -154,28 +151,34 @@ set(primaryWeightsFig, 'PaperPosition', [0 0 16 6]);
 set(primaryWeightsFig, 'PaperSize', [16 6]);
 saveas(primaryWeightsFig, '~/Desktop/inferredWeight.pdf', 'pdf');
 
-%%
-% % Turn primaries into settings
-% bgSettingsInferred = OLPrimaryToSettings(cal, bgPrimaryInferred);
-% bgSettingsNominal = OLPrimaryToSettings(cal, bgPrimaryNominal);
-% axLim = [-0.01 1.01];
-% 
-% for ii = 1:NGammaBands
-%     theFig = figure;
-%     plot(cal.computed.gammaInput, cal.computed.gammaTableAvg, '-k'); hold on;
-%     plot(cal.computed.gammaInputRaw, cal.computed.gammaTableMeasuredBands(:, ii), 'ok', 'MarkerFaceColor', 'k');
-%     h1 = plot(bgSettingsNominal(theGammaBands(ii)), bgPrimaryNominal(theGammaBands(ii)), 'sk', 'MarkerFaceColor', 'r');
-%     h2 = plot(bgSettingsInferred(theGammaBands(ii)), bgPrimaryInferred(theGammaBands(ii)), 'ok', 'MarkerFaceColor', 'r');
-%     title(['Primary ' num2str(theGammaBands(ii))]);
-%     xlim(axLim); ylim(axLim);
-%     xlabel('Input (settings)');
-%     ylabel('Output (primary)');
-%     legend([h1 h2], 'Nominal', 'Inferred', 'Location', 'NorthWest'); legend boxoff;
-%     pbaspect([1 1 1]);
-%     box off;
-%     set(gca, 'TickDir', 'out');
-%     set(theFig, 'PaperPosition', [0 0 4 4]);
-%     set(theFig, 'PaperSize', [4 4]);
-%     saveas(theFig, ['~/Desktop/gamma' num2str(theGammaBands(ii), '%02.f') '.png'], 'png');
-%     close(theFig);
-% end
+
+%
+% Turn primaries into settings
+bgSettingsInferred = OLPrimaryToSettings(cal, bgPrimaryInferred);
+bgSettingsNominal = OLPrimaryToSettings(cal, bgPrimaryNominal);
+modSettingsInferred = OLPrimaryToSettings(cal, modPrimaryInferred);
+modSettingsNominal = OLPrimaryToSettings(cal, modPrimaryNominal);
+axLim = [-0.01 1.01];
+
+for ii = 1:NGammaBands
+    theFig = figure;
+    plot(cal.computed.gammaInput, cal.computed.gammaTableAvg, '-k'); hold on;
+    plot(cal.computed.gammaInputRaw, cal.computed.gammaTableMeasuredBands(:, ii), 'ok', 'MarkerFaceColor', 'k');
+    h1 = plot(bgSettingsNominal(theGammaBands(ii)), bgPrimaryNominal(theGammaBands(ii)), 'sk', 'MarkerFaceColor', 'r');
+    h2 = plot(bgSettingsInferred(theGammaBands(ii)), bgPrimaryInferred(theGammaBands(ii)), 'ok', 'MarkerFaceColor', 'r');
+    h3 = plot(modSettingsNominal(theGammaBands(ii)), modPrimaryNominal(theGammaBands(ii)), 'sk', 'MarkerFaceColor', 'g');
+    h4 = plot(modSettingsInferred(theGammaBands(ii)), modPrimaryInferred(theGammaBands(ii)), 'ok', 'MarkerFaceColor', 'g');
+    title(['Primary ' num2str(theGammaBands(ii))]);
+    xlim(axLim); ylim(axLim);
+    xlabel('Input (settings)');
+    ylabel('Output (primary)');
+    legend([h1 h2 h3 h4], 'BG_{Nominal}', 'BG_{Inferred}', 'Mod_{Nominal}', 'Mod_{Inferred}', 'Location', 'NorthWest'); legend boxoff;
+    pbaspect([1 1 1]);
+    box off;
+    set(gca, 'TickDir', 'out');
+    set(theFig, 'PaperPosition', [0 0 4 4]);
+    set(theFig, 'PaperSize', [4 4]);
+    saveas(theFig, ['~/Desktop/gamma' num2str(theGammaBands(ii), '%02.f') '.png'], 'png');
+    close(theFig);
+end
+close all;
