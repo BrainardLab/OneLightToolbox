@@ -4,16 +4,22 @@ function OLAnalyzeCalOOC
         'refitGammaTablesUsingLinearInterpolation', false, ...
         'forceOLInitCal', true);
     
-    calAnalyzer.generateDriftAnalysisPlots();
+    plotDriftAnalysis = ~true;
+    plotCompositeMeasurents = ~true;
+    plotSampledSpectra = ~true;
+    plotFullSpectra = ~true;
+    plotGammaSPDs = ~true;
+    plotGammaTables = ~true;
+    plotPredictions = ~true;
+    plotAdditivityCheck = true;
     
+    if (plotAdditivityCheck)
+        calAnalyzer.plotAdditivityCheck();
+    end
     
-    plotCompositeMeasurents = true;
-    plotSampledSpectra = true;
-    plotFullSpectra = true;
-    plotGammaSPDs = true;
-    plotGammaTables = true;
-    plotPredictions = true;
-    
+    if (plotDriftAnalysis)
+        calAnalyzer.generateDriftAnalysisPlots();
+    end
     
     if (plotCompositeMeasurents)
         % Plot dark, half-on, and full-on raw measurements
@@ -21,9 +27,14 @@ function OLAnalyzeCalOOC
         calAnalyzer.plotSPD(spdType, 'darkMeas'); 
         calAnalyzer.plotSPD(spdType, 'halfOnMeas');
         calAnalyzer.plotSPD(spdType, 'fullOn');
+        calAnalyzer.plotSPD(spdType, 'wigglyMeas');
+        
+        spdType = 'computed';
+        calAnalyzer.plotSPD(spdType, 'halfOnMeas');
+        calAnalyzer.plotSPD(spdType, 'fullOn');
+        calAnalyzer.plotSPD(spdType, 'wigglyMeas');
     end
-    pause
-    
+        
     if (plotSampledSpectra)
         % Bands for which to plot spectral measurements
         nBandsToPlot = 6;
@@ -40,7 +51,7 @@ function OLAnalyzeCalOOC
             calAnalyzer.plotSPD(spdType, 'effectiveBgMeas', 'bandIndicesToPlot', whichBandIndicesToPlot);
         end
     end
-    pause
+    
     if (plotFullSpectra)
         % Full set of spectral measurements
 %         for bandIndex = 1:calAnalyzer.cal.describe.numWavelengthBands
@@ -54,21 +65,21 @@ function OLAnalyzeCalOOC
         spdType = 'raw';
         calAnalyzer.plotSPD(spdType, 'lightMeas', 'bandIndicesToPlot', []);
     end
-    pause
+    
     
     if (plotGammaSPDs)
         % SPDs at different gamma values
         gammaSPDType = 'raw';
         calAnalyzer.plotGammaSPD(gammaSPDType, 'rad');
     end
-    pause
+    
     
     if (plotGammaTables)
         % Two views of the measured and fitted gamma tables
         gammaType = 'computed';
         calAnalyzer.plotGamma(gammaType);
     end
-    pause
+    
     
     if (plotPredictions)
         spdType = 'raw';
@@ -76,8 +87,13 @@ function OLAnalyzeCalOOC
         calAnalyzer.plotPredictions(spdType, 'halfOnMeas');
         calAnalyzer.plotPredictions(spdType, 'fullOn');
         calAnalyzer.plotPredictions(spdType, 'wigglyMeas');
+        
+        spdType = 'computed';
+        calAnalyzer.plotPredictions(spdType, 'halfOnMeas');
+        calAnalyzer.plotPredictions(spdType, 'fullOn');
+        calAnalyzer.plotPredictions(spdType, 'wigglyMeas');
     end
-    pause
+    
     
     if (calAnalyzer.cal.describe.specifiedBackground)
         fprintf('Specified background figure, how repeatable - NOT IMPLEMENTED YET\n');
@@ -85,7 +101,7 @@ function OLAnalyzeCalOOC
 
     % Ask if the user would like to save the figures.
     commandwindow;
-    if GetWithDefault('Save the figures?', 1)
+    if GetWithDefault('Save the figures?', 0)
         fileFormat = GetWithDefault('File format (png or pdf):', 'png');
         calAnalyzer.exportFigs(fileFormat);
     end

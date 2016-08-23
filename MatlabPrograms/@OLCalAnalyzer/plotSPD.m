@@ -27,14 +27,24 @@ function plotSPD(obj,varargin)
             error('\nDid not find field ''cal.raw.%s''. Nothing plotted for this query.\n', spdName);
         else
             % Extract the desired spd data
-            spd = eval(sprintf('obj.cal.raw.%s', spdName));
+            if (strcmp(spdName, 'wigglyMeas'))
+                spd = eval(sprintf('obj.cal.raw.%s.measSpd', spdName));
+            else
+                spd = eval(sprintf('obj.cal.raw.%s', spdName));
+            end
+            size(spd)
         end
     elseif strcmp(spdType, 'computed')
         if (~isfield(obj.cal.computed, spdName))
             error('\nDid not find field ''cal.computed.%s''. Nothing plotted for this query.\n', spdName);
         else
             % Extract the desired spd data
-            spd = eval(sprintf('obj.cal.computed.%s', spdName));
+            if (strcmp(spdName, 'wigglyMeas'))
+                spd = eval(sprintf('obj.cal.computed.%s.measSpd', spdName));
+            else
+                spd = eval(sprintf('obj.cal.computed.%s', spdName));
+            end
+            size(spd)
         end
     end
     
@@ -51,11 +61,11 @@ function plotSPD(obj,varargin)
         figurePrefix = sprintf('%s_%s_select_bands', spdType, spdName);
     end
     obj.figsList.(figurePrefix) = hFig;
-    set(hFig, 'Name', figurePrefix, 'Color', [1 1 1], 'Position', [10 1000 530 520]);
-    subplot('Position', [0.08 0.08 0.91 0.91]);
+    set(hFig, 'Name', figurePrefix, 'Color', [1 1 1], 'Position', [10 1000 1000 520]);
+    
 
     % Plot
-    if ( (strcmp(spdName, 'darkMeas')) || (strcmp(spdName, 'halfOnMeas')) || (strcmp(spdName, 'fullOn')) )
+    if ( (strcmp(spdName, 'darkMeas')) || (strcmp(spdName, 'wigglyMeas')) || (strcmp(spdName, 'halfOnMeas')) || (strcmp(spdName, 'fullOn')) )
         switch spdName 
             case 'darkMeas'  
                 preLum = obj.summaryData.darkLumPre;
@@ -66,23 +76,41 @@ function plotSPD(obj,varargin)
             case 'fullOn'
                 preLum = obj.summaryData.fullOnLumPre;
                 postLum  = obj.summaryData.fullOnLumPost;
+            case 'wigglyMeas' 
+                obj.summaryData
+                preLum = obj.summaryData.wigglyLumPre;
+                postLum  = obj.summaryData.wigglyLumPost;
         end
         
+        
+        % The ratios plot
+        subplot('Position', [0.53 0.08 0.45 0.91]);
+        plot(obj.waveAxis, spd(:,1) ./ spd(:,end), 'k-');
+        title(sprintf('%s %s', spdType, spdName));
+        box off
+        pbaspect([1 1 1])      
+        set(gca, 'XLim', [obj.waveAxis(1)-5 obj.waveAxis(end)+5], 'YLim', [0.3 3]);
+        set(gca, 'FontSize', 12);
+        xlabel('wavelength (nm)', 'FontSize', 14, 'FontWeight', 'bold');
+        ylabel('pre- : post-calibration spd ratio', 'FontSize', 14, 'FontWeight', 'bold');
+    
+        subplot('Position', [0.04 0.08 0.45 0.91]);
         plot(obj.waveAxis, spd(:,1), 'r-', 'LineWidth', 2.0);
         hold on;
-        plot(obj.waveAxis, spd(:,2), 'b-', 'LineWidth', 2.0);
-        
+        plot(obj.waveAxis, spd(:,end), 'b-', 'LineWidth', 2.0);
         % legend
         hL = legend(...
-            sprintf('%s pre-calibration  (lum: %2.2f cd/m2)',spdName, preLum), ...
-            sprintf('%s post-calibration (lum: %2.2f cd/m2)',spdName, postLum), ...
+            sprintf('%s pre-calibration, %s  (lum: %2.2f cd/m2)',spdType, spdName, preLum), ...
+            sprintf('%s post-calibration, %s (lum: %2.2f cd/m2)',spdType, spdName, postLum), ...
             'Location', 'NorthOutside');
+        
     else
+        subplot('Position', [0.04 0.08 0.45 0.91]);
         colors = jet(size(spd,2));
         hold on;
         for bandIter = 1:size(spd,2)
             if (~isempty(bandIndicesToPlot))
-                lineLegend = sprintf('band %02d (%s)',bandIndicesToPlot(bandIter), spdType);
+                lineLegend = sprintf('band %02d, %s',bandIndicesToPlot(bandIter), spdType);
             else
                 lineLegend = '';
             end

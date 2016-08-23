@@ -14,19 +14,16 @@ function plotPredictions(obj, varargin)
     spdName = p.spdName;
     
     % Validate spdType
-    validatestring(spdType, {'raw'});
+    validatestring(spdType, {'raw', 'computed'});
     
-    if (~isfield(obj.cal.raw, spdName))
-        error('\nDid not find field ''cal.raw.%s''. Nothing plotted for this query.\n', spdName);
-    end
     
     % Extract the desired spd data
     if (strcmp(spdName, 'wigglyMeas'))
-        measuredSPD = eval(sprintf('obj.cal.raw.%s.measSpd', spdName));
+        measuredSPD = eval(sprintf('obj.cal.%s.%s.measSpd', spdType,spdName));
         settingsUsedPreCalibration = obj.cal.raw.wigglyMeas.settings(:,1);
         settingsUsedPostCalibration = obj.cal.raw.wigglyMeas.settings(:,2);
     else
-        measuredSPD = eval(sprintf('obj.cal.raw.%s', spdName));
+        measuredSPD = eval(sprintf('obj.cal.%s.%s', spdType,spdName));
         if (strcmp(spdName, 'fullOn'))
             settingsUsedPreCalibration = ones(obj.cal.describe.numWavelengthBands,1);
             settingsUsedPostCalibration = settingsUsedPreCalibration;
@@ -117,16 +114,17 @@ function plotPredictions(obj, varargin)
                 
     pbaspect([1 1 1]); 
     box off
+    grid on
     set(gca, 'FontSize', 16);
     xlabel('wavelength (nm)', 'FontSize', 20, 'FontWeight', 'bold'); 
-    ylabel('power (W/sr/m2/nm)', 'FontSize', 20, 'FontWeight', 'bold');
+    ylabel('power (mW/sr/m2/nm)', 'FontSize', 20, 'FontWeight', 'bold');
     title(sprintf('SPD: ''%s''', spdName));
     
     
     subplot('position', subplotPosVectors(1,2).v);
-    plot(obj.waveAxis, 1000*(predictedSPD-measuredSPDpreCalibration), 'r-', 'LineWidth', 4.0, 'Color', [1.0 0.4 0.4 1], 'DisplayName', 'predicted-preCalibration');
+    plot(obj.waveAxis, 1000*(predictedSPD-measuredSPDpreCalibration), 'r-', 'LineWidth', 4.0, 'Color', [1.0 0.4 0.4 1], 'DisplayName', 'predicted-measured(preCalibration)');
     hold on;
-    plot(obj.waveAxis, 1000*(predictedSPD-measuredSPDpostCalibration), 'b-', 'LineWidth', 4.0, 'Color', [0.4 0.4 1.0 1], 'DisplayName', 'predicted-postCalibration');
+    plot(obj.waveAxis, 1000*(predictedSPD-measuredSPDpostCalibration), 'b-', 'LineWidth', 4.0, 'Color', [0.4 0.4 1.0 1], 'DisplayName', 'predicted-measured(postCalibration)');
     hold off;
     set(gca, 'YLim', 1e-1*[-25 25]);
     
@@ -140,8 +138,8 @@ function plotPredictions(obj, varargin)
     grid on
     set(gca, 'FontSize', 16);
     xlabel('wavelength (nm)', 'FontSize', 20, 'FontWeight', 'bold'); 
-    ylabel('diff power (W/sr/m2/nm)', 'FontSize', 20, 'FontWeight', 'bold');
-    title(sprintf('SPD: ''%s''', spdName));
+    ylabel('diff power (mW/sr/m2/nm)', 'FontSize', 20, 'FontWeight', 'bold');
+    title(sprintf('SPD: ''%s, %s''', spdName, spdType));
     drawnow;
     
 end

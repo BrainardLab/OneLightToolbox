@@ -314,8 +314,8 @@ try
     
     if describe.WigglyMeas
         fprintf('- Wiggly measurement \n');
-        theWigglySettings = 0.1*ones(cal.describe.numWavelengthBands,1);
-        theWigglySettings(2:8:end) = 0.8;
+        theWigglySettings = zeros(cal.describe.numWavelengthBands, 1);
+        theWigglySettings(2:10:end) = 1.0;
         [starts,stops] = OLSettingsToStartsStops(cal,theWigglySettings);
         results.wigglyMeas.meas = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
         results.wigglyMeas.starts = starts;
