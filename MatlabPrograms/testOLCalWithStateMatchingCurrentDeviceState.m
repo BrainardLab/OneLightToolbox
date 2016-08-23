@@ -1,3 +1,6 @@
+cal.computed.dailyAdjustment.date
+cal.computed.dailyAdjustment.scaleFactor
+cal.computed.dailyAdjustment.spectralShiftCorrection
 function testOLCalWithStateMatchingCurrestDeviceState
 
     close all
@@ -10,7 +13,7 @@ function testOLCalWithStateMatchingCurrestDeviceState
     
     % Adjust the calibration file according to today's fullONSPD and combSPD
     todaysMeas = getTodaysMeasurements();
-    calToday = OLCalWithStateMatchingCurrestDeviceState(cal, todaysMeas.fullOnSPD, todaysMeas.combSPD);
+    calToday = OLCalWithStateMatchingCurrentDeviceState(cal, todaysMeas.fullOnSPD, todaysMeas.combSPD);
     
     figure(1); clf;
     subplot(1,2,1);

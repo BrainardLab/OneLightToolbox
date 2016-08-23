@@ -1,7 +1,7 @@
-function cal = OLCalWithStateMatchingCurrestDeviceState(cal0, referenceFullONSPD, referenceCombSPD)
-% OLCalWithStateMatchingCurrestDeviceState - Create a new cal in which the computed quantities match the power and spectral shift state as derived from the passed referenceFullONSPD and referenceCombSPD.
+function cal = OLCalWithStateMatchingCurrentDeviceState(cal0, referenceFullONSPD, referenceCombSPD)
+% OLCalWithStateMatchingCurrentDeviceState - Create a new cal in which the computed quantities match the power and spectral shift state as derived from the passed referenceFullONSPD and referenceCombSPD.
 % Syntax:
-% cal = OLCalWithStateMatchingCurrestDeviceState(cal0, referenceFullONSPD, referenceCombSPD);
+% cal = OLCalWithStateMatchingCurrentDeviceState(cal0, referenceFullONSPD, referenceCombSPD);
 %
 % 8/23/16  npc      Wrote it.
 %
