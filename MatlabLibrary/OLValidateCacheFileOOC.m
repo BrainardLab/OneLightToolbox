@@ -286,6 +286,7 @@ try
     
     % Take reference measurements
     if describe.FullOnMeas
+        fprintf('- Fukl-on measurement \n');
         [starts,stops] = OLSettingsToStartsStops(cal,1*ones(cal.describe.numWavelengthBands, 1));
         results.fullOnMeas.meas = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
         results.fullOnMeas.starts = starts;
@@ -294,6 +295,7 @@ try
     end
     
     if describe.HalfOnMeas
+        fprintf('- Half-on measurement \n');
         [starts,stops] = OLSettingsToStartsStops(cal,0.5*ones(cal.describe.numWavelengthBands, 1));
         results.halfOnMeas.meas = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
         results.halfOnMeas.starts = starts;
@@ -302,6 +304,7 @@ try
     end
     
     if describe.DarkMeas
+        fprintf('- Dark measurement \n');
         [starts,stops] = OLSettingsToStartsStops(cal,0*ones(cal.describe.numWavelengthBands, 1));
         results.offMeas.meas = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
         results.offMeas.starts = starts;
