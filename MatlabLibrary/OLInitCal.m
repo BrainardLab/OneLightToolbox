@@ -47,10 +47,12 @@ function cal = OLInitCal(calFileName, varargin)
 %              Have inline function returnScaleFactor return 1 if
 %                cal.describe.correctForDrift is false, and then get rid of
 %                all the other conditionals on this variable.
-% 8/14/16 npc  Added piecewise linear drift correction in cases where the
-%              cal file contains state tracking data (i.e., measured via
+% 8/14/16 npc  Added piecewise linear drift correction for calfiles that
+%              contain state tracking data (i.e., measured via
 %              OLCalibrateWithStateTrackingOOC.m)
-
+% 8/22/16 npc  Added spectral shift correction for for calfiles that
+%              contain state tracking data (i.e., measured via
+%              OLCalibrateWithStateTrackingOOC.m)
 
     % Check for the number of arguments.
     error(nargchk(1, Inf, nargin));
@@ -107,7 +109,6 @@ function cal = OLInitCal(calFileName, varargin)
 
     % Figure out the scalar to correct for the device drift
     if cal.describe.correctLinearDrift
-
         wavelengthIndices = find(cal.raw.fullOn(:,1) > 0.2*max(cal.raw.fullOn(:)));
         fullOn0 = cal.raw.fullOn(wavelengthIndices,1);
         fullOn1 = cal.raw.fullOn(wavelengthIndices,end);
@@ -119,22 +120,32 @@ function cal = OLInitCal(calFileName, varargin)
         
         % Check whether we tracked system state (i.e., calibrating via OLCalibrateWithTrackingOOC
         if (isfield(cal.describe, 'stateTracking'))
-
             % Over-write original scale factor with one based on tracking data
             cal.computed.returnScaleFactorOLD = returnScaleFactor;
             returnScaleFactor = @(t) piecewiseLinearScaleFactorFromStateTrackingData(t);
             cal.computed.returnScaleFactor = returnScaleFactor;
+            % Compute spectral shift corrections from tracking data
+            cal.computed.spectralShiftCorrection = OLComputeSpectralShiftCorrectionsFromStateMeasurements(cal);
         end %  if (isfield(cal.describe, 'stateTracking'))
     end  % if cal.describe.correctLinearDrift
 
+    
     % Get data
     cal.computed.D = cal.raw.cols;
+    
     cal.computed.pr650M = bsxfun(@times, cal.raw.lightMeas, returnScaleFactor(cal.raw.t.lightMeas));
+    cal.computed.pr650M = computeSpectralShiftCorrectedSPDs(cal, cal.computed.pr650M, cal.raw.t.lightMeas);
+    
     cal.computed.pr650Md = bsxfun(@times, cal.raw.darkMeas, returnScaleFactor(cal.raw.t.darkMeas));
+    cal.computed.pr650Md = computeSpectralShiftCorrectedSPDs(cal, cal.computed.pr650Md, cal.raw.t.darkMeas);
+    
     if (cal.describe.specifiedBackground)
         cal.computed.pr650MSpecifiedBg = bsxfun(@times, cal.raw.specifiedBackgroundMeas, returnScaleFactor(cal.raw.t.specifiedBackgroundMeas));
+        cal.computed.pr650MSpecifiedBg = computeSpectralShiftCorrectedSPDs(cal, cal.computed.pr650MSpecifiedBg, cal.raw.t.specifiedBackgroundMeas);
+        
         cal.computed.pr650MeanSpecifiedBackground = mean(cal.computed.pr650MSpecifiedBg,2);
         cal.computed.pr650MEffectiveBg = bsxfun(@times, cal.raw.effectiveBgMeas, returnScaleFactor(cal.raw.t.effectiveBgMeas));
+        cal.computed.pr650MEffectiveBg = computeSpectralShiftCorrectedSPDs(cal, cal.computed.pr650MEffectiveBg, cal.raw.t.effectiveBgMeas);
     end
 
     % Subtract appropriate measurement to get the incremental spectrum for each
@@ -193,9 +204,12 @@ function cal = OLInitCal(calFileName, varargin)
         % result of this makes the two sets of measurements equivalent going
         % onwards.
         gammaTemp = bsxfun(@times, cal.raw.gamma.rad(k).meas, returnScaleFactor(cal.raw.t.gamma.rad(k).meas));
+        gammaTemp = computeSpectralShiftCorrectedSPDs(cal, gammaTemp, cal.raw.t.gamma.rad(k).meas);
+        
         if (cal.describe.specifiedBackground)
             gammaEffectiveBgTemp = ...
                 bsxfun(@times, cal.raw.gamma.rad(k).effectiveBgMeas, returnScaleFactor(cal.raw.t.gamma.rad(k).effectiveBgMeas));
+            gammaEffectiveBgTemp = computeSpectralShiftCorrectedSPDs(cal, gammaEffectiveBgTemp, cal.raw.t.gamma.rad(k).effectiveBgMeas);
         end
         if (cal.describe.specifiedBackground)
             gammaMeas{k} = gammaTemp - gammaEffectiveBgTemp(:,ones(1,size(gammaTemp,2)));
@@ -219,9 +233,11 @@ function cal = OLInitCal(calFileName, varargin)
         if (size(cal.raw.gamma.rad(k).meas,2) ~= cal.describe.nGammaLevels)
             error('Mismatch between specified number of gamma levels and size of measurement array');
         end    
+        
         for i = 1:cal.describe.nGammaLevels
             cal.computed.gammaData1{k}(i) = gammaMeas{k}(cal.describe.minWlIndex(k):cal.describe.maxWlIndex(k),end)\ ...
                 gammaMeas{k}(cal.describe.minWlIndex(k):cal.describe.maxWlIndex(k),i); %#ok<*AGROW>
+            
         end
     end
 
@@ -246,11 +262,21 @@ function cal = OLInitCal(calFileName, varargin)
     % Average gamma measurements over bands
     cal.computed.gammaTableAvg = median(cal.computed.gammaTableMeasuredBandsFit,2);
 
+    % Compute drift corrected fullON, halfON and wiggly
+    cal.computed.wigglyMeas.measSpd = bsxfun(@times, cal.raw.wigglyMeas.measSpd, returnScaleFactor(cal.raw.t.wigglyMeas.t));
+    cal.computed.wigglyMeas.measSpd = computeSpectralShiftCorrectedSPDs(cal, cal.computed.wigglyMeas.measSpd, cal.raw.t.wigglyMeas.t);
+    
+    cal.computed.halfOnMeas = bsxfun(@times, cal.raw.halfOnMeas, returnScaleFactor(cal.raw.t.halfOnMeas));
+    cal.computed.halfOnMeas = computeSpectralShiftCorrectedSPDs(cal, cal.computed.halfOnMeas, cal.raw.t.halfOnMeas);
+    
+    cal.computed.fullOn = bsxfun(@times, cal.raw.fullOn, returnScaleFactor(cal.raw.t.fullOn));
+    cal.computed.fullOn = computeSpectralShiftCorrectedSPDs(cal, cal.computed.fullOn, cal.raw.t.fullOn);
+    
+    
     % Nested function computing scale factor based on state tracking measurements
     function scaleFactor = piecewiseLinearScaleFactorFromStateTrackingData(tInterp)
         
         wavelengthIndices = find(cal.raw.fullOn(:,1) > 0.2*max(cal.raw.fullOn(:)));
-        
         debugByTakingOnlyFirstAndLastPoints = false;
         if (debugByTakingOnlyFirstAndLastPoints)
             meas0 = cal.raw.fullOn(wavelengthIndices,1);  
@@ -275,4 +301,22 @@ function cal = OLInitCal(calFileName, varargin)
     end
 
 end
+
+function spectralShiftCorrectedSPDs = computeSpectralShiftCorrectedSPDs(cal, theSPDs, theTimesOfMeasurements)
+
+    spectralShiftCorrectedSPDs = theSPDs;
+    
+    if (isfield(cal.describe, 'stateTracking'))
+        spectralAxis = SToWls(cal.describe.S);
+        measurementsNum = size(theSPDs,2);
+        for measIndex = 1:measurementsNum
+            
+            [~,closestStateMeasIndex] = min(abs(cal.computed.spectralShiftCorrection.times - theTimesOfMeasurements(1,measIndex)));    
+            spectralShiftCorrection = cal.computed.spectralShiftCorrection.amplitudes(closestStateMeasIndex);
+    
+            spectralShiftCorrectedSPDs(:,measIndex) = OLApplySpectralShiftCorrection(theSPDs(:, measIndex), spectralShiftCorrection, spectralAxis);
+        end
+    end
+end
+
 
