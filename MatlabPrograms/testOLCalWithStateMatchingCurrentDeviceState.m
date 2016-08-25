@@ -1,6 +1,3 @@
-cal.computed.dailyAdjustment.date
-cal.computed.dailyAdjustment.scaleFactor
-cal.computed.dailyAdjustment.spectralShiftCorrection
 function testOLCalWithStateMatchingCurrestDeviceState
 
     close all
