@@ -4,13 +4,13 @@ function generateDriftAnalysisPlots(obj)
     if (isfield(cal.raw, 'spectralShiftsMeas'))
         computeDriftCorrectedStateMeasurements(obj)
         spectralShiftCorrection = computeSpectralShiftCorrectedStateMeasurements(obj);
-        pause
+  
         generateScalingFactorPlots(obj, spectralShiftCorrection);
-        pause
+  
         generateDriftCorrectedStateMeasurementPlots(obj);
-        pause
+       
         generateSpectralShiftPlots(obj);
-        pause
+        
     end
     
 end
@@ -253,7 +253,9 @@ function spectralShiftCorrection = computeSpectralShiftCorrectedStateMeasurement
         legends{numel(legends)+1} = sprintf('%2.1fnm shift',refPeaks(k));
     end
     plot(spectralShiftCorrection.amplitudes, 'k--', 'LineWidth', 1.5);
-    legends{numel(legends)+1} = 'median shift (correction applied)';
+    plot(spectralShiftCorrection.amplitudes, 'k-', 'LineWidth', 1.5);
+    legends{numel(legends)+1} = 'median shift';
+    legends{numel(legends)+1} = 'correction applied';
     legend(legends);
     % Update the object's copy
     obj.cal = cal;
