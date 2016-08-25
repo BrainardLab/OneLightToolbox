@@ -185,7 +185,9 @@ axLim = [-0.01 1.01];
 
 %% Re-run the prediction after correcting wl shift
 % Correct cal
-cal_corr = OLInitCal(cal)
+cal_copy = cal;
+cal_copy.describe.gammaFitType = 'linearinterpolation';
+cal_corr = OLInitCal(cal_copy);
 
 % Get the predictions
 bgSpdOrig = OLPrimaryToSpd(cal, bgPrimaryNominal);
