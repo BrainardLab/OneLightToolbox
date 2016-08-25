@@ -619,7 +619,7 @@ function cal = TakeGammaMeasurements(cal0, gammaBandIndex, ol, od, spectroRadiom
         [starts,stops] = OLSettingsToStartsStops(cal,theSettings); 
         measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
         cal.raw.gamma.rad(gammaBandIndex).effectiveBgMeas = measTemp.pr650.spectrum;
-        cal.raw.t.gamma.rad(gammaBandIndex).effectiveBgMeas(gammaBandIndex) = measTemp.pr650.time(1);
+        cal.raw.t.gamma.rad(gammaBandIndex).effectiveBgMeas = measTemp.pr650.time(1);
         if (meterToggle(2))
             cal.raw.gamma.omniDriver(gammaBandIndex).effectiveBgMeas = measTemp.omni.spectrum;
         end

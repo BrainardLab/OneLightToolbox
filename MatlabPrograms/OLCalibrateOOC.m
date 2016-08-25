@@ -519,7 +519,7 @@ try
                 [starts,stops] = OLSettingsToStartsStops(cal,cal.describe.specifiedBackgroundSettings);
                 measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
                 cal.raw.gamma.rad(i).effectiveBgMeas = measTemp.pr650.spectrum;
-                cal.raw.t.gamma.rad(i).effectiveBgMeas(i) = measTemp.pr650.time(1);
+                cal.raw.t.gamma.rad(i).effectiveBgMeas = measTemp.pr650.time(1);
                 if (meterToggle(2))
                     cal.raw.gamma.omniDriver(i).effectiveBgMeas = measTemp.omni.spectrum;
                 end
