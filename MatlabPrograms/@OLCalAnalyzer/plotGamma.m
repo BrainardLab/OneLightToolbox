@@ -246,7 +246,7 @@ function plotGamma(obj, varargin)
     
     % Plot ratios figures
     for gammaBandIter = 1: size(obj.cal.computed.gammaTableMeasuredBands,2)
-    
+ 
         hFig = figure; clf;
         figurePrefix = sprintf('%s_GammaScalarsBandNo%d', gammaType, gammaBandIndices(gammaBandIter));
         obj.figsList.(figurePrefix) = hFig;
@@ -262,52 +262,23 @@ function plotGamma(obj, varargin)
                    'bottomMargin',   0.03, ...
                    'topMargin',      0.02);
            
-        for gammaInputIter = 1:numel(gammaInRawValues)
 
+        for gammaInputIter = 1:numel(gammaInRawValues)
+    
             row = 1 + floor((gammaInputIter-1)/size(subplotPosVectors,2));
             col = 1 + mod((gammaInputIter-1),size(subplotPosVectors,2));
             subplot('position',subplotPosVectors(row,col).v);
 
-            gammaComputedScalar = obj.cal.computed.gammaTableMeasuredBands(gammaInputIter,gammaBandIter);
-
-            if (gammaInputIter == 1)
-                gammaOutAtThisLevel = obj.cal.computed.pr650MeanDark*0.0;
-            else
-                gammaOutAtThisLevel = squeeze(obj.cal.raw.gamma.rad(gammaBandIter).meas(:, gammaInputIter-1)) - obj.cal.computed.pr650MeanDark;
-                gammaOutAtThisLevel(gammaOutAtThisLevel<0) = 0;
-            end
-            gammaOutMax = squeeze(obj.cal.raw.gamma.rad(gammaBandIter).meas(:, end)) - obj.cal.computed.pr650MeanDark;
-            gammaOutMax(gammaOutMax<0) = 0;
-
-            ratiosAtIndividualWavelengths = gammaOutAtThisLevel * 0;
-            idx = find(gammaOutMax>0);
-            ratiosAtIndividualWavelengths(idx) = gammaOutAtThisLevel(idx) ./ gammaOutMax(idx);
-
-            if (max(gammaOutMax) > 0)
-                threshold = 10/100;
-                localUnispectralRatioWaveIndices = find(gammaOutMax/max(gammaOutMax)>threshold);
-                localUnispectralRatio = gammaOutMax(localUnispectralRatioWaveIndices) \ gammaOutAtThisLevel(localUnispectralRatioWaveIndices);
-                %localUnispectralRatio = mean(gammaOutAtThisLevel(localUnispectralRatioWaveIndices) ./ gammaOutMax(localUnispectralRatioWaveIndices));
-
-            else
-                localUnispectralRatioWaveIndices = [obj.waveAxis(1) obj.waveAxis(end)];
-                localUnispectralRatio = [0 0];
-            end
-
-            ratiosRange = gammaComputedScalar+[-0.2 0.2];
-            [obj.waveAxis(localUnispectralRatioWaveIndices(1)) obj.waveAxis(localUnispectralRatioWaveIndices(end)) localUnispectralRatio]
-            
-            ratiosAtIndividualWavelengths(ratiosAtIndividualWavelengths>ratiosRange(2)) = ratiosRange(2);
-            ratiosAtIndividualWavelengths(ratiosAtIndividualWavelengths<ratiosRange(1)) = ratiosRange(1);
-            plot([obj.waveAxis(1) obj.waveAxis(end)], gammaComputedScalar*[1 1], 'k-', 'LineWidth', 2.0);
+            plot([obj.waveAxis(1) obj.waveAxis(end)], obj.cal.computed.gammaTableMeasuredBands(gammaInputIter,gammaBandIter)*[1 1], 'r-', 'LineWidth', 2.0);
             hold on
-            plot([obj.waveAxis(localUnispectralRatioWaveIndices(1))-5 obj.waveAxis(localUnispectralRatioWaveIndices(end))+5], localUnispectralRatio*[1 1], 'g-', 'LineWidth', 2.0);
-            plot(obj.waveAxis(localUnispectralRatioWaveIndices), ratiosAtIndividualWavelengths(localUnispectralRatioWaveIndices), 'rs', 'MarkerFaceColor', [1 0 0], 'MarkerSize', 6, 'LineWidth', 1.0);
-            plot(obj.waveAxis, ratiosRange(1) + gammaOutMax/max(gammaOutMax), 'b-', 'LineWidth', 2.0);
+            [~, correspondingFittedGammaPointIter] = min(abs(gammaInRawValues(gammaInputIter) - obj.cal.computed.gammaInput));
+            plot([obj.waveAxis(1) obj.waveAxis(end)], obj.cal.computed.gammaTableMeasuredBandsFit(correspondingFittedGammaPointIter,gammaBandIter)*[1 1], 'b--', 'LineWidth', 2.0);
+            plot(obj.cal.computed.gammaRatios(gammaBandIter,gammaInputIter).wavelenths, obj.cal.computed.gammaRatios(gammaBandIter,gammaInputIter).ratios, 'ks-', 'LineWidth', 1.5);
+            plot(obj.waveAxis, obj.cal.computed.pr650M(:,gammaBandIndices(gammaBandIter))/max(squeeze(obj.cal.computed.pr650M(:,gammaBandIndices(gammaBandIter))))*0.2 + obj.cal.computed.gammaTableMeasuredBands(gammaInputIter,gammaBandIter)-0.1, 'b-', 'LineWidth', 1.5, 'Color', [0.3 0.3 0.3]);
             hold off
 
-            set(gca, 'XLim', [obj.waveAxis(1) obj.waveAxis(end)], 'YLim', ratiosRange);
-            hL = legend({'uni-spectral ratio', 'uni-spectral ratio (local))', 'wavelength-by-wavelength ratios'});
+            set(gca, 'XLim', [obj.waveAxis(1) obj.waveAxis(end)], 'YLim', obj.cal.computed.gammaTableMeasuredBands(gammaInputIter,gammaBandIter)+[-0.1 0.1]);
+            hL = legend({'uni-spectral ratio', 'uni-spectral ratio (fit)', 'wavelength-by-wavelength ratios'});
             title(sprintf('gamma in: %2.3f (band: %d)', gammaInRawValues(gammaInputIter), gammaBandIndices(gammaBandIter)));
         end
         drawnow

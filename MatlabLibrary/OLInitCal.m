@@ -235,10 +235,14 @@ function cal = OLInitCal(calFileName, varargin)
         end    
         
         for i = 1:cal.describe.nGammaLevels
-            cal.computed.gammaData1{k}(i) = gammaMeas{k}(cal.describe.minWlIndex(k):cal.describe.maxWlIndex(k),end)\ ...
-                gammaMeas{k}(cal.describe.minWlIndex(k):cal.describe.maxWlIndex(k),i); %#ok<*AGROW>
-            
+            wavelengthIndices = cal.describe.minWlIndex(k):cal.describe.maxWlIndex(k);
+            cal.computed.gammaData1{k}(i) = gammaMeas{k}(wavelengthIndices,end)\ ...
+                gammaMeas{k}(wavelengthIndices,i); %#ok<*AGROW>
+            cal.computed.gammaRatios(k,i+1).wavelenths = cal.computed.commonWls(wavelengthIndices);
+            cal.computed.gammaRatios(k,i+1).ratios = gammaMeas{k}(wavelengthIndices,i) ./ gammaMeas{k}(wavelengthIndices,end);
         end
+        cal.computed.gammaRatios(k,1).wavelenths = cal.computed.gammaRatios(k,2).wavelenths;
+        cal.computed.gammaRatios(k,1).ratios = 0*cal.computed.gammaRatios(k,2).ratios;
     end
 
     % Fit each indivdually measured gamma function to finely spaced real valued
