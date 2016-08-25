@@ -284,7 +284,7 @@ function plotGamma(obj, varargin)
             ratiosAtIndividualWavelengths(idx) = gammaOutAtThisLevel(idx) ./ gammaOutMax(idx);
 
             if (max(gammaOutMax) > 0)
-                threshold = 1/100;
+                threshold = 10/100;
                 localUnispectralRatioWaveIndices = find(gammaOutMax/max(gammaOutMax)>threshold);
                 localUnispectralRatio = gammaOutMax(localUnispectralRatioWaveIndices) \ gammaOutAtThisLevel(localUnispectralRatioWaveIndices);
                 %localUnispectralRatio = mean(gammaOutAtThisLevel(localUnispectralRatioWaveIndices) ./ gammaOutMax(localUnispectralRatioWaveIndices));
@@ -295,12 +295,13 @@ function plotGamma(obj, varargin)
             end
 
             ratiosRange = gammaComputedScalar+[-0.2 0.2];
-
+            [obj.waveAxis(localUnispectralRatioWaveIndices(1)) obj.waveAxis(localUnispectralRatioWaveIndices(end)) localUnispectralRatio]
+            
             ratiosAtIndividualWavelengths(ratiosAtIndividualWavelengths>ratiosRange(2)) = ratiosRange(2);
             ratiosAtIndividualWavelengths(ratiosAtIndividualWavelengths<ratiosRange(1)) = ratiosRange(1);
             plot([obj.waveAxis(1) obj.waveAxis(end)], gammaComputedScalar*[1 1], 'k-', 'LineWidth', 2.0);
             hold on
-            plot([obj.waveAxis(localUnispectralRatioWaveIndices(1)) obj.waveAxis(localUnispectralRatioWaveIndices(end))], localUnispectralRatio*[1 1], 'g-', 'LineWidth', 4.0);
+            plot([obj.waveAxis(localUnispectralRatioWaveIndices(1))-5 obj.waveAxis(localUnispectralRatioWaveIndices(end))+5], localUnispectralRatio*[1 1], 'g-', 'LineWidth', 2.0);
             plot(obj.waveAxis(localUnispectralRatioWaveIndices), ratiosAtIndividualWavelengths(localUnispectralRatioWaveIndices), 'rs', 'MarkerFaceColor', [1 0 0], 'MarkerSize', 6, 'LineWidth', 1.0);
             plot(obj.waveAxis, ratiosRange(1) + gammaOutMax/max(gammaOutMax), 'b-', 'LineWidth', 2.0);
             hold off

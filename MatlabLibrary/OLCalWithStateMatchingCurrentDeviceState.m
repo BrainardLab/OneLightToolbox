@@ -20,15 +20,13 @@ function cal = OLCalWithStateMatchingCurrentDeviceState(cal0, referenceFullONSPD
     cal.computed.dailyAdjustment.date = datestr(now);
     cal.computed.dailyAdjustment.scaleFactor = 1.0 / (referenceFullONSPD(wavelengthIndices) \ fullONSPD(wavelengthIndices,1));
    
-    
     % Compute daily spectral shift amount that needs to be applied to the referenceSPD in order to align it with the current combSPD
     [spectralShifts, referenceSPDpeaks] = OLComputeSpectralShiftBetweenCombSPDs(combSPD, referenceCombSPD, combPeaks, spectralAxis);
     % median shift across the 4 peaks
     cal.computed.dailyAdjustment.spectralShiftCorrection = -median(spectralShifts);
-    
-     
-    % Adjust all computed SPDs according to the computed scale factor and spectral shift amount
-    % Apply scale factor
+      
+    % Adjust all computed SPDs according to the computed (1) scale factor and (2) spectral shift amount
+    % 1. scale factor
     fprintf('Applying scale factor ,<strong> %2.5f</strong>, to the cal SPDs\n', cal.computed.dailyAdjustment.scaleFactor);
     cal.computed.pr650M = cal.computed.pr650M * cal.computed.dailyAdjustment.scaleFactor;
     cal.computed.pr650Md = cal.computed.pr650Md * cal.computed.dailyAdjustment.scaleFactor;
@@ -41,8 +39,7 @@ function cal = OLCalWithStateMatchingCurrentDeviceState(cal0, referenceFullONSPD
     cal.computed.halfOnMeas = cal.computed.halfOnMeas * cal.computed.dailyAdjustment.scaleFactor;
     cal.computed.fullOn = cal.computed.fullOn * cal.computed.dailyAdjustment.scaleFactor;
     
-    
-    % Apply spectral shift correction
+    % 2. spectral shift correction
     fprintf('\nApplying spectral shift correction, <strong>%2.5f nm</strong>, to the cal SPDs\n', cal.computed.dailyAdjustment.spectralShiftCorrection);
     cal.computed.pr650M = OLApplySpectralShiftCorrection(cal.computed.pr650M, cal.computed.dailyAdjustment.spectralShiftCorrection, spectralAxis);
     cal.computed.pr650Md = OLApplySpectralShiftCorrection(cal.computed.pr650Md, cal.computed.dailyAdjustment.spectralShiftCorrection, spectralAxis);
@@ -55,8 +52,7 @@ function cal = OLCalWithStateMatchingCurrentDeviceState(cal0, referenceFullONSPD
     cal.computed.halfOnMeas = OLApplySpectralShiftCorrection(cal.computed.halfOnMeas, cal.computed.dailyAdjustment.spectralShiftCorrection, spectralAxis);
     cal.computed.fullOn = OLApplySpectralShiftCorrection(cal.computed.fullOn, cal.computed.dailyAdjustment.spectralShiftCorrection, spectralAxis);
 
-    
-% just for test
+% just for testing
 %     combSPDadjusted =  OLApplySpectralShiftCorrection(combSPD, cal.computed.dailyAdjustment.spectralShiftCorrection, spectralAxis);
 %     
 %     figure();
@@ -65,6 +61,5 @@ function cal = OLCalWithStateMatchingCurrentDeviceState(cal0, referenceFullONSPD
 %     plot(spectralAxis, combSPD-referenceCombSPD, 'k-'); hold on;
 %     plot(spectralAxis, combSPDadjusted-referenceCombSPD, 'r-');
    
-    
 end
 
