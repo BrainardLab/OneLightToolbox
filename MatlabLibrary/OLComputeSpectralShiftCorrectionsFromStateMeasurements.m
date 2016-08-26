@@ -16,13 +16,15 @@ function spectralShiftCorrection = OLComputeSpectralShiftCorrectionsFromStateMea
     
     for stateMeasIndex = 1:size(cal.raw.spectralShiftsMeas.measSpd,2)-1
         theSPD = cal.raw.spectralShiftsMeas.measSpd(:, stateMeasIndex);
-        [spectralShifts, referenceSPDpeaks] = OLComputeSpectralShiftBetweenCombSPDs(theSPD, referenceSPD, combPeaks, spectralAxis);
+        [spectralShifts, referenceSPDpeaks, fitParams, paramNames] = OLComputeSpectralShiftBetweenCombSPDs(theSPD, referenceSPD, combPeaks, spectralAxis);
         % median shift across the 4 peaks
         spectralShiftCorrection.amplitudes(stateMeasIndex) = -median(spectralShifts);
         spectralShiftCorrection.times(stateMeasIndex) = cal.raw.spectralShiftsMeas.t(:, stateMeasIndex);
+        spectralShiftCorrection.fitParams(stateMeasIndex,:,:) = fitParams;
     end
     
     disp('OLComputeSpectralShiftCorrectionsFromStateMeasurements:');
-    combPeaks
-    referenceSPDpeaks
+    spectralShiftCorrection.paramNames = paramNames;
+    spectralShiftCorrection.combPeaks = combPeaks;
+    spectralShiftCorrection.referenceSPDpeaks = referenceSPDpeaks;
 end

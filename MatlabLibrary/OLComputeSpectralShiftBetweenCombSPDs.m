@@ -1,11 +1,11 @@
 % OLComputeSpectralShiftBetweenCombSPDs - Returns the spectral shift that needs to be applied to the referenceSPD in order to align it with the currentSPD
 %
 % Syntax:
-% [spectralShifts, refPeaks] = OLComputeSpectralShiftBetweenCombSPDs(theCurrentSPD, theReferenceSPD, combPeaks, spectralAxis)
+% [spectralShifts, refPeaks, fitParams] = OLComputeSpectralShiftBetweenCombSPDs(theCurrentSPD, theReferenceSPD, combPeaks, spectralAxis)
 %
 % 8/22/16   npc     Wrote it.
 %
-function [spectralShifts, refPeaks] = OLComputeSpectralShiftBetweenCombSPDs(theCurrentSPD, theReferenceSPD, combPeaks, spectralAxis)
+function [spectralShifts, refPeaks, fitParams, paramNames] = OLComputeSpectralShiftBetweenCombSPDs(theCurrentSPD, theReferenceSPD, combPeaks, spectralAxis)
     
     paramNames = {...
         'offset (mWatts)', ...
@@ -39,13 +39,13 @@ function [spectralShifts, refPeaks] = OLComputeSpectralShiftBetweenCombSPDs(theC
         
         % Fit the reference SPD peak
         spdData = 1000*theReferenceSPD(dataIndicesToFit);  % in milliWatts
-        fitParams = fitGaussianToData(xData, spdData, initialParams, paramLowerBounds, paramUpperBounds);
-        refPeak(peakIndex) = fitParams(3);
+        fitParamsRef = fitGaussianToData(xData, spdData, initialParams, paramLowerBounds, paramUpperBounds);
+        refPeak(peakIndex) = fitParamsRef(3);
         
         % Fit the current SPD peak
         spdData = 1000*theCurrentSPD(dataIndicesToFit);  % in milliWatts
-        fitParams = fitGaussianToData(xData, spdData, initialParams, paramLowerBounds, paramUpperBounds);
-        currentPeak(peakIndex) = fitParams(3);
+        fitParams(peakIndex,:) = fitGaussianToData(xData, spdData, initialParams, paramLowerBounds, paramUpperBounds);
+        currentPeak(peakIndex) = fitParams(peakIndex,3);
         
         spectralShifts(peakIndex) = currentPeak(peakIndex) - refPeak(peakIndex);
     end % peakIndex

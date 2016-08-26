@@ -48,4 +48,5 @@ function importCalData(obj)
     obj.cal = cal;
     obj.calID = calID;
     obj.figuresDir = plotFolder;
+    obj.cal.describe
 end
