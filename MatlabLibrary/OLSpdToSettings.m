@@ -43,7 +43,7 @@ numSpectra = size(targetSpds, 2);
 primaries = zeros(oneLightCal.describe.numColMirrors, numSpectra);
 for i = 1:numSpectra
 	% Convert to primaries.
-	[primaries(:,i), predictedSpds(i), outOfRange] = OLSpdToPrimary(oneLightCal, targetSpds(:,i), lambda, verbose); %#ok<AGROW>
+	[primaries(:,i), predictedSpds(:,i), outOfRange] = OLSpdToPrimary(oneLightCal, targetSpds(:,i), lambda, verbose); %#ok<AGROW>
 	
 	if verbose
 		% Look to see if we had any out of range values.
