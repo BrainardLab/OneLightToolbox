@@ -14,7 +14,7 @@ function [fit_out,x,fitComment] = OLFitGamma(values_in,measurements,values_out,f
 %     'betacdfpiecelin' - The input to the double betacdf is passed through a two piece
 %         linear function with control points (0,0), (1,1), and fit parameters (x,y). 
 %     'betacdfquad' - The input to the double betacdf is passed through a quadratic function
-%         with control points (0,0), (1,), and and fit parameters (x,y).       
+%         with control points (0,0), (1,1), and and fit parameters (x,y).       
 %
 % 3/14/14  dhb, ms  Cobbled together.
 % 
