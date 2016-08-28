@@ -74,7 +74,7 @@ function cal = OLInitCalBG(calFileName, varargin)
 
     % Create a parser for any optional arguments.
     parser = inputParser;
-    parser.addOParameter('FactorsMethod', 2, @isnumeric);
+    parser.addParameter('FactorsMethod', 2, @isnumeric);
     parser.addParameter('UseAverageGamma',[],@(x)isnumeric(x) || islogical(x));
     parser.addParameter('GammaFitType',[],@(x)ischar(x) || isnumeric(x));
     parser.addParameter('CorrectLinearDrift',[],@(x)isnumeric(x) || islogical(x));
@@ -286,9 +286,9 @@ function cal = OLInitCalBG(calFileName, varargin)
             gammaEffectiveBgTemp = computeSpectralShiftCorrectedSPDs(cal, gammaEffectiveBgTemp, cal.raw.t.gamma.rad(k).effectiveBgMeas);
             differentialPrimaryZeroInput(:,k) = gammaEffectiveBgTemp - cal.computed.pr650MeanSpecifiedBackground;
             cal.computed.gammaDataMin(k) = thePrimary(wavelengthIndices)\differentialPrimaryZeroInput(wavelengthIndices,k);
-            cal.computed.gammaData1 = cal.computed.gammaData1 - cal.computed.gammaDataMin(k);
+            cal.computed.gammaData1{k} = cal.computed.gammaData1{k} - cal.computed.gammaDataMin(k);
         end
-        fprintf('\tMeasured gamma function %d, max value is %0.2f should be close to 1\n',cal.computed.gammaData1(end));
+        fprintf('\tMeasured gamma function %d, max value is %0.2f should be close to 1\n',k,cal.computed.gammaData1{k}(end));
 
         % Fill in the ratios for the zero input case.  This is just zero,
         cal.computed.gammaRatios(k,1).wavelenths = cal.computed.gammaRatios(k,2).wavelenths;
@@ -306,7 +306,7 @@ function cal = OLInitCalBG(calFileName, varargin)
     cal.computed.gammaInputRaw = [0 ; cal.describe.gamma.gammaLevels'];
     cal.computed.gammaInput = linspace(0,1,cal.describe.nGammaFitLevels)';
     for k = 1:cal.describe.nGammaBands
-        cal.computed.gammaTableMeasuredBands(:,k) = [0 ; cal.computed.gammaData1{k}'];
+        cal.computed.gammaTableMeasuredBands(:,k) = [0 ; {k}'];
         cal.computed.gammaTableMeasuredBandsFit(:,k) = OLFitGamma(cal.computed.gammaInputRaw,cal.computed.gammaTableMeasuredBands(:,k),cal.computed.gammaInput,cal.describe.gammaFitType);
     end
     
