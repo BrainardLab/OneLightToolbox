@@ -21,7 +21,7 @@ function [results, validationDir, validationPath, openSpectroRadiometerOBJ] = OL
 % emailRecipient (string)   - Email address to receive notifications
 % meterType (string)        - Meter type to use.
 % spectroRadiometerOBJ      - A previously open PR650 or PR670 object
-%spectroRadiometerOBJWillShutdownAfterMeasurement - Boolean, indicating
+% spectroRadiometerOBJWillShutdownAfterMeasurement - Boolean, indicating
 %                             whether to shutdown the radiometer object
 % varargin (keyword-value)  - A few keywords which determine the behavior
 %                             of the routine.
