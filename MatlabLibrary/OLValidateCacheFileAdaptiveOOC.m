@@ -324,6 +324,8 @@ try
     
     % Loop over the stimuli in the cache file and take a measurement with
     % both the PR-650 and the OmniDriver.
+    nIter = 10;
+    iter = 1;
     switch cacheData.computeMethod
         case 'ReceptorIsolate'
             % Set up the power levels to use.
@@ -346,11 +348,15 @@ try
                 nPowerLevels = length(powerLevels);
             end
             
+            % Only get the primaries from the cache file if it's the first
+            % iteration
+            if iter == 1
+                backgroundPrimary = cacheData.data(describe.REFERENCE_OBSERVER_AGE).backgroundPrimary;
+                differencePrimary = cacheData.data(describe.REFERENCE_OBSERVER_AGE).differencePrimary;
+            end
+            
             % Refactor the cache data spectrum primaries to the power
             % level.
-            backgroundPrimary = cacheData.data(describe.REFERENCE_OBSERVER_AGE).backgroundPrimary;
-            differencePrimary = cacheData.data(describe.REFERENCE_OBSERVER_AGE).differencePrimary;
-            
             for i = 1:nPowerLevels
                 fprintf('- Measuring spectrum %d, level %g...\n', i, powerLevels(i));
                 primaries = backgroundPrimary+powerLevels(i).*differencePrimary;
@@ -391,6 +397,9 @@ try
                 results.modulationBGMeas = results.modulationAllMeas(theBGIndex);
             end
 
+            
+            %% Adaptive loop
+            
     end
     stopMeas = GetSecs;
     
