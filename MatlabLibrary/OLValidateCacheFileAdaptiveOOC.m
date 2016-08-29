@@ -353,13 +353,22 @@ try
             if iter == 1
                 backgroundPrimary = cacheData.data(describe.REFERENCE_OBSERVER_AGE).backgroundPrimary;
                 differencePrimary = cacheData.data(describe.REFERENCE_OBSERVER_AGE).differencePrimary;
+            else
+                backgroundPrimary = backgroundPrimaryInferred;
+                modulationPrimary = modulationPrimaryInferred;
             end
             
             % Refactor the cache data spectrum primaries to the power
             % level.
             for i = 1:nPowerLevels
                 fprintf('- Measuring spectrum %d, level %g...\n', i, powerLevels(i));
-                primaries = backgroundPrimary+powerLevels(i).*differencePrimary;
+                if powerLevels == 1
+                    primaries = modulationPrimary;
+                elseif powerLevels == 0
+                    primaries = backgroundPrimary;
+                else
+                    primaries = backgroundPrimary+powerLevels(i).*differencePrimary;
+                end
                 
                 % Convert the primaries to mirror settings.
                 settings = OLPrimaryToSettings(cal, primaries);
@@ -398,7 +407,10 @@ try
             end
 
             
-            %% Adaptive loop
+            %% Determine the primary settings from the measurements
+            backgroundPrimaryInferred = OLSpdToPrimary(cal, results.modulationBGMeas.meas.pr650.spectrum);
+            modulationPrimaryInferred = OLSpdToPrimary(cal, results.modulationBGMeas.meas.pr650.spectrum);
+
             
     end
     stopMeas = GetSecs;
