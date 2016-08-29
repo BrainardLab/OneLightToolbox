@@ -306,7 +306,7 @@ function cal = OLInitCalBG(calFileName, varargin)
     cal.computed.gammaInputRaw = [0 ; cal.describe.gamma.gammaLevels'];
     cal.computed.gammaInput = linspace(0,1,cal.describe.nGammaFitLevels)';
     for k = 1:cal.describe.nGammaBands
-        cal.computed.gammaTableMeasuredBands(:,k) = [0 ; {k}'];
+        cal.computed.gammaTableMeasuredBands(:,k) = [0 ; cal.computed.gammaData1{k}'];
         cal.computed.gammaTableMeasuredBandsFit(:,k) = OLFitGamma(cal.computed.gammaInputRaw,cal.computed.gammaTableMeasuredBands(:,k),cal.computed.gammaInput,cal.describe.gammaFitType);
     end
     
