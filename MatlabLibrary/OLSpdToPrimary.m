@@ -1,10 +1,11 @@
-function [effectivePrimary, primary, predictedSpd, outOfRange] = OLSpdToPrimary(oneLightCal, targetSpd, lambda, verbose)
+function [effectivePrimary, primary, predictedSpd, outOfRange] = OLSpdToPrimary(oneLightCal, targetSpd, lambda, verbose, darkSpd)
 % OLSpdToPrimary - Converts a spectrum into normalized primary OneLight mirror settings.
 %
 % Syntax:
 % [effectivePrimary, primary, predictedSpd, outOfRange] = OLSpdToPrimary(oneLightCal, targetSpd)
 % [effectivePrimary, primary, predictedSpd, outOfRange] = OLSpdToPrimary(oneLightCal, targetSpd, lambda)
 % [effectivePrimary, primary, predictedSpd, outOfRange] = OLSpdToPrimary(oneLightCal, targetSpd, lambda, verbose)
+% [effectivePrimary, primary, predictedSpd, outOfRange] = OLSpdToPrimary(oneLightCal, targetSpd, lambda, verbose, darkSpd)
 %
 % Description:
 % Convert a spectral power distribution to the linear 0-1 fraction of light
@@ -22,6 +23,10 @@ function [effectivePrimary, primary, predictedSpd, outOfRange] = OLSpdToPrimary(
 %     Defaults to 0.1.
 % verbose (logical) - Enables/disables verbose diagnostic information.
 %     Defaults to false.
+% darkSpd (Mx1) - Dark spd.  Should be on the same wavelength
+%     spacing and power units as the PR-650 field of the calibration
+%     structure. This is optional, and allows for bespoke dark measurements
+%     to be passed in.
 %
 % Output:
 % effectivePrimary (Nx1) - The normalized power level for effective primary
@@ -42,6 +47,7 @@ function [effectivePrimary, primary, predictedSpd, outOfRange] = OLSpdToPrimary(
 %
 % 3/29/13  dhb  Changed some variable names to make this cleaner (Settings -> Primary).
 % 11/08/15 dhb  Specify explicitly that lsqlin algorithm should be 'active-set', to satisfy warning in newer versions of Matlab
+% 08/29/16 ms   Added option to pass dark spd
 
 % Validate the number of inputs.
 error(nargchk(2, 4, nargin));
@@ -53,6 +59,9 @@ end
 if ~exist('verbose', 'var') || isempty(verbose)
     verbose = false;
 end
+if ~exist('darkSpd', 'var') || isempty(darkSpd)
+    darkSpd = oneLightCal.computed.pr650MeanDark;
+end
 
 % Make sure that the calibration file has been processed by OLInitCal.
 assert(isfield(oneLightCal, 'computed'), 'OLSpdToPrimary:InvalidCalFile', ...
@@ -60,7 +69,7 @@ assert(isfield(oneLightCal, 'computed'), 'OLSpdToPrimary:InvalidCalFile', ...
 
 % Look to see if any of the targetSpd wavelengths are less than the dark
 % measurement.
-if any((targetSpd - oneLightCal.computed.pr650MeanDark) < 0)
+if any((targetSpd - darkSpd) < 0)
     outOfRange.low = true;
 else
     outOfRange.low = false;
@@ -69,7 +78,7 @@ end
 % Find column input values for targetSpd without enforcing any constraints.  It's
 % not completely clear why we do this, as the only way we use the answer is to
 % determine the size of some vectors below, and for debugging.
-targeteffectivePrimary = pinv(oneLightCal.computed.pr650M) * (targetSpd - oneLightCal.computed.pr650MeanDark);
+targeteffectivePrimary = pinv(oneLightCal.computed.pr650M) * (targetSpd - darkSpd);
 targetPrimary = oneLightCal.computed.D * targeteffectivePrimary;
 if verbose
     fprintf('Pinv settings: min = %g, max = %g\n', min(targetPrimary(:)), max(targetPrimary(:)));
@@ -87,7 +96,7 @@ end
 % could happen if at some point in the future we change the conditions we use to
 % calibrate.
 C1 = oneLightCal.computed.pr650M;
-d1 = targetSpd - oneLightCal.computed.pr650MeanDark;
+d1 = targetSpd - darkSpd;
 C2 = zeros(length(targeteffectivePrimary)-1, length(targeteffectivePrimary));
 for i = 1:length(targeteffectivePrimary)-1
     C2(i,i) = lambda;
