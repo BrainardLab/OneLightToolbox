@@ -326,92 +326,99 @@ try
     % both the PR-650 and the OmniDriver.
     nIter = 10;
     iter = 1;
+    learningRate = 0.8;
     switch cacheData.computeMethod
         case 'ReceptorIsolate'
-            % Set up the power levels to use.
-            if describe.ReducedPowerLevels
-                % Only take three measurements
-                if describe.SkipBackground
-                    nPowerLevels = 2
-                    powerLevels = [-1 1];
-                else
-                    if strcmp(cacheData.data(32).describe.params.receptorIsolateMode, 'PIPR')
-                        nPowerLevels = 2;
-                        powerLevels = [0 1];
+            while iter <= nIter
+                iter
+                % Set up the power levels to use.
+                if describe.ReducedPowerLevels
+                    % Only take three measurements
+                    if describe.SkipBackground
+                        nPowerLevels = 2
+                        powerLevels = [-1 1];
                     else
-                        nPowerLevels = 3;
-                        powerLevels = [-1 0 1];
+                        if strcmp(cacheData.data(32).describe.params.receptorIsolateMode, 'PIPR')
+                            nPowerLevels = 2;
+                            powerLevels = [0 1];
+                        else
+                            nPowerLevels = 3;
+                            powerLevels = [-1 0 1];
+                        end
                     end
-                end
-            else
-                % Take a full set of measurements
-                nPowerLevels = length(powerLevels);
-            end
-            
-            % Only get the primaries from the cache file if it's the first
-            % iteration
-            if iter == 1
-                backgroundPrimary = cacheData.data(describe.REFERENCE_OBSERVER_AGE).backgroundPrimary;
-                differencePrimary = cacheData.data(describe.REFERENCE_OBSERVER_AGE).differencePrimary;
-            else
-                backgroundPrimary = backgroundPrimaryInferred;
-                modulationPrimary = modulationPrimaryInferred;
-            end
-            
-            % Refactor the cache data spectrum primaries to the power
-            % level.
-            for i = 1:nPowerLevels
-                fprintf('- Measuring spectrum %d, level %g...\n', i, powerLevels(i));
-                if powerLevels == 1
-                    primaries = modulationPrimary;
-                elseif powerLevels == 0
-                    primaries = backgroundPrimary;
                 else
-                    primaries = backgroundPrimary+powerLevels(i).*differencePrimary;
+                    % Take a full set of measurements
+                    nPowerLevels = length(powerLevels);
                 end
                 
-                % Convert the primaries to mirror settings.
-                settings = OLPrimaryToSettings(cal, primaries);
+                % Only get the primaries from the cache file if it's the first
+                % iteration
+                if iter == 1
+                    backgroundPrimary = cacheData.data(describe.REFERENCE_OBSERVER_AGE).backgroundPrimary;
+                    differencePrimary = cacheData.data(describe.REFERENCE_OBSERVER_AGE).differencePrimary;
+                else
+                    backgroundPrimary = backgroundPrimaryCorrected;
+                    modulationPrimary = modulationPrimaryCorrected;
+                end
                 
-                % Compute the stop mirrors.
-                [starts,stops] = OLSettingsToStartsStops(cal, settings);
+                % Refactor the cache data spectrum primaries to the power
+                % level.
+                for i = 1:nPowerLevels
+                    fprintf('- Measuring spectrum %d, level %g...\n', i, powerLevels(i));
+                    if powerLevels == 1
+                        primaries = modulationPrimary;
+                    elseif powerLevels == 0
+                        primaries = backgroundPrimary;
+                    else
+                        primaries = backgroundPrimary+powerLevels(i).*differencePrimary;
+                    end
+                    
+                    % Convert the primaries to mirror settings.
+                    settings = OLPrimaryToSettings(cal, primaries);
+                    
+                    % Compute the stop mirrors.
+                    [starts,stops] = OLSettingsToStartsStops(cal, settings);
+                    
+                    % Take the measurements
+                    results.modulationAllMeas(i).meas = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
+                    
+                    % Save out information about this.
+                    results.modulationAllMeas(i).powerLevel = powerLevels(i);
+                    results.modulationAllMeas(i).primaries = primaries;
+                    results.modulationAllMeas(i).settings = settings;
+                    results.modulationAllMeas(i).starts = starts;
+                    results.modulationAllMeas(i).stops = stops;
+                    results.modulationAllMeas(i).predictedSpd = cal.computed.pr650M*primaries + cal.computed.pr650MeanDark;
+                end
                 
-                % Take the measurements
-                results.modulationAllMeas(i).meas = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
+                % For convenience we pull out the max., min. and background.
+                theMaxIndex = find([results.modulationAllMeas(:).powerLevel] == 1);
+                theMinIndex = find([results.modulationAllMeas(:).powerLevel] == -1);
+                theBGIndex = find([results.modulationAllMeas(:).powerLevel] == 0);
+                if ~isempty(theMaxIndex)
+                    results.modulationMaxMeas = results.modulationAllMeas(theMaxIndex);
+                end
                 
-                % Save out information about this.
-                results.modulationAllMeas(i).powerLevel = powerLevels(i);
-                results.modulationAllMeas(i).primaries = primaries;
-                results.modulationAllMeas(i).settings = settings;
-                results.modulationAllMeas(i).starts = starts;
-                results.modulationAllMeas(i).stops = stops;
-                results.modulationAllMeas(i).predictedSpd = cal.computed.pr650M*primaries + cal.computed.pr650MeanDark;
+                if ~isempty(theBGIndex)
+                    results.modulationMinMeas = results.modulationAllMeas(theMinIndex);
+                else % Some times there's no negative excursion. We set it to BG
+                    results.modulationMinMeas = results.modulationAllMeas(theBGIndex);
+                end
+                
+                if ~isempty(theBGIndex)
+                    results.modulationBGMeas = results.modulationAllMeas(theBGIndex);
+                end
+                
+                
+                %% Determine the primary settings from the measurements
+                backgroundPrimaryInferred = OLSpdToPrimary(cal, results.modulationBGMeas.meas.pr650.spectrum);
+                modulationPrimaryInferred = OLSpdToPrimary(cal, results.modulationBGMeas.meas.pr650.spectrum);
+                
+                backgroundPrimaryCorrected = backgroundPrimary + 0.8*(backgroundPrimaryInferred-backgroundPrimary);
+                modulationPrimaryCorrected = modulationPrimary + 0.8*(modulationPrimaryInferred-modulationPrimary);
+                
+                iter = iter+1;
             end
-            
-            % For convenience we pull out the max., min. and background.
-            theMaxIndex = find([results.modulationAllMeas(:).powerLevel] == 1);
-            theMinIndex = find([results.modulationAllMeas(:).powerLevel] == -1);
-            theBGIndex = find([results.modulationAllMeas(:).powerLevel] == 0);
-            if ~isempty(theMaxIndex)
-                results.modulationMaxMeas = results.modulationAllMeas(theMaxIndex);
-            end
-            
-            if ~isempty(theBGIndex)
-                results.modulationMinMeas = results.modulationAllMeas(theMinIndex);
-            else % Some times there's no negative excursion. We set it to BG
-                results.modulationMinMeas = results.modulationAllMeas(theBGIndex);
-            end
-            
-            if ~isempty(theBGIndex)
-                results.modulationBGMeas = results.modulationAllMeas(theBGIndex);
-            end
-
-            
-            %% Determine the primary settings from the measurements
-            backgroundPrimaryInferred = OLSpdToPrimary(cal, results.modulationBGMeas.meas.pr650.spectrum);
-            modulationPrimaryInferred = OLSpdToPrimary(cal, results.modulationBGMeas.meas.pr650.spectrum);
-
-            
     end
     stopMeas = GetSecs;
     
