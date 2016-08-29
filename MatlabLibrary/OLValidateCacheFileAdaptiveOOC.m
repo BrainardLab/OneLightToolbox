@@ -390,38 +390,7 @@ try
             if ~isempty(theBGIndex)
                 results.modulationBGMeas = results.modulationAllMeas(theBGIndex);
             end
-            
-        case 'Standard'
-            % For each spectrum we'll measure a range of fractional power
-            % levels defined by the vector below.
-            results.powerLevels = [0.5 1];
-            numPowerLevels = length(results.powerLevels);
-            
-            % If the cacheData has a field called
-            % 'whichSettingIndexToValidate', iterate only over these
-            if isfield(cacheData, 'whichSettingIndexToValidate');
-                iter = cacheData.whichSettingIndexToValidate;
-            else
-                iter = 1:size(cacheData.targetSpds, 2);
-            end
-            for i = iter
-                for j = 1:numPowerLevels
-                    fprintf('- Measuring spectrum %d, Power level %g...', i, results.powerLevels(j));
-                    
-                    % Refactor the cache data spectrum primaries to the
-                    % power level.
-                    primaries = cacheData.primaries(:,i) * results.powerLevels(j);
-                    
-                    % Convert the primaries to mirror settings.
-                    settings = OLPrimaryToSettings(cal, primaries);
-                    
-                    % Compute the start/stop mirrors.
-                    [starts,stops] = OLSettingsToStartsStops(cal,settings);
-                    results.meas(j, i) = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
-                    
-                    fprintf('Done\n');
-                end
-            end
+
     end
     stopMeas = GetSecs;
     
