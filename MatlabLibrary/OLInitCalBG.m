@@ -120,7 +120,8 @@ function cal = OLInitCalBG(calFileName, varargin)
         returnScaleFactor = @(t) 1./((1-(1-s)*((t-t0)./(t1-t0))));
         cal.computed.returnScaleFactor = returnScaleFactor;
         
-        % Check whether we tracked system state (i.e., calibrating via OLCalibrateWithTrackingOOC
+        % Check whether we tracked system state (i.e., calibrating via
+        % OLCalibrateWithTrackingOOC)
         if (isfield(cal.describe, 'stateTracking'))
             % Over-write original scale factor with one based on tracking data
             cal.computed.returnScaleFactorOLD = returnScaleFactor;
@@ -198,9 +199,7 @@ function cal = OLInitCalBG(calFileName, varargin)
         error('Mismatch between specified number of gamma bands and size of measurement struct array');
     end
     for k = 1:cal.describe.nGammaBands
-        % Dark subtract with time correction.  As with primary spectra above,
-        % there are two distinct ways we can do this, depending on whether we
-        % calibrated around dark or around a specified background.
+        % Time correction.
         gammaTemp = bsxfun(@times, cal.raw.gamma.rad(k).meas, returnScaleFactor(cal.raw.t.gamma.rad(k).meas));
         gammaTemp = computeSpectralShiftCorrectedSPDs(cal, gammaTemp, cal.raw.t.gamma.rad(k).meas);
         
