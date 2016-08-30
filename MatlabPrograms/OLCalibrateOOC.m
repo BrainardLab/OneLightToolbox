@@ -27,17 +27,16 @@ function OLCalibrateOOC
 %          dhb  Started converting to use new OLSettingsToStartStops for all computation of starts/stops.
 %               A side effect of this was to fix a bug where out of band mirrors were not all the way off
 %               for some measurements.
-% 2/17/14  dhb  All measurements get their starts/stops using
-% OLSettingsToStartsStops.
+% 2/17/14  dhb  All measurements get their starts/stops using OLSettingsToStartsStops.
 %          dhb  Set calID to mglGetSecs. dhb  Put in save before init,
-%                 temporarily, because the init is likely to crash until we fix it
-%                 for new cal file.
+%               temporarily, because the init is likely to crash until we fix it
+%               for new cal file.
 % 7/20/14  ms   calID set with OLGetCalID. Save before init taken out.
 % 4/9/16   dhb  Added in option to measure around a non-zero background.
 %               Also did a little cleaning, which I hope doesn't break
-%                 anything.
+%               anything.
 %               Remove blocks of commented out code. Uncomment debugging
-%                 save before call to init, because there will probably be bugs.
+%               save before call to init, because there will probably be bugs.
 % 4/15/16  npc  Adapted to use PR650dev/PR670dev objects
 % 8/30/16  ms   Added OLInitCalBG if we calibrated around background
 
