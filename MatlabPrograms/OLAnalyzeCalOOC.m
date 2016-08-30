@@ -2,19 +2,22 @@ function OLAnalyzeCalOOC
 
     calAnalyzer = OLCalAnalyzer(...
         'refitGammaTablesUsingLinearInterpolation', false, ...
-        'forceOLInitCal', true);
+        'forceOLInitCal', false);
     
+    %%%%%
+    % PLEASE ADD SOME DESCRIPTION OF WHAT EACH OF THESE DOES!!!!!
+    % ALSO NEEDS SOME TUNING FOR CALIBRATIONS DONE AROUND A SPECIFIED
+    % BACKGROUND.
+    %%%%
     plotDriftAnalysis = ~true;
     plotCompositeMeasurents = ~true;
     plotSampledSpectra = ~true;
-    plotFullSpectra = ~true;
-    plotGammaSPDs = ~true;
+    plotFullSpectra = true;
+    plotGammaSPDs = true;
     plotGammaTables = true;
     plotPredictions = ~true;
     plotAdditivityCheck = ~true;
-    
-
-    
+  
     if (plotDriftAnalysis)
         calAnalyzer.generateDriftAnalysisPlots();
     end

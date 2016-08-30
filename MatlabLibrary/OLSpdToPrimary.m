@@ -30,7 +30,7 @@ function [effectivePrimary, primary, predictedSpd, outOfRange] = OLSpdToPrimary(
 %
 % Output:
 % effectivePrimary (Nx1) - The normalized power level for effective primary
-%     of the OneLight. Not gamma corrected.
+%     of the OneLight. N is the number of effective primaries. Not gamma corrected.
 % primary (Nx1) - The normalized power level for each column of the
 %     OneLight.  These values are not gamma corrected.  N is the number
 %     of columns specified by the OneLight object, and corresponds to
@@ -50,7 +50,7 @@ function [effectivePrimary, primary, predictedSpd, outOfRange] = OLSpdToPrimary(
 % 08/29/16 ms   Added option to pass dark spd
 
 % Validate the number of inputs.
-error(nargchk(2, 5, nargin));
+narginchk(2, 5);
 
 % Setup some defaults.
 if ~exist('lambda', 'var') || isempty(lambda)

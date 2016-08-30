@@ -427,7 +427,6 @@ function OLCalibrateWithStateTrackingOOC
     
         % Take a final set of state measurements
         cal = TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
-    
         
         % Store the type of calibration and unique calibration ID
         cal.describe.calType = selectedCalType;

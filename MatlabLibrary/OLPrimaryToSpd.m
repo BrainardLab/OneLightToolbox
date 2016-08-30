@@ -20,7 +20,7 @@ function [spd] = OLPrimaryToSpd(oneLightCal, primary)
 % 5/24/13  dhb  Wrote this.
 
 % Validate the number of inputs.
-error(nargchk(2, 2, nargin));
+narginchk(2, 2);
 
 % Make sure that the calibration file has been processed by OLInitCal.
 assert(isfield(oneLightCal, 'computed'), 'OLPrimaryToSpd:InvalidCalFile', ...

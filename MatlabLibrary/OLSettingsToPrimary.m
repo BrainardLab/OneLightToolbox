@@ -26,7 +26,7 @@ function primary = OLSettingsToPrimary(cal, settings, verbose)
 % 2/16/14  dhb       Convert to take input and output for each primery, not for each mirror.
 
 % Validate the number of inputs.
-error(nargchk(2, 3, nargin));
+narginchk(2,3);
 
 % Setup some defaults.
 if ~exist('verbose', 'var') || isempty(verbose)
@@ -43,15 +43,14 @@ if (size(settings,1) ~= cal.describe.numWavelengthBands)
     error('Passed number of primaries does not match calibration data');
 end
 
-% If we've dummied up what looks like a gamma function measurement for
-% every primary, then we can just use PTB's gamma correction directly.
 if ~isfield(cal.describe, 'useAverageGamma') || (~cal.describe.useAverageGamma)
+    % If we've dummied up what looks like a gamma function measurement for
+    % every primary, then we can just use PTB's gamma correction directly.
     cal.computed.gammaMode = 0;
     primary = SettingsToPrimary(cal.computed,settings);
-    
+else
     % If we computed a single average gamma function, we have to use lower level
     % routines.
-else
     primary = zeros(size(settings));
     NSpectra = size(settings, 2);
     for i = 1:NSpectra

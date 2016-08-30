@@ -55,7 +55,7 @@ function cal = OLInitCal(calFileName, varargin)
 %              OLCalibrateWithStateTrackingOOC.m)
 
     % Check for the number of arguments.
-    error(nargchk(1, Inf, nargin));
+    narginchk(1, Inf);
 
     % Load the calibration file.
     if (isstr(calFileName))
