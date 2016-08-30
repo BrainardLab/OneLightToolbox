@@ -356,6 +356,7 @@ try
                 if iter == 1
                     backgroundPrimary = cacheData.data(describe.REFERENCE_OBSERVER_AGE).backgroundPrimary;
                     differencePrimary = cacheData.data(describe.REFERENCE_OBSERVER_AGE).differencePrimary;
+                    modulationPrimary = cacheData.data(describe.REFERENCE_OBSERVER_AGE).backgroundPrimary+cacheData.data(describe.REFERENCE_OBSERVER_AGE).differencePrimary;
                 else
                     backgroundPrimary = backgroundPrimaryCorrected;
                     modulationPrimary = modulationPrimaryCorrected;
@@ -365,9 +366,9 @@ try
                 % level.
                 for i = 1:nPowerLevels
                     fprintf('- Measuring spectrum %d, level %g...\n', i, powerLevels(i));
-                    if powerLevels == 1
+                    if powerLevels(i) == 1
                         primaries = modulationPrimary;
-                    elseif powerLevels == 0
+                    elseif powerLevels(i) == 0
                         primaries = backgroundPrimary;
                     else
                         primaries = backgroundPrimary+powerLevels(i).*differencePrimary;
@@ -411,11 +412,23 @@ try
                 
                 
                 %% Determine the primary settings from the measurements
-                backgroundPrimaryInferred = OLSpdToPrimary(cal, results.modulationBGMeas.meas.pr650.spectrum);
-                modulationPrimaryInferred = OLSpdToPrimary(cal, results.modulationBGMeas.meas.pr650.spectrum);
+                deltaBackgroundPrimaryInferred = OLSpdToPrimary(cal, (results.modulationBGMeas.meas.pr650.spectrum-results.offMeas.meas.pr650.spectrum)-...
+                    (results.modulationBGMeas.predictedSpd-cal.computed.pr650MeanDark), [], [], zeros(size(cal.computed.pr650MeanDark)));
+                deltaModulationPrimaryInferred = OLSpdToPrimary(cal, (results.modulationMaxMeas.meas.pr650.spectrum-results.offMeas.meas.pr650.spectrum)-...
+                    (results.modulationMaxMeas.predictedSpd-cal.computed.pr650MeanDark), [], [], zeros(size(cal.computed.pr650MeanDark)));
                 
-                backgroundPrimaryCorrected = backgroundPrimary + 0.8*(backgroundPrimaryInferred-backgroundPrimary);
-                modulationPrimaryCorrected = modulationPrimary + 0.8*(modulationPrimaryInferred-modulationPrimary);
+                backgroundPrimaryCorrected = backgroundPrimary - 0.8*deltaBackgroundPrimaryInferred;
+                backgroundPrimaryCorrected(backgroundPrimaryCorrected > 1) = 1;
+                backgroundPrimaryCorrected(backgroundPrimaryCorrected < 0) = 0;
+                modulationPrimaryCorrected = modulationPrimary - 0.8*deltaModulationPrimaryInferred;
+                modulationPrimaryCorrected(modulationPrimaryCorrected > 1) = 1;
+                modulationPrimaryCorrected(modulationPrimaryCorrected < 0) = 0;
+                
+                theCanonicalPhotoreceptors = cacheData.data(describe.REFERENCE_OBSERVER_AGE).describe.photoreceptors;%{'LCone', 'MCone', 'SCone', 'Melanopsin', 'Rods'};
+                T_receptors = cacheData.data(describe.REFERENCE_OBSERVER_AGE).describe.T_receptors;%GetHumanPhotoreceptorSS(S, theCanonicalPhotoreceptors, data(val.describe.REFERENCE_OBSERVER_AGE).describe.params.fieldSizeDegrees, val.describe.REFERENCE_OBSERVER_AGE, 4.7, [], data(val.describe.REFERENCE_OBSERVER_AGE).describe.fractionBleached);
+                
+                contrasts(:, iter) = ComputeAndReportContrastsFromSpds(['Iteration ' num2str(iter, '%02.0f')] ,theCanonicalPhotoreceptors,T_receptors,...
+                    results.modulationBGMeas.meas.pr650.spectrum,results.modulationMaxMeas.meas.pr650.spectrum,true);
                 
                 iter = iter+1;
             end
