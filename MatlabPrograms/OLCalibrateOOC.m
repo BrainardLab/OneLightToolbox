@@ -460,7 +460,6 @@ try
             gammaMeasIter = 1:cal.describe.nGammaBands;
         end
         
-        
         for i = gammaMeasIter
             fprintf('\n*** Gamma measurements on gamma band set %d of %d ***\n\n', i, cal.describe.nGammaBands);
             
@@ -507,7 +506,6 @@ try
             end
             fprintf('Done\n');
             
-            
             % If we're specifying the background, we need a measurement of that
             % background but with the settings for the specified gamma band set
             % to zero.  This is then used to subtract off the background from
@@ -548,7 +546,6 @@ try
         end
     end
     
-    
     % Take another half on measurement.
     fprintf('- Taking half on measurement...');
     theSettings = 0.5*ones(nPrimaries,1);
@@ -577,7 +574,7 @@ try
         cal.raw.omniDriver.fullOnMeas(:,currentFullOnMeasurementNum) = measTemp.omni.spectrum;
     end
     fprintf('Done\n');
-    
+
     
     % Now we'll do an independence test on the same column sets from the
     % gamma measurements.  Even when we use an effective background for
