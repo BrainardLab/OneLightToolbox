@@ -1,8 +1,8 @@
 function OLCalibrateOOC
-% OLCalibrate - Calibrates the OneLight device.
+% OLCalibrateOOC - Calibrates the OneLight device.
 %
 % Syntax:
-% OLCalibrate
+% OLCalibrateOOC
 %
 % Description:
 % Calibrates a OneLight device using a PR-650 radiometer and the OneLight
