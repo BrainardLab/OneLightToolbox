@@ -448,8 +448,13 @@ try
     % loads up the data with a bunch of computed information found in the
     % computed subfield of the structure.  Only do this if we did full
     % calibration, since otherwise OLInitCal will barf.
-    if (all([cal.describe.doPrimaries cal.describe.doGamma cal.describe.doIndependence]))
-        cal = OLInitCal(cal);
+    if (all([cal.describe.doPrimaries cal.describe.doGamma cal.describe.doIndependence]))]
+        if (cal.describe.specifiedBackground)
+            % Use OLInitCalBG if the background is specified
+            cal = OLInitCalBG(cal);
+        else
+            cal = OLInitCal(cal);
+        end
         
         % Save out the calibration
         oneLightCalSubdir = 'OneLight';
