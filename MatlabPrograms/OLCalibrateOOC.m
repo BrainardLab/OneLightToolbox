@@ -39,6 +39,7 @@ function OLCalibrateOOC
 %               Remove blocks of commented out code. Uncomment debugging
 %                 save before call to init, because there will probably be bugs.
 % 4/15/16  npc  Adapted to use PR650dev/PR670dev objects
+% 8/30/16  ms   Added OLInitCalBG if we calibrated around background
 
 spectroRadiometerOBJ = [];
 
@@ -796,25 +797,3 @@ if (whichPrimary < nPrimaries)
     theSettings(whichPrimary+1) = specifiedBackgroundSettigns(whichPrimary+1);
 end
 end
-
-%% Run primary gamma and additivity test
-% THIS IS CODE WE MIGHT WANT TO INSERT, BUT IT IS NOT DONE YET.
-%
-% Before we save the calibration, we will run a standard primary gamma
-% and additivity test. This test takes a middle primary and measures it
-% in the presence or absence of flanking primaries on either side at
-% 0.25, 0.5 and 1 of the max. We do this here because we need the gamma
-% function to run this successfully.
-%     whichPrimaryToTest = cal.describe.gamma.gammaBands(ceil(end/2));
-%     cal.raw.diagnostics.additivity.midPrimary.flankersSep0Off = OLPrimaryGammaAndAdditivityTest(cal, whichPrimaryToTest, 1, {[0 0.25 0], [0 0.5 0], [0 1 0]});
-%     cal.raw.diagnostics.additivity.midPrimary.flankersSep0On = OLPrimaryGammaAndAdditivityTest(cal, whichPrimaryToTest, 1, {[1 0.25 1], [1 0.5 1], [1 1 1]});
-%     cal.raw.diagnostics.additivity.midPrimary.flankersSep3Off = OLPrimaryGammaAndAdditivityTest(cal, whichPrimaryToTest, 3, {[0 0.25 0], [0 0.5 0], [0 1 0]});
-%     cal.raw.diagnostics.additivity.midPrimary.flankersSep3On = OLPrimaryGammaAndAdditivityTest(cal, whichPrimaryToTest, 3, {[1 0.25 1], [1 0.5 1], [1 1 1]});
-%
-%     whichPrimaryToTest = round((cal.describe.gamma.gammaBands(ceil(end/2)+1) + cal.describe.gamma.gammaBands(ceil(end/2)))/2);
-%     cal.raw.diagnostics.additivity.offGammaPrimary.flankersSep0Off = OLPrimaryGammaAndAdditivityTest(cal, whichPrimaryToTest, 1, {[0 0.25 0], [0 0.5 0], [0 1 0]});
-%     cal.raw.diagnostics.additivity.offGammaPrimary.flankersSep0On = OLPrimaryGammaAndAdditivityTest(cal, whichPrimaryToTest, 1, {[1 0.25 1], [1 0.5 1], [1 1 1]});
-%     cal.raw.diagnostics.additivity.offGammaPrimary.flankersSep3Off = OLPrimaryGammaAndAdditivityTest(cal, whichPrimaryToTest, 3, {[0 0.25 0], [0 0.5 0], [0 1 0]});
-%     cal.raw.diagnostics.additivity.offGammaPrimary.flankersSep3On = OLPrimaryGammaAndAdditivityTest(cal, whichPrimaryToTest, 3, {[1 0.25 1], [1 0.5 1], [1 1 1]});
-%
-
