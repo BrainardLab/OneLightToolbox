@@ -50,7 +50,7 @@ function [effectivePrimary, primary, predictedSpd, outOfRange] = OLSpdToPrimary(
 % 08/29/16 ms   Added option to pass dark spd
 
 % Validate the number of inputs.
-error(nargchk(2, 4, nargin));
+error(nargchk(2, 5, nargin));
 
 % Setup some defaults.
 if ~exist('lambda', 'var') || isempty(lambda)
