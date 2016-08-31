@@ -63,8 +63,8 @@ if ~isfield(cal.describe, 'useAverageGamma') || (~cal.describe.useAverageGamma)
     cal.computed.gammaMode = 0;
     settings = PrimaryToSettings(cal.computed,primary);
     
-% If we computed a single average gamma function, we have to use lower level
-% routines.
+    % If we computed a single average gamma function, we have to use lower level
+    % routines.
 else
     
     settings = zeros(size(primary));
