@@ -135,7 +135,7 @@ try
     cal.describe.stateTracking.stateMeasurementIndex = 0;
     
     % Non-zero background for gamma and related measurments
-    cal.describe.specifiedBackground = 1;
+    cal.describe.specifiedBackground = false;
     
     % Some code for debugging and quick checks.  These should generally all
     % be set to true.  If any are false, OLInitCal is not run.  You'll want
@@ -146,7 +146,7 @@ try
     cal.describe.doIndependence = true;
     
     % Call save
-    cal.describe.extraSave = true;
+    cal.describe.extraSave = false;
     
     % Don't use omni.
     % First entry is PR-6xx and is always true.
