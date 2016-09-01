@@ -1,4 +1,4 @@
-function testOLCalWithStateMatchingCurrestDeviceState
+function testOLCalWithStateMatchingCurrentDeviceState
 
     close all
     

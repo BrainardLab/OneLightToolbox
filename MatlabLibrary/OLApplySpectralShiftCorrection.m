@@ -30,7 +30,7 @@ function spectralShiftCorrectedSPDs = OLApplySpectralShiftCorrection(theSpds, sp
             shiftedSpd(end:end+shiftBinsNum+1) = 0;
         end
     
-        % back to original sampling
+        % Back to original sampling
         spectralShiftCorrectedSPDs(:, iSPD) = interp1(xDataHiRes, shiftedSpd, xData);
     end
 end
