@@ -28,7 +28,7 @@ function [effectivePrimary primary] = OLSpdToPrimary(oneLightCal, targetSpd, var
 % 3/29/13  dhb  Changed some variable names to make this cleaner (Settings -> Primary).
 % 11/08/15 dhb  Specify explicitly that lsqlin algorithm should be 'active-set', ...
 %               to satisfy warning in newer versions of Matlab
-% 
+%
 
 % Parse the input
 p = inputParser;
@@ -40,7 +40,7 @@ p.parse(varargin{:});
 params = p.Results;
 
 if params.differentialMode
-   darkSpd = zeros(size(oneLightCal.computed.pr650MeanDark));
+    darkSpd = zeros(size(oneLightCal.computed.pr650MeanDark));
 else
     darkSpd = oneLightCal.computed.pr650MeanDark;
 end
@@ -87,20 +87,31 @@ end
 d2 = zeros(length(targeteffectivePrimary)-1, 1);
 C = [C1 ; C2];
 d = [d1 ; d2];
-A = -oneLightCal.computed.D;
-b = zeros(size(targetPrimary))-eps;
-vlb = [];%zeros(size(targeteffectivePrimary));
+
+if params.differentialMode
+    A = [];
+    b = [];
+    vlb = []; % Allow primaries to <0 if we are in differential mode
+else
+    A = -oneLightCal.computed.D;
+    b = zeros(size(targetPrimary))-eps;
+    vlb = zeros(size(targeteffectivePrimary));
+end
 options = optimset('lsqlin');
 options = optimset(options,'Diagnostics','off','Display','off','LargeScale','off','Algorithm','active-set');
-targeteffectivePrimary1 = lsqlin(C,d,[],[],[],[],vlb,[],[],options);
+targeteffectivePrimary1 = lsqlin(C,d,A,b,[],[],vlb,[],[],options);
 if verbose
     fprintf('Lsqlin effective settings: min = %g, max = %g\n', min(targeteffectivePrimary1(:)), max(targeteffectivePrimary1(:)));
 end
-%targeteffectivePrimary1(targeteffectivePrimary1 < 0) = 0;
+if ~params.differentialMode
+    targeteffectivePrimary1(targeteffectivePrimary1 < 0) = 0; % Bound to 0
+end
 primary = oneLightCal.computed.D * targeteffectivePrimary1;
 effectivePrimary = targeteffectivePrimary1;
-if (any(primary < 0))
-    error('D matrix used in calibration does not have assumed properties.  Read comments in source.');
+if params.differentialMode
+    if (any(primary < 0))
+        error('D matrix used in calibration does not have assumed properties.  Read comments in source.');
+    end
 end
 index1 = find(primary < 0);
 index2 = find(primary > 1);
