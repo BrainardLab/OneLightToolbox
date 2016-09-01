@@ -1,4 +1,4 @@
-function [effectivePrimary, primary, predictedSpd, outOfRange] = OLSpdToPrimary(oneLightCal, targetSpd, lambda, verbose, darkSpd)
+function effectivePrimary = OLSpdToPrimary(oneLightCal, targetSpd, lambda, verbose, darkSpd)
 % OLSpdToPrimary - Converts a spectrum into normalized primary OneLight mirror settings.
 %
 % Syntax:
@@ -54,7 +54,7 @@ narginchk(2, 5);
 
 % Setup some defaults.
 if ~exist('lambda', 'var') || isempty(lambda)
-    lambda = 0.1;
+    lambda = 0.01;
 end
 if ~exist('verbose', 'var') || isempty(verbose)
     verbose = false;
@@ -84,6 +84,7 @@ if verbose
     fprintf('Pinv settings: min = %g, max = %g\n', min(targetPrimary(:)), max(targetPrimary(:)));
 end
 
+
 % Use lsqlin to enforce constraints.
 % We will assume that the D matrix has non-overlapping sets of 1's in each of its
 % columns, which is how we currently do our calibration.  When this is true, we can
@@ -107,18 +108,18 @@ C = [C1 ; C2];
 d = [d1 ; d2];
 A = -oneLightCal.computed.D;
 b = zeros(size(targetPrimary))-eps;
-vlb = zeros(size(targeteffectivePrimary));
+vlb = [];%zeros(size(targeteffectivePrimary));
 options = optimset('lsqlin');
 options = optimset(options,'Diagnostics','off','Display','off','LargeScale','off','Algorithm','active-set');
-targeteffectivePrimary1 = lsqlin(C,d,A,b,[],[],vlb,[],[],options);
+targeteffectivePrimary1 = lsqlin(C,d,[],[],[],[],vlb,[],[],options);
 if verbose
     fprintf('Lsqlin effective settings: min = %g, max = %g\n', min(targeteffectivePrimary1(:)), max(targeteffectivePrimary1(:)));
 end
-targeteffectivePrimary1(targeteffectivePrimary1 < 0) = 0;
+%targeteffectivePrimary1(targeteffectivePrimary1 < 0) = 0;
 primary = oneLightCal.computed.D * targeteffectivePrimary1;
 effectivePrimary = targeteffectivePrimary1;
 if (any(primary < 0))
-    error('D matrix used in calibration does not have assumed properties.  Read comments in source.');
+    %error('D matrix used in calibration does not have assummed properties.  Read comments in source.');
 end
 index1 = find(primary < 0);
 index2 = find(primary > 1);

@@ -324,7 +324,7 @@ try
     
     % Loop over the stimuli in the cache file and take a measurement with
     % both the PR-650 and the OmniDriver.
-    nIter = 5;
+    nIter = 10;
     iter = 1;
     learningRate = 0.8;
     switch cacheData.computeMethod
@@ -414,9 +414,9 @@ try
                 
                 
                 %% Determine the primary settings from the measurements
-                deltaBackgroundPrimaryInferred = OLSpdToPrimary(cal, (results.modulationBGMeas.meas.pr650.spectrum-results.offMeas.meas.pr650.spectrum)-...
+                deltaBackgroundPrimaryInferred = OLSpdToPrimary(cal, (results.modulationBGMeas.meas.pr650.spectrum)-...
                     (results.modulationBGMeas.predictedSpd-cal.computed.pr650MeanDark), [], [], zeros(size(cal.computed.pr650MeanDark)));
-                deltaModulationPrimaryInferred = OLSpdToPrimary(cal, (results.modulationMaxMeas.meas.pr650.spectrum-results.offMeas.meas.pr650.spectrum)-...
+                deltaModulationPrimaryInferred = OLSpdToPrimary(cal, (results.modulationMaxMeas.meas.pr650.spectrum)-...
                     (results.modulationMaxMeas.predictedSpd-cal.computed.pr650MeanDark), [], [], zeros(size(cal.computed.pr650MeanDark)));
 
                 
