@@ -14,31 +14,10 @@ function effectivePrimary = OLSpdToPrimary(oneLightCal, targetSpd, varargin)
 % Input:
 % oneLightCal (struct) - OneLight calibration file after it has been
 %     processed by OLInitCal.
-% targetSpd (Mx1) - Target spectrum.  Should be on the same wavelength
-%     spacing and power units as the PR-650 field of the calibration
-%     structure.
-% lambda (scalar) - Determines how much smoothing we apply to the settings.
-%     Needed because there are more columns than wavelengths on the PR-650.
-%     Defaults to 0.1.
-% verbose (logical) - Enables/disables verbose diagnostic information.
-%     Defaults to false.
 %
 % Output:
 % effectivePrimary (Nx1) - The normalized power level for effective primary
 %     of the OneLight. N is the number of effective primaries. Not gamma corrected.
-% primary (Nx1) - The normalized power level for each column of the
-%     OneLight.  These values are not gamma corrected.  N is the number
-%     of columns specified by the OneLight object, and corresponds to
-%     the number of columns on its DLP chip.
-% predictedSpd (struct) - What we think we'll produce with the returned
-%     primary settings, for both PR-650 and OmniDriver radiometers. This
-%     can deviate from the target because, for example, the OneLight device
-%     has a finite spectral bandwidth.
-% outOfRange (struct) - Contains 4 fields: low, high, numLow, and numHigh.
-%     Low is true if the passed targetSpd has less power at any wavelength
-%     than the dark measurement.  High is true if the computed primaries
-%     exceed 1 for any column.  'numLow' and 'numHight' report the number
-%     of out of range values.
 %
 % 3/29/13  dhb  Changed some variable names to make this cleaner (Settings -> Primary).
 % 11/08/15 dhb  Specify explicitly that lsqlin algorithm should be 'active-set', ...
