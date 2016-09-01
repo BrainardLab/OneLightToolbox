@@ -57,7 +57,7 @@ cal = availableCalTypes(calIndex).CalFileName;
 % of the calibration data we want.
 if ischar(cal)
     % Get all the calibration data.
-    [~, cals] = LoadCalFile(cal);
+    [~, cals] = LoadCalFile(cal, [], getpref('OneLight', 'OneLightCalData'));
     
     % Have the user select a calibration if there is more than 1.
     if length(cals) > 1
