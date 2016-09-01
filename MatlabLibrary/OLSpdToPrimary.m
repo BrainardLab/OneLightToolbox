@@ -1,65 +1,47 @@
-function [effectivePrimary, primary, predictedSpd, outOfRange] = OLSpdToPrimary(oneLightCal, targetSpd, lambda, verbose, darkSpd)
+function [effectivePrimary primary] = OLSpdToPrimary(oneLightCal, targetSpd, varargin)
 % OLSpdToPrimary - Converts a spectrum into normalized primary OneLight mirror settings.
 %
 % Syntax:
-% [effectivePrimary, primary, predictedSpd, outOfRange] = OLSpdToPrimary(oneLightCal, targetSpd)
-% [effectivePrimary, primary, predictedSpd, outOfRange] = OLSpdToPrimary(oneLightCal, targetSpd, lambda)
-% [effectivePrimary, primary, predictedSpd, outOfRange] = OLSpdToPrimary(oneLightCal, targetSpd, lambda, verbose)
-% [effectivePrimary, primary, predictedSpd, outOfRange] = OLSpdToPrimary(oneLightCal, targetSpd, lambda, verbose, darkSpd)
+% effectivePrimary = OLSpdToPrimary(oneLightCal, targetSpd)
+% effectivePrimary = OLSpdToPrimary(oneLightCal, targetSpd, lambda)
+% effectivePrimary = OLSpdToPrimary(oneLightCal, targetSpd, lambda, verbose)
 %
 % Description:
 % Convert a spectral power distribution to the linear 0-1 fraction of light
 % that we need from each column of mirrors.  No gamma correction is applied
 % to the primary settings.
+% This program also allows for a 'differentialMode' which is true unless
+% the 'differential' keyword is passed.
 %
 % Input:
 % oneLightCal (struct) - OneLight calibration file after it has been
 %     processed by OLInitCal.
-% targetSpd (Mx1) - Target spectrum.  Should be on the same wavelength
-%     spacing and power units as the PR-650 field of the calibration
-%     structure.
-% lambda (scalar) - Determines how much smoothing we apply to the settings.
-%     Needed because there are more columns than wavelengths on the PR-650.
-%     Defaults to 0.1.
-% verbose (logical) - Enables/disables verbose diagnostic information.
-%     Defaults to false.
-% darkSpd (Mx1) - Dark spd.  Should be on the same wavelength
-%     spacing and power units as the PR-650 field of the calibration
-%     structure. This is optional, and allows for bespoke dark measurements
-%     to be passed in.
-%
-% Output:
-% effectivePrimary (Nx1) - The normalized power level for effective primary
-%     of the OneLight. Not gamma corrected.
 % primary (Nx1) - The normalized power level for each column of the
 %     OneLight.  These values are not gamma corrected.  N is the number
 %     of columns specified by the OneLight object, and corresponds to
 %     the number of columns on its DLP chip.
-% predictedSpd (struct) - What we think we'll produce with the returned
-%     primary settings, for both PR-650 and OmniDriver radiometers. This
-%     can deviate from the target because, for example, the OneLight device
-%     has a finite spectral bandwidth.
-% outOfRange (struct) - Contains 4 fields: low, high, numLow, and numHigh.
-%     Low is true if the passed targetSpd has less power at any wavelength
-%     than the dark measurement.  High is true if the computed primaries
-%     exceed 1 for any column.  'numLow' and 'numHight' report the number
-%     of out of range values.
+%
+% Output:
+% effectivePrimary (Nx1) - The normalized power level for effective primary
+%     of the OneLight. N is the number of effective primaries. Not gamma corrected.
 %
 % 3/29/13  dhb  Changed some variable names to make this cleaner (Settings -> Primary).
-% 11/08/15 dhb  Specify explicitly that lsqlin algorithm should be 'active-set', to satisfy warning in newer versions of Matlab
-% 08/29/16 ms   Added option to pass dark spd
+% 11/08/15 dhb  Specify explicitly that lsqlin algorithm should be 'active-set', ...
+%               to satisfy warning in newer versions of Matlab
+%
 
-% Validate the number of inputs.
-error(nargchk(2, 4, nargin));
+% Parse the input
+p = inputParser;
+p.addOptional('verbose', false, @islogical);
+p.addOptional('lambda', 0.1, @isscalar);
+p.addOptional('differentialMode', false, @islogical);
 
-% Setup some defaults.
-if ~exist('lambda', 'var') || isempty(lambda)
-    lambda = 0.1;
-end
-if ~exist('verbose', 'var') || isempty(verbose)
-    verbose = false;
-end
-if ~exist('darkSpd', 'var') || isempty(darkSpd)
+p.parse(varargin{:});
+params = p.Results;
+
+if params.differentialMode
+    darkSpd = zeros(size(oneLightCal.computed.pr650MeanDark));
+else
     darkSpd = oneLightCal.computed.pr650MeanDark;
 end
 
@@ -105,20 +87,31 @@ end
 d2 = zeros(length(targeteffectivePrimary)-1, 1);
 C = [C1 ; C2];
 d = [d1 ; d2];
-A = -oneLightCal.computed.D;
-b = zeros(size(targetPrimary))-eps;
-vlb = zeros(size(targeteffectivePrimary));
+
+if params.differentialMode
+    A = [];
+    b = [];
+    vlb = []; % Allow primaries to <0 if we are in differential mode
+else
+    A = -oneLightCal.computed.D;
+    b = zeros(size(targetPrimary))-eps;
+    vlb = zeros(size(targeteffectivePrimary));
+end
 options = optimset('lsqlin');
 options = optimset(options,'Diagnostics','off','Display','off','LargeScale','off','Algorithm','active-set');
 targeteffectivePrimary1 = lsqlin(C,d,A,b,[],[],vlb,[],[],options);
 if verbose
     fprintf('Lsqlin effective settings: min = %g, max = %g\n', min(targeteffectivePrimary1(:)), max(targeteffectivePrimary1(:)));
 end
-targeteffectivePrimary1(targeteffectivePrimary1 < 0) = 0;
+if ~params.differentialMode
+    targeteffectivePrimary1(targeteffectivePrimary1 < 0) = 0; % Bound to 0
+end
 primary = oneLightCal.computed.D * targeteffectivePrimary1;
 effectivePrimary = targeteffectivePrimary1;
-if (any(primary < 0))
-    error('D matrix used in calibration does not have assummed properties.  Read comments in source.');
+if params.differentialMode
+    if (any(primary < 0))
+        error('D matrix used in calibration does not have assumed properties.  Read comments in source.');
+    end
 end
 index1 = find(primary < 0);
 index2 = find(primary > 1);
@@ -138,7 +131,4 @@ else
     outOfRange.high = false;
 end
 
-predictedSpd.pr650 = oneLightCal.computed.pr650M * targeteffectivePrimary1 + oneLightCal.computed.pr650MeanDark;
-if (oneLightCal.describe.useOmni)
-    predictedSpd.omni = oneLightCal.computed.omniM * targeteffectivePrimary1 + oneLightCal.computed.omniMeanDark;
-end
+predictedSpd.pr650 = oneLightCal.computed.pr650M * targeteffectivePrimary1 + darkSpd;

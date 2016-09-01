@@ -1,14 +1,15 @@
-function OLCalibrateOOC
-% OLCalibrate - Calibrates the OneLight device.
+function OLCalibrateWithStateTrackingOOC
+% OLCalibrateWithStateTrackingOOC - Calibrates the OneLight device, while
+% tracking its state (power fluctuations and spectral shifts)
 %
 % Syntax:
-% OLCalibrate
+% OLCalibrateWithStateTrackingOOC
 %
 % Description:
-% Calibrates a OneLight device using a PR-650 radiometer and the OneLight
-% supplied spectrometer (OmniDriver).  The goal is to bypass the
-% several pieces of hardware and mathematics used by the software supplied
-% by the OneLight people.
+% Calibrates a OneLight device using a PR-6xx radiometer aor the OneLight
+% supplied spectrometer (OmniDriver) while tracking for changes in:
+%   (a) the total power emitted and the bulb, and
+%   (b) spectral shifts of the bulb.
 %
 % 3/29/13  dhb  Added cautionary note about changing stepSize to not equal
 %               bandWidth, and set it directly to be the same as bandWidth
@@ -27,8 +28,7 @@ function OLCalibrateOOC
 %          dhb  Started converting to use new OLSettingsToStartStops for all computation of starts/stops.
 %               A side effect of this was to fix a bug where out of band mirrors were not all the way off
 %               for some measurements.
-% 2/17/14  dhb  All measurements get their starts/stops using
-% OLSettingsToStartsStops.
+% 2/17/14  dhb  All measurements get their starts/stops using OLSettingsToStartsStops.
 %          dhb  Set calID to mglGetSecs. dhb  Put in save before init,
 %                 temporarily, because the init is likely to crash until we fix it
 %                 for new cal file.
@@ -39,7 +39,14 @@ function OLCalibrateOOC
 %               Remove blocks of commented out code. Uncomment debugging
 %                 save before call to init, because there will probably be bugs.
 % 4/15/16  npc  Adapted to use PR650dev/PR670dev objects
-
+% 8/13/16  npc  Proceduralized all the measurement code
+%               Added stimuli for tracking power fluctuations and spectral
+%               shifts of the OneLight bulb
+% 8/17/16  npc  Added 'warming-up' stimuli right before the calibration
+%               to see if this eliminates the large initial drift correction
+% 8/24/16  dhb, ms Fix bug that NPC identified in the specified background
+%               code.
+%
 spectroRadiometerOBJ = [];
 
 try
@@ -105,6 +112,9 @@ try
     end
     cal.describe.nGammaFitLevels = 1024;
     
+    % Levels at which to measure the gamma function
+    cal.describe.nGammaLevels = 24;
+    
     % Randomize measurements. If this flag is set, the measurements
     % will be done in random order. We do this to counter systematic device
     % drift.
@@ -117,8 +127,15 @@ try
     % time of measurement.
     cal.describe.correctLinearDrift = 1;
     
+    % Specify how often (every how many stimuli) to gauge the system state
+    % In other words when to insert the power fluctuation and the spectral
+    % shift gauge stimuli
+    cal.describe.stateTracking.calibrationStimInterval = 5;
+    cal.describe.stateTracking.calibrationStimIndex = 0;
+    cal.describe.stateTracking.stateMeasurementIndex = 0;
+    
     % Non-zero background for gamma and related measurments
-    cal.describe.specifiedBackground = 0;
+    cal.describe.specifiedBackground = false;
     
     % Some code for debugging and quick checks.  These should generally all
     % be set to true.  If any are false, OLInitCal is not run.  You'll want
@@ -129,7 +146,7 @@ try
     cal.describe.doIndependence = true;
     
     % Call save
-    cal.describe.extraSave = true;
+    cal.describe.extraSave = false;
     
     % Don't use omni.
     % First entry is PR-6xx and is always true.
@@ -191,10 +208,6 @@ try
     % Open the OneLight device.
     ol = OneLight;
     
-    % Gamma measurement parameters.  The measurements
-    % are spaced evenly across the effective primaries.
-    cal.describe.nGammaLevels = 24;
-    
     % Get the number of rows and columns
     cal.describe.numRowMirrors = ol.NumRows;
     cal.describe.numColMirrors = ol.NumCols;
@@ -224,12 +237,26 @@ try
         cal.describe.specifiedBackgroundSettings = 0.5*ones(nPrimaries,1);
     end
     
+    % Define the state tracking stimulus settings
+    cal.describe.stateTracking.stimSettings.powerFluctuationsStim = ones(nPrimaries,1);
+    cal.describe.stateTracking.stimSettings.spectralShiftsStim = zeros(nPrimaries,1);
+    cal.describe.stateTracking.stimSettings.spectralShiftsStim(2:10:end) = 1.0;
+    
     % Find and set the optimal integration time.  Subtract off a couple
     % thousand microseconds just to give it a conservative value.
     ol.setAll(true);
     
+    % Ask for a keypress to start the warming up phase.
+    % We hope this will will decrease the large initial drift correction
+    input(sprintf('<strong>Press return to enter the OneLight warmup loop</strong>\n'));
+    % don't take any measurements [false false]
+    % warmpUpMeterToggle = [false false];
+    % take measurements
+    warmpUpMeterToggle = [1 cal.describe.useOmni];
+    OLWarmUpOOC(cal, ol, od, spectroRadiometerOBJ, warmpUpMeterToggle);
+    
     % Ask for a keypress to continue.
-    input('*** Press return to pause 10s then continue with the calibration***\n');
+    input(sprintf('<strong>Press return to pause 10s then continue with the calibration</strong>\n'));
     pause(10);
     tic;
     startCal = GetSecs;
@@ -238,83 +265,28 @@ try
     % need to be fussed with a little.
     ol.setAll(false);
     
-    fprintf('\n*** Initial measurements of spectra of interest ***\n\n');
+    fprintf('\n<strong>Initial measurements of spectra of interest</strong>\n\n');
     
     % Take a full on measurement.
-    fprintf('- Taking full on measurement...');
-    theSettings = ones(nPrimaries,1);
-    [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
-    measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
-    
-    cal.raw.fullOn(:,1) = measTemp.pr650.spectrum;
-    cal.raw.t.fullOn(:,1) = measTemp.pr650.time(1);
-    if (meterToggle(2))
-        cal.raw.omniDriver.fullOnMeas(:,1) = measTemp.omni.spectrum;
-    end
-    fprintf('Done\n');
+    fullMeasurementIndex = 1;
+    cal = TakeFullOnMeasurement(fullMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
     
     % Take a half on measurement.
-    fprintf('- Taking half on measurement...');
-    theSettings = 0.5*ones(nPrimaries,1);
-    [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
-    measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
+    halfOnMeasurementIndex = 1;
+    cal = TakeHalfOnMeasurement(halfOnMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
     
-    cal.raw.halfOnMeas(:,1) = measTemp.pr650.spectrum;
-    cal.raw.t.halfOnMeas(:,1) = measTemp.pr650.time(1);
-    if (meterToggle(2))
-        cal.raw.omniDriver.halfOnMeas(:,1) = measTemp.omni.spectrum;
-    end
-    fprintf('Done\n');
+    % Take a wiggly measurement
+    wigglyMeasurementIndex = 1;
+    cal = TakeWigglyMeasurement(wigglyMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
     
-    % Take a wiggly measurement.
-    fprintf('- Taking wiggly measurement...');
-    theSettings = 0.1*ones(nPrimaries,1);
-    theSettings(2:8:end) = 0.8;
-    [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
-    measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
-    cal.raw.wigglyMeas.settings(:,1) = theSettings;
-    cal.raw.wigglyMeas.measSpd(:,1) = measTemp.pr650.spectrum;
-    cal.raw.t.wigglyMeas.t(:,1) = measTemp.pr650.time(1);
-    if (meterToggle(2))
-        cal.raw.omniDriver.wigglyMeas(:,1) = measTemp.omni.spectrum;
-    end
-    fprintf('Done\n');
+    % Take a dark measurement
+    darkMeasurementIndex = 1;
+    cal = TakeDarkMeasurement(darkMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
     
-    spectroRadiometerOBJ.setOptions('sensitivityMode', 'EXTENDED');
-    % Take a dark measurement.  Use special case provided by OLSettingsToStartsStops
-    % that turns all mirrors off.
-    fprintf('- Measuring dark background...');
-    theSettings = 0*ones(nPrimaries,1);
-    [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
-    measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
-    cal.raw.darkMeas(:,1) = measTemp.pr650.spectrum;
-    cal.raw.t.darkMeas(:,1) = measTemp.pr650.time(1);
-    if (meterToggle(2))
-        cal.raw.omniDriver.darkMeas(:,1) = measTemp.omni.spectrum;
-    end
-    fprintf('Done\n');
-    
-    % Take a check dark measurement.  Use setAll(false) instead of our
-    % starts/stops code.
-    fprintf('- Measuring dark background again...');
-    ol.setAll(false);
-    cal.raw.darkMeasCheck(:,1) = spectroRadiometerOBJ.measure('userS', cal.describe.S); % MeasSpd(cal.describe.S,cal.describe.meterTypeNum,'off');
-    cal.raw.t.darkMeasCheck(:,1) = mglGetSecs;
-    fprintf('Done\n');
-    spectroRadiometerOBJ.setOptions('sensitivityMode', 'STANDARD');
-    
-    % Take a spcecified background measurement, if desired
+    % Take a specified background measurement, if desired
     if (cal.describe.specifiedBackground)
-        fprintf('- Measuring specified background...');
-        theSettings = cal.describe.specifiedBackgroundSettings;
-        [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
-        measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
-        cal.raw.specifiedBackgroundMeas(:,1) = measTemp.pr650.spectrum;
-        cal.raw.t.specifiedBackgroundMeas(:,1) = measTemp.pr650.time(1);
-        if (meterToggle(2))
-            cal.raw.omniDriver.specifiedBackgroundMeas(:,1) = measTemp.omni.spectrum;
-        end
-        fprintf('Done\n');
+        specifiedBackgroundMeasurementIndex = 1;
+        cal = TakeSpecifiedBackgroundMeasurement(specifiedBackgroundMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
     end
     
     % Primary measurements.
@@ -325,7 +297,7 @@ try
     % used except to put the data in to the matrix.  This may be a vestigal
     % feature, but I am not going to change it right now.
     if (cal.describe.doPrimaries)
-        fprintf('\n*** Measure spectra of effective primaries ***\n\n');
+        fprintf('\n<strong>Measure spectra of effective primaries</strong>\n\n');
         
         % If needed, shuffle the primary measurements.
         if cal.describe.randomizePrimaryMeas
@@ -333,46 +305,9 @@ try
         else
             primaryMeasIter = 1:length(cal.describe.primaryStartCols);
         end
-        for i = primaryMeasIter
-            
-            % Record the band start and end.
-            wavelengthBandMeasurements(i).bandRange = [cal.describe.primaryStartCols(i), cal.describe.primaryStopCols(i)]; %#ok<*AGROW>
-            
-            % If we are using a specified background, we need to measure for all
-            % primaries except the one being characterized at the specified
-            % level. (If not, we just use the dark measurement for this
-            % purpose.  Which is used to produce the actual calibration data is
-            % handled when we post-process the measurements.)
-            if (cal.describe.specifiedBackground)
-                fprintf('- Measuring effective background for effective primary %d...',i);
-                theSettings = GetEffectiveBackgroundSettingsForPrimary(i,cal.describe.specifiedBackgroundSettings);
-                [starts,stops] = OLSettingsToStartsStops(cal,cal.describe.specifiedBackgroundSettings);
-                measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
-                wavelengthBandMeasurements(i).effectiveBackgroundSpectrum = measTemp.pr650.spectrum;
-                wavelengthBandMeasurements(i).effectiveBackgroundTime = measTemp.pr650.time(1);
-                if (meterToggle(2))
-                    wavelengthBandMeasurements(i).effectiveBackgroundSpectrumOD = measTemp.omni.spectrum;
-                end
-                fprintf('Done\n');
-            end
-            
-            % Set the starts/stops for this effective primary, relative to the
-            % measurement background, and take the measurement.
-            fprintf('- Measurement for effective primary %d of %d...', i, length(cal.describe.primaryStartCols));
-            if (cal.describe.specifiedBackground)
-                theSettings = GetEffectiveBackgroundSettingsForPrimary(i,cal.describe.specifiedBackgroundSettings);
-            else
-                theSettings = zeros(nPrimaries,1);
-            end
-            theSettings(i) = 1;
-            [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
-            measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
-            wavelengthBandMeasurements(i).lightSpectrum = measTemp.pr650.spectrum;
-            wavelengthBandMeasurements(i).time = measTemp.pr650.time(1);
-            if (meterToggle(2))
-                wavelengthBandMeasurements(i).lightSpectrumOD = measTemp.omni.spectrum;
-            end
-            fprintf('Done\n');
+        
+        for primaryIndex = primaryMeasIter
+            [cal, wavelengthBandMeasurements(primaryIndex)] = TakePrimaryMeasurement(cal, primaryIndex, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
         end
         
         % Refactor the measurements into separate matrices for further calculations.
@@ -402,38 +337,7 @@ try
                 error('Inconsistency in various primary column descriptors');
             end
         end
-    end
-    
-    
-    % Take another full on measurement.
-    fprintf('- Taking full on measurement...');
-    theSettings = ones(nPrimaries,1);
-    [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
-    measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
-    
-    currentFullOnMeasurementNum = size(cal.raw.fullOn,2)+1;
-    cal.raw.fullOn(:,currentFullOnMeasurementNum) = measTemp.pr650.spectrum;
-    cal.raw.t.fullOn(:,currentFullOnMeasurementNum) = measTemp.pr650.time(1);
-    if (meterToggle(2))
-        cal.raw.omniDriver.fullOnMeas(:,currentFullOnMeasurementNum) = measTemp.omni.spectrum;
-    end
-    fprintf('Done\n');
-    
-    
-    % Take another half on measurement.
-    fprintf('- Taking half on measurement...');
-    theSettings = 0.5*ones(nPrimaries,1);
-    [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
-    measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
-    
-    currentHalfOnMeasurementNum = size(cal.raw.halfOnMeas,2)+1;
-    cal.raw.halfOnMeas(:,currentHalfOnMeasurementNum) = measTemp.pr650.spectrum;
-    cal.raw.t.halfOnMeas(:,currentHalfOnMeasurementNum) = measTemp.pr650.time(1);
-    if (meterToggle(2))
-        cal.raw.omniDriver.halfOnMeas(:,currentHalfOnMeasurementNum) = measTemp.omni.spectrum;
-    end
-    fprintf('Done\n');
-    
+    end  % if (cal.describe.doPrimaries)
     
     % Store some measurement parameters.
     cal.describe.durationMinutes = (GetSecs - startCal)/60;
@@ -443,9 +347,8 @@ try
     %
     % We do this for cal.describe.nGammaBands of the bands, at
     % cal.describe.nGammaLevels for each band.
-    
     if (cal.describe.doGamma)
-        fprintf('\n*** Gamma measurements ***\n\n');
+        fprintf('\n<strong>Gamma measurements</strong>\n\n');
         
         cal.describe.gamma.gammaBands = round(linspace(1,cal.describe.numWavelengthBands,cal.describe.nGammaBands));
         cal.describe.gamma.gammaLevels = linspace(1/cal.describe.nGammaLevels,1,cal.describe.nGammaLevels);
@@ -453,130 +356,17 @@ try
         % Allocate some memory.
         cal.raw.gamma.cols = zeros(ol.NumCols, cal.describe.nGammaBands);
         
-        % Make gand amma measurements for each band
+        % Make gamma measurements for each band
         if cal.describe.randomizeGammaMeas
             gammaMeasIter = Shuffle(1:cal.describe.nGammaBands);
         else
             gammaMeasIter = 1:cal.describe.nGammaBands;
         end
         
-        
-        for i = gammaMeasIter
-            fprintf('\n*** Gamma measurements on gamma band set %d of %d ***\n\n', i, cal.describe.nGammaBands);
-            
-            % Store the columns used for this set.
-            cal.raw.gamma.cols(:,i) = cal.raw.cols(:,cal.describe.gamma.gammaBands(i));
-            % Allocate memory for the recorded spectra.
-            cal.raw.gamma.rad(i).meas = zeros(cal.describe.S(3), cal.describe.nGammaLevels);
-            
-            % Test each gamma level for this band. If the gamma randomization
-            % flag is set, shuffle now. We are still storing the measurements
-            % in the right order as expected.
-            if cal.describe.randomizeGammaLevels
-                gammaLevelsIter = Shuffle(1:cal.describe.nGammaLevels);
-            else
-                gammaLevelsIter = 1:cal.describe.nGammaLevels;
-            end
-            
-            % Take another half on measurement.
-            fprintf('- Taking half on measurement...');
-            theSettings = 0.5*ones(nPrimaries,1);
-            [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
-            measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
-            
-            currentHalfOnMeasurementNum = size(cal.raw.halfOnMeas,2)+1;
-            cal.raw.halfOnMeas(:,currentHalfOnMeasurementNum) = measTemp.pr650.spectrum;
-            cal.raw.t.halfOnMeas(:,currentHalfOnMeasurementNum) = measTemp.pr650.time(1);
-            if (meterToggle(2))
-                cal.raw.omniDriver.halfOnMeas(:,currentHalfOnMeasurementNum) = measTemp.omni.spectrum;
-            end
-            fprintf('Done\n');
-            
-            
-            % Take another full on measurement.
-            fprintf('- Taking full on measurement...');
-            theSettings = ones(nPrimaries,1);
-            [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
-            measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
-            
-            currentFullOnMeasurementNum = size(cal.raw.fullOn,2)+1;
-            cal.raw.fullOn(:,currentFullOnMeasurementNum) = measTemp.pr650.spectrum;
-            cal.raw.t.fullOn(:,currentFullOnMeasurementNum) = measTemp.pr650.time(1);
-            if (meterToggle(2))
-                cal.raw.omniDriver.fullOnMeas(:,currentFullOnMeasurementNum) = measTemp.omni.spectrum;
-            end
-            fprintf('Done\n');
-            
-            
-            % If we're specifying the background, we need a measurement of that
-            % background but with the settings for the specified gamma band set
-            % to zero.  This is then used to subtract off the background from
-            % the series of gamma measurements, rather than using the omnibus
-            % dark level measurement.
-            if (cal.describe.specifiedBackground)
-                fprintf('- Measuring effective background for gamma band %d...',i);
-                theSettings = GetEffectiveBackgroundSettingsForPrimary(cal.describe.gamma.gammaBands(i),cal.describe.specifiedBackgroundSettings);
-                [starts,stops] = OLSettingsToStartsStops(cal,cal.describe.specifiedBackgroundSettings);
-                measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
-                cal.raw.gamma.rad(i).effectiveBgMeas = measTemp.pr650.spectrum;
-                cal.raw.t.gamma.rad(i).effectiveBgMeas = measTemp.pr650.time(1);
-                if (meterToggle(2))
-                    cal.raw.gamma.omniDriver(i).effectiveBgMeas = measTemp.omni.spectrum;
-                end
-                fprintf('Done\n');
-            end
-            
-            for rowTest = gammaLevelsIter;
-                fprintf('- Taking measurement %d of %d for gamma band %d...', rowTest, cal.describe.nGammaLevels,i);
-                
-                % Set the starts/stops, measure, and store
-                if (cal.describe.specifiedBackground)
-                    theSettings = GetEffectiveBackgroundSettingsForPrimary(cal.describe.gamma.gammaBands(i),cal.describe.specifiedBackgroundSettings);
-                else
-                    theSettings = zeros(nPrimaries,1);
-                end
-                theSettings(cal.describe.gamma.gammaBands(i)) = cal.describe.gamma.gammaLevels(rowTest);
-                [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
-                measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
-                cal.raw.gamma.rad(i).meas(:,rowTest) = measTemp.pr650.spectrum;
-                cal.raw.t.gamma.rad(i).meas(rowTest) = measTemp.pr650.time(1);
-                if (meterToggle(2))
-                    cal.raw.gamma.omnidriver(i).meas(:,rowTest) = measTemp.omni.spectrum;
-                end
-                fprintf('Done\n');
-            end
+        for gammaBandIndex = gammaMeasIter
+            cal = TakeGammaMeasurements(cal, gammaBandIndex, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
         end
-    end
-    
-    
-    % Take another half on measurement.
-    fprintf('- Taking half on measurement...');
-    theSettings = 0.5*ones(nPrimaries,1);
-    [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
-    measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
-    
-    currentHalfOnMeasurementNum = size(cal.raw.halfOnMeas,2)+1;
-    cal.raw.halfOnMeas(:,currentHalfOnMeasurementNum) = measTemp.pr650.spectrum;
-    cal.raw.t.halfOnMeas(:,currentHalfOnMeasurementNum) = measTemp.pr650.time(1);
-    if (meterToggle(2))
-        cal.raw.omniDriver.halfOnMeas(:,currentHalfOnMeasurementNum) = measTemp.omni.spectrum;
-    end
-    fprintf('Done\n');
-    
-    
-    % Take another full on measurement.
-    fprintf('- Taking full on measurement...');
-    theSettings = ones(nPrimaries,1);
-    [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
-    measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
-    
-    currentFullOnMeasurementNum = size(cal.raw.fullOn,2)+1;
-    cal.raw.fullOn(:,currentFullOnMeasurementNum) = measTemp.pr650.spectrum;
-    cal.raw.t.fullOn(:,currentFullOnMeasurementNum) = measTemp.pr650.time(1);
-    if (meterToggle(2))
-        cal.raw.omniDriver.fullOnMeas(:,currentFullOnMeasurementNum) = measTemp.omni.spectrum;
-    end
-    fprintf('Done\n');
+    end  % if (cal.describe.doGamma)
     
     
     % Now we'll do an independence test on the same column sets from the
@@ -584,8 +374,7 @@ try
     % calibration, we do this test around a dark background.  This could
     % be modified with a little thought.
     if (cal.describe.doIndependence)
-        % Set some parameters which we don't have if we just do the
-        % independence measurements
+        % Set some parameters which we don't have if we just do the independence measurements
         if ~(cal.describe.doGamma)
             cal.describe.gamma.gammaBands = round(linspace(1,cal.describe.numWavelengthBands,cal.describe.nGammaBands));
             cal.describe.gamma.gammaLevels = linspace(1/cal.describe.nGammaLevels,1,cal.describe.nGammaLevels);
@@ -599,141 +388,45 @@ try
                 primaryMeasIter = 1:length(cal.describe.primaryStartCols);
             end
             for i = primaryMeasIter
-                
                 % Record the band start and end.
                 wavelengthBandMeasurements(i).bandRange = [cal.describe.primaryStartCols(i), cal.describe.primaryStopCols(i)]; %#ok<*AGROW>
             end
+            
             for i = 1:cal.describe.numWavelengthBands
-                
                 % Store which columns were on for this measurement.
                 cal.raw.cols(:,i) = zeros(ol.NumCols, 1);
                 e = wavelengthBandMeasurements(i).bandRange;
                 cal.raw.cols(e(1):e(2),i) = 1;
             end
-        end
+        end % if ~(cal.describe.doPrimaries)
         
-        fprintf('\n*** Independence Test ***\n\n');
-        
-        % Store some measurement data regarding the independence test.
-        cal.describe.independence.gammaBands = cal.describe.gamma.gammaBands;
-        cal.describe.independence.nGammaBands = cal.describe.nGammaBands;
-        cal.raw.independence.cols = zeros(ol.NumCols, cal.describe.nGammaBands);
-        
-        fprintf('- Testing column sets individually...');
-        for i = 1:cal.describe.independence.nGammaBands
-            % Store column set used for this measurement.
-            cal.raw.independence.cols(:,i) = cal.raw.cols(:,cal.describe.independence.gammaBands(i));
-            
-            % Take a measurement.
-            if (cal.describe.specifiedBackground)
-                theSettings = zeros(nPrimaries,1);
-            else
-                theSettings = zeros(nPrimaries,1);
-            end
-            theSettings(cal.describe.independence.gammaBands(i)) = 1;
-            [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
-            measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
-            cal.raw.independence.meas(:,i) = measTemp.pr650.spectrum;
-            cal.raw.t.independence.meas(i) = measTemp.pr650.time(1);
-            if (meterToggle(2))
-                cal.raw.independence.measOD(:,i) = measTemp.omni.spectrum;
-            end
-        end
-        fprintf('Done\n');
-        
-        % Now take a cumulative measurement.
-        fprintf('- Testing column sets cumulatively...');
-        cal.raw.independence.colsAll = sum(cal.raw.independence.cols, 2);
-        if (cal.describe.specifiedBackground)
-            theSettings = zeros(nPrimaries,1);
-        else
-            theSettings = zeros(nPrimaries,1);
-        end
-        for i = 1:cal.describe.independence.nGammaBands
-            theSettings(cal.describe.independence.gammaBands(i)) = 1;
-        end
-        [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
-        measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
-        cal.raw.independence.measAll = measTemp.pr650.spectrum;
-        cal.raw.t.independence.measAll = measTemp.pr650.time(1);
-        if (meterToggle(2))
-            cal.raw.independence.measODAll = measTemp.omni.spectrum;
-        end
-        fprintf('Done\n');
+        cal = TakeIndependenceMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
     end
     
-    % Take a spcecified background measurement at the end, if desired
-    %
-    % This uses the same settings as for the specified background
-    % measurement above.
+    % Take a specified background measurement at the end, if desired
     if (cal.describe.specifiedBackground)
-        fprintf('- Measuring specified background...');
-        [starts,stops] = OLSettingsToStartsStops(cal,cal.describe.specifiedBackgroundSettings);
-        measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
-        cal.raw.specifiedBackgroundMeas(:,2) = measTemp.pr650.spectrum;
-        cal.raw.t.specifiedBackgroundMeas(:,2) = measTemp.pr650.time(1);
-        if (meterToggle(2))
-            cal.raw.omniDriver.specifiedBackgroundMeas(:,2) = measTemp.omni.spectrum;
-        end
-        fprintf('Done\n');
+        specifiedBackgroundMeasurementIndex = size(cal.raw.specifiedBackgroundMeas,2) + 1;
+        cal = TakeSpecifiedBackgroundMeasurement(specifiedBackgroundMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
     end
     
-    % Take a dark measurement at the end.  Use special case provided by OLSettingsToStartsStops
-    % that turns all mirrors off.
-    spectroRadiometerOBJ.setOptions('sensitivityMode', 'EXTENDED');
-    fprintf('- Measuring dark...');
-    theSettings = 0*ones(nPrimaries,1);
-    [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
-    measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
-    cal.raw.darkMeas(:,2) = measTemp.pr650.spectrum;
-    cal.raw.t.darkMeas(:,2) = measTemp.pr650.time(1);
-    if (meterToggle(2))
-        cal.raw.omniDriver.darkMeas(:,1) = measTemp.omni.spectrum;
-    end
-    fprintf('Done\n');
-    spectroRadiometerOBJ.setOptions('sensitivityMode', 'STANDARD');
+    % Take another dark measurement
+    darkMeasurementIndex = size(cal.raw.darkMeas,2)+1;
+    cal = TakeDarkMeasurement(darkMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
     
-    % Take a wiggly measurement.
-    fprintf('- Taking wiggly measurement...');
-    theSettings = 0.1*ones(nPrimaries,1);
-    theSettings(2:8:end) = 0.8;
-    [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
-    measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
-    cal.raw.wigglyMeas.settings(:,2) = theSettings;
-    cal.raw.wigglyMeas.measSpd(:,2) = measTemp.pr650.spectrum;
-    cal.raw.t.wigglyMeas.t(:,2) = measTemp.pr650.time(1);
-    if (meterToggle(2))
-        cal.raw.omniDriver.wigglyMeas(:,2) = measTemp.omni.spectrum;
-    end
-    fprintf('Done\n');
+    % Take another wiggly measurement.
+    wigglyMeasurementIndex = size(cal.raw.wigglyMeas.measSpd,2)+1;
+    cal = TakeWigglyMeasurement(wigglyMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
     
     % Take another half on measurement.
-    fprintf('- Taking half on measurement...');
-    theSettings = 0.5*ones(nPrimaries,1);
-    [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
-    measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
-    
-    currentHalfOnMeasurementNum = size(cal.raw.halfOnMeas,2)+1;
-    cal.raw.halfOnMeas(:,currentHalfOnMeasurementNum) = measTemp.pr650.spectrum;
-    cal.raw.t.halfOnMeas(:,currentHalfOnMeasurementNum) = measTemp.pr650.time(1);
-    if (meterToggle(2))
-        cal.raw.omniDriver.halfOnMeas(:,currentHalfOnMeasurementNum) = measTemp.omni.spectrum;
-    end
-    fprintf('Done\n');
+    halfOnMeasurementIndex = size(cal.raw.halfOnMeas,2)+1;
+    cal = TakeHalfOnMeasurement(halfOnMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
     
     % Take another full on measurement.
-    fprintf('- Taking full on measurement...');
-    theSettings = ones(nPrimaries,1);
-    [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
-    measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
+    fullMeasurementIndex = size(cal.raw.fullOn,2)+1;
+    cal = TakeFullOnMeasurement(fullMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
     
-    currentFullOnMeasurementNum = size(cal.raw.fullOn,2)+1;
-    cal.raw.fullOn(:,currentFullOnMeasurementNum) = measTemp.pr650.spectrum;
-    cal.raw.t.fullOn(:,currentFullOnMeasurementNum) = measTemp.pr650.time(1);
-    if (meterToggle(2))
-        cal.raw.omniDriver.fullOnMeas(:,currentFullOnMeasurementNum) = measTemp.omni.spectrum;
-    end
-    fprintf('Done\n');
+    % Take a final set of state measurements
+    cal = TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
     
     % Store the type of calibration and unique calibration ID
     cal.describe.calType = selectedCalType;
@@ -747,8 +440,7 @@ try
     % commented out this initial save so that we don't get the
     % annoying double saves in the calibration files.
     if (cal.describe.extraSave)
-        oneLightCalSubdir = 'OneLight';
-        SaveCalFile(cal, fullfile(oneLightCalSubdir,selectedCalType.CalFileName));
+        SaveCalFile(cal, selectedCalType.CalFileName, getpref('OneLight', 'OneLightCalData'));
     end
     
     % Run the calibration file through the initialization process.  This
@@ -756,15 +448,24 @@ try
     % computed subfield of the structure.  Only do this if we did full
     % calibration, since otherwise OLInitCal will barf.
     if (all([cal.describe.doPrimaries cal.describe.doGamma cal.describe.doIndependence]))
-        cal = OLInitCal(cal);
+        if (cal.describe.specifiedBackground)
+            % Use OLInitCalBG if the background is specified
+            cal = OLInitCalBG(cal);
+        else
+            cal = OLInitCal(cal);
+        end
         
         % Save out the calibration
-        oneLightCalSubdir = 'OneLight';
-        SaveCalFile(cal, fullfile(oneLightCalSubdir,selectedCalType.CalFileName));
+        SaveCalFile(cal, selectedCalType.CalFileName, getpref('OneLight', 'OneLightCalData'));
     end
     
-    fprintf('\n*** Calibration Complete ***\n\n');
+    % Notify user we are done
+    fprintf('\n<strong>Calibration Complete</strong>\n\n');
     
+    % Shutdown the PR670/650
+    spectroRadiometerOBJ.shutDown();
+    
+    % Send email that we are done
     SendEmail(emailRecipient, 'OneLight Calibration Complete', ...
         'Finished!');
 catch e
@@ -780,36 +481,407 @@ end
 
 end
 
+function cal = TakeStateMeasurements(cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage)
+cal = cal0;
+cal.describe.stateTracking.stateMeasurementIndex = cal.describe.stateTracking.stateMeasurementIndex + 1;
+
+fprintf('-- Power fluctuation state measurement #%d ...', cal.describe.stateTracking.stateMeasurementIndex);
+theSettings = cal.describe.stateTracking.stimSettings.powerFluctuationsStim;
+[starts,stops] = OLSettingsToStartsStops(cal,theSettings);
+measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
+cal.raw.powerFluctuationMeas.measSpd(:, cal.describe.stateTracking.stateMeasurementIndex) = measTemp.pr650.spectrum;
+cal.raw.powerFluctuationMeas.t(:, cal.describe.stateTracking.stateMeasurementIndex) = measTemp.pr650.time(1);
+fprintf('Done\n');
+
+fprintf('-- Spectral shift state measurement #%d    ...', cal.describe.stateTracking.stateMeasurementIndex);
+theSettings = cal.describe.stateTracking.stimSettings.spectralShiftsStim;
+[starts,stops] = OLSettingsToStartsStops(cal,theSettings);
+measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
+cal.raw.spectralShiftsMeas.measSpd(:, cal.describe.stateTracking.stateMeasurementIndex) = measTemp.pr650.spectrum;
+cal.raw.spectralShiftsMeas.t(:, cal.describe.stateTracking.stateMeasurementIndex) = measTemp.pr650.time(1);
+fprintf('Done\n');
+end
+
+function cal = TakeIndependenceMeasurements(cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage)
+
+cal = cal0;
+nPrimaries = cal.describe.numWavelengthBands;
+
+fprintf('\n<strong>Independence Test</strong>\n\n');
+% Store some measurement data regarding the independence test.
+cal.describe.independence.gammaBands = cal.describe.gamma.gammaBands;
+cal.describe.independence.nGammaBands = cal.describe.nGammaBands;
+cal.raw.independence.cols = zeros(ol.NumCols, cal.describe.nGammaBands);
+
+% Test column sets individually
+for i = 1:cal.describe.independence.nGammaBands
+    
+    % See if we need to take a new set of state measurements
+    if (mod(cal.describe.stateTracking.calibrationStimIndex, cal.describe.stateTracking.calibrationStimInterval) == 0)
+        cal = TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
+    end
+    
+    % Update calibration stim index
+    cal.describe.stateTracking.calibrationStimIndex = cal.describe.stateTracking.calibrationStimIndex + 1;
+    fprintf('- Measurement #%d: column set %d of %d ...', cal.describe.stateTracking.calibrationStimIndex, i, cal.describe.independence.nGammaBands);
+    
+    % Store column set used for this measurement.
+    cal.raw.independence.cols(:,i) = cal.raw.cols(:,cal.describe.independence.gammaBands(i));
+    
+    % Take a measurement.  Here we are ignoring the specified
+    % background.
+    if (cal.describe.specifiedBackground)
+        theSettings = zeros(nPrimaries,1);
+    else
+        theSettings = zeros(nPrimaries,1);
+    end
+    theSettings(cal.describe.independence.gammaBands(i)) = 1;
+    [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
+    measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
+    cal.raw.independence.meas(:,i) = measTemp.pr650.spectrum;
+    cal.raw.t.independence.meas(i) = measTemp.pr650.time(1);
+    if (meterToggle(2))
+        cal.raw.independence.measOD(:,i) = measTemp.omni.spectrum;
+    end
+    fprintf('Done\n');
+end
+
+% See if we need to take a new set of state measurements
+if (mod(cal.describe.stateTracking.calibrationStimIndex, cal.describe.stateTracking.calibrationStimInterval) == 0)
+    cal = TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
+end
+
+% Update calibration stim index
+cal.describe.stateTracking.calibrationStimIndex = cal.describe.stateTracking.calibrationStimIndex + 1;
+
+% Now take a cumulative measurement.
+fprintf('- Measurement #%d: cumulative column sets ...', cal.describe.stateTracking.calibrationStimIndex);
+
+cal.raw.independence.colsAll = sum(cal.raw.independence.cols, 2);
+if (cal.describe.specifiedBackground)
+    theSettings = zeros(nPrimaries,1);
+else
+    theSettings = zeros(nPrimaries,1);
+end
+for i = 1:cal.describe.independence.nGammaBands
+    theSettings(cal.describe.independence.gammaBands(i)) = 1;
+end
+[starts,stops] = OLSettingsToStartsStops(cal,theSettings);
+measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
+cal.raw.independence.measAll = measTemp.pr650.spectrum;
+cal.raw.t.independence.measAll = measTemp.pr650.time(1);
+if (meterToggle(2))
+    cal.raw.independence.measODAll = measTemp.omni.spectrum;
+end
+fprintf('Done\n');
+
+end
+
+function cal = TakeGammaMeasurements(cal0, gammaBandIndex, ol, od, spectroRadiometerOBJ, meterToggle, nAverage)
+
+cal = cal0;
+nPrimaries = cal.describe.numWavelengthBands;
+
+fprintf('\n<strong>Gamma measurements on gamma band set %d of %d</strong>\n\n', gammaBandIndex , cal.describe.nGammaBands);
+
+% Store the columns used for this set.
+cal.raw.gamma.cols(:,gammaBandIndex ) = cal.raw.cols(:,cal.describe.gamma.gammaBands(gammaBandIndex ));
+
+% Allocate memory for the recorded spectra.
+cal.raw.gamma.rad(gammaBandIndex ).meas = zeros(cal.describe.S(3), cal.describe.nGammaLevels);
+
+% Test each gamma level for this band. If the gamma randomization
+% flag is set, shuffle now. We are still storing the measurements
+% in the right order as expected.
+if cal.describe.randomizeGammaLevels
+    gammaLevelsIter = Shuffle(1:cal.describe.nGammaLevels);
+else
+    gammaLevelsIter = 1:cal.describe.nGammaLevels;
+end
+
+% If we're specifying the background, we need a measurement of that
+% background but with the settings for the specified gamma band set
+% to zero.  This is then used to subtract off the background from
+% the series of gamma measurements, rather than using the omnibus
+% dark level measurement.
+if (cal.describe.specifiedBackground)
+    
+    % See if we need to take a new set of state measurements
+    if (mod(cal.describe.stateTracking.calibrationStimIndex, cal.describe.stateTracking.calibrationStimInterval) == 0)
+        cal = TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
+    end
+    
+    % Update calibration stim index
+    cal.describe.stateTracking.calibrationStimIndex = cal.describe.stateTracking.calibrationStimIndex + 1;
+    fprintf('- Measurement #%d: effective background for gamma band: %d ...', cal.describe.stateTracking.calibrationStimIndex, gammaBandIndex);
+    
+    % Measure effective background, which has the setting for this
+    % primary set to zero.
+    theSettings = GetEffectiveBackgroundSettingsForPrimary(cal.describe.gamma.gammaBands(gammaBandIndex),cal.describe.specifiedBackgroundSettings);
+    [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
+    measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
+    cal.raw.gamma.rad(gammaBandIndex).effectiveBgMeas = measTemp.pr650.spectrum;
+    cal.raw.t.gamma.rad(gammaBandIndex).effectiveBgMeas = measTemp.pr650.time(1);
+    if (meterToggle(2))
+        cal.raw.gamma.omniDriver(gammaBandIndex).effectiveBgMeas = measTemp.omni.spectrum;
+    end
+    fprintf('Done\n');
+end
+
+for gammaLevelIndex = gammaLevelsIter
+    % See if we need to take a new set of state measurements
+    if (mod(cal.describe.stateTracking.calibrationStimIndex, cal.describe.stateTracking.calibrationStimInterval) == 0)
+        cal = TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
+    end
+    
+    % Update calibration stim index
+    cal.describe.stateTracking.calibrationStimIndex = cal.describe.stateTracking.calibrationStimIndex + 1;
+    fprintf('- Measurement #%d: gamma level %d of %d for gamma band: %d ...', cal.describe.stateTracking.calibrationStimIndex, gammaLevelIndex, cal.describe.nGammaLevels,gammaBandIndex);
+    
+    % Set the starts/stops, measure, and store
+    if (cal.describe.specifiedBackground)
+        theSettings = GetEffectiveBackgroundSettingsForPrimary(cal.describe.gamma.gammaBands(gammaBandIndex),cal.describe.specifiedBackgroundSettings);
+    else
+        theSettings = zeros(nPrimaries,1);
+    end
+    theSettings(cal.describe.gamma.gammaBands(gammaBandIndex)) = cal.describe.gamma.gammaLevels(gammaLevelIndex);
+    [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
+    measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
+    cal.raw.gamma.rad(gammaBandIndex).meas(:,gammaLevelIndex) = measTemp.pr650.spectrum;
+    cal.raw.t.gamma.rad(gammaBandIndex).meas(gammaLevelIndex) = measTemp.pr650.time(1);
+    if (meterToggle(2))
+        cal.raw.gamma.omnidriver(gammaBandIndex).meas(:,gammaLevelIndex) = measTemp.omni.spectrum;
+    end
+    fprintf('Done\n');
+end
+end
+
+function [cal, primaryMeasurement] = TakePrimaryMeasurement(cal0, primaryIndex, ol, od, spectroRadiometerOBJ, meterToggle, nAverage)
+
+cal = cal0;
+nPrimaries = cal.describe.numWavelengthBands;
+
+% Record the band start and end.
+primaryMeasurement.bandRange = [cal.describe.primaryStartCols(primaryIndex), cal.describe.primaryStopCols(primaryIndex)];
+
+% If we are using a specified background, we need to measure for all
+% primaries except the one being characterized at the specified
+% level. (If not, we just use the dark measurement for this
+% purpose.  Which is used to produce the actual calibration data is
+% handled when we post-process the measurements.)
+if (cal.describe.specifiedBackground)
+    
+    % See if we need to take a new set of state measurements
+    if (mod(cal.describe.stateTracking.calibrationStimIndex, cal.describe.stateTracking.calibrationStimInterval) == 0)
+        cal = TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
+    end
+    
+    % Update calibration stim index
+    cal.describe.stateTracking.calibrationStimIndex = cal.describe.stateTracking.calibrationStimIndex + 1;
+    fprintf('- Measurement #%d: effective background for effective primary %d ...', cal.describe.stateTracking.calibrationStimIndex, primaryIndex);
+    
+    % Get the background settings for this primary, and measure.  The
+    % background for this primary has this primary set to zero, but all
+    % the others on.
+    theSettings = GetEffectiveBackgroundSettingsForPrimary(primaryIndex,cal.describe.specifiedBackgroundSettings);
+    [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
+    measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
+    primaryMeasurement.effectiveBackgroundSpectrum = measTemp.pr650.spectrum;
+    primaryMeasurement.effectiveBackgroundTime = measTemp.pr650.time(1);
+    if (meterToggle(2))
+        primaryMeasurement.effectiveBackgroundSpectrumOD = measTemp.omni.spectrum;
+    end
+    fprintf('Done\n');
+end
+
+% See if we need to take a new set of state measurements
+if (mod(cal.describe.stateTracking.calibrationStimIndex, cal.describe.stateTracking.calibrationStimInterval) == 0)
+    cal = TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
+end
+
+% Update calibration stim index
+cal.describe.stateTracking.calibrationStimIndex = cal.describe.stateTracking.calibrationStimIndex + 1;
+fprintf('- Measurement #%d: effective primary %d of %d...', cal.describe.stateTracking.calibrationStimIndex, primaryIndex, length(cal.describe.primaryStartCols));
+
+% Set the starts/stops for this effective primary, relative to the
+% measurement background, and take the measurement.
+if (cal.describe.specifiedBackground)
+    theSettings = GetEffectiveBackgroundSettingsForPrimary(primaryIndex,cal.describe.specifiedBackgroundSettings);
+else
+    theSettings = zeros(nPrimaries,1);
+end
+theSettings(primaryIndex) = 1;
+[starts,stops] = OLSettingsToStartsStops(cal,theSettings);
+measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
+primaryMeasurement.lightSpectrum = measTemp.pr650.spectrum;
+primaryMeasurement.time = measTemp.pr650.time(1);
+if (meterToggle(2))
+    primaryMeasurement.lightSpectrumOD = measTemp.omni.spectrum;
+end
+fprintf('Done\n');
+end
+
+function cal = TakeSpecifiedBackgroundMeasurement(measurementIndex, cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage)
+% Take a spcecified background measurement
+cal = cal0;
+
+% See if we need to take a new set of state measurements
+if (mod(cal.describe.stateTracking.calibrationStimIndex, cal.describe.stateTracking.calibrationStimInterval) == 0)
+    cal = TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
+end
+
+% Update calibration stim index
+cal.describe.stateTracking.calibrationStimIndex = cal.describe.stateTracking.calibrationStimIndex + 1;
+fprintf('- Measurement #%d: specified background ...', cal.describe.stateTracking.calibrationStimIndex);
+
+theSettings = cal.describe.specifiedBackgroundSettings;
+[starts,stops] = OLSettingsToStartsStops(cal,theSettings);
+measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
+cal.raw.specifiedBackgroundMeas(:,measurementIndex) = measTemp.pr650.spectrum;
+cal.raw.t.specifiedBackgroundMeas(:,measurementIndex) = measTemp.pr650.time(1);
+if (meterToggle(2))
+    cal.raw.omniDriver.specifiedBackgroundMeas(:,measurementIndex) = measTemp.omni.spectrum;
+end
+fprintf('Done\n');
+
+end
+
+function cal = TakeDarkMeasurement(measurementIndex, cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage)
+% Take a dark measurement at the end.  Use special case provided by OLSettingsToStartsStops that turns all mirrors off.
+cal = cal0;
+nPrimaries = cal.describe.numWavelengthBands;
+
+% See if we need to take a new set of state measurements
+if (mod(cal.describe.stateTracking.calibrationStimIndex, cal.describe.stateTracking.calibrationStimInterval) == 0)
+    cal = TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
+end
+
+% Update calibration stim index and take dark measurement
+cal.describe.stateTracking.calibrationStimIndex = cal.describe.stateTracking.calibrationStimIndex + 1;
+fprintf('- Measurement #%d: Dark...', cal.describe.stateTracking.calibrationStimIndex);
+spectroRadiometerOBJ.setOptions('sensitivityMode', 'EXTENDED');
+theSettings = 0*ones(nPrimaries,1);
+[starts,stops] = OLSettingsToStartsStops(cal,theSettings);
+measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
+cal.raw.darkMeas(:,measurementIndex) = measTemp.pr650.spectrum;
+cal.raw.t.darkMeas(:,measurementIndex) = measTemp.pr650.time(1);
+if (meterToggle(2))
+    cal.raw.omniDriver.darkMeas(:,measurementIndex) = measTemp.omni.spectrum;
+end
+fprintf('Done\n');
+
+% See if we need to take a new set of state measurements
+if (mod(cal.describe.stateTracking.calibrationStimIndex, cal.describe.stateTracking.calibrationStimInterval) == 0)
+    cal = TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
+end
+
+% Update calibration stim index and take check dark measurement.
+% Use setAll(false) instead of our starts/stops code.
+cal.describe.stateTracking.calibrationStimIndex = cal.describe.stateTracking.calibrationStimIndex + 1;
+fprintf('- Measurement #%d: Dark (now using setAll(false) instead of starts/stops code) ...', cal.describe.stateTracking.calibrationStimIndex);
+ol.setAll(false);
+cal.raw.darkMeasCheck(:,measurementIndex) = spectroRadiometerOBJ.measure('userS', cal.describe.S);
+cal.raw.t.darkMeasCheck(:,measurementIndex) = mglGetSecs;
+fprintf('Done\n');
+
+spectroRadiometerOBJ.setOptions('sensitivityMode', 'STANDARD');
+end
+
+function cal = TakeWigglyMeasurement(measurementIndex, cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage)
+
+cal = cal0;
+nPrimaries = cal.describe.numWavelengthBands;
+
+% See if we need to take a new set of state measurements
+if (mod(cal.describe.stateTracking.calibrationStimIndex, cal.describe.stateTracking.calibrationStimInterval) == 0)
+    cal = TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
+end
+
+% Update calibration stim index
+cal.describe.stateTracking.calibrationStimIndex = cal.describe.stateTracking.calibrationStimIndex + 1;
+fprintf('- Measurement #%d: Wiggly pattern ...', cal.describe.stateTracking.calibrationStimIndex);
+theSettings = 0.1*ones(nPrimaries,1);
+theSettings(2:8:end) = 0.8;
+[starts,stops] = OLSettingsToStartsStops(cal,theSettings);
+
+measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
+cal.raw.wigglyMeas.settings(:,measurementIndex) = theSettings;
+cal.raw.wigglyMeas.measSpd(:,measurementIndex) = measTemp.pr650.spectrum;
+cal.raw.t.wigglyMeas.t(:,measurementIndex) = measTemp.pr650.time(1);
+if (meterToggle(2))
+    cal.raw.omniDriver.wigglyMeas(:,measurementIndex) = measTemp.omni.spectrum;
+end
+fprintf('Done\n');
+end
+
+function cal = TakeHalfOnMeasurement(measurementIndex, cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage)
+
+cal = cal0;
+nPrimaries = cal.describe.numWavelengthBands;
+
+% See if we need to take a new set of state measurements
+if (mod(cal.describe.stateTracking.calibrationStimIndex, cal.describe.stateTracking.calibrationStimInterval) == 0)
+    cal = TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
+end
+
+% Update calibration stim index
+cal.describe.stateTracking.calibrationStimIndex = cal.describe.stateTracking.calibrationStimIndex + 1;
+fprintf('- Measurement #%d: Half ON pattern ...', cal.describe.stateTracking.calibrationStimIndex);
+theSettings = 0.5*ones(nPrimaries,1);
+[starts,stops] = OLSettingsToStartsStops(cal,theSettings);
+measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
+
+cal.raw.halfOnMeas(:,measurementIndex) = measTemp.pr650.spectrum;
+cal.raw.t.halfOnMeas(:,measurementIndex) = measTemp.pr650.time(1);
+if (meterToggle(2))
+    cal.raw.omniDriver.halfOnMeas(:,measurementIndex) = measTemp.omni.spectrum;
+end
+fprintf('Done\n');
+end
+
+function cal = TakeFullOnMeasurement(measurementIndex, cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage)
+
+cal = cal0;
+nPrimaries = cal.describe.numWavelengthBands;
+
+% See if we need to take a new set of state measurements
+if (mod(cal.describe.stateTracking.calibrationStimIndex, cal.describe.stateTracking.calibrationStimInterval) == 0)
+    cal = TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
+end
+
+% Update calibration stim index
+cal.describe.stateTracking.calibrationStimIndex = cal.describe.stateTracking.calibrationStimIndex + 1;
+fprintf('- Measurement #%d: Full ON pattern ...', cal.describe.stateTracking.calibrationStimIndex);
+theSettings = ones(nPrimaries,1);
+[starts,stops] = OLSettingsToStartsStops(cal,theSettings);
+measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
+
+cal.raw.fullOn(:,measurementIndex) = measTemp.pr650.spectrum;
+cal.raw.t.fullOn(:,measurementIndex) = measTemp.pr650.time(1);
+if (meterToggle(2))
+    cal.raw.omniDriver.fullOnMeas(:,measurementIndex) = measTemp.omni.spectrum;
+end
+fprintf('Done\n');
+
+end
+
 function theSettings = GetEffectiveBackgroundSettingsForPrimary(whichPrimary,specifiedBackgroundSettings)
 
-nPrimaries = length(specifiedBackgroundSettings);
-theSettings = zeros(size(specifiedBackgroundSettings));
-if (whichPrimary > 1)
-    theSettings(whichPrimary-1) = specifiedBackgroundSettigns(whichPrimary-1);
+% Two ways of doing this.  The NEIGHBORHOOD method just sets the two
+% primaries immediately adjacent to the one of interest.  The regular
+% method sets the whole specified background.
+NEIGHBORMETHOD = false;
+if (NEIGHBORMETHOD)
+    nPrimaries = length(specifiedBackgroundSettings);
+    theSettings = zeros(size(specifiedBackgroundSettings));
+    if (whichPrimary > 1)
+        theSettings(whichPrimary-1) = specifiedBackgroundSettings(whichPrimary-1);
+    end
+    if (whichPrimary < nPrimaries)
+        theSettings(whichPrimary+1) = specifiedBackgroundSettigns(whichPrimary+1);
+    end
+else
+    theSettings = specifiedBackgroundSettings;
+    theSettings(whichPrimary) = 0;
 end
-if (whichPrimary < nPrimaries)
-    theSettings(whichPrimary+1) = specifiedBackgroundSettigns(whichPrimary+1);
 end
-end
-
-%% Run primary gamma and additivity test
-% THIS IS CODE WE MIGHT WANT TO INSERT, BUT IT IS NOT DONE YET.
-%
-% Before we save the calibration, we will run a standard primary gamma
-% and additivity test. This test takes a middle primary and measures it
-% in the presence or absence of flanking primaries on either side at
-% 0.25, 0.5 and 1 of the max. We do this here because we need the gamma
-% function to run this successfully.
-%     whichPrimaryToTest = cal.describe.gamma.gammaBands(ceil(end/2));
-%     cal.raw.diagnostics.additivity.midPrimary.flankersSep0Off = OLPrimaryGammaAndAdditivityTest(cal, whichPrimaryToTest, 1, {[0 0.25 0], [0 0.5 0], [0 1 0]});
-%     cal.raw.diagnostics.additivity.midPrimary.flankersSep0On = OLPrimaryGammaAndAdditivityTest(cal, whichPrimaryToTest, 1, {[1 0.25 1], [1 0.5 1], [1 1 1]});
-%     cal.raw.diagnostics.additivity.midPrimary.flankersSep3Off = OLPrimaryGammaAndAdditivityTest(cal, whichPrimaryToTest, 3, {[0 0.25 0], [0 0.5 0], [0 1 0]});
-%     cal.raw.diagnostics.additivity.midPrimary.flankersSep3On = OLPrimaryGammaAndAdditivityTest(cal, whichPrimaryToTest, 3, {[1 0.25 1], [1 0.5 1], [1 1 1]});
-%
-%     whichPrimaryToTest = round((cal.describe.gamma.gammaBands(ceil(end/2)+1) + cal.describe.gamma.gammaBands(ceil(end/2)))/2);
-%     cal.raw.diagnostics.additivity.offGammaPrimary.flankersSep0Off = OLPrimaryGammaAndAdditivityTest(cal, whichPrimaryToTest, 1, {[0 0.25 0], [0 0.5 0], [0 1 0]});
-%     cal.raw.diagnostics.additivity.offGammaPrimary.flankersSep0On = OLPrimaryGammaAndAdditivityTest(cal, whichPrimaryToTest, 1, {[1 0.25 1], [1 0.5 1], [1 1 1]});
-%     cal.raw.diagnostics.additivity.offGammaPrimary.flankersSep3Off = OLPrimaryGammaAndAdditivityTest(cal, whichPrimaryToTest, 3, {[0 0.25 0], [0 0.5 0], [0 1 0]});
-%     cal.raw.diagnostics.additivity.offGammaPrimary.flankersSep3On = OLPrimaryGammaAndAdditivityTest(cal, whichPrimaryToTest, 3, {[1 0.25 1], [1 0.5 1], [1 1 1]});
-%
-

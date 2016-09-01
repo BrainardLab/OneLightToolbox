@@ -7,7 +7,7 @@ function cal = OLGetCalibrationStructure
 % 4/4/13  dhb, ms  Pulled out of a calling program as separate function.
 
 % First, set the paths in which the calibration files live.
-calFolderInfo = what(fullfile(CalDataFolder, 'OneLight'));
+calFolderInfo = what(getpref('OneLight', 'OneLightCalData'));
 calFolder = calFolderInfo.path;
 
 % Get a list of possible calibration types.
@@ -57,7 +57,7 @@ cal = availableCalTypes(calIndex).CalFileName;
 % of the calibration data we want.
 if ischar(cal)
     % Get all the calibration data.
-    [~, cals] = LoadCalFile(cal);
+    [~, cals] = LoadCalFile(cal, [], getpref('OneLight', 'OneLightCalData'));
     
     % Have the user select a calibration if there is more than 1.
     if length(cals) > 1

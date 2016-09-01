@@ -59,7 +59,7 @@ if ~isempty(calType)
     params.calibrationType = calType;
 end
 cType = OLCalibrationTypes.(params.calibrationType);
-params.oneLightCal = LoadCalFile(cType.CalFileName);
+params.oneLightCal = LoadCalFile(cType.CalFileName, [], getpref('OneLight', 'OneLightCalData'));
 
 % Setup the cache.
 params.olCache = OLCache(params.cacheDir, params.oneLightCal);

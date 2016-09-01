@@ -39,7 +39,7 @@ end
 photoreceptorClasses = allwords(params.photoreceptorClasses, ',');
 
 %% Load the calibration file.
-cal = LoadCalFile(OLCalibrationTypes.(params.calibrationType).CalFileName);
+cal = LoadCalFile(OLCalibrationTypes.(params.calibrationType).CalFileName, [], getpref('OneLight', 'OneLightCalData'));
 assert(~isempty(cal), 'OLFlickerComputeModulationSpectra:NoCalFile', 'Could not load calibration file: %s', ...
     OLCalibrationTypes.(params.calibrationType).CalFileName);
 calID = OLGetCalID(cal);

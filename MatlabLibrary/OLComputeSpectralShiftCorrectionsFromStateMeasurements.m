@@ -1,10 +1,9 @@
 % OLComputeSpectralShiftCorrectionsFromStateMeasurements - Returns a struct which contains spectral shift amplitude and time information for the sequence of spectral shift measurements in a calfile.
 %
 % Syntax:
-% spectralShiftCorrection = OLComputeSpectralShiftCorrectionsFromStateMeasurements(cal)
+%   spectralShiftCorrection = OLComputeSpectralShiftCorrectionsFromStateMeasurements(cal)
 %
 % 8/22/16   npc     Wrote it.
-%
 
 function spectralShiftCorrection = OLComputeSpectralShiftCorrectionsFromStateMeasurements(cal)
 
@@ -23,7 +22,7 @@ function spectralShiftCorrection = OLComputeSpectralShiftCorrectionsFromStateMea
         spectralShiftCorrection.fitParams(stateMeasIndex,:,:) = fitParams;
     end
     
-    disp('OLComputeSpectralShiftCorrectionsFromStateMeasurements:');
+    %disp('OLComputeSpectralShiftCorrectionsFromStateMeasurements:');
     spectralShiftCorrection.paramNames = paramNames;
     spectralShiftCorrection.combPeaks = combPeaks;
     spectralShiftCorrection.referenceSPDpeaks = referenceSPDpeaks;

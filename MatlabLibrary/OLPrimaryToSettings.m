@@ -40,7 +40,7 @@ function settings = OLPrimaryToSettings(cal, primary, verbose)
 % 2/16/14  dhb       Convert to take input and output for each primery, not for each mirror.
 
 % Validate the number of inputs.
-error(nargchk(2, 3, nargin));
+narginchk(2, 3);
 
 % Setup some defaults.
 if ~exist('verbose', 'var') || isempty(verbose)
@@ -63,8 +63,8 @@ if ~isfield(cal.describe, 'useAverageGamma') || (~cal.describe.useAverageGamma)
     cal.computed.gammaMode = 0;
     settings = PrimaryToSettings(cal.computed,primary);
     
-% If we computed a single average gamma function, we have to use lower level
-% routines.
+    % If we computed a single average gamma function, we have to use lower level
+    % routines.
 else
     
     settings = zeros(size(primary));
