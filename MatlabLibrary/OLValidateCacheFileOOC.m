@@ -198,7 +198,7 @@ while true
 end
 
 % Load the calibration file associated with this calibration type.
-cal = LoadCalFile(OLCalibrationTypes.(selectedCalType).CalFileName);
+cal = LoadCalFile(OLCalibrationTypes.(selectedCalType).CalFileName, [], getpref('OneLight', 'OneLightCalData'));
 
 % Pull out the file name
 cacheFileNameFull = cacheFileName;

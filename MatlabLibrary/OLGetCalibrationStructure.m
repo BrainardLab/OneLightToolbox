@@ -7,7 +7,7 @@ function cal = OLGetCalibrationStructure
 % 4/4/13  dhb, ms  Pulled out of a calling program as separate function.
 
 % First, set the paths in which the calibration files live.
-calFolderInfo = what([getpref('OneLight', 'OneLightCalData') '/']);
+calFolderInfo = what(getpref('OneLight', 'OneLightCalData'));
 calFolder = calFolderInfo.path;
 
 % Get a list of possible calibration types.
