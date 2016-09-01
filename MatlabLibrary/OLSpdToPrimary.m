@@ -1,4 +1,4 @@
-function effectivePrimary = OLSpdToPrimary(oneLightCal, targetSpd, varargin)
+function [effectivePrimary primary] = OLSpdToPrimary(oneLightCal, targetSpd, varargin)
 % OLSpdToPrimary - Converts a spectrum into normalized primary OneLight mirror settings.
 %
 % Syntax:
@@ -10,10 +10,16 @@ function effectivePrimary = OLSpdToPrimary(oneLightCal, targetSpd, varargin)
 % Convert a spectral power distribution to the linear 0-1 fraction of light
 % that we need from each column of mirrors.  No gamma correction is applied
 % to the primary settings.
+% This program also allows for a 'differentialMode' which is true unless
+% the 'differential' keyword is passed.
 %
 % Input:
 % oneLightCal (struct) - OneLight calibration file after it has been
 %     processed by OLInitCal.
+% primary (Nx1) - The normalized power level for each column of the
+%     OneLight.  These values are not gamma corrected.  N is the number
+%     of columns specified by the OneLight object, and corresponds to
+%     the number of columns on its DLP chip.
 %
 % Output:
 % effectivePrimary (Nx1) - The normalized power level for effective primary
@@ -37,10 +43,6 @@ if params.differentialMode
    darkSpd = zeros(size(oneLightCal.computed.pr650MeanDark));
 else
     darkSpd = oneLightCal.computed.pr650MeanDark;
-end
-
-if ~exist('oneLightCal.computed.pr650MeanDark', 'var') || isempty(oneLightCal.computed.pr650MeanDark)
-    oneLightCal.computed.pr650MeanDark = darkSpd;
 end
 
 % Make sure that the calibration file has been processed by OLInitCal.
