@@ -98,7 +98,7 @@ end
 primary = oneLightCal.computed.D * targeteffectivePrimary1;
 effectivePrimary = targeteffectivePrimary1;
 if (any(primary < 0))
-    %error('D matrix used in calibration does not have assummed properties.  Read comments in source.');
+    error('D matrix used in calibration does not have assumed properties.  Read comments in source.');
 end
 index1 = find(primary < 0);
 index2 = find(primary > 1);
