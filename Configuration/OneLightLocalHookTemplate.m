@@ -43,19 +43,19 @@ setpref('OneLight', 'dropboxPath', dropboxBaseDir);
 setpref('OneLight', 'dataPath', dataPath);
 
 % Set the modulation path
-setpref('OneLight', 'modulationPath', fullfile(dropboxBaseDir, 'MELA_materials', 'modulations'));
+setpref('OneLight', 'modulationPath', fullfile(dropboxBaseDir, 'MELA_materials', 'modulations/'));
 
 % Set the materials path
-setpref('OneLight', 'materialsPath', fullfile(dropboxBaseDir, 'MELA_materials'));
+setpref('OneLight', 'materialsPath', fullfile(dropboxBaseDir, 'MELA_materials/'));
 
 % Set the cache path
-setpref('OneLight', 'cachePath', fullfile(dropboxBaseDir, 'MELA_materials', 'cache'));
+setpref('OneLight', 'cachePath', fullfile(dropboxBaseDir, 'MELA_materials', 'cache/'));
 
 % Set the cache path
-setpref('OneLight', 'OneLightCalData', fullfile(dropboxBaseDir, 'MELA_materials', 'OneLightCalData'));
+setpref('OneLight', 'OneLightCalData', fullfile(dropboxBaseDir, 'MELA_materials', 'OneLightCalData/'));
 
 % Set the default speak rate
 setpref('OneLight', 'SpeakRateDefault', 230);
 
 % Add OLFlickerSensitivity to the path
-addpath(genpath('/Users/Shared/Matlab/Experiments/OneLight/OLFlickerSensitivity/code'));
+addpath(genpath('/Users/Shared/Matlab/Experiments/OneLight/OLFlickerSensitivity/code/'));
