@@ -406,14 +406,12 @@ try
                     results.modulationBGMeas = results.modulationAllMeas(theBGIndex);
                 end
                 
-                
                 %% Determine the primary settings from the measurements
                 deltaBackgroundPrimaryInferred = OLSpdToPrimary(cal, (results.modulationBGMeas.meas.pr650.spectrum)-...
-                    (results.modulationBGMeas.predictedSpd-cal.computed.pr650MeanDark), [], [], zeros(size(cal.computed.pr650MeanDark)));
+                    results.modulationBGMeas.predictedSpd, 'differentialMode', true);
                 deltaModulationPrimaryInferred = OLSpdToPrimary(cal, (results.modulationMaxMeas.meas.pr650.spectrum)-...
-                    (results.modulationMaxMeas.predictedSpd-cal.computed.pr650MeanDark), [], [], zeros(size(cal.computed.pr650MeanDark)));
+                    results.modulationMaxMeas.predictedSpd, 'differentialMode', true);
 
-                
                 backgroundPrimaryCorrected = backgroundPrimary - learningRate*deltaBackgroundPrimaryInferred;
                 backgroundPrimaryCorrected(backgroundPrimaryCorrected > 1) = 1;
                 backgroundPrimaryCorrected(backgroundPrimaryCorrected < 0) = 0;
@@ -421,7 +419,6 @@ try
                 modulationPrimaryCorrected(modulationPrimaryCorrected > 1) = 1;
                 modulationPrimaryCorrected(modulationPrimaryCorrected < 0) = 0;
                 
-
                 theCanonicalPhotoreceptors = cacheData.data(describe.REFERENCE_OBSERVER_AGE).describe.photoreceptors;%{'LCone', 'MCone', 'SCone', 'Melanopsin', 'Rods'};
                 T_receptors = cacheData.data(describe.REFERENCE_OBSERVER_AGE).describe.T_receptors;%GetHumanPhotoreceptorSS(S, theCanonicalPhotoreceptors, data(val.describe.REFERENCE_OBSERVER_AGE).describe.params.fieldSizeDegrees, val.describe.REFERENCE_OBSERVER_AGE, 4.7, [], data(val.describe.REFERENCE_OBSERVER_AGE).describe.fractionBleached);
                 
@@ -451,9 +448,8 @@ try
                 
                 subplot(2, 3, 6);
                 plot(deltaModulationPrimaryInferred, '-r'); hold on;
-                %pause;
                 
-                
+                % Increment
                 iter = iter+1;
             end
     end
