@@ -63,6 +63,7 @@ p.addOptional('SkipBackground', false, @islogical);
 p.addOptional('ReducedPowerLevels', true, @islogical);
 p.addOptional('NoAdjustment', false, @islogical);
 p.addOptional('lambda', 0.8, @isscalar);
+p.addOptional('NIter', 10, @isscalar);
 p.addOptional('REFERENCE_OBSERVER_AGE', 32, @isscalar);
 p.addOptional('selectedCalType', [], @isstr);
 p.addOptional('CALCULATE_SPLATTER', true, @islogical);
@@ -325,14 +326,11 @@ try
     end
     
     % Loop over the stimuli in the cache file and take a measurement with
-    % both the PR-650 and the OmniDriver.
-    nIter = 10;
+    % the PR-670.
     iter = 1;
-    learningRate = 0.8;
     switch cacheData.computeMethod
         case 'ReceptorIsolate'
-            while iter <= nIter
-                iter
+            while iter <= NIter
                 % Set up the power levels to use.
                 if describe.ReducedPowerLevels
                     % Only take three measurements
@@ -420,12 +418,11 @@ try
                     (results.modulationBGMeas.predictedSpd-cal.computed.pr650MeanDark), [], [], zeros(size(cal.computed.pr650MeanDark)));
                 deltaModulationPrimaryInferred = OLSpdToPrimary(cal, (results.modulationMaxMeas.meas.pr650.spectrum)-...
                     (results.modulationMaxMeas.predictedSpd-cal.computed.pr650MeanDark), [], [], zeros(size(cal.computed.pr650MeanDark)));
-
                 
-                backgroundPrimaryCorrected = backgroundPrimary - learningRate*deltaBackgroundPrimaryInferred;
+                backgroundPrimaryCorrected = backgroundPrimary - describe.lambda*deltaBackgroundPrimaryInferred;
                 backgroundPrimaryCorrected(backgroundPrimaryCorrected > 1) = 1;
                 backgroundPrimaryCorrected(backgroundPrimaryCorrected < 0) = 0;
-                modulationPrimaryCorrected = modulationPrimary - learningRate*deltaModulationPrimaryInferred;
+                modulationPrimaryCorrected = modulationPrimary - describe.lambda*deltaModulationPrimaryInferred;
                 modulationPrimaryCorrected(modulationPrimaryCorrected > 1) = 1;
                 modulationPrimaryCorrected(modulationPrimaryCorrected < 0) = 0;
                 
