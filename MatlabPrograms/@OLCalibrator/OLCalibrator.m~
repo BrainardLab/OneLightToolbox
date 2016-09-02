@@ -1,0 +1,21 @@
+% Static class with OneLight calibration-related methods
+%
+% 9/2/2016  npc   Wrote it
+%
+
+classdef OLCalibrator
+    methods (Static = true)
+        
+        % Method to take state measurements for a OneLight calibration. In stand alone mode,
+        % the data are added to a barebones calibration structure.
+        [cal, calMeasOnly] = TakeStateMeasurements(cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, standAlone);
+    
+        % Method to take full ON measurements.
+        cal = TakeFullOnMeasurement(measurementIndex, cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
+        
+        
+        cal = TakeHalfOnMeasurement(measurementIndex, cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage)
+
+            
+    end
+end
