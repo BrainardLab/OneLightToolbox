@@ -30,12 +30,12 @@ function [results, validationDir, validationPath, openSpectroRadiometerOBJ] = OL
 %                                                             to file name
 %                             'FullOnMeas'          true      Full-on
 %                             'HalfOnMeas'          false     Half-on
-%                             'DarkMeas'            false     Dark
-%                             'WigglyMeas',         true      Comb spectra
+%                             'DarkMeas'            false     DarkComb spectra
+%                             'CalStateMeasurements'    true  State measurements     
 %                             'SkipBackground'      false     Background
 %                             'ReducedPowerLevels'  true      Only 3 levels
 %                             'NoAdjustment      '  true      Does not pause
-%                             'REFERENCE_OBSERVER_AGE'         32        Standard obs.
+%                             'REFERENCE_OBSERVER_AGE'  32    Standard obs.
 %                             'selectedCalType'     'EyeTrackerLongCableEyePiece1'
 %                                                             Calibration
 %                                                             type
