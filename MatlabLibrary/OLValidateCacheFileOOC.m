@@ -315,7 +315,7 @@ try
     
     if describe.CalStateMeasurements
         fprintf('- State measurements \n');
-        [~, CalStateMeas] = TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, true);
+        [~, CalStateMeasurements] = TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, true);
     end
     
     % Loop over the stimuli in the cache file and take a measurement with
