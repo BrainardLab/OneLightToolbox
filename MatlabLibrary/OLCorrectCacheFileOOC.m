@@ -40,7 +40,6 @@ function [results, validationDir, validationPath, openSpectroRadiometerOBJ] = OL
 %                                                             Calibration
 %                                                             type
 %                             'powerLevels'         scalar    Which power levels
-%                             'lambda'              scalar    Learning rate for adaptive correction
 %
 % Output:
 % results (struct) - Results struct. This is different depending on which
@@ -62,7 +61,6 @@ p.addOptional('CalStateMeasurements', false, @islogical);
 p.addOptional('SkipBackground', false, @islogical);
 p.addOptional('ReducedPowerLevels', true, @islogical);
 p.addOptional('NoAdjustment', false, @islogical);
-p.addOptional('lambda', 0.8, @isscalar);
 p.addOptional('REFERENCE_OBSERVER_AGE', 32, @isscalar);
 p.addOptional('selectedCalType', [], @isstr);
 p.addOptional('CALCULATE_SPLATTER', true, @islogical);
