@@ -470,6 +470,6 @@ catch e
         openSpectroRadiometerOBJ = [];
     end
     
-    %SendEmail(emailRecipient, ['[OL] ' cacheFileName '/Validation failed'], e.message);
+    SendEmail(emailRecipient, ['[OL] ' cacheFileName '/Validation failed'], e.message);
     rethrow(e)
 end

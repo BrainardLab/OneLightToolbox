@@ -62,7 +62,7 @@ function f = OLFindMaxSpectrumFun(scaleFactor, oneLightCal, targetSpd, lambda)
 % This is the function that fsolve tries to drive to 0 by varying its first
 % argument.
 
-primary = OLSpdToPrimary(oneLightCal, scaleFactor*targetSpd, lambda);
+primary = OLSpdToPrimary(oneLightCal, scaleFactor*targetSpd, 'lambda', lambda);
 maxPrimary = max(primary);
 f = maxPrimary-1;
 
