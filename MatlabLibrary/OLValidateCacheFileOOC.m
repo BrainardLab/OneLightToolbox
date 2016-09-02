@@ -315,13 +315,7 @@ try
     
     if describe.CalStateMeasurements
         fprintf('- State measurements \n');
-        theWigglySettings = zeros(cal.describe.numWavelengthBands, 1);
-        theWigglySettings(2:10:end) = 1.0;
-        [starts,stops] = OLSettingsToStartsStops(cal,theWigglySettings);
-        results.wigglyMeas.meas = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
-        results.wigglyMeas.starts = starts;
-        results.wigglyMeas.stops = stops;
-        results.wigglyMeas.predictedFromCal = cal.raw.wigglyMeas.measSpd(:,1);
+        [~, CalStateMeas] = TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, true);
     end
     
     % Loop over the stimuli in the cache file and take a measurement with
