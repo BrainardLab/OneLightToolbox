@@ -2,7 +2,7 @@ function [results, validationDir, validationPath, openSpectroRadiometerOBJ] = OL
     meterType, spectroRadiometerOBJ, spectroRadiometerOBJWillShutdownAfterMeasurement, varargin)
 % results = OLValidateCacheFileOOC(cacheFileName, emailRecipient, ...
 % meterType, spectroRadiometerOBJ, spectroRadiometerOBJWillShutdownAfterMeasurement, varargin)
-% OLValidateCacheFileOOCOOC - Validates a OneLight cache file.
+% OLValidateCacheFileOOC - Validates a OneLight cache file.
 %
 % Syntax:
 % OLValidateCacheFile(cacheFileName)
