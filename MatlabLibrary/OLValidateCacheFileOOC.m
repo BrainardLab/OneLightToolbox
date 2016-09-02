@@ -31,7 +31,7 @@ function [results, validationDir, validationPath, openSpectroRadiometerOBJ] = OL
 %                             'FullOnMeas'          true      Full-on
 %                             'HalfOnMeas'          false     Half-on
 %                             'DarkMeas'            false     DarkComb spectra
-%                             'CalStateMeasurements'    true  State measurements     
+%                             'CalStateMeas'    true  State measurements     
 %                             'SkipBackground'      false     Background
 %                             'ReducedPowerLevels'  true      Only 3 levels
 %                             'NoAdjustment      '  true      Does not pause
@@ -49,7 +49,7 @@ function [results, validationDir, validationPath, openSpectroRadiometerOBJ] = OL
 % 1/21/14  dhb, ms  Convert to use OLSettingsToStartsStops.
 % 1/30/14  ms       Added keyword parameters to make this useful.
 % 7/06/16  npc      Adapted to use PR650dev/PR670dev objects
-% 9/2/16   ms       Updated with new CalStateMeasurements option
+% 9/2/16   ms       Updated with new CalStateMeas option
 tic;
 
 % Parse the input
@@ -58,7 +58,7 @@ p.addOptional('ReferenceMode', true, @islogical);
 p.addOptional('FullOnMeas', true, @islogical);
 p.addOptional('HalfOnMeas', false, @islogical);
 p.addOptional('DarkMeas', false, @islogical);
-p.addOptional('CalStateMeasurements', false, @islogical);
+p.addOptional('CalStateMeas', false, @islogical);
 p.addOptional('SkipBackground', false, @islogical);
 p.addOptional('ReducedPowerLevels', true, @islogical);
 p.addOptional('NoAdjustment', false, @islogical);
@@ -313,9 +313,9 @@ try
         results.offMeas.predictedFromCal = cal.raw.darkMeas(:, 1);
     end
     
-    if describe.CalStateMeasurements
+    if describe.CalStateMeas
         fprintf('- State measurements \n');
-        [~, CalStateMeasurements] = TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, true);
+        [~, CalStateMeas] = TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, true);
     end
     
     % Loop over the stimuli in the cache file and take a measurement with
