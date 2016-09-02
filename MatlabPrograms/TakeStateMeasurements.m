@@ -7,7 +7,7 @@ function [cal calMeasOnly] = TakeStateMeasurements(cal0, ol, od, spectroRadiomet
 % 7/xx/16   npc     Written.
 % 9/2/16    ms      Some updates
 
-if ~exist('var', 'standAlone') || isempty(standAlone)
+if ~exist('standAlone', 'var') || isempty(standAlone)
     standAlone = false;
 end
 
