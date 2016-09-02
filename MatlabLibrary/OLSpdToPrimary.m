@@ -108,7 +108,7 @@ if ~params.differentialMode
 end
 primary = oneLightCal.computed.D * targeteffectivePrimary1;
 effectivePrimary = targeteffectivePrimary1;
-if params.differentialMode
+if ~params.differentialMode
     if (any(primary < 0))
         error('D matrix used in calibration does not have assumed properties.  Read comments in source.');
     end
