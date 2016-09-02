@@ -12,7 +12,7 @@ if ~exist('var', 'standAlone') || isempty(standAlone)
 end
 
 if standAlone
-   calMeasOnly.describe = cal.describe. 
+   calMeasOnly.describe = cal.describe;
 end
 cal = cal0;
 cal.describe.stateTracking.stateMeasurementIndex = cal.describe.stateTracking.stateMeasurementIndex + 1;
