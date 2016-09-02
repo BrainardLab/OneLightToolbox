@@ -49,6 +49,7 @@ function [results, validationDir, validationPath, openSpectroRadiometerOBJ] = OL
 % 1/21/14  dhb, ms  Convert to use OLSettingsToStartsStops.
 % 1/30/14  ms       Added keyword parameters to make this useful.
 % 7/06/16  npc      Adapted to use PR650dev/PR670dev objects
+% 9/2/16   ms       Updated with new CalStateMeasurements option
 tic;
 
 % Parse the input
