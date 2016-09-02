@@ -64,8 +64,8 @@ p.addOptional('SkipBackground', false, @islogical);
 p.addOptional('ReducedPowerLevels', true, @islogical);
 p.addOptional('NoAdjustment', false, @islogical);
 p.addOptional('REFERENCE_OBSERVER_AGE', 32, @isscalar);
-p.addOptional('NIter', 10, @isscalar);
-p.addOptional('lambda', 0.8, @isscalar);
+p.addOptional('NIter', 20, @isscalar);
+p.addOptional('lambda', 0.9, @isscalar);
 p.addOptional('selectedCalType', [], @isstr);
 p.addOptional('CALCULATE_SPLATTER', true, @islogical);
 p.addOptional('powerLevels', 32, @isnumeric);
@@ -116,7 +116,7 @@ if (isempty(spectroRadiometerOBJ))
                     'verbosity',        1, ...
                     'syncMode',         'OFF', ...      % choose from 'OFF', 'AUTO', [20 400];
                     'cyclesToAverage',  1, ...          % choose any integer in range [1 99]
-                    'sensitivityMode',  'EXTENDED', ... % choose between 'STANDARD' and 'EXTENDED'.  'STANDARD': (exposure range: 6 - 6,000 msec, 'EXTENDED': exposure range: 6 - 30,000 msec
+                    'sensitivityMode',  'STANDARD', ... % choose between 'STANDARD' and 'EXTENDED'.  'STANDARD': (exposure range: 6 - 6,000 msec, 'EXTENDED': exposure range: 6 - 30,000 msec
                     'exposureTime',     'ADAPTIVE', ... % choose between 'ADAPTIVE' (for adaptive exposure), or a value in the range [6 6000] for 'STANDARD' sensitivity mode, or a value in the range [6 30000] for the 'EXTENDED' sensitivity mode
                     'apertureSize',     '1 DEG' ...   % choose between '1 DEG', '1/2 DEG', '1/4 DEG', '1/8 DEG'
                     );
