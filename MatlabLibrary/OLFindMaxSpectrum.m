@@ -54,7 +54,7 @@ end
 scaleFactor = fsolve(@(scaleFactor) OLFindMaxSpectrumFun(scaleFactor,oneLightCal,targetSpd,lambda),1,options);
 
 maxSpd = scaleFactor*targetSpd;
-primary = OLSpdToPrimary(oneLightCal,maxSpd,lambda);
+primary = OLSpdToPrimary(oneLightCal, maxSpd, 'lambda', lambda);
 maxVal = max(primary);
 
 

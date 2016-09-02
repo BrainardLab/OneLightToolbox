@@ -3,8 +3,8 @@ function [effectivePrimary primary] = OLSpdToPrimary(oneLightCal, targetSpd, var
 %
 % Syntax:
 % effectivePrimary = OLSpdToPrimary(oneLightCal, targetSpd)
-% effectivePrimary = OLSpdToPrimary(oneLightCal, targetSpd, lambda)
-% effectivePrimary = OLSpdToPrimary(oneLightCal, targetSpd, lambda, verbose)
+% effectivePrimary = OLSpdToPrimary(oneLightCal, targetSpd, params.lambda)
+% effectivePrimary = OLSpdToPrimary(oneLightCal, targetSpd, params.lambda, verbose)
 %
 % Description:
 % Convert a spectral power distribution to the linear 0-1 fraction of light
@@ -62,7 +62,7 @@ end
 % determine the size of some vectors below, and for debugging.
 targeteffectivePrimary = pinv(oneLightCal.computed.pr650M) * (targetSpd - darkSpd);
 targetPrimary = oneLightCal.computed.D * targeteffectivePrimary;
-if verbose
+if params.verbose
     fprintf('Pinv settings: min = %g, max = %g\n', min(targetPrimary(:)), max(targetPrimary(:)));
 end
 
@@ -81,8 +81,8 @@ C1 = oneLightCal.computed.pr650M;
 d1 = targetSpd - darkSpd;
 C2 = zeros(length(targeteffectivePrimary)-1, length(targeteffectivePrimary));
 for i = 1:length(targeteffectivePrimary)-1
-    C2(i,i) = lambda;
-    C2(i,i+1) = -lambda;
+    C2(i,i) = params.lambda;
+    C2(i,i+1) = -params.lambda;
 end
 d2 = zeros(length(targeteffectivePrimary)-1, 1);
 C = [C1 ; C2];
@@ -100,7 +100,7 @@ end
 options = optimset('lsqlin');
 options = optimset(options,'Diagnostics','off','Display','off','LargeScale','off','Algorithm','active-set');
 targeteffectivePrimary1 = lsqlin(C,d,A,b,[],[],vlb,[],[],options);
-if verbose
+if params.verbose
     fprintf('Lsqlin effective settings: min = %g, max = %g\n', min(targeteffectivePrimary1(:)), max(targeteffectivePrimary1(:)));
 end
 if ~params.differentialMode
@@ -120,7 +120,7 @@ index2 = find(primary > 1);
 outOfRange.numLow = length(index1);
 outOfRange.numHigh = length(index2);
 
-if verbose
+if params.verbose
     fprintf('Number of target settings less than 0: %d, number greater than 1: %d\n', outOfRange.numLow, outOfRange.numHigh);
 end
 
