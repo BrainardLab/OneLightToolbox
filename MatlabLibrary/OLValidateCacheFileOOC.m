@@ -57,7 +57,7 @@ p.addOptional('ReferenceMode', true, @islogical);
 p.addOptional('FullOnMeas', true, @islogical);
 p.addOptional('HalfOnMeas', false, @islogical);
 p.addOptional('DarkMeas', false, @islogical);
-p.addOptional('WigglyMeas', false, @islogical);
+p.addOptional('CalStateMeasurements', false, @islogical);
 p.addOptional('SkipBackground', false, @islogical);
 p.addOptional('ReducedPowerLevels', true, @islogical);
 p.addOptional('NoAdjustment', false, @islogical);
@@ -312,8 +312,8 @@ try
         results.offMeas.predictedFromCal = cal.raw.darkMeas(:, 1);
     end
     
-    if describe.WigglyMeas
-        fprintf('- Wiggly measurement \n');
+    if describe.CalStateMeasurements
+        fprintf('- State measurements \n');
         theWigglySettings = zeros(cal.describe.numWavelengthBands, 1);
         theWigglySettings(2:10:end) = 1.0;
         [starts,stops] = OLSettingsToStartsStops(cal,theWigglySettings);
