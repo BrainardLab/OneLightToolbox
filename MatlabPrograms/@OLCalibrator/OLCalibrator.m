@@ -33,5 +33,8 @@ classdef OLCalibrator
     
         % Method to take measurements that assess primary independence
         cal = TakeIndependenceMeasurements(cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
+    
+        % Method to visualize the OneLight state progression during a calibration.
+        VisualizeStateProgression();      
     end
 end
