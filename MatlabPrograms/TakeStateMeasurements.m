@@ -5,6 +5,7 @@ function [cal calMeasOnly] = TakeStateMeasurements(cal0, ol, od, spectroRadiomet
 % the data are added to a barebones calibration structure.
 %
 % 7/xx/16   npc     Written.
+% 9/2/16    ms      Some updates
 
 if ~exist('var', 'standAlone') || isempty(standAlone)
     standAlone = false;
