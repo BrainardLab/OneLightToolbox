@@ -11,7 +11,7 @@ function cal = TakeDarkMeasurement(measurementIndex, cal0, ol, od, spectroRadiom
 
     % See if we need to take a new set of state measurements
     if (mod(cal.describe.stateTracking.calibrationStimIndex, cal.describe.stateTracking.calibrationStimInterval) == 0)
-        cal = TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
+        cal = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
     end
 
     % Update calibration stim index and take dark measurement
@@ -30,7 +30,7 @@ function cal = TakeDarkMeasurement(measurementIndex, cal0, ol, od, spectroRadiom
 
     % See if we need to take a new set of state measurements
     if (mod(cal.describe.stateTracking.calibrationStimIndex, cal.describe.stateTracking.calibrationStimInterval) == 0)
-        cal = TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
+        cal = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
     end
 
     % Update calibration stim index and take check dark measurement.

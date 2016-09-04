@@ -11,7 +11,7 @@ function cal = TakeWigglyMeasurement(measurementIndex, cal0, ol, od, spectroRadi
 
     % See if we need to take a new set of state measurements
     if (mod(cal.describe.stateTracking.calibrationStimIndex, cal.describe.stateTracking.calibrationStimInterval) == 0)
-        cal = TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
+        cal = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
     end
 
     % Update calibration stim index
