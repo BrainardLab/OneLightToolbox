@@ -65,7 +65,7 @@ p.addOptional('ReducedPowerLevels', true, @islogical);
 p.addOptional('NoAdjustment', false, @islogical);
 p.addOptional('REFERENCE_OBSERVER_AGE', 32, @isscalar);
 p.addOptional('NIter', 20, @isscalar);
-p.addOptional('lambda', 0.9, @isscalar);
+p.addOptional('lambda', 0.8, @isscalar);
 p.addOptional('selectedCalType', [], @isstr);
 p.addOptional('CALCULATE_SPLATTER', true, @islogical);
 p.addOptional('powerLevels', 32, @isnumeric);
@@ -469,6 +469,7 @@ try
     
     % Save out useful information
     [calID calIDTitle] = OLGetCalID(cal);
+    results.describe.contrasts = contrasts;
     results.describe.calID = calID;
     results.describe.calIDTitle = calIDTitle;
     results.describe.cal = cal;
