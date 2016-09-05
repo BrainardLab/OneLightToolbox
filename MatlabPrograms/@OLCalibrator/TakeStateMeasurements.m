@@ -13,7 +13,7 @@ function [cal, calMeasOnly] = TakeStateMeasurements(cal0, ol, od, spectroRadiome
     end
 
     if standAlone
-       calMeasOnly.describe = cal.describe;
+       calMeasOnly.describe = cal0.describe;
     end
     cal = cal0;
     cal.describe.stateTracking.stateMeasurementIndex = cal.describe.stateTracking.stateMeasurementIndex + 1;
