@@ -315,7 +315,7 @@ try
     
     if describe.CalStateMeas
         fprintf('- State measurements \n');
-        [~, CalStateMeas] = TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, true);
+        [~, CalStateMeas] = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, true);
     end
     
     % Loop over the stimuli in the cache file and take a measurement with
@@ -448,6 +448,7 @@ try
     results.describe.meterToggle = meterToggle;
     results.describe.REFERENCE_OBSERVER_AGE = describe.REFERENCE_OBSERVER_AGE;
     results.describe.S = S;
+    results.describe.CalStateMeas = CalStateMeas;
     
     % Save the data to the validation folder.
     if results.describe.referenceMode
