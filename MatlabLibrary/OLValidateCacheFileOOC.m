@@ -40,6 +40,7 @@ function [results, validationDir, validationPath, openSpectroRadiometerOBJ] = OL
 %                                                             Calibration
 %                                                             type
 %                             'powerLevels'         scalar    Which power levels
+%                             'pr670sensitivityMode'    string 'STANDARD' or 'EXTENDED'
 %
 % Output:
 % results (struct) - Results struct. This is different depending on which
