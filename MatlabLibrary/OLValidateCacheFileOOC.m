@@ -315,8 +315,10 @@ try
     
     if describe.CalStateMeas
         fprintf('- State measurements \n');
-        [~, CalStateMeas] = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, true);
+        [~, calStateMeas] = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, true);
+        OLCalibrator.SaveStateMeasurements(cal, calStateMeas);
     end
+    
     
     % Loop over the stimuli in the cache file and take a measurement with
     % both the PR-650 and the OmniDriver.
@@ -448,7 +450,7 @@ try
     results.describe.meterToggle = meterToggle;
     results.describe.REFERENCE_OBSERVER_AGE = describe.REFERENCE_OBSERVER_AGE;
     results.describe.S = S;
-    results.describe.CalStateMeas = CalStateMeas;
+    results.describe.calStateMeas = calStateMeas;
     
     % Save the data to the validation folder.
     if results.describe.referenceMode
