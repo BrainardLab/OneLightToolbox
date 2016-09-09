@@ -8,3 +8,6 @@
 
 function SaveStateMeasurements(cal0, calMeasOnly)
 
+outDir = fullfile(getpref('OneLight', 'OneLightCalData'), cal.describe.calType, cal.describe.date, 'StateMeasurements.mat');
+% Save out the calibration
+SaveCalFile(calMeasOnly, 'StateMeasurements.mat', outDir);
