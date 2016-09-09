@@ -67,6 +67,7 @@ p.addOptional('selectedCalType', [], @isstr);
 p.addOptional('CALCULATE_SPLATTER', true, @islogical);
 p.addOptional('powerLevels', 32, @isnumeric);
 p.addOptional('outDir', [], @isstr);
+p.addOptional('pr670sensitivityMode', 'STANDARD', @isstr);
 
 p.parse(varargin{:});
 describe = p.Results;
@@ -112,7 +113,7 @@ if (isempty(spectroRadiometerOBJ))
                     'verbosity',        1, ...
                     'syncMode',         'OFF', ...      % choose from 'OFF', 'AUTO', [20 400];
                     'cyclesToAverage',  1, ...          % choose any integer in range [1 99]
-                    'sensitivityMode',  'EXTENDED', ... % choose between 'STANDARD' and 'EXTENDED'.  'STANDARD': (exposure range: 6 - 6,000 msec, 'EXTENDED': exposure range: 6 - 30,000 msec
+                    'sensitivityMode',  'STANDARD', ... % choose between 'STANDARD' and 'EXTENDED'.  'STANDARD': (exposure range: 6 - 6,000 msec, 'EXTENDED': exposure range: 6 - 30,000 msec
                     'exposureTime',     'ADAPTIVE', ... % choose between 'ADAPTIVE' (for adaptive exposure), or a value in the range [6 6000] for 'STANDARD' sensitivity mode, or a value in the range [6 30000] for the 'EXTENDED' sensitivity mode
                     'apertureSize',     '1 DEG' ...   % choose between '1 DEG', '1/2 DEG', '1/4 DEG', '1/8 DEG'
                     );
