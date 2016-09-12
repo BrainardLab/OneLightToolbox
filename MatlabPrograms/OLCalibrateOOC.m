@@ -1,9 +1,9 @@
-function OLCalibrateWithStateTrackingOOC
-% OLCalibrateWithStateTrackingOOC - Calibrates the OneLight device, while
+function OLCalibrateOOC
+% OLCalibrateOOC - Calibrates the OneLight device, while
 % tracking its state (power fluctuations and spectral shifts)
 %
 % Syntax:
-% OLCalibrateWithStateTrackingOOC
+% OLCalibrateOOC
 %
 % Description:
 % Calibrates a OneLight device using a PR-6xx radiometer aor the OneLight
