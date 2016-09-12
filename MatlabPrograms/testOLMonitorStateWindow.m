@@ -1,40 +1,18 @@
 function testOLMonitorStateWindow
 
-   
-    % Get the cal
+    % ----------- GLUE CODE - THIS IS DONE BY THE EXPERIMENTAL PROGRAM ----
     cal = OLGetCalibrationStructure;
-    
-    nAverage = 1;
-    meterToggle = [1 cal.describe.useOmni];
-    
-    % Connect to the OceanOptics spectrometer.
-    if (cal.describe.useOmni)
-        od = OmniDriver;
-        od.Debug = true;
-        % Turn on some averaging and smoothing for the spectrum acquisition.
-        od.ScansToAverage = 10;
-        od.BoxcarWidth = 2;
-
-        % Make sure electrical dark correction is enabled.
-        od.CorrectForElectricalDark = true;
-
-        % Set the OmniDriver integration time to match up with what's in the
-        % calibration file.
-        od.IntegrationTime = cal.describe.omniDriver.integrationTime;
-    else
-        od = [];
-    end
+    nAverage = 1; meterToggle = [1 0]; od = [];
 
     % Open up the OneLight
     ol = OneLight;
     
     % Generate the spectroradiometer object
     spectroRadiometerOBJ = generateSpectroRadiometerOBJ();
-    
-    
+    % ----------- END OF GLUE CODE  ----
+
     
     % -------------- CODE TO ADD TO EXPERIMENTAL PROGRAM (BEFORE DATA COLLECTION BEGINS) ----------------------------
-
     % Collect state data until the user closes the monitoring window
     [hMonitoDataWindow, monitoredData] = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
     uiwait(hMonitoDataWindow);
@@ -42,10 +20,8 @@ function testOLMonitorStateWindow
     fprintf('Saving data \n');
     % Save the monitoring data
     save('WarmUpMonitoredData.mat', 'monitoredData');
-    
     % ------------------------- END OF CODE TO ADD ------------------------
-    
-    
+
     % Continue with experiment
     spectroRadiometerOBJ.shutDown();
 end

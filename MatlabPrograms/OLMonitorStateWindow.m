@@ -55,14 +55,6 @@ function [figureHandle, monitoredData] = OLMonitorStateWindow(cal, ol, od, spect
     end
 
 
-    % Deleter function
-    function [] = deleterFunction(varargin)
-    % If figure is deleted, so is the timer.
-        stop(S.tmr);
-        delete(S.tmr);
-    end
-
-
     % Updater function
     function [] = guiUpdaterFunction(varargin)
          
