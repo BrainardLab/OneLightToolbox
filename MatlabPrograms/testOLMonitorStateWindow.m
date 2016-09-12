@@ -32,12 +32,14 @@ function testOLMonitorStateWindow
     spectroRadiometerOBJ = generateSpectroRadiometerOBJ();
     
     
+    
     % -------------- CODE TO ADD TO EXPERIMENTAL PROGRAM (BEFORE DATA COLLECTION BEGINS) ----------------------------
 
     % Collect state data until the user closes the monitoring window
     [hMonitoDataWindow, monitoredData] = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
     uiwait(hMonitoDataWindow);
 
+    fprintf('Saving data \n');
     % Save the monitoring data
     save('WarmUpMonitoredData.mat', 'monitoredData');
     
