@@ -1,4 +1,3 @@
-
 function OLMakeModulations(configFileName, observerAgeInYears, calType, nullingID, protocolDir)
 % OLMakeModulations - Creates the cache data for a given config file.
 %
@@ -30,7 +29,7 @@ function OLMakeModulations(configFileName, observerAgeInYears, calType, nullingI
 % Setup the directories we'll use.  We count on the
 % standard relative directory structure that we always
 % use in our (BrainardLab) experiments.
-baseDir = '/Users/Shared/Matlab/Experiments/OneLight/OLFlickerSensitivity/code/';
+baseDir = getpref('OneLight', 'OLFlickerSensitivityBaseDir');
 configDir = fullfile(baseDir, 'config', 'modulations');
 cacheDir = fullfile(getpref('OneLight', 'cachePath'), 'stimuli');
 modulationDir = fullfile(getpref('OneLight', 'modulationPath'));
