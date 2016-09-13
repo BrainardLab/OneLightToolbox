@@ -1,4 +1,4 @@
-function [results, validationDir, validationPath, openSpectroRadiometerOBJ] = OLCorrectCacheFileOOC(cacheFileName, emailRecipient, ...
+function [cacheData openSpectroRadiometerOBJ] = OLCorrectCacheFileOOC(cacheFileName, emailRecipient, ...
     meterType, spectroRadiometerOBJ, spectroRadiometerOBJWillShutdownAfterMeasurement, varargin)
 % results = OLCorrectCacheFileOOC(cacheFileName, emailRecipient, ...
 % meterType, spectroRadiometerOBJ, spectroRadiometerOBJWillShutdownAfterMeasurement, varargin)
@@ -431,7 +431,15 @@ try
                 iter = iter+1;
             end
     end
-    stopMeas = GetSecs;
+    
+    % Replace the old nominal settings with the corrected ones.
+    for ii = 1:length(cacheData.data)
+        if ii == describe.REFERENCE_OBSERVER_AGE;
+            cacheData.data(ii).
+        else
+            cacheData.data(ii) = [];
+        end
+    end
     
     % Turn the OneLight mirrors off.
     ol.setAll(false);
