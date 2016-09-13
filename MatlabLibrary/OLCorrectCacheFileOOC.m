@@ -427,6 +427,11 @@ try
                 contrasts(:, iter) = ComputeAndReportContrastsFromSpds(['Iteration ' num2str(iter, '%02.0f')] ,theCanonicalPhotoreceptors,T_receptors,...
                     results.modulationBGMeas.meas.pr650.spectrum,results.modulationMaxMeas.meas.pr650.spectrum,true);
                 
+                backgroundPrimaryCorrectedAll(:, iter) = backgroundPrimaryCorrected;
+                deltaBackgroundPrimaryInferredAll(:, iter)= deltaBackgroundPrimaryInferred;
+                modulationPrimaryCorrectedAll(:, iter) = modulationPrimaryCorrected;
+                deltaModulationPrimaryInferredAll(:, iter)= deltaModulationPrimaryInferred;
+                
                 % Increment
                 iter = iter+1;
             end
@@ -435,7 +440,8 @@ try
     % Replace the old nominal settings with the corrected ones.
     for ii = 1:length(cacheData.data)
         if ii == describe.REFERENCE_OBSERVER_AGE;
-            cacheData.data(ii) = [];
+            cacheData.data(ii).backgroundPrimary = backgroundPrimaryCorrectedAll(:, end);
+            cacheData.data(ii).modulationPrimarySignedPositive = modulationPrimaryCorrectedAll(:, end);
         else
             cacheData.data(ii) = [];
         end
