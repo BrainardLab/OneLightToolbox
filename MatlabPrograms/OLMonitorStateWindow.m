@@ -39,6 +39,9 @@ function [figureHandle, monitoredData] = OLMonitorStateWindow(cal, ol, od, spect
     % Start the timer object.
     start(S.tmr);
     
+    % Wait until user closes the figure
+    uiwait(S.figHandle);
+    
     function closeRequestFunction(src,callbackdata)
        selection = questdlg('Stop monitoring OLstate?',...
           'OLMonitorStateWindow',...
