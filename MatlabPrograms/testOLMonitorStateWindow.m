@@ -1,3 +1,8 @@
+% Demos how to embed a call to OLMonitorStateWindow within an OL experiment
+%
+% 9/12/16   npc     Wrote it.
+%
+
 function testOLMonitorStateWindow
 
     % ----------- GLUE CODE - THIS IS DONE BY THE EXPERIMENTAL PROGRAM ----
@@ -9,23 +14,26 @@ function testOLMonitorStateWindow
     
     % Generate the spectroradiometer object
     spectroRadiometerOBJ = generateSpectroRadiometerOBJ();
-    % ----------- END OF GLUE CODE  ----
+    % ----------- END OF GLUE CODE  ---------------------------------------
 
     
-    % -------------- CODE TO ADD TO EXPERIMENTAL PROGRAM (BEFORE DATA COLLECTION BEGINS) ----------------------------
+    % ------ CODE TO EMBED TO EXPERIMENTAL PROGRAM (BEFORE DATA COLLECTION BEGINS) --------------
     % Collect state data until the user closes the monitoring window
-    [hMonitoDataWindow, monitoredData] = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
+    monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
 
+    % Save the monitoring data (optional)
     fprintf('Saving data \n');
-    % Save the monitoring data
     save('WarmUpMonitoredData.mat', 'monitoredData');
-    % ------------------------- END OF CODE TO ADD ------------------------
+    % ------- END OF CODE TO EMBED TO EXPERIMENTAL PROGRAM  -------------------------------------
 
     % Continue with experiment
+    
+    % ----------- GLUE CODE - THIS SHOULD BE DONE BY THE EXPERIMENTAL PROGRAM ----
     spectroRadiometerOBJ.shutDown();
+    % ----------- END OF GLUE CODE ----------------------------------------
 end
 
-
+% --------------- GLUE CODE -----------------------------------------------
 function spectroRadiometerOBJ = generateSpectroRadiometerOBJ()
 
     % Instantiate a PR670 object

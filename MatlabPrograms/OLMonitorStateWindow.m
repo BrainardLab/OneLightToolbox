@@ -5,26 +5,24 @@
 % is intended to be inserted right before data collection begins. 
 %
 % Syntax:
-% [figureHandle, monitoredData] = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage)
+% monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage)
 %
 % 9/12/16   npc     Wrote it.
 %
 
-function [figureHandle, monitoredData] = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage)
+function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage)
 
+    % Initialize everything
     measurementIndex = 0;
     monitoredData = [];
-    
     referenceTime = [];
     referencePowerSPD = [];
     referenceCombSPD = [];
     wavelengthIndices = [];
-    
     spectralAxis = SToWls(cal.describe.S);
     
     % Generate the GUI
     S = generateGUI(spectralAxis);
-    figureHandle = S.figHandle;
     
     % Add the timer for triggering data acquisition
     S.tmr = timer('Name','MeasurementTimer',...
@@ -42,7 +40,8 @@ function [figureHandle, monitoredData] = OLMonitorStateWindow(cal, ol, od, spect
     % Wait until user closes the figure
     uiwait(S.figHandle);
     
-    function closeRequestFunction(src,callbackdata)
+    % Callback function for when the user closes the figure
+    function closeRequestFunction(varargin)
        selection = questdlg('Stop monitoring OLstate?',...
           'OLMonitorStateWindow',...
           'Yes','No','Yes'); 
@@ -51,14 +50,14 @@ function [figureHandle, monitoredData] = OLMonitorStateWindow(cal, ol, od, spect
                 delete(gcf)
                 stop(S.tmr);
                 delete(S.tmr);
-                fprintf('Please wait to complete current measurement\n');
+                fprintf('Please wait for completion of current state measurement ...\n');
           case 'No'
           return 
        end
     end
 
 
-    % Updater function
+    % Updater function - data collection & visualization
     function [] = guiUpdaterFunction(varargin)
          
         try
@@ -118,7 +117,6 @@ function [figureHandle, monitoredData] = OLMonitorStateWindow(cal, ol, od, spect
              delete(S.figHandle); % Close it all down.
              rethrow(e)
         end       
-        
     end
     
 end
@@ -185,5 +183,4 @@ function S = generateGUI(spectralAxis)
     set(gca, 'FontSize', 14);
     xlabel('time (mins)', 'FontSize', 16, 'FontWeight', 'bold');
     ylabel('spectral shift (nm)', 'FontSize', 16, 'FontWeight', 'bold');
-    
 end
