@@ -444,36 +444,7 @@ try
         end
     end
     
-    % Save out useful information
-    [calID calIDTitle] = OLGetCalID(cal);
-    results.describe.contrasts = contrasts;
-    results.describe.calID = calID;
-    results.describe.calIDTitle = calIDTitle;
-    results.describe.cal = cal;
-    results.describe.cache.data = cacheData.data;
-    results.describe.cache.cacheFileName = cacheFileName;
-    results.describe.cache.REFERENCE_OBSERVER_AGE = describe.REFERENCE_OBSERVER_AGE;
-    results.describe.validationDate = validationDate;
-    results.describe.validationTime = validationTime;
-    results.describe.startMeas = startMeas;
-    results.describe.stopMeas = stopMeas;
-    results.describe.calibrationType = char(OLCalibrationTypes.(selectedCalType));
-    results.describe.referenceMode = describe.ReferenceMode;
-    results.describe.meterType = theMeterTypeID;
-    results.describe.meterToggle = meterToggle;
-    results.describe.REFERENCE_OBSERVER_AGE = describe.REFERENCE_OBSERVER_AGE;
-    results.describe.S = S;
-    
-    % Save the data to the validation folder.
-    if results.describe.referenceMode
-        resultsFileName = sprintf('%s-%s-%s', simpleCacheFileName, selectedCalType, 'SpotCheck');
-    else
-        resultsFileName = sprintf('%s-%s', simpleCacheFileName, selectedCalType);
-    end
-    SaveCalFile(results, resultsFileName, [validationDir '/']);
-    
-    validationPath = fullfile(validationDir, resultsFileName);
-    
+
     % Check if we want to do splatter calculations
     try
         OLAnalyzeValidationReceptorIsolate(validationPath, 'short');
