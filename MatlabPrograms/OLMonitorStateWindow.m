@@ -80,16 +80,17 @@ function [figureHandle, monitoredData] = OLMonitorStateWindow(cal, ol, od, spect
                  monitoredData.timeSeries = [];
                  monitoredData.powerRatioSeries = [];
                  monitoredData.spectralShiftSeries = [];
+                 monitoredData.spectralAxis = spectralAxis;
              end
              
              if (measurementIndex > 1)
-                 newSPDRatio = data.powerSPD(wavelengthIndices) \ referencePowerSPD;
+                 newSPDRatio = 1.0 / (data.powerSPD(wavelengthIndices) \ referencePowerSPD);
                  combPeaks = [480 540 596 652]+10; 
                  [spectralShifts, refPeaks, fitParams] = OLComputeSpectralShiftBetweenCombSPDs(data.shiftSPD, referenceCombSPD, combPeaks, spectralAxis);
                
                  monitoredData.powerRatioSeries = cat(2, monitoredData.powerRatioSeries, newSPDRatio);
                  monitoredData.timeSeries = cat(2, monitoredData.timeSeries, (data.powerSPDt-referenceTime)/60);
-                 monitoredData.spectralShiftSeries = cat(2, monitoredData.spectralShiftSeries, median(spectralShifts));
+                 monitoredData.spectralShiftSeries = cat(2, monitoredData.spectralShiftSeries, -median(spectralShifts));
              end
              
              if (isvalid(S.figHandle))
