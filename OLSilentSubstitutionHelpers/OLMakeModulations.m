@@ -160,7 +160,6 @@ if isempty(strfind(params.direction, 'DoublePulse'));
     describe.thePhasesDeg = describe.params.carrierPhase;
     describe.theContrastRelMax = describe.params.contrastScalars;
     
-    
     for f = 1:params.nFrequencies
         for p = 1:params.nPhases
             for c = 1:params.nContrastScalars
@@ -247,7 +246,6 @@ if isempty(strfind(params.direction, 'DoublePulse'));
                         waveform.noise.noisePrimary = theNoisePrimaries;
                     end
                 end
-                
                 
                 waveform.theContrastRelMax = params.contrastScalars(c);
                 waveform.duration = params.trialDuration;      % Trial duration
