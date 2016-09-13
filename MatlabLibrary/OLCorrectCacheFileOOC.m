@@ -1,4 +1,4 @@
-function [cacheData openSpectroRadiometerOBJ] = OLCorrectCacheFileOOC(cacheFileName, emailRecipient, ...
+function [cacheData olCache openSpectroRadiometerOBJ] = OLCorrectCacheFileOOC(cacheFileName, emailRecipient, ...
     meterType, spectroRadiometerOBJ, spectroRadiometerOBJWillShutdownAfterMeasurement, varargin)
 % results = OLCorrectCacheFileOOC(cacheFileName, emailRecipient, ...
 % meterType, spectroRadiometerOBJ, spectroRadiometerOBJWillShutdownAfterMeasurement, varargin)
@@ -435,7 +435,7 @@ try
     % Replace the old nominal settings with the corrected ones.
     for ii = 1:length(cacheData.data)
         if ii == describe.REFERENCE_OBSERVER_AGE;
-            cacheData.data(ii).
+            cacheData.data(ii) = [];
         else
             cacheData.data(ii) = [];
         end
@@ -452,7 +452,6 @@ try
         end
     end
     
-
     % Check if we want to do splatter calculations
     try
         OLAnalyzeValidationReceptorIsolate(validationPath, 'short');
