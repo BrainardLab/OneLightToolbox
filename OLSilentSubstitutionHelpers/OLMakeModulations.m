@@ -1,4 +1,4 @@
-function OLMakeModulations(configFileName, observerAgeInYears, calType, nullingID, protocolDir)
+function OLMakeModulations(configFileName, observerAgeInYears, calType, protocolDir, fileSuffix)
 % OLMakeModulations - Creates the cache data for a given config file.
 %
 % Syntax:
@@ -69,11 +69,18 @@ for i = 1:length(file_names)
     [~, params.cacheFileName{i}] = fileparts(file_names{i});
 end
 
+if ~isempty(customCacheFileName)
+    params.cacheFileName{i} = cacheFileName;
+end
+
 %% Iterate over the cache files to be loaded in.
 for i = 1:length(params.cacheFileName)
     % Load the cache data.
-    cacheData{i} = params.olCache.load(params.cacheFileName{i});
-    
+    if ~exist('fileSuffix', 'var') || isempty(fileSuffix)
+        cacheData{i} = params.olCache.load(params.cacheFileName{i});
+    else
+        cacheData{i} = [params.olCache.load(params.cacheFileName{i}) fileSuffix];
+    end
     % Store the internal date of the cache data we're using.  The cache
     % data date is a unique timestamp identifying a specific set of cache
     % data. We want to save that to associate data sets to specific
@@ -89,180 +96,79 @@ params.cacheData = cacheData;
 % shown
 fprintf(['\n* Running precalculations for ' fileNameSave '\n']);
 
+% Get the background
+backgroundPrimary = cacheData.backgroundPrimary;
 
-if isempty(strfind(params.direction, 'DoublePulse'));
-    % Get the background
-    backgroundPrimary = cacheData.backgroundPrimary;
-    
-    % Do something else if we are used nulled settings
-    if ~isempty(nullingID)
-        dataFile = [nullingID '-nulling-1.mat'];
-        tmp = load(fullfile(protocolDir, dataFile));
-        % Not too sustainable but works for now.
-        switch params.direction
-            case 'MelanopsinDirectedUnnulled'
-                modulationPrimary = backgroundPrimary+tmp.nulling{1, 1}.params.scalarPrimary*tmp.nulling{1, 1}.primaryNulling;
-            case 'MelanopsinDirectedNulled'
-                modulationPrimary = backgroundPrimary+tmp.nullingaverages{1}.differencePrimary;
-            case 'MelanopsinDirectedLegacyNulled'
-                modulationPrimary = backgroundPrimary+tmp.nullingaverages{1}.differencePrimary;
-            case {'MelanopsinDirectedPenumbralIgnoreNulledPositive' 'MelanopsinDirectedPenumbralIgnoreNulledNegative'};
-                modulationPrimary = backgroundPrimary+tmp.nullingaverages{1}.differencePrimary;
-            case {'LMSDirectedNulled' 'LMSDirectedNulledPositive' 'LMSDirectedNulledNegative'};
-                modulationPrimary = backgroundPrimary+tmp.nullingaverages{2}.differencePrimary;
-            case 'NulledResidualSplatter'
-                modulationPrimary = backgroundPrimary+tmp.nullingaverages{1}.nulledResidualPrimary;
-            case {'Background' 'ConeNoiseOnly' 'BackgroundConeNoise'}
-                modulationPrimary = backgroundPrimary;
-            case 'LightFlux'
-                modulationPrimary = cacheData.modulationPrimarySignedPositive;
-            otherwise
-                fprintf('**** NOT USING NULLED SETTINGS ****\n');
-                % Get the modulation primary
-                if strfind(fileNameSave, 'Background') % Background case
-                    modulationPrimary = backgroundPrimary;
-                else
-                    modulationPrimary = cacheData.modulationPrimarySignedPositive;
-                end
-        end
-        
-        % Save to specific file
-        params.observerAgeInYears = observerAgeInYears;
-        [~, fileName, fileSuffix] = fileparts(fileNameSave);
-        fileNameSave = [fileName '-' nullingID fileSuffix];
-        fileNameSaveFull = [fileName '-' nullingID '-full' fileSuffix];
-        
-    else
-        
-        % Get the modulation primary
-        if strfind(fileNameSave, 'Background') % Background case
-            modulationPrimary = backgroundPrimary;
-        else
-            modulationPrimary = cacheData.modulationPrimarySignedPositive;
-        end
-        % Save to specific file
-        params.observerAgeInYears = observerAgeInYears;
-        [~, fileName, fileSuffix] = fileparts(fileNameSave);
-        fileNameSave = [fileName '-' num2str(params.observerAgeInYears) fileSuffix];
-        fileNameSaveFull = [fileName '-' num2str(params.observerAgeInYears) '-full' fileSuffix];
-    end
-    
-    % Set up a few flags here
-    [~, describe.modulationName] = fileparts(fileNameSave);
-    describe.direction = params.direction;
-    describe.date = datestr(now);
-    describe.cal = params.oneLightCal;
-    describe.calID = OLGetCalID(params.oneLightCal);
-    describe.cacheDate = params.cacheDate;
-    describe.params = params;
-    describe.theFrequenciesHz = describe.params.carrierFrequency;
-    describe.thePhasesDeg = describe.params.carrierPhase;
-    describe.theContrastRelMax = describe.params.contrastScalars;
-    
-    for f = 1:params.nFrequencies
-        for p = 1:params.nPhases
-            for c = 1:params.nContrastScalars
-                % Construct the time vector
-                if strcmp(params.modulationMode, 'AM')
-                    waveform.theEnvelopeFrequencyHz = params.modulationFrequencyTrials(1); % Modulation frequency
-                    waveform.thePhaseDeg = params.modulationPhase(p);
-                    waveform.thePhaseRad = deg2rad(params.modulationPhase(p));
-                    waveform.theFrequencyHz = params.carrierFrequency(f);
-                elseif ~isempty(strfind(params.modulationMode, 'pulse'))
-                    waveform.phaseRandSec = params.phaseRandSec(p);
-                    waveform.stepTimeSec = params.stepTimeSec(f);
-                    waveform.preStepTimeSec = params.preStepTimeSec(f);
-                    waveform.theFrequencyHz = -1;
-                    waveform.thePhaseDeg = -1;
-                else
-                    waveform.thePhaseDeg = params.carrierPhase(p);
-                    waveform.thePhaseRad = deg2rad(params.carrierPhase(p));
-                    waveform.theFrequencyHz = params.carrierFrequency(f);
-                end
-                
-                waveform.direction = params.direction;
-                waveform.modulationPrimary = modulationPrimary;
-                waveform.backgroundPrimary = backgroundPrimary;
-                waveform.modulationWaveform = params.modulationWaveForm;
-                waveform.modulationMode = params.modulationMode;
-                
-                if isfield(params, 'coneNoise')
-                    if params.coneNoise
-                        if strcmp(params.stimulationMode, 'peripheral')
-                            % LMS
-                            cacheDataTmp = params.olCache.load('Cache-LMSDirectedNoise.mat');
-                            cacheDataNoisePrimary{1} = cacheDataTmp.data(observerAgeInYears).differencePrimary;
-                            % L-M
-                            cacheDataTmp = params.olCache.load('Cache-LMinusMDirectedNoise.mat');
-                            cacheDataNoisePrimary{2} = cacheDataTmp.data(observerAgeInYears).differencePrimary;
-                        elseif strcmp(params.stimulationMode, 'foveal')
-                            % LMS
-                            cacheDataTmp = params.olCache.load('Cache-LMSDirectedNoiseFoveal.mat');
-                            cacheDataNoisePrimary{1} = cacheDataTmp.data(observerAgeInYears).differencePrimary;
-                            % L-M
-                            cacheDataTmp = params.olCache.load('Cache-LMinusMDirectedNoiseFoveal.mat');
-                            cacheDataNoisePrimary{2} = cacheDataTmp.data(observerAgeInYears).differencePrimary;
-                        elseif strcmp(params.stimulationMode, 'maxmel')
-                            % LMS
-                            cacheDataTmp = params.olCache.load('Cache-LMSDirectedNoiseMaxMel.mat');
-                            cacheDataNoisePrimary{1} = cacheDataTmp.data(observerAgeInYears).differencePrimary;
-                            % L-M
-                            cacheDataTmp = params.olCache.load('Cache-LMinusMDirectedNoiseMaxMel.mat');
-                            cacheDataNoisePrimary{2} = cacheDataTmp.data(observerAgeInYears).differencePrimary;
-                        end
-                        
-                        % Make the noise vector
-                        t = 0:params.timeStep:params.trialDuration-params.timeStep;
-                        startIdx = 1:(1/(params.timeStep))/(params.coneNoiseFrequency):length(t);
-                        endIdx = (1/(params.timeStep))/(params.coneNoiseFrequency):(1/(params.timeStep))/(params.coneNoiseFrequency):length(t);
-                        nSamples = length(startIdx);
-                        nContrastLevels = 11;
-                        
-                        possibleLevels = linspace(-1, 1, nContrastLevels);
-                        theRand = possibleLevels(randi(nContrastLevels, 2, nSamples));
-                        
-                        for i = 1:length(startIdx)
-                            sampleSuccessful = false;
-                            while ~sampleSuccessful
-                                noiseScalarLMS = possibleLevels(randi(nContrastLevels, 1, 1));
-                                noiseScalarLMinusM = possibleLevels(randi(nContrastLevels, 1, 1));
-                                tmpPrimary1 = modulationPrimary + noiseScalarLMS*cacheDataNoisePrimary{1} + noiseScalarLMinusM*cacheDataNoisePrimary{2};
-                                tmpPrimary2 = backgroundPrimary + noiseScalarLMS*cacheDataNoisePrimary{1} + noiseScalarLMinusM*cacheDataNoisePrimary{2};
-                                if ~(any(tmpPrimary1 > 1) | any(tmpPrimary1 < 0) | any(tmpPrimary2 > 1) | any(tmpPrimary2 < 0))
-                                    sampleSuccessful = true;
-                                else
-                                    fprintf('* Within-gamut sample not successful at %.2f LMS and %.2f L-M, drawing another sample...\n', noiseScalarLMS, noiseScalarLMinusM);
-                                end
-                            end
-                            noiseVectorLMS(startIdx(i):endIdx(i)) = noiseScalarLMS;
-                            noiseVectorLMinusM(startIdx(i):endIdx(i)) = noiseScalarLMinusM;
-                        end
-                        
-                        for i = 1:length(t)
-                            theNoisePrimaries(:, i) = noiseVectorLMS(i)*cacheDataNoisePrimary{1} ... % LMS
-                                + noiseVectorLMinusM(i)*cacheDataNoisePrimary{2};
-                        end
-                        waveform.noise.noisePrimary = theNoisePrimaries;
-                    end
-                end
-                
-                waveform.theContrastRelMax = params.contrastScalars(c);
-                waveform.duration = params.trialDuration;      % Trial duration
-                waveform.cal = params.oneLightCal;
-                waveform.calID = OLGetCalID(params.oneLightCal);
-                waveform.t = 0:params.timeStep:waveform.duration-params.timeStep;  % Time vector
-                
-                waveform.window.cosineWindowIn = params.cosineWindowIn;
-                waveform.window.cosineWindowOut = params.cosineWindowOut;
-                waveform.window.cosineWindowDurationSecs = params.cosineWindowDurationSecs;
-                waveform.window.type = 'cosine';
-                waveform.window.nWindowed = params.cosineWindowDurationSecs/params.timeStep;
-                
-                fprintf('* Calculating %0.f s of %s, %.2f Hz, %.2f deg, %.1f pct contrast (of max)\n         ', waveform.duration, waveform.direction, waveform.theFrequencyHz, waveform.thePhaseDeg, 100*waveform.theContrastRelMax);
-                % Calculate it.
-                modulation(f, p, c) = OLCalculateStartsStopsModulation(waveform, describe.cal, backgroundPrimary, modulationPrimary-backgroundPrimary);
-                fprintf('  - Done.\n');
+% Get the modulation primary
+if strfind(fileNameSave, 'Background') % Background case
+    modulationPrimary = backgroundPrimary;
+else
+    modulationPrimary = cacheData.modulationPrimarySignedPositive;
+end
+% Save to specific file
+params.observerAgeInYears = observerAgeInYears;
+if ~exist('fileSuffix', 'var') || isempty(fileSuffix)
+    [~, fileName, fileSuffix] = fileparts(fileNameSave);
+else
+    [~, fileName] = fileparts(fileNameSave);
+end
+fileNameSave = [fileName '-' num2str(params.observerAgeInYears) fileSuffix];
+
+% Set up a few flags here
+[~, describe.modulationName] = fileparts(fileNameSave);
+describe.direction = params.direction;
+describe.date = datestr(now);
+describe.cal = params.oneLightCal;
+describe.calID = OLGetCalID(params.oneLightCal);
+describe.cacheDate = params.cacheDate;
+describe.params = params;
+describe.theFrequenciesHz = describe.params.carrierFrequency;
+describe.thePhasesDeg = describe.params.carrierPhase;
+describe.theContrastRelMax = describe.params.contrastScalars;
+
+for f = 1:params.nFrequencies
+    for p = 1:params.nPhases
+        for c = 1:params.nContrastScalars
+            % Construct the time vector
+            if strcmp(params.modulationMode, 'AM')
+                waveform.theEnvelopeFrequencyHz = params.modulationFrequencyTrials(1); % Modulation frequency
+                waveform.thePhaseDeg = params.modulationPhase(p);
+                waveform.thePhaseRad = deg2rad(params.modulationPhase(p));
+                waveform.theFrequencyHz = params.carrierFrequency(f);
+            elseif ~isempty(strfind(params.modulationMode, 'pulse'))
+                waveform.phaseRandSec = params.phaseRandSec(p);
+                waveform.stepTimeSec = params.stepTimeSec(f);
+                waveform.preStepTimeSec = params.preStepTimeSec(f);
+                waveform.theFrequencyHz = -1;
+                waveform.thePhaseDeg = -1;
+            else
+                waveform.thePhaseDeg = params.carrierPhase(p);
+                waveform.thePhaseRad = deg2rad(params.carrierPhase(p));
+                waveform.theFrequencyHz = params.carrierFrequency(f);
             end
+            
+            waveform.direction = params.direction;
+            waveform.modulationPrimary = modulationPrimary;
+            waveform.backgroundPrimary = backgroundPrimary;
+            waveform.modulationWaveform = params.modulationWaveForm;
+            waveform.modulationMode = params.modulationMode;
+            
+            waveform.theContrastRelMax = params.contrastScalars(c);
+            waveform.duration = params.trialDuration;      % Trial duration
+            waveform.cal = params.oneLightCal;
+            waveform.calID = OLGetCalID(params.oneLightCal);
+            waveform.t = 0:params.timeStep:waveform.duration-params.timeStep;  % Time vector
+            
+            waveform.window.cosineWindowIn = params.cosineWindowIn;
+            waveform.window.cosineWindowOut = params.cosineWindowOut;
+            waveform.window.cosineWindowDurationSecs = params.cosineWindowDurationSecs;
+            waveform.window.type = 'cosine';
+            waveform.window.nWindowed = params.cosineWindowDurationSecs/params.timeStep;
+            
+            fprintf('* Calculating %0.f s of %s, %.2f Hz, %.2f deg, %.1f pct contrast (of max)\n         ', waveform.duration, waveform.direction, waveform.theFrequencyHz, waveform.thePhaseDeg, 100*waveform.theContrastRelMax);
+            % Calculate it.
+            modulation(f, p, c) = OLCalculateStartsStopsModulation(waveform, describe.cal, backgroundPrimary, modulationPrimary-backgroundPrimary);
+            fprintf('  - Done.\n');
         end
     end
 end
