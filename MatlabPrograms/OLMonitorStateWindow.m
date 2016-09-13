@@ -7,6 +7,8 @@
 % Syntax:
 % monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage)
 %
+% See testOLMonitorStateWindow for usage of this function.
+%
 % 9/12/16   npc     Wrote it.
 %
 
@@ -42,9 +44,11 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
     
     % Callback function for when the user closes the figure
     function closeRequestFunction(varargin)
+        
        selection = questdlg('Stop monitoring OLstate?',...
           'OLMonitorStateWindow',...
           'Yes','No','Yes'); 
+      
        switch selection, 
           case 'Yes',
                 delete(gcf)

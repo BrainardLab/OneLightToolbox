@@ -24,6 +24,10 @@ function testOLMonitorStateWindow
     % Save the monitoring data (optional)
     fprintf('Saving data \n');
     save('WarmUpMonitoredData.mat', 'monitoredData');
+    
+    % Visualize monitoredData (optional)
+    OLVisualizeMonitoredData(monitoredData);
+    
     % ------- END OF CODE TO EMBED TO EXPERIMENTAL PROGRAM  -------------------------------------
 
     % Continue with experiment
