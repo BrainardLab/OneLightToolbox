@@ -33,7 +33,7 @@ function OLVisualizeMonitoredData(monitoredData)
        
     hFig = figure(1);
     clf;
-    set(hFig, 'Position', [30 30 1200 900]);
+    set(hFig, 'Position', [30 30 1600 900]);
     
     subplot('Position', subplotPosVectors2(1,1).v);
     plot(monitoredData.spectralAxis, powerSPDs, '-');
@@ -47,20 +47,19 @@ function OLVisualizeMonitoredData(monitoredData)
     set(gca, 'FontSize', 14);
     xlabel('wavelength (nm)', 'FontSize', 16, 'FontWeight', 'bold');
     
-    
     subplot('Position', subplotPosVectors2(2,1).v);
-    plot(monitoredData.timeSeries, monitoredData.powerRatioSeries, 'ks-', 'LineWidth', 2.0, 'MarkerSize', 10, 'MarkerFaceColor', [1.0 0.7 0.7]);
+    plot(monitoredData.timeSeries, monitoredData.powerRatioSeries, 'ks-', 'LineWidth', 1.5, 'MarkerSize', 8, 'MarkerFaceColor', [1.0 0.7 0.7]);
     set(gca, 'FontSize', 14);
     xlabel('Time elapsed (minutes)', 'FontSize', 16, 'FontWeight', 'bold');
     ylabel('power ratio (current:first)',  'FontSize', 16, 'FontWeight', 'bold');
     
     subplot('Position', subplotPosVectors2(2,2).v);
-    plot(monitoredData.timeSeries, monitoredData.spectralShiftSeries, 'ks-', 'LineWidth', 2.0, 'MarkerSize', 10, 'MarkerFaceColor', [0.7 0.7 1.0]);
+    plot(monitoredData.timeSeries, monitoredData.spectralShiftSeries, 'ks-', 'LineWidth', 1.5, 'MarkerSize', 8, 'MarkerFaceColor', [0.7 0.7 1.0]);
     set(gca, 'FontSize', 14);
     xlabel('Time elapsed (minutes)',  'FontSize', 16, 'FontWeight', 'bold');
     ylabel('spectral shift, nm (current-first)',  'FontSize', 16, 'FontWeight', 'bold');
-    
+
     colormap(lines);
     drawnow
-    
+    NicePlot.exportFigToPNG('MonitoredData.png', hFig, 300);
 end

@@ -64,6 +64,8 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
     % Updater function - data collection & visualization
     function [] = guiUpdaterFunction(varargin)
          
+        combPeaks = [480 540 596 652]+10;
+        
         try
              % Measure and retrieve the data
              [~, calStateMeas] = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, true);
@@ -72,6 +74,7 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
              data.shiftSPDt = calStateMeas.raw.spectralShiftsMeas.t;
              data.powerSPD  = calStateMeas.raw.powerFluctuationMeas.measSpd;
              data.powerSPDt = calStateMeas.raw.powerFluctuationMeas.t;
+             
              measurementIndex = measurementIndex + 1;
              monitoredData.measurements{measurementIndex} = data;
              
@@ -80,21 +83,21 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
                  referencePowerSPD = data.powerSPD(wavelengthIndices);
                  referenceCombSPD = data.shiftSPD;
                  referenceTime = data.powerSPDt;
+                 monitoredData.spectralAxis = spectralAxis;
+                 [~, ~, fitParams] = OLComputeSpectralShiftBetweenCombSPDs(referenceCombSPD, referenceCombSPD, combPeaks, spectralAxis);
                  monitoredData.timeSeries = [];
                  monitoredData.powerRatioSeries = [];
                  monitoredData.spectralShiftSeries = [];
-                 monitoredData.spectralAxis = spectralAxis;
-             end
-             
-             if (measurementIndex > 1)
+             else
                  newSPDRatio = 1.0 / (data.powerSPD(wavelengthIndices) \ referencePowerSPD);
-                 combPeaks = [480 540 596 652]+10; 
                  [spectralShifts, refPeaks, fitParams] = OLComputeSpectralShiftBetweenCombSPDs(data.shiftSPD, referenceCombSPD, combPeaks, spectralAxis);
-               
-                 monitoredData.powerRatioSeries = cat(2, monitoredData.powerRatioSeries, newSPDRatio);
                  monitoredData.timeSeries = cat(2, monitoredData.timeSeries, (data.powerSPDt-referenceTime)/60);
+                 monitoredData.powerRatioSeries = cat(2, monitoredData.powerRatioSeries, newSPDRatio);
                  monitoredData.spectralShiftSeries = cat(2, monitoredData.spectralShiftSeries, -median(spectralShifts));
              end
+             
+             % save fitted params time series as well
+             monitoredData.fitParamsTimeSeries(:,:,measurementIndex) = fitParams;
              
              if (isvalid(S.figHandle))
                  % Update GUI
@@ -107,7 +110,6 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
                  if (measurementIndex > 1)
                      set(S.currentShiftPlotFit, 'xData', refPeaks);
                      set(S.currentShiftPlotFit, 'yData', max(data.shiftSPD(:)) * ones(size(refPeaks)));
-
                      set(S.timeSeriesPowerPlot, 'xData', monitoredData.timeSeries);
                      set(S.timeSeriesPowerPlot, 'yData', monitoredData.powerRatioSeries);
                      set(S.timeSeriesShiftPlot, 'xData', monitoredData.timeSeries);
@@ -116,9 +118,10 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
              end
              
          catch e
+             % Close it all down.
              spectroRadiometerOBJ.shutDown();
              fprintf('Error: %s\n', e.message);
-             delete(S.figHandle); % Close it all down.
+             delete(S.figHandle); 
              rethrow(e)
         end       
     end
