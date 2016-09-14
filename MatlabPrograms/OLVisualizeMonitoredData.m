@@ -33,7 +33,7 @@ function OLVisualizeMonitoredData(monitoredData)
        
     hFig = figure(1);
     clf;
-    set(hFig, 'Position', [30 30 1200 900], 'Color', [1 1 1]);
+    set(hFig, 'Position', [30 30 1600 900], 'Color', [1 1 1]);
     
     cmap = jet(measurementsNum);
     
