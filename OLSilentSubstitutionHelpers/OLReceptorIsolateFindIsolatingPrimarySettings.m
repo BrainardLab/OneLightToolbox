@@ -395,9 +395,9 @@ else
         photopicLuminanceCdM2 = scaleFactor*photopicLuminanceCdM2;
         
         %% Get cone spectral sensitivities to use to compute isomerization rates
-        lambdaMaxShift = [0 0 0];
-        [T_cones, T_quantalIsom]  = GetHumanPhotoreceptorSS(S, {'LCone' 'MCone' 'SCone'}, params.fieldSizeDegrees, observerAgeInYears, pupilDiameterMm, lambdaMaxShift, []);
-        [T_conesHemo, T_quantalIsomHemo]  = GetHumanPhotoreceptorSS(S, {'LConeHemoLegacy' 'MConeHemoLegacy' 'SConeHemoLegacy'}, params.fieldSizeDegrees, observerAgeInYears, pupilDiameterMm, lambdaMaxShift, []);
+        lambdaMaxShift = zeros(1, length(photoreceptorClasses));
+        [T_cones, T_quantalIsom]  = GetHumanPhotoreceptorSS(S, {'LCone' 'MCone' 'SCone'}, params.fieldSizeDegrees, observerAgeInYears, pupilDiameterMm, [], []);
+        [T_conesHemo, T_quantalIsomHemo]  = GetHumanPhotoreceptorSS(S, {'LConeTabulatedAbsorbancePenumbral' 'MConeTabulatedAbsorbancePenumbral' 'SConeTabulatedAbsorbancePenumbral'}, params.fieldSizeDegrees, observerAgeInYears, pupilDiameterMm, [], []);
         
         %% Compute irradiance, trolands, etc.
         pupilAreaMm2 = pi*((pupilDiameterMm/2)^2);
