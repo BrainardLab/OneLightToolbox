@@ -12,6 +12,13 @@ function OLVisualizeMonitoredData(monitoredData)
     
     measurementsNum = numel(monitoredData.measurements);
     
+    if (isfield(monitoredData, 'fitParamsTimeSeries'))
+        for k = 1:measurementsNum
+            combSPDMeasTimes(k) = monitoredData.measurements{k}.powerSPDt;
+        end
+        combSPDMeasTimes = (combSPDMeasTimes - combSPDMeasTimes(1))/60;
+    end
+    
     for k = 1:measurementsNum
         if (k == 1)
             powerSPDs = zeros(measurementsNum, numel(monitoredData.measurements{1}.powerSPD));
@@ -42,19 +49,20 @@ function OLVisualizeMonitoredData(monitoredData)
     for k = 1:measurementsNum
         plot(monitoredData.spectralAxis, powerSPDs(k,:), '-', 'Color', cmap(k,:), 'LineWidth', 2);
     end
-    set(gca, 'XLim', [monitoredData.spectralAxis(1) monitoredData.spectralAxis(end)]);
-    set(gca, 'FontSize', 14);
-    xlabel('wavelength (nm)', 'FontSize', 16, 'FontWeight', 'bold');
-    box 'on';
-    
-    subplot('Position', subplotPosVectors2(1,2).v);
-    hold on
     for k = 1:measurementsNum
         plot(monitoredData.spectralAxis, combSPDs(k,:), '-', 'Color', cmap(k,:), 'LineWidth', 2);
     end
     set(gca, 'XLim', [monitoredData.spectralAxis(1) monitoredData.spectralAxis(end)]);
     set(gca, 'FontSize', 14);
     xlabel('wavelength (nm)', 'FontSize', 16, 'FontWeight', 'bold');
+    box 'on';
+    
+    subplot('Position', subplotPosVectors2(1,2).v);
+    peakNo = 2;
+    plot(combSPDMeasTimes, squeeze(monitoredData.fitParamsTimeSeries(peakNo, 3, 1:measurementsNum)), 'ks-', 'LineWidth', 2.0, 'MarkerSize', 10, 'MarkerFaceColor', [0.6 1.0 0.7]);
+    set(gca, 'FontSize', 14);
+    xlabel('Time elapsed (minutes)', 'FontSize', 16, 'FontWeight', 'bold');
+    ylabel('spectral peak (nm)', 'FontSize', 16, 'FontWeight', 'bold');
     box 'on';
     
     subplot('Position', subplotPosVectors2(2,1).v);

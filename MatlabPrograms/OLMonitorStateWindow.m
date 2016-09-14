@@ -100,7 +100,7 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
                  [spectralShifts, refPeaks, fitParams] = OLComputeSpectralShiftBetweenCombSPDs(data.shiftSPD, referenceCombSPD, combPeaks, spectralAxis);
                  monitoredData.timeSeries = cat(2, monitoredData.timeSeries, (data.powerSPDt-referenceTime)/60);
                  monitoredData.powerRatioSeries = cat(2, monitoredData.powerRatioSeries, newSPDRatio);
-                 monitoredData.spectralShiftSeries = cat(2, monitoredData.spectralShiftSeries, -median(spectralShifts));
+                 monitoredData.spectralShiftSeries = cat(2, monitoredData.spectralShiftSeries, median(spectralShifts));
              end
              
              % save fitted params time series as well
