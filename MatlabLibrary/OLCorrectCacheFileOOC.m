@@ -30,7 +30,7 @@ function [cacheData olCache openSpectroRadiometerOBJ] = OLCorrectCacheFileOOC(ca
 %                                                             to file name
 %                             'FullOnMeas'          true      Full-on
 %                             'HalfOnMeas'          false     Half-on
-%                             'CalStateMeas'    true  State measurements 
+%                             'CalStateMeas'    true  State measurements
 %                             'SkipBackground'      false     Background
 %                             'ReducedPowerLevels'  true      Only 3 levels
 %                             'NoAdjustment      '  true      Does not pause
@@ -398,7 +398,7 @@ try
                     results.modulationBGMeas.predictedSpd, 'differentialMode', true);
                 deltaModulationPrimaryInferred = OLSpdToPrimary(cal, (results.modulationMaxMeas.meas.pr650.spectrum)-...
                     results.modulationMaxMeas.predictedSpd, 'differentialMode', true);
-
+                
                 backgroundPrimaryCorrected = backgroundPrimary - describe.lambda*deltaBackgroundPrimaryInferred;
                 backgroundPrimaryCorrected(backgroundPrimaryCorrected > 1) = 1;
                 backgroundPrimaryCorrected(backgroundPrimaryCorrected < 0) = 0;
@@ -428,6 +428,7 @@ try
         if ii == describe.REFERENCE_OBSERVER_AGE;
             cacheData.data(ii).backgroundPrimary = backgroundPrimaryCorrectedAll(:, end);
             cacheData.data(ii).modulationPrimarySignedPositive = modulationPrimaryCorrectedAll(:, end);
+            cacheData.data(ii).differencePrimary = modulationPrimaryCorrectedAll(:, end)-backgroundPrimaryCorrectedAll(:, end);
             cacheData.data(ii).correction.backgroundPrimaryCorrectedAll = backgroundPrimaryCorrectedAll;
             cacheData.data(ii).correction.deltaBackgroundPrimaryInferredAll = deltaBackgroundPrimaryInferredAll;
             cacheData.data(ii).correction.bgSpdAll = bgSpdAll;
