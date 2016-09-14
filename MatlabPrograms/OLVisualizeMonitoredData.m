@@ -33,34 +33,44 @@ function OLVisualizeMonitoredData(monitoredData)
        
     hFig = figure(1);
     clf;
-    set(hFig, 'Position', [30 30 1200 900]);
+    set(hFig, 'Position', [30 30 1200 900], 'Color', [1 1 1]);
+    
+    cmap = jet(measurementsNum);
     
     subplot('Position', subplotPosVectors2(1,1).v);
-    plot(monitoredData.spectralAxis, powerSPDs, '-');
+    hold on
+    for k = 1:measurementsNum
+        plot(monitoredData.spectralAxis, powerSPDs(k,:), '-', 'Color', cmap(k,:), 'LineWidth', 2);
+    end
     set(gca, 'XLim', [monitoredData.spectralAxis(1) monitoredData.spectralAxis(end)]);
     set(gca, 'FontSize', 14);
     xlabel('wavelength (nm)', 'FontSize', 16, 'FontWeight', 'bold');
+    box 'on';
     
     subplot('Position', subplotPosVectors2(1,2).v);
-    plot(monitoredData.spectralAxis, combSPDs, '-');
+    hold on
+    for k = 1:measurementsNum
+        plot(monitoredData.spectralAxis, combSPDs(k,:), '-', 'Color', cmap(k,:), 'LineWidth', 2);
+    end
     set(gca, 'XLim', [monitoredData.spectralAxis(1) monitoredData.spectralAxis(end)]);
     set(gca, 'FontSize', 14);
     xlabel('wavelength (nm)', 'FontSize', 16, 'FontWeight', 'bold');
-    
+    box 'on';
     
     subplot('Position', subplotPosVectors2(2,1).v);
     plot(monitoredData.timeSeries, monitoredData.powerRatioSeries, 'ks-', 'LineWidth', 2.0, 'MarkerSize', 10, 'MarkerFaceColor', [1.0 0.7 0.7]);
     set(gca, 'FontSize', 14);
     xlabel('Time elapsed (minutes)', 'FontSize', 16, 'FontWeight', 'bold');
     ylabel('power ratio (current:first)',  'FontSize', 16, 'FontWeight', 'bold');
+    box 'on';
     
     subplot('Position', subplotPosVectors2(2,2).v);
     plot(monitoredData.timeSeries, monitoredData.spectralShiftSeries, 'ks-', 'LineWidth', 2.0, 'MarkerSize', 10, 'MarkerFaceColor', [0.7 0.7 1.0]);
     set(gca, 'FontSize', 14);
     xlabel('Time elapsed (minutes)',  'FontSize', 16, 'FontWeight', 'bold');
     ylabel('spectral shift, nm (current-first)',  'FontSize', 16, 'FontWeight', 'bold');
+    box 'on';
     
-    colormap(lines);
     drawnow
     
 end
