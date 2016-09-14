@@ -75,6 +75,7 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
              % Measure and retrieve the data
              fprintf('Measuring state data (measurement index: %d) ... ', measurementIndex+1);
              [~, calStateMeas] = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, true);
+             SaveStateMeasurements(cal, calStateMeas);
              
              data.shiftSPD  = calStateMeas.raw.spectralShiftsMeas.measSpd;
              data.shiftSPDt = calStateMeas.raw.spectralShiftsMeas.t;
