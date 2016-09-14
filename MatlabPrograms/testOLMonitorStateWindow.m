@@ -19,11 +19,12 @@ function testOLMonitorStateWindow
     
     % ------ CODE TO EMBED TO EXPERIMENTAL PROGRAM (BEFORE DATA COLLECTION BEGINS) --------------
     % Collect state data until the user closes the monitoring window
+    saveFileName = sprintf('BoxD_MonitoredData_%s', strrep(strrep(strrep(datestr(now), '-', '_'), ' ', '_'), ':', '_'))
     monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
 
     % Save the monitoring data (optional)
     fprintf('Saving data \n');
-    save('WarmUpMonitoredData.mat', 'monitoredData');
+    save(saveFileName, 'monitoredData');
     
     % Visualize monitoredData (optional)
     OLVisualizeMonitoredData(monitoredData);
