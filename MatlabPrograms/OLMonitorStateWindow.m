@@ -24,7 +24,9 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
     spectralAxis = SToWls(cal.describe.S);
     
     % Generate the GUI
-    S = generateGUI(spectralAxis);
+    S = generateGUI(spectralAxis);            
+    set(S.figHandle,'closeRequestFcn',{@closeRequestFunction})
+    
     
     % Add the timer for triggering data acquisition
     S.tmr = timer('Name','MeasurementTimer',...
@@ -32,10 +34,8 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
                 'StartDelay', 1, ...      % Start after 1 second.
                 'TasksToExecute',inf,...  % Number of times to update
                 'ExecutionMode','fixedSpacing',...
-                'TimerFcn',{@guiUpdaterFunction}); 
+                'TimerFcn',{@guiUpdaterFunction});
             
-    set(S.figHandle,'closeRequestFcn',{@closeRequestFunction})
-    
     % Start the timer object.
     start(S.tmr);
     
@@ -44,19 +44,23 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
     
     % Callback function for when the user closes the figure
     function closeRequestFunction(varargin)
-        
+       
+       % Stop the timer
+       stop(S.tmr);
+       
        selection = questdlg('Stop monitoring OLstate?',...
           'OLMonitorStateWindow',...
           'Yes','No','Yes'); 
       
        switch selection, 
           case 'Yes',
-                delete(gcf)
-                stop(S.tmr);
                 delete(S.tmr);
                 fprintf('Please wait for completion of current state measurement ...\n');
+                delete(gcf)
           case 'No'
-                fprintf('Will continue measuring.\n');
+                % Restart the timer
+                start(S.tmr);
+                fprintf('\tWill not stop.\n');
           return 
        end
     end
@@ -69,6 +73,7 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
         
         try
              % Measure and retrieve the data
+             fprintf('Measuring state data (measurement index: %d) ... ', measurementIndex+1);
              [~, calStateMeas] = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, true);
              
              data.shiftSPD  = calStateMeas.raw.spectralShiftsMeas.measSpd;
@@ -170,7 +175,7 @@ function S = generateGUI(spectralAxis)
     S.currentShiftPlot = plot(x,y, 'bs-', 'MarkerFaceColor', [0.7 0.7 1.0]);
     hold on;
     x = x(1); y = [0];
-    S.currentShiftPlotFit = plot(x,y, 'r*', 'MarkerSize', 16);
+    S.currentShiftPlotFit = plot(x,y, 'r*', 'MarkerSize', 12);
     hold off;
     S.currentShiftAxes = gca;
     set(gca, 'FontSize', 14);
@@ -180,14 +185,14 @@ function S = generateGUI(spectralAxis)
     x = [0];
     y = [0];
     subplot(S.timeSeriesPowerSubPlot);
-    S.timeSeriesPowerPlot = plot(x,y, 'ks-', 'MarkerSize', 10, 'MarkerFaceColor', [1.0 0.7 0.7]);
+    S.timeSeriesPowerPlot = plot(x,y, 'ks-', 'MarkerSize', 8, 'MarkerFaceColor', [1.0 0.7 0.7]);
     S.timeSeriesPowerAxes = gca;
     set(gca, 'FontSize', 14);
     xlabel('time (mins)', 'FontSize', 16, 'FontWeight', 'bold');
     ylabel('power (current : first) ratio', 'FontSize', 16, 'FontWeight', 'bold');
     
     subplot(S.timeSeriesShiftSubPlot);
-    S.timeSeriesShiftPlot = plot(x,y, 'ks-', 'MarkerSize', 10, 'MarkerFaceColor', [0.7 0.7 1.0]);
+    S.timeSeriesShiftPlot = plot(x,y, 'ks-', 'MarkerSize', 8, 'MarkerFaceColor', [0.7 0.7 1.0]);
     S.timeSeriesShiftAxes = gca;
     set(gca, 'FontSize', 14);
     xlabel('time (mins)', 'FontSize', 16, 'FontWeight', 'bold');
