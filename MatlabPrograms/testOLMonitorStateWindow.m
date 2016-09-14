@@ -22,11 +22,11 @@ function testOLMonitorStateWindow
     saveFileName = sprintf('BoxD_MonitoredStateData_%s', strrep(strrep(strrep(datestr(now), '-', '_'), ' ', '_'), ':', '_'));
     monitoredStateData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
 
-    % Save the monitoring data (optional)
+    % Save the monitored state data (optional)
     fprintf('Saving data to ''%s.mat''.\n', saveFileName);
     save(saveFileName, 'monitoredStateData');
     
-    % Visualize monitoredData (optional)
+    % Visualize monitored state data (optional)
     OLVisualizeMonitoredData(monitoredStateData);
     
     % ------- END OF CODE TO EMBED TO EXPERIMENTAL PROGRAM  -------------------------------------
