@@ -435,7 +435,18 @@ try
             cacheData.data(ii).correction.deltaModulationPrimaryInferredAll = deltaModulationPrimaryInferredAll;
             cacheData.data(ii).correction.modSpdAll = modSpdAll;
         else
-            cacheData.data(ii) = [];
+            cacheData.data(ii).describe = [];
+            cacheData.data(ii).backgroundPrimary = [];
+            cacheData.data(ii).backgroundSpd = [];
+            cacheData.data(ii).differencePrimary = [];
+            cacheData.data(ii).differenceSpd = [];
+            cacheData.data(ii).modulationPrimarySignedPositive = [];
+            cacheData.data(ii).modulationPrimarySignedNegative = [];
+            cacheData.data(ii).modulationSpdSignedPositive = [];
+            cacheData.data(ii).modulationSpdSignedNegative = [];
+            cacheData.data(ii).ambientSpd = [];
+            cacheData.data(ii).operatingPoint = [];
+            cacheData.data(ii).computeMethod = [];
         end
     end
     

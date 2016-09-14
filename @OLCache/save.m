@@ -41,9 +41,9 @@ end
 
 % Append a date so that this cache data has a unique identifier.
 cacheData.date = datestr(now);
-tmp = cacheData.cal.describe.date;
+tmp = cacheData.cal.describe;
 cacheData.cal = [];
-cacheData.cal.describe.date = tmp;
+cacheData.cal.describe = tmp;
 
 % Update the cache data structure.
 if isfield(data, obj.CalibrationData.describe.calType.char)
