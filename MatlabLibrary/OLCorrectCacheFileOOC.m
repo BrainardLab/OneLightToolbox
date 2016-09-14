@@ -209,23 +209,6 @@ cal = LoadCalFile(OLCalibrationTypes.(selectedCalType).CalFileName, [], getpref(
 cacheFileNameFull = cacheFileName;
 [~, cacheFileName] = fileparts(cacheFileName);
 
-% We also create a folder hierarchy, in which we store validations.
-% Identified by measurement.
-validationDate = datestr(now);
-validationTime = GetSecs;
-if isempty(describe.outDir)
-    validationDir = fullfile(cacheDir, cacheFileName, char(cal.describe.calType), strrep(strrep(cal.describe.date, ' ', '_'), ':', '_'), 'validation', strrep(strrep(validationDate, ' ', '_'), ':', '_'));
-else
-    
-    validationDir = fullfile(describe.outDir, cacheFileName, strrep(strrep(validationDate, ' ', '_'), ':', '_'));
-end
-if ~exist(validationDir)
-    mkdir(validationDir);
-end
-
-% Copy the cache file
-copyfile(cacheFileNameFull, fullfile(describe.outDir, [cacheFileName '.mat']));
-
 %% Determine which meters to measure with
 % It is probably a safe assumption that we will not validate a cache file
 % with the Omni with respect to a calibration that was done without the
@@ -409,6 +392,8 @@ try
                 end
                 
                 %% Determine the primary settings from the measurements
+                bgSpdAll(:, iter) = results.modulationBGMeas.meas.pr650.spectrum;
+                modSpdAll(:, iter) = results.modulationMaxMeas.meas.pr650.spectrum;
                 deltaBackgroundPrimaryInferred = OLSpdToPrimary(cal, (results.modulationBGMeas.meas.pr650.spectrum)-...
                     results.modulationBGMeas.predictedSpd, 'differentialMode', true);
                 deltaModulationPrimaryInferred = OLSpdToPrimary(cal, (results.modulationMaxMeas.meas.pr650.spectrum)-...
@@ -421,8 +406,8 @@ try
                 modulationPrimaryCorrected(modulationPrimaryCorrected > 1) = 1;
                 modulationPrimaryCorrected(modulationPrimaryCorrected < 0) = 0;
                 
-                theCanonicalPhotoreceptors = cacheData.data(describe.REFERENCE_OBSERVER_AGE).describe.photoreceptors;%{'LCone', 'MCone', 'SCone', 'Melanopsin', 'Rods'};
-                T_receptors = cacheData.data(describe.REFERENCE_OBSERVER_AGE).describe.T_receptors;%GetHumanPhotoreceptorSS(S, theCanonicalPhotoreceptors, data(val.describe.REFERENCE_OBSERVER_AGE).describe.params.fieldSizeDegrees, val.describe.REFERENCE_OBSERVER_AGE, 4.7, [], data(val.describe.REFERENCE_OBSERVER_AGE).describe.fractionBleached);
+                theCanonicalPhotoreceptors = cacheData.data(describe.REFERENCE_OBSERVER_AGE).describe.photoreceptors;
+                T_receptors = cacheData.data(describe.REFERENCE_OBSERVER_AGE).describe.T_receptors;
                 
                 % Save out information about the correction
                 contrasts(:, iter) = ComputeAndReportContrastsFromSpds(['Iteration ' num2str(iter, '%02.0f')] ,theCanonicalPhotoreceptors,T_receptors,...
@@ -443,6 +428,12 @@ try
         if ii == describe.REFERENCE_OBSERVER_AGE;
             cacheData.data(ii).backgroundPrimary = backgroundPrimaryCorrectedAll(:, end);
             cacheData.data(ii).modulationPrimarySignedPositive = modulationPrimaryCorrectedAll(:, end);
+            cacheData.data(ii).correction.backgroundPrimaryCorrectedAll = backgroundPrimaryCorrectedAll;
+            cacheData.data(ii).correction.deltaBackgroundPrimaryInferredAll = deltaBackgroundPrimaryInferredAll;
+            cacheData.data(ii).correction.bgSpdAll = bgSpdAll;
+            cacheData.data(ii).correction.modulationPrimaryCorrectedAll = modulationPrimaryCorrectedAll;
+            cacheData.data(ii).correction.deltaModulationPrimaryInferredAll = deltaModulationPrimaryInferredAll;
+            cacheData.data(ii).correction.modSpdAll = modSpdAll;
         else
             cacheData.data(ii) = [];
         end
