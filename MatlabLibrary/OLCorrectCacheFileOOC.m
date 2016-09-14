@@ -317,7 +317,8 @@ try
     
     if describe.CalStateMeas
         fprintf('- State measurements \n');
-        [~, CalStateMeas] = TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, true);
+        [~, calStateMeas] = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, true);
+        OLCalibrator.SaveStateMeasurements(cal, calStateMeas);
     end
     
     % Loop over the stimuli in the cache file and take a measurement with
