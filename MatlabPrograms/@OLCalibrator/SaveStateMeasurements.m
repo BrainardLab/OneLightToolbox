@@ -8,7 +8,7 @@
 
 function SaveStateMeasurements(cal0, calMeasOnly)
 
-outDir = fullfile(getpref('OneLight', 'OneLightCalData'), 'StateMeasurements', char(cal0.describe.calType), strrep(strrep(cal0.describe.date, ' ', '_'), ':', '_'));
+outDir = fullfile(getpref('OneLight', 'OneLightCalData'), 'StateMeasurements', char(cal0.describe.calType), strrep(strrep(cal0.describe.date, ' ', '_'), ':', '_'), datestr(now, 'mmddyy'));
 if ~exist(outDir)
    mkdir(outDir); 
 end
