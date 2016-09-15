@@ -124,7 +124,7 @@ try
             fprintf('- Taking initial half on measurement\n');
             starts = zeros(1, ol.NumCols);
             stops = round(ones(1, ol.NumCols) * (ol.NumRows - 1));
-            [measTemp, omniSpectrumSaturated] = OLTakeMeasurementOOC(ol, od, starts, stops, S, meterToggle, meterType, 1);
+            [measTemp, omniSpectrumSaturated] = OLTakeMeasurementOOC(ol, od, [], starts, stops, S, meterToggle, 1);
             if omniSpectrumSaturated
                 beep; commandwindow;
                 fprintf('*** OMNI SPECTRUM SATURATED. RESTART PROGRAM.\n');
