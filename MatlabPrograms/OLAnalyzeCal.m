@@ -53,8 +53,7 @@ if (cal.describe.useOmni)
 end
 
 % Find the directory we store our calibration files.
-oneLightCalSubdir = 'OneLight';
-calFolderInfo = what(fullfile(CalDataFolder, oneLightCalSubdir));
+calFolderInfo = what(getpref('OneLight', 'OneLightCalData'));
 calFolder = calFolderInfo.path;
 
 %% Title and plot folder stuff
