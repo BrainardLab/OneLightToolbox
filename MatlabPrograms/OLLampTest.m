@@ -160,7 +160,7 @@ try
                 end
                 
                 % Measure
-                measTemp = OLTakeMeasurement(ol, od, starts, stops, S, [false useOmni], meterType, 1);
+                measTemp = OLTakeMeasurementOOC(ol, od, [], starts, stops, S, meterToggle, 1);
                 halfOnCurrentOmni = measTemp.omni.spectrum;
                 halfOnCurrentSum = sum(halfOnCurrentOmni);
                 if (halfOnCurrentSum > halfOnMaxSum)
