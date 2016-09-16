@@ -69,6 +69,7 @@ p.addOptional('lambda', 0.8, @isscalar);
 p.addOptional('selectedCalType', [], @isstr);
 p.addOptional('CALCULATE_SPLATTER', true, @islogical);
 p.addOptional('powerLevels', 32, @isnumeric);
+p.addOptional('doCorrection', true, @islogical);
 p.addOptional('outDir', [], @isstr);
 
 p.parse(varargin{:});
@@ -230,6 +231,10 @@ olCache = OLCache(cacheDir, cal);
 if wasRecomputed
     olCache.save(simpleCacheFileName, cacheData);
     cacheData = olCache.load(simpleCacheFileName);
+end
+
+if ~(describe.doCorrection)
+   return; % Just return with no correction 
 end
 
 % Connect to the OceanOptics spectrometer.
