@@ -51,7 +51,6 @@ function [cacheData olCache openSpectroRadiometerOBJ] = OLCorrectCacheFileOOC(ca
 % 1/21/14  dhb, ms  Convert to use OLSettingsToStartsStops.
 % 1/30/14  ms       Added keyword parameters to make this useful.
 % 7/06/16  npc      Adapted to use PR650dev/PR670dev objects
-tic;
 
 % Parse the input
 p = inputParser;
@@ -471,7 +470,6 @@ try
     try
         OLAnalyzeValidationReceptorIsolate(validationPath, 'short');
     end
-    toc;
 catch e
     if (~isempty(spectroRadiometerOBJ))
         spectroRadiometerOBJ.shutDown();
