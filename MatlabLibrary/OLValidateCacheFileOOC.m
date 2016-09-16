@@ -51,7 +51,6 @@ function [results, validationDir, validationPath, openSpectroRadiometerOBJ] = OL
 % 1/30/14  ms       Added keyword parameters to make this useful.
 % 7/06/16  npc      Adapted to use PR650dev/PR670dev objects
 % 9/2/16   ms       Updated with new CalStateMeas option
-tic;
 
 % Parse the input
 p = inputParser;
@@ -468,7 +467,6 @@ try
     try
         OLAnalyzeValidationReceptorIsolate(validationPath, 'short');
     end
-    toc;
 catch e
     if (~isempty(spectroRadiometerOBJ))
         spectroRadiometerOBJ.shutDown();
