@@ -342,6 +342,33 @@ try
                     differencePrimary = cacheData.data(describe.REFERENCE_OBSERVER_AGE).differencePrimary;
                     modulationPrimary = cacheData.data(describe.REFERENCE_OBSERVER_AGE).backgroundPrimary+cacheData.data(describe.REFERENCE_OBSERVER_AGE).differencePrimary;
                 else
+                    %% Determine the primary settings from the measurements
+                    bgSpdAll(:, iter-1) = results.modulationBGMeas.meas.pr650.spectrum;
+                    modSpdAll(:, iter-1) = results.modulationMaxMeas.meas.pr650.spectrum;
+                    deltaBackgroundPrimaryInferred = OLSpdToPrimary(cal, (results.modulationBGMeas.meas.pr650.spectrum)-...
+                        results.modulationBGMeas.predictedSpd, 'differentialMode', true);
+                    deltaModulationPrimaryInferred = OLSpdToPrimary(cal, (results.modulationMaxMeas.meas.pr650.spectrum)-...
+                        results.modulationMaxMeas.predictedSpd, 'differentialMode', true);
+                    
+                    backgroundPrimaryCorrected = backgroundPrimary - describe.lambda*deltaBackgroundPrimaryInferred;
+                    backgroundPrimaryCorrected(backgroundPrimaryCorrected > 1) = 1;
+                    backgroundPrimaryCorrected(backgroundPrimaryCorrected < 0) = 0;
+                    modulationPrimaryCorrected = modulationPrimary - describe.lambda*deltaModulationPrimaryInferred;
+                    modulationPrimaryCorrected(modulationPrimaryCorrected > 1) = 1;
+                    modulationPrimaryCorrected(modulationPrimaryCorrected < 0) = 0;
+                    
+                    theCanonicalPhotoreceptors = cacheData.data(describe.REFERENCE_OBSERVER_AGE).describe.photoreceptors;
+                    T_receptors = cacheData.data(describe.REFERENCE_OBSERVER_AGE).describe.T_receptors;
+                    
+                    % Save out information about the correction
+                    contrasts(:, iter) = ComputeAndReportContrastsFromSpds(['Iteration ' num2str(iter, '%02.0f')] ,theCanonicalPhotoreceptors,T_receptors,...
+                        results.modulationBGMeas.meas.pr650.spectrum,results.modulationMaxMeas.meas.pr650.spectrum,true);
+                    
+                    backgroundPrimaryCorrectedAll(:, iter-1) = backgroundPrimaryCorrected;
+                    deltaBackgroundPrimaryInferredAll(:, iter-1)= deltaBackgroundPrimaryInferred;
+                    modulationPrimaryCorrectedAll(:, iter-1) = modulationPrimaryCorrected;
+                    deltaModulationPrimaryInferredAll(:, iter-1)= deltaModulationPrimaryInferred;
+                    
                     backgroundPrimary = backgroundPrimaryCorrected;
                     modulationPrimary = modulationPrimaryCorrected;
                 end
@@ -395,33 +422,6 @@ try
                 if ~isempty(theBGIndex)
                     results.modulationBGMeas = results.modulationAllMeas(theBGIndex);
                 end
-                
-                %% Determine the primary settings from the measurements
-                bgSpdAll(:, iter) = results.modulationBGMeas.meas.pr650.spectrum;
-                modSpdAll(:, iter) = results.modulationMaxMeas.meas.pr650.spectrum;
-                deltaBackgroundPrimaryInferred = OLSpdToPrimary(cal, (results.modulationBGMeas.meas.pr650.spectrum)-...
-                    results.modulationBGMeas.predictedSpd, 'differentialMode', true);
-                deltaModulationPrimaryInferred = OLSpdToPrimary(cal, (results.modulationMaxMeas.meas.pr650.spectrum)-...
-                    results.modulationMaxMeas.predictedSpd, 'differentialMode', true);
-                
-                backgroundPrimaryCorrected = backgroundPrimary - describe.lambda*deltaBackgroundPrimaryInferred;
-                backgroundPrimaryCorrected(backgroundPrimaryCorrected > 1) = 1;
-                backgroundPrimaryCorrected(backgroundPrimaryCorrected < 0) = 0;
-                modulationPrimaryCorrected = modulationPrimary - describe.lambda*deltaModulationPrimaryInferred;
-                modulationPrimaryCorrected(modulationPrimaryCorrected > 1) = 1;
-                modulationPrimaryCorrected(modulationPrimaryCorrected < 0) = 0;
-                
-                theCanonicalPhotoreceptors = cacheData.data(describe.REFERENCE_OBSERVER_AGE).describe.photoreceptors;
-                T_receptors = cacheData.data(describe.REFERENCE_OBSERVER_AGE).describe.T_receptors;
-                
-                % Save out information about the correction
-                contrasts(:, iter) = ComputeAndReportContrastsFromSpds(['Iteration ' num2str(iter, '%02.0f')] ,theCanonicalPhotoreceptors,T_receptors,...
-                    results.modulationBGMeas.meas.pr650.spectrum,results.modulationMaxMeas.meas.pr650.spectrum,true);
-                
-                backgroundPrimaryCorrectedAll(:, iter) = backgroundPrimaryCorrected;
-                deltaBackgroundPrimaryInferredAll(:, iter)= deltaBackgroundPrimaryInferred;
-                modulationPrimaryCorrectedAll(:, iter) = modulationPrimaryCorrected;
-                deltaModulationPrimaryInferredAll(:, iter)= deltaModulationPrimaryInferred;
                 
                 % Increment
                 iter = iter+1;
