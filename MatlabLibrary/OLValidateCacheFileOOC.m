@@ -318,6 +318,8 @@ try
         fprintf('- State measurements \n');
         [~, calStateMeas] = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, true);
         OLCalibrator.SaveStateMeasurements(cal, calStateMeas);
+    else
+        calStateMeas = [];
     end
     
     
