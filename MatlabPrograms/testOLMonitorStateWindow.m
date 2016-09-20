@@ -29,8 +29,8 @@ end
 fprintf('Saving data to ''%s.mat''.\n', fullfile(outDir, 'MonitoredStateData'));
 save(fullfile(outDir, 'MonitoredStateData'), 'monitoredStateData');
 
-% Visualize monitored state data (optional)
-OLVisualizeMonitoredData(monitoredStateData);
+% Visualize monitored state data (visualize data with respect the last combSpectra in the calfile)
+OLVisualizeMonitoredData(monitoredStateData, cal);
 
 % ------- END OF CODE TO EMBED TO EXPERIMENTAL PROGRAM  -------------------------------------
 

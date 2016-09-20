@@ -3,7 +3,7 @@ function testOLVisualizeMonitoredData
     % Load calibration file that we will u
     cal = OLGetCalibrationStructure;
     
-    dataFile = assembleMonitoredStateDatafile(cal);
+    dataFile = selectMonitoredStateDatafile(cal);
     load(dataFile, 'monitoredStateData');
     
     % Plot relative to first combSPD of the monitoredStateDra
@@ -15,7 +15,7 @@ function testOLVisualizeMonitoredData
 end
 
 
-function dataFile = assembleMonitoredStateDatafile(cal)
+function dataFile = selectMonitoredStateDatafile(cal)
     d = strrep(cal.describe.date(1:11), ' ', '-');
     cal.describe.date(1:11) = d;
     cal.describe.date(12) = '_';
