@@ -90,7 +90,17 @@ function OLVisualizeMonitoredData(varargin)
     subplot('Position', subplotPosVectors2(1,2).v);
     stairs(timeSeries, powerRatioSeries, 'ks-', 'LineWidth', 2.0, 'MarkerSize', 10, 'MarkerFaceColor', [1.0 0.7 0.7]);
     set(gca, 'FontSize', 14, 'XLim', [timeSeries(1)-5 timeSeries(end)+5]);
-    set(gca, 'YTick', powerRatioSeries(1)+ 0.01*(-100:1:100));
+    powerRatioRange =  (max(powerRatioSeries(:)) - min(powerRatioSeries(:)));
+    if (powerRatioRange < 0.2)
+        yTicks = powerRatioSeries(1)+ 0.01*(-100:1:100);
+    elseif (powerRatioRange < 0.4)
+        yTicks = powerRatioSeries(1)+ 0.02*(-100:1:100);
+    elseif (powerRatioRange < 0.8)
+        yTicks = powerRatioSeries(1)+ 0.04*(-100:1:100);
+    else
+        yTicks = powerRatioSeries(1)+ 0.05*(-100:1:100);
+    end
+    set(gca, 'YTick', yTicks, 'YTickLabel', sprintf('%2.2f\n', yTicks));
     xlabel('Time elapsed (minutes)', 'FontSize', 16, 'FontWeight', 'bold');
     ylabel('power ratio (current:REFcal)',  'FontSize', 16, 'FontWeight', 'bold');
     if (~isempty(referenceDate))
@@ -104,7 +114,8 @@ function OLVisualizeMonitoredData(varargin)
     subplot('Position', subplotPosVectors2(1,3).v);
     stairs(timeSeries, spectralShiftSeries, 'ks-', 'LineWidth', 2.0, 'MarkerSize', 10, 'MarkerFaceColor', [0.7 0.7 1.0]);
     set(gca, 'FontSize', 14, 'XLim', [timeSeries(1)-5 timeSeries(end)+5]);
-    set(gca, 'YTick', spectralShiftSeries(1) + 0.2*(-100:1:100));
+    yTicks = spectralShiftSeries(1) + 0.2*(-100:1:100);
+    set(gca, 'YTick', yTicks, 'YTickLabel', sprintf('%2.2f\n', yTicks));
     xlabel('Time elapsed (minutes)',  'FontSize', 16, 'FontWeight', 'bold');
     ylabel('spectral shift (mean of 4 peaks), nm (current-REFcal)',  'FontSize', 16, 'FontWeight', 'bold');
     box 'on'; grid on
@@ -115,12 +126,15 @@ function OLVisualizeMonitoredData(varargin)
     end
     
     
-    maxPeakShifts = max(max(abs(squeeze(bsxfun(@minus, fitParamsTimeSeries(:, 3, :), fitParamsTimeSeries(:, 3, 1))))))
+    maxPeakShifts = max(max(abs(squeeze(bsxfun(@minus, fitParamsTimeSeries(:, 3, :), fitParamsTimeSeries(:, 3, 1))))));
     subplot('Position', subplotPosVectors2(2,1).v);
     peakNo = 1;
     stairs(timeSeries, squeeze(fitParamsTimeSeries(peakNo, 3, 1:numel(timeSeries))), 'ks-', 'LineWidth', 2.0, 'MarkerSize', 10, 'MarkerFaceColor', [0.6 1.0 0.7]);
     set(gca, 'FontSize', 14, 'XLim', [timeSeries(1)-5 timeSeries(end)+5]);
-    set(gca, 'YTick', fitParamsTimeSeries(peakNo, 3, 1)+ 0.2*(-100:1:100), 'YLim', fitParamsTimeSeries(peakNo, 3, 1) + maxPeakShifts * [-1 1]);
+    set(gca, 'YLim', fitParamsTimeSeries(peakNo, 3, 1) + maxPeakShifts * [-1 1]);
+    yTicks = fitParamsTimeSeries(peakNo, 3, 1)+ 0.2*(-100:1:100);
+    set(gca, 'YTick', yTicks, 'YTickLabel', sprintf('%2.2f\n', yTicks));
+    
     xlabel('Time elapsed (minutes)', 'FontSize', 16, 'FontWeight', 'bold');
     ylabel('spectral shift, peak #1 (nm)', 'FontSize', 16, 'FontWeight', 'bold');
     if (~isempty(referenceDate));
@@ -134,7 +148,9 @@ function OLVisualizeMonitoredData(varargin)
     peakNo = 2;
     stairs(timeSeries, squeeze(fitParamsTimeSeries(peakNo, 3, 1:numel(timeSeries))), 'ks-', 'LineWidth', 2.0, 'MarkerSize', 10, 'MarkerFaceColor', [0.6 1.0 0.7]);
     set(gca, 'FontSize', 14, 'XLim', [timeSeries(1)-5 timeSeries(end)+5]);
-    set(gca, 'YTick', fitParamsTimeSeries(peakNo, 3, 1) + 0.2*(-100:1:100), 'YLim', fitParamsTimeSeries(peakNo, 3, 1) + maxPeakShifts* [-1 1]);
+    set(gca, 'YLim', fitParamsTimeSeries(peakNo, 3, 1) + maxPeakShifts* [-1 1]);
+    yTicks = fitParamsTimeSeries(peakNo, 3, 1)+ 0.2*(-100:1:100);
+    set(gca, 'YTick', yTicks, 'YTickLabel', sprintf('%2.2f\n', yTicks));
     xlabel('Time elapsed (minutes)', 'FontSize', 16, 'FontWeight', 'bold');
     ylabel('spectral shift, peak #2 (nm)', 'FontSize', 16, 'FontWeight', 'bold');
     if (~isempty(referenceDate));
@@ -148,7 +164,9 @@ function OLVisualizeMonitoredData(varargin)
     peakNo = 3;
     stairs(timeSeries, squeeze(fitParamsTimeSeries(peakNo, 3, 1:numel(timeSeries))), 'ks-', 'LineWidth', 2.0, 'MarkerSize', 10, 'MarkerFaceColor', [0.6 1.0 0.7]);
     set(gca, 'FontSize', 14, 'XLim', [timeSeries(1)-5 timeSeries(end)+5]);
-    set(gca, 'YTick', fitParamsTimeSeries(peakNo, 3, 1) + 0.2*(-100:1:100), 'YLim', fitParamsTimeSeries(peakNo, 3, 1) + maxPeakShifts * [-1 1]);
+    set(gca, 'YLim', fitParamsTimeSeries(peakNo, 3, 1) + maxPeakShifts * [-1 1]);
+    yTicks = fitParamsTimeSeries(peakNo, 3, 1)+ 0.2*(-100:1:100);
+    set(gca, 'YTick', yTicks, 'YTickLabel', sprintf('%2.2f\n', yTicks));
     xlabel('Time elapsed (minutes)', 'FontSize', 16, 'FontWeight', 'bold');
     ylabel('spectral shift, peak #3 (nm)', 'FontSize', 16, 'FontWeight', 'bold');
     if (~isempty(referenceDate))
