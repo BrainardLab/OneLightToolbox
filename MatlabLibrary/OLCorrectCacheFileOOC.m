@@ -414,8 +414,9 @@ try
                 T_receptors = cacheData.data(describe.REFERENCE_OBSERVER_AGE).describe.T_receptors;
                 
                 % Save out information about the correction
-                contrasts(:, iter) = ComputeAndReportContrastsFromSpds(['Iteration ' num2str(iter, '%02.0f')] ,theCanonicalPhotoreceptors,T_receptors,...
-                    results.modulationBGMeas.meas.pr650.spectrum,results.modulationMaxMeas.meas.pr650.spectrum,true);
+                postreceptoralCombinations = [1 1 1 0 ; 1 -1 0 0 ; 0 0 1 0];
+                [contrasts(:, iter) postreceptoralContrasts(:, iter)] = ComputeAndReportContrastsFromSpds(['Iteration ' num2str(iter, '%02.0f')] ,theCanonicalPhotoreceptors,T_receptors,...
+                    results.modulationBGMeas.meas.pr650.spectrum,results.modulationMaxMeas.meas.pr650.spectrum,postreceptoralCombinations,true);
                 
                 backgroundPrimaryCorrectedAll(:, iter) = backgroundPrimaryCorrected;
                 deltaBackgroundPrimaryInferredAll(:, iter)= deltaBackgroundPrimaryInferred;
@@ -439,6 +440,8 @@ try
             cacheData.data(ii).correction.modulationPrimaryCorrectedAll = modulationPrimaryCorrectedAll;
             cacheData.data(ii).correction.deltaModulationPrimaryInferredAll = deltaModulationPrimaryInferredAll;
             cacheData.data(ii).correction.modSpdAll = modSpdAll;
+            cacheData.data(ii).correction.contrasts = contrasts;
+            cacheData.data(ii).correction.postreceptoralContrasts = postreceptoralContrasts;
         else
             cacheData.data(ii).describe = [];
             cacheData.data(ii).backgroundPrimary = [];
