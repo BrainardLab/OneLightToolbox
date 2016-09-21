@@ -31,7 +31,7 @@ function [results, validationDir, validationPath, openSpectroRadiometerOBJ] = OL
 %                             'FullOnMeas'          true      Full-on
 %                             'HalfOnMeas'          false     Half-on
 %                             'DarkMeas'            false     DarkComb spectra
-%                             'CalStateMeas'    true  State measurements     
+%                             'CalStateMeas'    true  State measurements
 %                             'SkipBackground'      false     Background
 %                             'ReducedPowerLevels'  true      Only 3 levels
 %                             'NoAdjustment      '  true      Does not pause
@@ -466,9 +466,7 @@ try
     validationPath = fullfile(validationDir, resultsFileName);
     
     % Check if we want to do splatter calculations
-    try
-        OLAnalyzeValidationReceptorIsolate(validationPath, 'short');
-    end
+    OLAnalyzeValidationReceptorIsolateShort(validationPath);
 catch e
     if (~isempty(spectroRadiometerOBJ))
         spectroRadiometerOBJ.shutDown();
