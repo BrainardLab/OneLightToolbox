@@ -51,7 +51,6 @@ function [cacheData olCache openSpectroRadiometerOBJ] = OLCorrectCacheFileOOC(ca
 % 1/21/14  dhb, ms  Convert to use OLSettingsToStartsStops.
 % 1/30/14  ms       Added keyword parameters to make this useful.
 % 7/06/16  npc      Adapted to use PR650dev/PR670dev objects
-tic;
 
 % Parse the input
 p = inputParser;
@@ -69,6 +68,7 @@ p.addOptional('lambda', 0.8, @isscalar);
 p.addOptional('selectedCalType', [], @isstr);
 p.addOptional('CALCULATE_SPLATTER', true, @islogical);
 p.addOptional('powerLevels', 32, @isnumeric);
+p.addOptional('doCorrection', true, @islogical);
 p.addOptional('outDir', [], @isstr);
 
 p.parse(varargin{:});
@@ -230,6 +230,10 @@ olCache = OLCache(cacheDir, cal);
 if wasRecomputed
     olCache.save(simpleCacheFileName, cacheData);
     cacheData = olCache.load(simpleCacheFileName);
+end
+
+if ~(describe.doCorrection)
+   return; % Just return with no correction 
 end
 
 % Connect to the OceanOptics spectrometer.
@@ -410,8 +414,9 @@ try
                 T_receptors = cacheData.data(describe.REFERENCE_OBSERVER_AGE).describe.T_receptors;
                 
                 % Save out information about the correction
-                contrasts(:, iter) = ComputeAndReportContrastsFromSpds(['Iteration ' num2str(iter, '%02.0f')] ,theCanonicalPhotoreceptors,T_receptors,...
-                    results.modulationBGMeas.meas.pr650.spectrum,results.modulationMaxMeas.meas.pr650.spectrum,true);
+                postreceptoralCombinations = [1 1 1 0 ; 1 -1 0 0 ; 0 0 1 0];
+                [contrasts(:, iter) postreceptoralContrasts(:, iter)] = ComputeAndReportContrastsFromSpds(['Iteration ' num2str(iter, '%02.0f')] ,theCanonicalPhotoreceptors,T_receptors,...
+                    results.modulationBGMeas.meas.pr650.spectrum,results.modulationMaxMeas.meas.pr650.spectrum,postreceptoralCombinations,true);
                 
                 backgroundPrimaryCorrectedAll(:, iter) = backgroundPrimaryCorrected;
                 deltaBackgroundPrimaryInferredAll(:, iter)= deltaBackgroundPrimaryInferred;
@@ -435,6 +440,8 @@ try
             cacheData.data(ii).correction.modulationPrimaryCorrectedAll = modulationPrimaryCorrectedAll;
             cacheData.data(ii).correction.deltaModulationPrimaryInferredAll = deltaModulationPrimaryInferredAll;
             cacheData.data(ii).correction.modSpdAll = modSpdAll;
+            cacheData.data(ii).correction.contrasts = contrasts;
+            cacheData.data(ii).correction.postreceptoralContrasts = postreceptoralContrasts;
         else
             cacheData.data(ii).describe = [];
             cacheData.data(ii).backgroundPrimary = [];
@@ -466,7 +473,6 @@ try
     try
         OLAnalyzeValidationReceptorIsolate(validationPath, 'short');
     end
-    toc;
 catch e
     if (~isempty(spectroRadiometerOBJ))
         spectroRadiometerOBJ.shutDown();
