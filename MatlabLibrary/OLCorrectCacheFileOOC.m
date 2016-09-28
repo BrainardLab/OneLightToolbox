@@ -398,9 +398,19 @@ try
                 %% Determine the primary settings from the measurements
                 bgSpdAll(:, iter) = results.modulationBGMeas.meas.pr650.spectrum;
                 modSpdAll(:, iter) = results.modulationMaxMeas.meas.pr650.spectrum;
-                deltaBackgroundPrimaryInferred = OLSpdToPrimary(cal, (results.modulationBGMeas.meas.pr650.spectrum)-...
+                
+                % Figure out a scaling factor from the first measurement
+                % which puts the measured spectrum into the same range as
+                % the predicted spectrum. This deals with fluctuations with
+                % absolute light level.
+                if iter == 1
+                   % Determine the scale factor
+                   kScale = results.modulationBGMeas.meas.pr650.spectrum \ results.modulationBGMeas.predictedSpd;
+                end
+                
+                deltaBackgroundPrimaryInferred = OLSpdToPrimary(cal, (kScale*results.modulationBGMeas.meas.pr650.spectrum)-...
                     results.modulationBGMeas.predictedSpd, 'differentialMode', true);
-                deltaModulationPrimaryInferred = OLSpdToPrimary(cal, (results.modulationMaxMeas.meas.pr650.spectrum)-...
+                deltaModulationPrimaryInferred = OLSpdToPrimary(cal, (kScale*results.modulationMaxMeas.meas.pr650.spectrum)-...
                     results.modulationMaxMeas.predictedSpd, 'differentialMode', true);
                 
                 backgroundPrimaryCorrected = backgroundPrimary - describe.lambda*deltaBackgroundPrimaryInferred;
@@ -414,7 +424,7 @@ try
                 T_receptors = cacheData.data(describe.REFERENCE_OBSERVER_AGE).describe.T_receptors;
                 
                 % Save out information about the correction
-                postreceptoralCombinations = [1 1 1 0 ; 1 -1 0 0 ; 0 0 1 0];
+                postreceptoralCombinations = [1 1 1 0 0 0 ; 1 -1 0 0 0 0 ; 0 0 1 0 0 0 ; 0 0 0 1 1 1 ; 0 0 0 1 -1 0 ; 0 0 0 0 0 1];
                 [contrasts(:, iter) postreceptoralContrasts(:, iter)] = ComputeAndReportContrastsFromSpds(['Iteration ' num2str(iter, '%02.0f')] ,theCanonicalPhotoreceptors,T_receptors,...
                     results.modulationBGMeas.meas.pr650.spectrum,results.modulationMaxMeas.meas.pr650.spectrum,postreceptoralCombinations,true);
                 
