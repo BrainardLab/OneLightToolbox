@@ -27,6 +27,9 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
     S = generateGUI(spectralAxis);            
     set(S.figHandle,'closeRequestFcn',{@closeRequestFunction})
     
+    % Temperature probe init
+    LJTemperatureProbe('close')
+    LJTemperatureProbe('open')
     
     % Add the timer for triggering data acquisition
     S.tmr = timer('Name','MeasurementTimer',...
@@ -71,7 +74,7 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
          
         combPeaks = [480 540 596 652]+10;
         
-        try
+        try 
              % Measure and retrieve the data
              fprintf('Measuring state data (measurement index: %d) ... ', measurementIndex+1);
              [~, calStateMeas] = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, true);
@@ -81,6 +84,7 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
              data.shiftSPDt = calStateMeas.raw.spectralShiftsMeas.t;
              data.powerSPD  = calStateMeas.raw.powerFluctuationMeas.measSpd;
              data.powerSPDt = calStateMeas.raw.powerFluctuationMeas.t;
+             data.temperature = (calStateMeas.raw.temperature.value)';
              data.datestr   = datestr(now);
              
              measurementIndex = measurementIndex + 1;
@@ -96,12 +100,14 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
                  monitoredData.timeSeries = [];
                  monitoredData.powerRatioSeries = [];
                  monitoredData.spectralShiftSeries = [];
+                 monitoredData.temperatureSeries = [];
              else
                  newSPDRatio = 1.0 / (data.powerSPD(wavelengthIndices) \ referencePowerSPD);
                  [spectralShifts, refPeaks, fitParams] = OLComputeSpectralShiftBetweenCombSPDs(data.shiftSPD, referenceCombSPD, combPeaks, spectralAxis);
                  monitoredData.timeSeries = cat(2, monitoredData.timeSeries, (data.powerSPDt-referenceTime)/60);
                  monitoredData.powerRatioSeries = cat(2, monitoredData.powerRatioSeries, newSPDRatio);
                  monitoredData.spectralShiftSeries = cat(2, monitoredData.spectralShiftSeries, median(spectralShifts));
+                 monitoredData.temperatureSeries = cat(2, monitoredData.temperatureSeries, data.temperature/110);
              end
              
              % save fitted params time series as well
@@ -120,6 +126,8 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
                      set(S.currentShiftPlotFit, 'yData', max(data.shiftSPD(:)) * ones(size(refPeaks)));
                      set(S.timeSeriesPowerPlot, 'xData', monitoredData.timeSeries);
                      set(S.timeSeriesPowerPlot, 'yData', monitoredData.powerRatioSeries);
+                     set(S.timeSeriesTemperaturePlot, 'xData', monitoredData.timeSeries);
+                     set(S.timeSeriesTemperaturePlot, 'yData', monitoredData.monitoredData.temperatureSeries);
                      set(S.timeSeriesShiftPlot, 'xData', monitoredData.timeSeries);
                      set(S.timeSeriesShiftPlot, 'yData', monitoredData.spectralShiftSeries);
                  end
@@ -187,6 +195,9 @@ function S = generateGUI(spectralAxis)
     y = [0];
     subplot(S.timeSeriesPowerSubPlot);
     S.timeSeriesPowerPlot = plot(x,y, 'ks-', 'MarkerSize', 8, 'MarkerFaceColor', [1.0 0.7 0.7]);
+    hold on;
+    S.timeSeriesTemperaturePlot = plot(x,y, 'r.-', 'MarkerSize', 8, 'MarkerFaceColor', [1.0 0.7 0.7]);
+    hold off;
     S.timeSeriesPowerAxes = gca;
     set(gca, 'FontSize', 14);
     xlabel('time (mins)', 'FontSize', 16, 'FontWeight', 'bold');
