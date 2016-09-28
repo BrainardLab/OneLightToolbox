@@ -31,7 +31,7 @@ function [results, validationDir, validationPath, openSpectroRadiometerOBJ] = OL
 %                             'FullOnMeas'          true      Full-on
 %                             'HalfOnMeas'          false     Half-on
 %                             'DarkMeas'            false     DarkComb spectra
-%                             'CalStateMeas'    true  State measurements     
+%                             'CalStateMeas'    true  State measurements
 %                             'SkipBackground'      false     Background
 %                             'ReducedPowerLevels'  true      Only 3 levels
 %                             'NoAdjustment      '  true      Does not pause
@@ -51,7 +51,6 @@ function [results, validationDir, validationPath, openSpectroRadiometerOBJ] = OL
 % 1/30/14  ms       Added keyword parameters to make this useful.
 % 7/06/16  npc      Adapted to use PR650dev/PR670dev objects
 % 9/2/16   ms       Updated with new CalStateMeas option
-tic;
 
 % Parse the input
 p = inputParser;
@@ -319,6 +318,8 @@ try
         fprintf('- State measurements \n');
         [~, calStateMeas] = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, true);
         OLCalibrator.SaveStateMeasurements(cal, calStateMeas);
+    else
+        calStateMeas = [];
     end
     
     
@@ -465,10 +466,7 @@ try
     validationPath = fullfile(validationDir, resultsFileName);
     
     % Check if we want to do splatter calculations
-    try
-        OLAnalyzeValidationReceptorIsolate(validationPath, 'short');
-    end
-    toc;
+    OLAnalyzeValidationReceptorIsolate(validationPath);
 catch e
     if (~isempty(spectroRadiometerOBJ))
         spectroRadiometerOBJ.shutDown();

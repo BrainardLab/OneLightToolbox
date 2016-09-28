@@ -124,7 +124,7 @@ try
             fprintf('- Taking initial half on measurement\n');
             starts = zeros(1, ol.NumCols);
             stops = round(ones(1, ol.NumCols) * (ol.NumRows - 1));
-            [measTemp, omniSpectrumSaturated] = OLTakeMeasurement(ol, od, starts, stops, S, meterToggle, meterType, 1);
+            [measTemp, omniSpectrumSaturated] = OLTakeMeasurementOOC(ol, od, [], starts, stops, S, meterToggle, 1);
             if omniSpectrumSaturated
                 beep; commandwindow;
                 fprintf('*** OMNI SPECTRUM SATURATED. RESTART PROGRAM.\n');
@@ -160,7 +160,7 @@ try
                 end
                 
                 % Measure
-                measTemp = OLTakeMeasurement(ol, od, starts, stops, S, [false useOmni], meterType, 1);
+                measTemp = OLTakeMeasurementOOC(ol, od, [], starts, stops, S, meterToggle, 1);
                 halfOnCurrentOmni = measTemp.omni.spectrum;
                 halfOnCurrentSum = sum(halfOnCurrentOmni);
                 if (halfOnCurrentSum > halfOnMaxSum)
