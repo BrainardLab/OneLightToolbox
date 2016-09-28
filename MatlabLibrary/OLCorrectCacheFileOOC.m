@@ -42,6 +42,7 @@ function [cacheData olCache openSpectroRadiometerOBJ] = OLCorrectCacheFileOOC(ca
 %                             'NIter'               scalar    number of
 %                                                             iterations
 %                             'lambda'              scalar    Learning rate
+%                             'postreceptoralCombinations'  scalar     Post-receptoral combinations to calculate contrast w.r.t.
 %
 % Output:
 % results (struct) - Results struct. This is different depending on which
@@ -69,6 +70,7 @@ p.addOptional('selectedCalType', [], @isstr);
 p.addOptional('CALCULATE_SPLATTER', true, @islogical);
 p.addOptional('powerLevels', 32, @isnumeric);
 p.addOptional('doCorrection', true, @islogical);
+p.addOptional('postreceptoralCombinations', [], @isscalar);
 p.addOptional('outDir', [], @isstr);
 
 p.parse(varargin{:});
@@ -424,7 +426,6 @@ try
                 T_receptors = cacheData.data(describe.REFERENCE_OBSERVER_AGE).describe.T_receptors;
                 
                 % Save out information about the correction
-                postreceptoralCombinations = [1 1 1 0 0 0 ; 1 -1 0 0 0 0 ; 0 0 1 0 0 0 ; 0 0 0 1 1 1 ; 0 0 0 1 -1 0 ; 0 0 0 0 0 1];
                 [contrasts(:, iter) postreceptoralContrasts(:, iter)] = ComputeAndReportContrastsFromSpds(['Iteration ' num2str(iter, '%02.0f')] ,theCanonicalPhotoreceptors,T_receptors,...
                     results.modulationBGMeas.meas.pr650.spectrum,results.modulationMaxMeas.meas.pr650.spectrum,postreceptoralCombinations,true);
                 
