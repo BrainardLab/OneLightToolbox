@@ -23,12 +23,20 @@ theSettings = cal.describe.stateTracking.stimSettings.powerFluctuationsStim;
 [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
 measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
 if standAlone
+    % SPD
     calMeasOnly.raw.powerFluctuationMeas.measSpd = measTemp.pr650.spectrum;
     calMeasOnly.raw.powerFluctuationMeas.t = measTemp.pr650.time(1);
+    % Temperature
+    [~, calMeasOnly.raw.temperature.value] = LJTemperatureProbe('measure');
+    calMeasOnly.raw.temperature.t = measTemp.pr650.time(1);
 else
+    % SPD
     fprintf('-- Power fluctuation state measurement #%d ...', cal.describe.stateTracking.stateMeasurementIndex);
     cal.raw.powerFluctuationMeas.measSpd(:, cal.describe.stateTracking.stateMeasurementIndex) = measTemp.pr650.spectrum;
     cal.raw.powerFluctuationMeas.t(:, cal.describe.stateTracking.stateMeasurementIndex) = measTemp.pr650.time(1);
+    % Temperature
+    [~, cal.raw.temperature.value(cal.describe.stateTracking.stateMeasurementIndex,:)] = LJTemperatureProbe('measure');
+    cal.raw.temperature.t(cal.describe.stateTracking.stateMeasurementIndex,:) = measTemp.pr650.time(1);
 end
 fprintf('Done\n');
 
