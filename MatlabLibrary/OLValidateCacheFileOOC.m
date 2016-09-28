@@ -66,6 +66,7 @@ p.addOptional('REFERENCE_OBSERVER_AGE', 32, @isscalar);
 p.addOptional('selectedCalType', [], @isstr);
 p.addOptional('CALCULATE_SPLATTER', true, @islogical);
 p.addOptional('powerLevels', 32, @isnumeric);
+p.addOptional('postreceptoralCombinations', [], @isscalar);
 p.addOptional('outDir', [], @isstr);
 p.addOptional('pr670sensitivityMode', 'STANDARD', @isstr);
 
@@ -466,7 +467,7 @@ try
     validationPath = fullfile(validationDir, resultsFileName);
     
     % Check if we want to do splatter calculations
-    OLAnalyzeValidationReceptorIsolate(validationPath);
+    OLAnalyzeValidationReceptorIsolate(validationPath, postreceptoralCombinations);
 catch e
     if (~isempty(spectroRadiometerOBJ))
         spectroRadiometerOBJ.shutDown();
