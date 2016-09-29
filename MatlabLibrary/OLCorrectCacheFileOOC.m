@@ -427,7 +427,7 @@ try
                 
                 % Save out information about the correction
                 [contrasts(:, iter) postreceptoralContrasts(:, iter)] = ComputeAndReportContrastsFromSpds(['Iteration ' num2str(iter, '%02.0f')] ,theCanonicalPhotoreceptors,T_receptors,...
-                    results.modulationBGMeas.meas.pr650.spectrum,results.modulationMaxMeas.meas.pr650.spectrum,postreceptoralCombinations,true);
+                    results.modulationBGMeas.meas.pr650.spectrum,results.modulationMaxMeas.meas.pr650.spectrum,describe.postreceptoralCombinations,true);
                 
                 backgroundPrimaryCorrectedAll(:, iter) = backgroundPrimaryCorrected;
                 deltaBackgroundPrimaryInferredAll(:, iter)= deltaBackgroundPrimaryInferred;

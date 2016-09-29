@@ -467,7 +467,7 @@ try
     validationPath = fullfile(validationDir, resultsFileName);
     
     % Check if we want to do splatter calculations
-    OLAnalyzeValidationReceptorIsolate(validationPath, postreceptoralCombinations);
+    OLAnalyzeValidationReceptorIsolate(validationPath, describe.postreceptoralCombinations);
 catch e
     if (~isempty(spectroRadiometerOBJ))
         spectroRadiometerOBJ.shutDown();
