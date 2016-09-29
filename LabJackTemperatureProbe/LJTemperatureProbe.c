@@ -92,8 +92,6 @@ int openUE9device()
     if( getCalibrationInfo(UE9_devHandle, &caliInfo) < 0 ) {
         return 0;  // could not get calibration data
     }
-    
-	mexPrintf("Opened UE9 device\n");
     return(1);    
 }
 
@@ -102,7 +100,6 @@ int closeUE9device()
     if (UE9_devHandle != NULL) {
         closeUSBConnection(UE9_devHandle);
         UE9_devHandle = NULL;
-        mexPrintf("Closed UE9 device\n");
     }
     else {
         mexPrintf("UE9 device was not open.\n");
