@@ -70,7 +70,7 @@ p.addOptional('selectedCalType', [], @isstr);
 p.addOptional('CALCULATE_SPLATTER', true, @islogical);
 p.addOptional('powerLevels', 32, @isnumeric);
 p.addOptional('doCorrection', true, @islogical);
-p.addOptional('postreceptoralCombinations', [], @isscalar);
+p.addOptional('postreceptoralCombinations', [], @isnumeric);
 p.addOptional('outDir', [], @isstr);
 
 p.parse(varargin{:});
