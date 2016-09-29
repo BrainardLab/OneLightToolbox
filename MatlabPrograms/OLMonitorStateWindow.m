@@ -36,7 +36,8 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
     
     if (takeTemperatureMeasurements)
         % Init temperature probe
-        LJTemperatureProbe('close')
+        LJTemperatureProbe('close');
+        status = LJTemperatureProbe('open');
         if (status == 0)
             error('Could not open UE9 device. Is it connected ?\n');
         end
@@ -102,7 +103,7 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
              data.shiftSPDt = calStateMeas.raw.spectralShiftsMeas.t;
              data.powerSPD  = calStateMeas.raw.powerFluctuationMeas.measSpd;
              data.powerSPDt = calStateMeas.raw.powerFluctuationMeas.t;
-             data.temperature = (calStateMeas.raw.temperature.value)';
+             data.temperature = calStateMeas.raw.temperature.value;
              data.datestr   = datestr(now);
              
              measurementIndex = measurementIndex + 1;
@@ -125,7 +126,7 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
                  monitoredData.timeSeries = cat(2, monitoredData.timeSeries, (data.powerSPDt-referenceTime)/60);
                  monitoredData.powerRatioSeries = cat(2, monitoredData.powerRatioSeries, newSPDRatio);
                  monitoredData.spectralShiftSeries = cat(2, monitoredData.spectralShiftSeries, median(spectralShifts));
-                 monitoredData.temperatureSeries = cat(2, monitoredData.temperatureSeries, data.temperature/110);
+                 monitoredData.temperatureSeries = cat(2, monitoredData.temperatureSeries, (data.temperature)');
              end
              
              % save fitted params time series as well
@@ -135,17 +136,17 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
                  % Update GUI
                  set(S.currentPowerPlot, 'yData', data.powerSPD);
                  set(S.currentShiftPlot, 'yData', data.shiftSPD);
-
-                 title(S.currentPowerAxes, sprintf('Full ON SPD - measurement no: %3d', measurementIndex), 'FontSize', 16);
-                 title(S.currentShiftAxes, sprintf('comb SPD - measurement time: %2.1f mins', (data.shiftSPDt-referenceTime)/60), 'FontSize', 16);
+                 title(S.currentPowerAxes, sprintf('Full ON & Comb SPD - measurement no: %3d (%2.1f mins)', measurementIndex, (data.powerSPDt-referenceTime)/60), 'FontSize', 16);
 
                  if (measurementIndex > 1)
                      set(S.currentShiftPlotFit, 'xData', refPeaks);
                      set(S.currentShiftPlotFit, 'yData', max(data.shiftSPD(:)) * ones(size(refPeaks)));
                      set(S.timeSeriesPowerPlot, 'xData', monitoredData.timeSeries);
                      set(S.timeSeriesPowerPlot, 'yData', monitoredData.powerRatioSeries);
-                     set(S.timeSeriesTemperaturePlot, 'xData', monitoredData.timeSeries);
-                     set(S.timeSeriesTemperaturePlot, 'yData', monitoredData.monitoredData.temperatureSeries);
+                     set(S.timeSeriesTemperaturePlot1, 'xData', monitoredData.timeSeries);
+                     set(S.timeSeriesTemperaturePlot1, 'yData', monitoredData.temperatureSeries(1,:));
+                     set(S.timeSeriesTemperaturePlot2, 'xData', monitoredData.timeSeries);
+                     set(S.timeSeriesTemperaturePlot2, 'yData', monitoredData.temperatureSeries(2,:));
                      set(S.timeSeriesShiftPlot, 'xData', monitoredData.timeSeries);
                      set(S.timeSeriesShiftPlot, 'yData', monitoredData.spectralShiftSeries);
                  end
@@ -183,7 +184,7 @@ function S = generateGUI(spectralAxis)
            'topMargin',      0.05);
        
     S.currentPowerSubPlot = subplot('Position', subplotPosVectors2(1,1).v);
-    S.currentShiftSubPlot = subplot('Position', subplotPosVectors2(1,2).v);
+    S.timeSeriesTemperatureSubPlot = subplot('Position', subplotPosVectors2(1,2).v);
     S.timeSeriesPowerSubPlot = subplot('Position', subplotPosVectors2(2,1).v);
     S.timeSeriesShiftSubPlot = subplot('Position', subplotPosVectors2(2,2).v);
     
@@ -192,30 +193,33 @@ function S = generateGUI(spectralAxis)
 
     subplot(S.currentPowerSubPlot);
     S.currentPowerPlot = plot(x,y, 'rs-', 'MarkerFaceColor', [1.0 0.7 0.7]);
+    hold on;
+    S.currentShiftPlot = plot(x,y, 'bs-', 'MarkerFaceColor', [0.7 0.7 1.0]);
+    x = x(1); y = [0];
+    S.currentShiftPlotFit = plot(x,y, 'k*', 'MarkerSize', 12);
+    hold off;
     S.currentPowerAxes = gca;
     set(gca, 'FontSize', 14);
     xlabel('wavelength (nm)', 'FontSize', 16, 'FontWeight', 'bold');
     ylabel('power', 'FontSize', 16, 'FontWeight', 'bold');
-    title(S.currentPowerAxes, sprintf('Full ON SPD'), 'FontSize', 16);
-    
-    subplot(S.currentShiftSubPlot);
-    S.currentShiftPlot = plot(x,y, 'bs-', 'MarkerFaceColor', [0.7 0.7 1.0]);
-    hold on;
-    x = x(1); y = [0];
-    S.currentShiftPlotFit = plot(x,y, 'r*', 'MarkerSize', 12);
-    hold off;
-    S.currentShiftAxes = gca;
-    set(gca, 'FontSize', 14);
-    xlabel('wavelength (nm)', 'FontSize', 16, 'FontWeight', 'bold');
-    title(S.currentShiftAxes, sprintf('comb SPD'), 'FontSize', 16);
+    title(S.currentPowerAxes, sprintf('Full ON & Comb SPD'), 'FontSize', 16);
     
     x = [0];
     y = [0];
+    subplot(S.timeSeriesTemperatureSubPlot);
+    S.timeSeriesTemperaturePlot1 = plot(x,y, 'rs-', 'MarkerSize', 8, 'MarkerFaceColor', [1.0 0.7 0.7]);
+    hold on
+    S.timeSeriesTemperaturePlot2 = plot(x,y, 'bs-', 'MarkerSize', 8, 'MarkerFaceColor', [0.7 0.7 1.0]);
+    hold off
+    legend({'OneLight probe', 'Ambient'}, 'Location', 'NorthWest');
+    S.timeSeriesTemperatureAxes = gca;
+    set(gca, 'FontSize', 14, 'YLim',[10 110]);
+    xlabel('time (mins)', 'FontSize', 16, 'FontWeight', 'bold');
+    ylabel('temperature (deg Celcius)', 'FontSize', 16, 'FontWeight', 'bold');
+    title('Ambient and OneLight temperature', 'FontSize', 16);
+    
     subplot(S.timeSeriesPowerSubPlot);
     S.timeSeriesPowerPlot = plot(x,y, 'ks-', 'MarkerSize', 8, 'MarkerFaceColor', [1.0 0.7 0.7]);
-    hold on;
-    S.timeSeriesTemperaturePlot = plot(x,y, 'r.-', 'MarkerSize', 8, 'MarkerFaceColor', [1.0 0.7 0.7]);
-    hold off;
     S.timeSeriesPowerAxes = gca;
     set(gca, 'FontSize', 14);
     xlabel('time (mins)', 'FontSize', 16, 'FontWeight', 'bold');
