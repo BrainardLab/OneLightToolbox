@@ -161,18 +161,19 @@ try
     % Enter bulb number.  This is a number that we assign by convention.
     cal.describe.bulbNumber = GetWithDefault('Enter bulb number',5);
     
-    % Ask whether to take temperature measurements
+    % Query user whether to take temperature measurements
     takeTemperatureMeasurements = GetWithDefault('Take Temperature Measurements ?', false);
-    if (takeTemperatureMeasurements ~= true)
+    if (takeTemperatureMeasurements ~= true) && (takeTemperatureMeasurements ~= 1)
         takeTemperatureMeasurements = false;
+    else
+        takeTemperatureMeasurements = true;
     end
 
     if (takeTemperatureMeasurements)
-        % Init temperature probe
-        LJTemperatureProbe('close')
-        status = LJTemperatureProbe('open');
-        if (status == 0)
-            error('Could not open UE9 device. Is it connected ?\n');
+        % Gracefully attempt to open the LabJack
+        [takeTemperatureMeasurements, quitNow] = OLCalibrator.OpenLabJackTemperatureProbe(takeTemperatureMeasurements);
+        if (quitNow)
+            return;
         end
     end
     

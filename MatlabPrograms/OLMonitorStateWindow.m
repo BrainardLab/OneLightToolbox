@@ -35,24 +35,10 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
     set(S.figHandle,'closeRequestFcn',{@closeRequestFunction})
     
     if (takeTemperatureMeasurements)
-        % Init temperature probe
-        LJTemperatureProbe('close');
-        status = LJTemperatureProbe('open');
-        if (status == 0)
-            fprintf('<strong>Could not open the UE9 device.</strong>\n');
-            selection = input(sprintf('Continue without temperature measurements <strong>[Y]</strong> or try again after making sure it is connected <strong>[A]</strong>? '), 's');
-            if (isempty(selection) || strcmpi(selection, 'y'))
-                takeTemperatureMeasurements = false;
-            else
-                fprintf('Trying to open the UE9 device once more ...\n');
-                status = LJTemperatureProbe('open');
-                if (status == 1)
-                    fprintf('Sucessfully opened the UE9 device!!\n');
-                else
-                    fprintf('Failed to open the UE9 device again. Quitting.\n');
-                    return;
-                end
-            end
+        % Gracefully attempt to open the LabJack
+        [takeTemperatureMeasurements, quitNow] = OLCalibrator.OpenLabJackTemperatureProbe(takeTemperatureMeasurements);
+        if (quitNow)
+            return;
         end
     end
     

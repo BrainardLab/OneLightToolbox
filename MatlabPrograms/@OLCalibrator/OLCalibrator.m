@@ -40,5 +40,8 @@ classdef OLCalibrator
         
         % Method to visualize the OneLight state progression during a calibration.
         VisualizeStateProgression();      
+        
+        % Method to gracefull open the LabJackTemperatureProbe
+        takeTemperatureMeasurements = OpenLabJackTemperatureProbe(takeTemperatureMeasurements0);
     end
 end
