@@ -21,8 +21,10 @@ spectroRadiometerOBJ = generateSpectroRadiometerOBJ();
 % ------ CODE TO EMBED TO EXPERIMENTAL PROGRAM (BEFORE DATA COLLECTION BEGINS) --------------
 % Collect state data until the user closes the monitoring window
 takeTemperatureMeasurements = GetWithDefault('Take Temperature Measurements ?', false);
-if (takeTemperatureMeasurements ~= true)
+if (takeTemperatureMeasurements ~= true) && (takeTemperatureMeasurements ~= 1)
     takeTemperatureMeasurements = false;
+else
+    takeTemperatureMeasurements = true;
 end
 monitoredStateData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
 
