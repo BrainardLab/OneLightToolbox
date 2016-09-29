@@ -12,6 +12,8 @@ if ~exist('standAlone', 'var') || isempty(standAlone)
     standAlone = false;
 end
 
+takeTemperatureMeasurements = false;
+
 if standAlone
     calMeasOnly.describe = cal0.describe;
     calMeasOnly.describe.dateStateMeas = datestr(now);
@@ -27,16 +29,20 @@ if standAlone
     calMeasOnly.raw.powerFluctuationMeas.measSpd = measTemp.pr650.spectrum;
     calMeasOnly.raw.powerFluctuationMeas.t = measTemp.pr650.time(1);
     % Temperature
-    [~, calMeasOnly.raw.temperature.value] = LJTemperatureProbe('measure');
-    calMeasOnly.raw.temperature.t = measTemp.pr650.time(1);
+    if (takeTemperatureMeasurements)
+        [~, calMeasOnly.raw.temperature.value] = LJTemperatureProbe('measure');
+        calMeasOnly.raw.temperature.t = measTemp.pr650.time(1);
+    end
 else
     % SPD
     fprintf('-- Power fluctuation state measurement #%d ...', cal.describe.stateTracking.stateMeasurementIndex);
     cal.raw.powerFluctuationMeas.measSpd(:, cal.describe.stateTracking.stateMeasurementIndex) = measTemp.pr650.spectrum;
     cal.raw.powerFluctuationMeas.t(:, cal.describe.stateTracking.stateMeasurementIndex) = measTemp.pr650.time(1);
     % Temperature
-    [~, cal.raw.temperature.value(cal.describe.stateTracking.stateMeasurementIndex,:)] = LJTemperatureProbe('measure');
-    cal.raw.temperature.t(cal.describe.stateTracking.stateMeasurementIndex,:) = measTemp.pr650.time(1);
+    if (takeTemperatureMeasurements)
+        [~, cal.raw.temperature.value(cal.describe.stateTracking.stateMeasurementIndex,:)] = LJTemperatureProbe('measure');
+        cal.raw.temperature.t(cal.describe.stateTracking.stateMeasurementIndex,:) = measTemp.pr650.time(1);
+    end
 end
 fprintf('Done\n');
 
