@@ -103,8 +103,10 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
              data.shiftSPDt = calStateMeas.raw.spectralShiftsMeas.t;
              data.powerSPD  = calStateMeas.raw.powerFluctuationMeas.measSpd;
              data.powerSPDt = calStateMeas.raw.powerFluctuationMeas.t;
-             data.temperature = calStateMeas.raw.temperature.value;
              data.datestr   = datestr(now);
+             if (takeTemperatureMeasurements)
+                data.temperature = calStateMeas.raw.temperature.value;
+             end
              
              measurementIndex = measurementIndex + 1;
              monitoredData.measurements{measurementIndex} = data;
