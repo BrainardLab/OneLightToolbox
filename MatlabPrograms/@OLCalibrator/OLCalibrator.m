@@ -42,6 +42,6 @@ classdef OLCalibrator
         VisualizeStateProgression();      
         
         % Method to gracefull open the LabJackTemperatureProbe
-        takeTemperatureMeasurements = OpenLabJackTemperatureProbe(takeTemperatureMeasurements0);
+        [takeTemperatureMeasurements, quitNow] = OpenLabJackTemperatureProbe(takeTemperatureMeasurements0);
     end
 end
