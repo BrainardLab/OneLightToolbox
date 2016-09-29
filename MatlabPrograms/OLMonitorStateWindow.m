@@ -41,7 +41,7 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
         if (status == 0)
             fprintf('<strong>Could not open the UE9 device.</strong>\n');
             selection = input(sprintf('Continue without temperature measurements <strong>[Y]</strong> or try again after making sure it is connected <strong>[A]</strong>? '), 's');
-            if (isempty(selection) || strcmp(selection, 'Y'))
+            if (isempty(selection) || strcmpi(selection, 'y'))
                 takeTemperatureMeasurements = false;
             else
                 fprintf('Trying to open the UE9 device once more ...\n');
