@@ -48,7 +48,8 @@ function OLCalibrateOOC
 %               code.
 % 9/2/16   npc  Removed Take*Measurements() methods and assembled them in 
 %               static class @OLCalibrator
-
+% 9/29/16  npc  Optionally record temperature
+%
 spectroRadiometerOBJ = [];
 
 try
@@ -160,6 +161,21 @@ try
     % Enter bulb number.  This is a number that we assign by convention.
     cal.describe.bulbNumber = GetWithDefault('Enter bulb number',5);
     
+    % Ask whether to take temperature measurements
+    takeTemperatureMeasurements = GetWithDefault('Take Temperature Measurements ?', false);
+    if (takeTemperatureMeasurements ~= true)
+        takeTemperatureMeasurements = false;
+    end
+
+    if (takeTemperatureMeasurements)
+        % Init temperature probe
+        LJTemperatureProbe('close')
+        status = LJTemperatureProbe('open');
+        if (status == 0)
+            error('Could not open UE9 device. Is it connected ?\n');
+        end
+    end
+    
     % Ask for email recipient
     emailRecipient = GetWithDefault('Send status email to','cottaris@psych.upenn.edu');
     
@@ -206,6 +222,8 @@ try
         otherwise,
             error('Unknown meter type');
     end
+    
+    
     
     % Open the OneLight device.
     ol = OneLight;
@@ -271,24 +289,24 @@ try
     
     % Take a full on measurement.
     fullMeasurementIndex = 1;
-    cal = OLCalibrator.TakeFullOnMeasurement(fullMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
+    cal = OLCalibrator.TakeFullOnMeasurement(fullMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
     
     % Take a half on measurement.
     halfOnMeasurementIndex = 1;
-    cal = OLCalibrator.TakeHalfOnMeasurement(halfOnMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
+    cal = OLCalibrator.TakeHalfOnMeasurement(halfOnMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
     
     % Take a wiggly measurement
     wigglyMeasurementIndex = 1;
-    cal = OLCalibrator.TakeWigglyMeasurement(wigglyMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
+    cal = OLCalibrator.TakeWigglyMeasurement(wigglyMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
     
     % Take a dark measurement
     darkMeasurementIndex = 1;
-    cal = OLCalibrator.TakeDarkMeasurement(darkMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
+    cal = OLCalibrator.TakeDarkMeasurement(darkMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
     
     % Take a specified background measurement, if desired
     if (cal.describe.specifiedBackground)
         specifiedBackgroundMeasurementIndex = 1;
-        cal = OLCalibrator.TakeSpecifiedBackgroundMeasurement(specifiedBackgroundMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
+        cal = OLCalibrator.TakeSpecifiedBackgroundMeasurement(specifiedBackgroundMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
     end
     
     % Primary measurements.
@@ -309,7 +327,7 @@ try
         end
         
         for primaryIndex = primaryMeasIter
-            [cal, wavelengthBandMeasurements(primaryIndex)] = OLCalibrator.TakePrimaryMeasurement(cal, primaryIndex, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
+            [cal, wavelengthBandMeasurements(primaryIndex)] = OLCalibrator.TakePrimaryMeasurement(cal, primaryIndex, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
         end
         
         % Refactor the measurements into separate matrices for further calculations.
@@ -366,7 +384,7 @@ try
         end
         
         for gammaBandIndex = gammaMeasIter
-            cal = OLCalibrator.TakeGammaMeasurements(cal, gammaBandIndex, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
+            cal = OLCalibrator.TakeGammaMeasurements(cal, gammaBandIndex, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
         end
     end  % if (cal.describe.doGamma)
     
@@ -402,33 +420,33 @@ try
             end
         end % if ~(cal.describe.doPrimaries)
         
-        cal = OLCalibrator.TakeIndependenceMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
+        cal = OLCalibrator.TakeIndependenceMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
     end
     
     % Take a specified background measurement at the end, if desired
     if (cal.describe.specifiedBackground)
         specifiedBackgroundMeasurementIndex = size(cal.raw.specifiedBackgroundMeas,2) + 1;
-        cal = OLCalibrator.TakeSpecifiedBackgroundMeasurement(specifiedBackgroundMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
+        cal = OLCalibrator.TakeSpecifiedBackgroundMeasurement(specifiedBackgroundMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
     end
     
     % Take another dark measurement
     darkMeasurementIndex = size(cal.raw.darkMeas,2)+1;
-    cal = OLCalibrator.TakeDarkMeasurement(darkMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
+    cal = OLCalibrator.TakeDarkMeasurement(darkMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
     
     % Take another wiggly measurement.
     wigglyMeasurementIndex = size(cal.raw.wigglyMeas.measSpd,2)+1;
-    cal = OLCalibrator.TakeWigglyMeasurement(wigglyMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
+    cal = OLCalibrator.TakeWigglyMeasurement(wigglyMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
     
     % Take another half on measurement.
     halfOnMeasurementIndex = size(cal.raw.halfOnMeas,2)+1;
-    cal = OLCalibrator.TakeHalfOnMeasurement(halfOnMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
+    cal = OLCalibrator.TakeHalfOnMeasurement(halfOnMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
     
     % Take another full on measurement.
     fullMeasurementIndex = size(cal.raw.fullOn,2)+1;
-    cal = OLCalibrator.TakeFullOnMeasurement(fullMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
+    cal = OLCalibrator.TakeFullOnMeasurement(fullMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
     
     % Take a final set of state measurements
-    cal = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
+    cal = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
     
     % Store the type of calibration and unique calibration ID
     cal.describe.calType = selectedCalType;
@@ -470,6 +488,12 @@ try
     % Send email that we are done
     SendEmail(emailRecipient, 'OneLight Calibration Complete', ...
         'Finished!');
+    
+    if (takeTemperatureMeasurements)
+        % Close temperature probe
+        LJTemperatureProbe('close')
+    end
+    
 catch e
     fprintf('Failed with message: ''%s''.\nPlease wait for the spectroradiometer to shut down .... ', e.message);
     if (~isempty(spectroRadiometerOBJ))
@@ -478,6 +502,12 @@ catch e
     SendEmail(emailRecipient, 'OneLight Calibration Failed', ...
         ['Calibration failed with the following error' 10 e.message]);
     keyboard;
+    
+    if (takeTemperatureMeasurements)
+        % Close temperature probe
+        LJTemperatureProbe('close')
+    end
+    
     rethrow(e);
 end
 end

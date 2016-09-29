@@ -10,11 +10,18 @@
 % See testOLMonitorStateWindow for usage of this function.
 %
 % 9/12/16   npc     Wrote it.
+% 9/29/16   npc     Optionally record temperature.
 %
 
-function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage)
+function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, varargin)
 
-    % Initialize everything
+    p = inputParser;
+    p.addParameter('takeTemperatureMeasurements', false, @islogical);
+    % Execute the parser
+    p.parse(varargin{:});
+    takeTemperatureMeasurements = p.Results.takeTemperatureMeasurements;
+    
+    
     measurementIndex = 0;
     monitoredData = [];
     referenceTime = [];
@@ -27,9 +34,13 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
     S = generateGUI(spectralAxis);            
     set(S.figHandle,'closeRequestFcn',{@closeRequestFunction})
     
-    % Temperature probe init
-    LJTemperatureProbe('close')
-    LJTemperatureProbe('open')
+    if (takeTemperatureMeasurements)
+        % Init temperature probe
+        LJTemperatureProbe('close')
+        if (status == 0)
+            error('Could not open UE9 device. Is it connected ?\n');
+        end
+    end
     
     % Add the timer for triggering data acquisition
     S.tmr = timer('Name','MeasurementTimer',...
@@ -44,6 +55,11 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
     
     % Wait until user closes the figure
     uiwait(S.figHandle);
+    
+    if (takeTemperatureMeasurements)
+        % Close temperature probe
+        LJTemperatureProbe('close')
+    end
     
     % Callback function for when the user closes the figure
     function closeRequestFunction(varargin)
@@ -77,7 +93,9 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
         try 
              % Measure and retrieve the data
              fprintf('Measuring state data (measurement index: %d) ... ', measurementIndex+1);
-             [~, calStateMeas] = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, true);
+             [~, calStateMeas] = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, 'standAlone', true, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
+    
+             % Initialize everything);
              OLCalibrator.SaveStateMeasurements(cal, calStateMeas);
              
              data.shiftSPD  = calStateMeas.raw.spectralShiftsMeas.measSpd;
