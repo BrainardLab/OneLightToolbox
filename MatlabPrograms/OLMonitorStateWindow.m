@@ -44,12 +44,12 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
             if (isempty(selection) || strcmp(selection, 'Y'))
                 takeTemperatureMeasurements = false;
             else
-                fprintf('Trying to open UE9 device once more\n');
+                fprintf('Trying to open the UE9 device once more ...\n');
                 status = LJTemperatureProbe('open');
                 if (status == 1)
-                    fprintf('Opened UE9 device !!\n');
+                    fprintf('Sucessfully opened the UE9 device!!\n');
                 else
-                    fprintf('Failed to open UE9 device again. Quitting.\n');
+                    fprintf('Failed to open the UE9 device again. Quitting.\n');
                     return;
                 end
             end
