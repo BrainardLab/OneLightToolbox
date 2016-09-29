@@ -126,7 +126,9 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
                  monitoredData.timeSeries = cat(2, monitoredData.timeSeries, (data.powerSPDt-referenceTime)/60);
                  monitoredData.powerRatioSeries = cat(2, monitoredData.powerRatioSeries, newSPDRatio);
                  monitoredData.spectralShiftSeries = cat(2, monitoredData.spectralShiftSeries, median(spectralShifts));
-                 monitoredData.temperatureSeries = cat(2, monitoredData.temperatureSeries, (data.temperature)');
+                 if (takeTemperatureMeasurements)
+                    monitoredData.temperatureSeries = cat(2, monitoredData.temperatureSeries, (data.temperature)');
+                 end
              end
              
              % save fitted params time series as well
@@ -143,12 +145,14 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
                      set(S.currentShiftPlotFit, 'yData', max(data.shiftSPD(:)) * ones(size(refPeaks)));
                      set(S.timeSeriesPowerPlot, 'xData', monitoredData.timeSeries);
                      set(S.timeSeriesPowerPlot, 'yData', monitoredData.powerRatioSeries);
-                     set(S.timeSeriesTemperaturePlot1, 'xData', monitoredData.timeSeries);
-                     set(S.timeSeriesTemperaturePlot1, 'yData', monitoredData.temperatureSeries(1,:));
-                     set(S.timeSeriesTemperaturePlot2, 'xData', monitoredData.timeSeries);
-                     set(S.timeSeriesTemperaturePlot2, 'yData', monitoredData.temperatureSeries(2,:));
                      set(S.timeSeriesShiftPlot, 'xData', monitoredData.timeSeries);
                      set(S.timeSeriesShiftPlot, 'yData', monitoredData.spectralShiftSeries);
+                     if (takeTemperatureMeasurements)
+                        set(S.timeSeriesTemperaturePlot1, 'xData', monitoredData.timeSeries);
+                        set(S.timeSeriesTemperaturePlot1, 'yData', monitoredData.temperatureSeries(1,:));
+                        set(S.timeSeriesTemperaturePlot2, 'xData', monitoredData.timeSeries);
+                        set(S.timeSeriesTemperaturePlot2, 'yData', monitoredData.temperatureSeries(2,:));
+                     end
                  end
              end
              
