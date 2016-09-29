@@ -102,7 +102,7 @@ int closeUE9device()
         UE9_devHandle = NULL;
     }
     else {
-        mexPrintf("UE9 device was not open.\n");
+        //mexPrintf("UE9 device was not open.\n");
     }
 	
     return(1);    
