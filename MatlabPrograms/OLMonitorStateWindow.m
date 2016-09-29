@@ -154,6 +154,7 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
                         set(S.timeSeriesTemperaturePlot1, 'yData', monitoredData.temperatureSeries(1,:));
                         set(S.timeSeriesTemperaturePlot2, 'xData', monitoredData.timeSeries);
                         set(S.timeSeriesTemperaturePlot2, 'yData', monitoredData.temperatureSeries(2,:));
+                        set(S.timeSeriesTemperatureAxes, 'YLim', [min(monitoredData.temperatureSeries(:)) max(monitoredData.temperatureSeries(:))]);
                      end
                  end
              end
