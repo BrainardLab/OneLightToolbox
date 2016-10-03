@@ -21,7 +21,7 @@ S = [380 1 401];
 cal = OLGetCalibrationStructure;
 calType = cal.describe.calType.CalFileName;
 calDate = cal.describe.date;
-calFolderInfo = what(fullfile(CalDataFolder, 'OneLight'));
+calFolderInfo = what(getpref('OneLight', 'OneLightCalData'));
 calFolder = calFolderInfo.path;
 calFileName = cal.describe.calType.CalFileName;
 

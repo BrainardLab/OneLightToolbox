@@ -273,7 +273,7 @@ function plotGamma(obj, varargin)
             hold on
             [~, correspondingFittedGammaPointIter] = min(abs(gammaInRawValues(gammaInputIter) - obj.cal.computed.gammaInput));
             plot([obj.waveAxis(1) obj.waveAxis(end)], obj.cal.computed.gammaTableMeasuredBandsFit(correspondingFittedGammaPointIter,gammaBandIter)*[1 1], 'b--', 'LineWidth', 2.0);
-            plot(obj.cal.computed.gammaRatios(gammaBandIter,gammaInputIter).wavelenths, obj.cal.computed.gammaRatios(gammaBandIter,gammaInputIter).ratios, 'ks-', 'LineWidth', 1.5);
+            plot(obj.cal.computed.gammaRatios(gammaBandIter,gammaInputIter).wavelengths, obj.cal.computed.gammaRatios(gammaBandIter,gammaInputIter).ratios, 'ks-', 'LineWidth', 1.5);
             plot(obj.waveAxis, obj.cal.computed.pr650M(:,gammaBandIndices(gammaBandIter))/max(squeeze(obj.cal.computed.pr650M(:,gammaBandIndices(gammaBandIter))))*0.2 + obj.cal.computed.gammaTableMeasuredBands(gammaInputIter,gammaBandIter)-0.1, 'b-', 'LineWidth', 1.5, 'Color', [0.3 0.3 0.3]);
             hold off
 
