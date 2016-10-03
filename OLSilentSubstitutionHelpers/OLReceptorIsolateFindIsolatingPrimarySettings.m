@@ -275,12 +275,9 @@ else
                 fractionBleachedFromIsom(i) = ComputePhotopigmentBleaching(theLMSIsomerizations(i),'cones','isomerizations','Boynton');
                 fractionBleachedFromIsomHemo(i) = ComputePhotopigmentBleaching(theLMSIsomerizationsHemo(i),'cones','isomerizations','Boynton');
             end
-            fprintf('    * Stimulus luminance %0.1f candelas/m2\n',photopicLuminanceCdM2);
-            fprintf('    * Fraction bleached computed from trolands (applies to L and M cones): %0.2f\n',fractionBleachedFromTrolands);
-            fprintf('    * Fraction bleached from isomerization rates: L, %0.2f; M, %0.2f; S, %0.2f\n', ...
-                fractionBleachedFromIsom(1),fractionBleachedFromIsom(2),fractionBleachedFromIsom(3));
-            fprintf('    * Fraction bleached from isomerization rates: LHemo, %0.2f; MHemo, %0.2f; SHemo, %0.2f\n', ...
-                fractionBleachedFromIsomHemo(1),fractionBleachedFromIsomHemo(2),fractionBleachedFromIsomHemo(3));
+            fprintf('    * Luminance <strong>%0.1f</strong> cd/m2\n',photopicLuminanceCdM2);
+            fprintf('    * Retinal irradiance <strong>%0.1f</strong> ph td / <strong>%0.1f</strong> log ph td\n',irradiancePhotTrolands,log10(irradiancePhotTrolands));
+            fprintf('    * Retinal irradiance <strong>%0.1f</strong> sc td / <strong>%0.1f</strong> log sc td\n',irradianceScotTrolands, log10(irradianceScotTrolands));
             
             % We can now assign the fraction bleached for each photoreceptor
             % class.
@@ -429,12 +426,10 @@ else
             fractionBleachedFromIsom(i) = ComputePhotopigmentBleaching(theLMSIsomerizations(i),'cones','isomerizations','Boynton');
             fractionBleachedFromIsomHemo(i) = ComputePhotopigmentBleaching(theLMSIsomerizationsHemo(i),'cones','isomerizations','Boynton');
         end
-        fprintf('    * Stimulus luminance %0.1f candelas/m2\n',photopicLuminanceCdM2);
-        fprintf('    * Fraction bleached computed from trolands (applies to L and M cones): %0.2f\n',fractionBleachedFromTrolands);
-        fprintf('    * Fraction bleached from isomerization rates: L, %0.2f; M, %0.2f; S, %0.2f\n', ...
-            fractionBleachedFromIsom(1),fractionBleachedFromIsom(2),fractionBleachedFromIsom(3));
-        fprintf('    * Fraction bleached from isomerization rates: LHemo, %0.2f; MHemo, %0.2f; SHemo, %0.2f\n', ...
-            fractionBleachedFromIsomHemo(1),fractionBleachedFromIsomHemo(2),fractionBleachedFromIsomHemo(3));
+        fprintf('    * Luminance <strong>%0.1f</strong> cd/m2\n',photopicLuminanceCdM2);
+        fprintf('    * Retinal irradiance <strong>%0.1f</strong> ph td / <strong>%0.1f</strong> log ph td\n',irradiancePhotTrolands,log10(irradiancePhotTrolands));
+        fprintf('    * Retinal irradiance <strong>%0.1f</strong> sc td / <strong>%0.1f</strong> log sc td\n',irradianceScotTrolands, log10(irradianceScotTrolands));
+        
         
         % We can now assign the fraction bleached for each photoreceptor
         % class.
