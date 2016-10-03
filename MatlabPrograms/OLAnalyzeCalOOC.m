@@ -9,12 +9,12 @@ function OLAnalyzeCalOOC
     % ALSO NEEDS SOME TUNING FOR CALIBRATIONS DONE AROUND A SPECIFIED
     % BACKGROUND.
     %%%%
-    plotDriftAnalysis = ~true;
+    plotDriftAnalysis = true;
     plotCompositeMeasurents = ~true;
     plotSampledSpectra = ~true;
-    plotFullSpectra = true;
-    plotGammaSPDs = true;
-    plotGammaTables = true;
+    plotFullSpectra = ~true;
+    plotGammaSPDs = ~true;
+    plotGammaTables = ~true;
     plotPredictions = ~true;
     plotAdditivityCheck = ~true;
   
