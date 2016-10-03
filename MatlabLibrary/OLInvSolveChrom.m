@@ -48,15 +48,16 @@ xyY_s*w;
 
 %% Second step: Optimize smoothness of the spectra subject to the
 % chromaticity constraints
+targetLum = maxLuminance;
 xy_target = xyY_target(1:2);
 
 % Set up the optimization
 options = optimset('fmincon');
 options = optimset(options,'Diagnostics','off','Display','off','LargeScale','off','Algorithm','active-set', 'MaxIter', 10000, 'MaxFunEvals', 100000, 'TolFun', 1e-10, 'TolCon', 1e-10, 'TolX', 1e-10);
-maxHeadroom = 0.02;
-vub = ones(size(B_primary, 2), 1)*0.5+0.25;
-vlb = ones(size(B_primary, 2), 1)*0.5-0.25;
-x = fmincon(@(x) ObjFunction(x, B_primary, ambientSpd, T_xyz, maxLuminance/2),B*w,[],[],[],[],vlb,vub,@(x)ChromaticityNonlcon(x, B_primary, T_xyz, xy_target),options);
+maxHeadroom = 0.1;
+vub = ones(size(B_primary, 2), 1)-maxHeadroom;
+vlb = ones(size(B_primary, 2), 1)*maxHeadroom;
+x = fmincon(@(x) ObjFunction(x, B_primary, ambientSpd, T_xyz, targetLum),B*w,[],[],[],[],vlb,vub,@(x)ChromaticityNonlcon(x, B_primary, T_xyz, xy_target),options);
 
 %problem = createOptimProblem('fmincon', 'objective', @(x) ObjFunction(x, B_primary, ambientSpd, T_xyz, maxLuminance/2), 'x0', B*w, 'lb', vlb, 'ub', vub, 'nonlcon', @(x)ChromaticityNonlcon(x, B_primary, T_xyz, xy_target), 'options', options);
 %gs = GlobalSearch;
@@ -71,28 +72,15 @@ end
 if any(isolatingPrimary < 0)
     error('Primary values < 0');
 end
-chromaticityXY = (T_xyz(1:2, :)*B_primary*x)./repmat(sum(T_xyz*B_primary*x), 2, 1);
-photopicLuminanceCdM2 = (T_xyz(3, :)*B_primary*x);
-
-plot(wls, B_primary*bgRef); hold on;
-plot(wls, B_primary*x, '-r');
-legend(['Half-on, x=' num2str(chromaticityXY_ref(1), '%.2f') ', y=' num2str(chromaticityXY_ref(2), '%.2f') ', Y=' num2str(photopicLuminanceCdM2_ref, '%.2f') ' cd/m2'] , ...
-    ['New, x=' num2str(chromaticityXY(1), '%.2f') ', y=' num2str(chromaticityXY(2), '%.2f') ', Y=' num2str(photopicLuminanceCdM2, '%.2f') ' cd/m2']);
-legend boxoff;
-title(cal.describe.calType.char);
-
-pbaspect([1 1 1]); box off; set(gca, 'TickDir', 'out');
-set(gcf, 'PaperPosition', [0 0 5 5]); set(gcf, 'PaperSize', [5 5]);
-saveas(gcf, ['InvSolveChrom_' cal.describe.calType.char], 'pdf');
-close(gcf);
+chromaticityXY = (T_xyz(1:2, :)*B_primary*x)./repmat(sum(T_xyz*B_primary*x), 2, 1)
+photopicLuminanceCdM2 = (T_xyz(3, :)*B_primary*x)
 
 function f = ObjFunction(x, B_primary, ambientSpd, T_xyz, targetLum)
 backgroundSpd = B_primary*x + ambientSpd;
 photopicLuminanceCdM2 = T_xyz(2,:)*backgroundSpd;
 
-w1 = 0; w2 = 1;
-f = w1*(photopicLuminanceCdM2-targetLum).^2 + w2*mean(abs(diff(backgroundSpd)));
-
+% Maximize the luminance
+f = -photopicLuminanceCdM2;
 
 function [c ceq] = ChromaticityNonlcon(x, B_primary, T_xyz, xy_target)
 % Calculate chromaticity
