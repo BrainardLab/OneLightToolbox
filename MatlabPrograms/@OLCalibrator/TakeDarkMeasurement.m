@@ -3,15 +3,23 @@
 % Takes dark measurements.
 %
 % 8/13/16   npc     Wrote it
-
-function cal = TakeDarkMeasurement(measurementIndex, cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage)
+% 9/29/16   npc     Optionally record temperature
+%
+function cal = TakeDarkMeasurement(measurementIndex, cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, varargin)
+    
+    p = inputParser;
+    p.addParameter('takeTemperatureMeasurements', false, @islogical);
+    % Execute the parser
+    p.parse(varargin{:});
+    takeTemperatureMeasurements = p.Results.takeTemperatureMeasurements;
+    
     % Take a dark measurement at the end.  Use special case provided by OLSettingsToStartsStops that turns all mirrors off.
     cal = cal0;
     nPrimaries = cal.describe.numWavelengthBands;
 
     % See if we need to take a new set of state measurements
     if (mod(cal.describe.stateTracking.calibrationStimIndex, cal.describe.stateTracking.calibrationStimInterval) == 0)
-        cal = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
+        cal = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
     end
 
     % Update calibration stim index and take dark measurement

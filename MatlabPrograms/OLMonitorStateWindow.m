@@ -10,11 +10,18 @@
 % See testOLMonitorStateWindow for usage of this function.
 %
 % 9/12/16   npc     Wrote it.
+% 9/29/16   npc     Optionally record temperature.
 %
 
-function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage)
+function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, varargin)
 
-    % Initialize everything
+    p = inputParser;
+    p.addParameter('takeTemperatureMeasurements', false, @islogical);
+    % Execute the parser
+    p.parse(varargin{:});
+    takeTemperatureMeasurements = p.Results.takeTemperatureMeasurements;
+    
+    
     measurementIndex = 0;
     monitoredData = [];
     referenceTime = [];
@@ -27,6 +34,13 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
     S = generateGUI(spectralAxis);            
     set(S.figHandle,'closeRequestFcn',{@closeRequestFunction})
     
+    if (takeTemperatureMeasurements)
+        % Gracefully attempt to open the LabJack
+        [takeTemperatureMeasurements, quitNow] = OLCalibrator.OpenLabJackTemperatureProbe(takeTemperatureMeasurements);
+        if (quitNow)
+            return;
+        end
+    end
     
     % Add the timer for triggering data acquisition
     S.tmr = timer('Name','MeasurementTimer',...
@@ -41,6 +55,11 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
     
     % Wait until user closes the figure
     uiwait(S.figHandle);
+    
+    if (takeTemperatureMeasurements)
+        % Close temperature probe
+        LJTemperatureProbe('close')
+    end
     
     % Callback function for when the user closes the figure
     function closeRequestFunction(varargin)
@@ -71,10 +90,12 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
          
         combPeaks = [480 540 596 652]+10;
         
-        try
+        try 
              % Measure and retrieve the data
              fprintf('Measuring state data (measurement index: %d) ... ', measurementIndex+1);
-             [~, calStateMeas] = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, true);
+             [~, calStateMeas] = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, 'standAlone', true, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
+    
+             % Initialize everything);
              OLCalibrator.SaveStateMeasurements(cal, calStateMeas);
              
              data.shiftSPD  = calStateMeas.raw.spectralShiftsMeas.measSpd;
@@ -82,6 +103,9 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
              data.powerSPD  = calStateMeas.raw.powerFluctuationMeas.measSpd;
              data.powerSPDt = calStateMeas.raw.powerFluctuationMeas.t;
              data.datestr   = datestr(now);
+             if (takeTemperatureMeasurements)
+                data.temperature = calStateMeas.raw.temperature.value;
+             end
              
              measurementIndex = measurementIndex + 1;
              monitoredData.measurements{measurementIndex} = data;
@@ -96,12 +120,16 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
                  monitoredData.timeSeries = [];
                  monitoredData.powerRatioSeries = [];
                  monitoredData.spectralShiftSeries = [];
+                 monitoredData.temperatureSeries = [];
              else
                  newSPDRatio = 1.0 / (data.powerSPD(wavelengthIndices) \ referencePowerSPD);
                  [spectralShifts, refPeaks, fitParams] = OLComputeSpectralShiftBetweenCombSPDs(data.shiftSPD, referenceCombSPD, combPeaks, spectralAxis);
                  monitoredData.timeSeries = cat(2, monitoredData.timeSeries, (data.powerSPDt-referenceTime)/60);
                  monitoredData.powerRatioSeries = cat(2, monitoredData.powerRatioSeries, newSPDRatio);
                  monitoredData.spectralShiftSeries = cat(2, monitoredData.spectralShiftSeries, median(spectralShifts));
+                 if (takeTemperatureMeasurements)
+                    monitoredData.temperatureSeries = cat(2, monitoredData.temperatureSeries, (data.temperature)');
+                 end
              end
              
              % save fitted params time series as well
@@ -111,9 +139,7 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
                  % Update GUI
                  set(S.currentPowerPlot, 'yData', data.powerSPD);
                  set(S.currentShiftPlot, 'yData', data.shiftSPD);
-
-                 title(S.currentPowerAxes, sprintf('Full ON SPD - measurement no: %3d', measurementIndex), 'FontSize', 16);
-                 title(S.currentShiftAxes, sprintf('comb SPD - measurement time: %2.1f mins', (data.shiftSPDt-referenceTime)/60), 'FontSize', 16);
+                 title(S.currentPowerAxes, sprintf('Full ON & Comb SPD - measurement no: %3d (%2.1f mins)', measurementIndex, (data.powerSPDt-referenceTime)/60), 'FontSize', 16);
 
                  if (measurementIndex > 1)
                      set(S.currentShiftPlotFit, 'xData', refPeaks);
@@ -122,6 +148,13 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
                      set(S.timeSeriesPowerPlot, 'yData', monitoredData.powerRatioSeries);
                      set(S.timeSeriesShiftPlot, 'xData', monitoredData.timeSeries);
                      set(S.timeSeriesShiftPlot, 'yData', monitoredData.spectralShiftSeries);
+                     if (takeTemperatureMeasurements)
+                        set(S.timeSeriesTemperaturePlot1, 'xData', monitoredData.timeSeries);
+                        set(S.timeSeriesTemperaturePlot1, 'yData', monitoredData.temperatureSeries(1,:));
+                        set(S.timeSeriesTemperaturePlot2, 'xData', monitoredData.timeSeries);
+                        set(S.timeSeriesTemperaturePlot2, 'yData', monitoredData.temperatureSeries(2,:));
+                        set(S.timeSeriesTemperatureAxes, 'YLim', [min(monitoredData.temperatureSeries(:))-5 max(monitoredData.temperatureSeries(:))+5]);
+                     end
                  end
              end
              
@@ -157,7 +190,7 @@ function S = generateGUI(spectralAxis)
            'topMargin',      0.05);
        
     S.currentPowerSubPlot = subplot('Position', subplotPosVectors2(1,1).v);
-    S.currentShiftSubPlot = subplot('Position', subplotPosVectors2(1,2).v);
+    S.timeSeriesTemperatureSubPlot = subplot('Position', subplotPosVectors2(1,2).v);
     S.timeSeriesPowerSubPlot = subplot('Position', subplotPosVectors2(2,1).v);
     S.timeSeriesShiftSubPlot = subplot('Position', subplotPosVectors2(2,2).v);
     
@@ -166,25 +199,31 @@ function S = generateGUI(spectralAxis)
 
     subplot(S.currentPowerSubPlot);
     S.currentPowerPlot = plot(x,y, 'rs-', 'MarkerFaceColor', [1.0 0.7 0.7]);
+    hold on;
+    S.currentShiftPlot = plot(x,y, 'bs-', 'MarkerFaceColor', [0.7 0.7 1.0]);
+    x = x(1); y = [0];
+    S.currentShiftPlotFit = plot(x,y, 'k*', 'MarkerSize', 12);
+    hold off;
     S.currentPowerAxes = gca;
     set(gca, 'FontSize', 14);
     xlabel('wavelength (nm)', 'FontSize', 16, 'FontWeight', 'bold');
     ylabel('power', 'FontSize', 16, 'FontWeight', 'bold');
-    title(S.currentPowerAxes, sprintf('Full ON SPD'), 'FontSize', 16);
-    
-    subplot(S.currentShiftSubPlot);
-    S.currentShiftPlot = plot(x,y, 'bs-', 'MarkerFaceColor', [0.7 0.7 1.0]);
-    hold on;
-    x = x(1); y = [0];
-    S.currentShiftPlotFit = plot(x,y, 'r*', 'MarkerSize', 12);
-    hold off;
-    S.currentShiftAxes = gca;
-    set(gca, 'FontSize', 14);
-    xlabel('wavelength (nm)', 'FontSize', 16, 'FontWeight', 'bold');
-    title(S.currentShiftAxes, sprintf('comb SPD'), 'FontSize', 16);
+    title(S.currentPowerAxes, sprintf('Full ON & Comb SPD'), 'FontSize', 16);
     
     x = [0];
     y = [0];
+    subplot(S.timeSeriesTemperatureSubPlot);
+    S.timeSeriesTemperaturePlot1 = plot(x,y, 'rs-', 'MarkerSize', 8, 'MarkerFaceColor', [1.0 0.7 0.7]);
+    hold on
+    S.timeSeriesTemperaturePlot2 = plot(x,y, 'bs-', 'MarkerSize', 8, 'MarkerFaceColor', [0.7 0.7 1.0]);
+    hold off
+    legend({'OneLight probe', 'Ambient'}, 'Location', 'NorthWest');
+    S.timeSeriesTemperatureAxes = gca;
+    set(gca, 'FontSize', 14, 'YLim',[10 110]);
+    xlabel('time (mins)', 'FontSize', 16, 'FontWeight', 'bold');
+    ylabel('temperature (deg Celcius)', 'FontSize', 16, 'FontWeight', 'bold');
+    title('Ambient and OneLight temperature', 'FontSize', 16);
+    
     subplot(S.timeSeriesPowerSubPlot);
     S.timeSeriesPowerPlot = plot(x,y, 'ks-', 'MarkerSize', 8, 'MarkerFaceColor', [1.0 0.7 0.7]);
     S.timeSeriesPowerAxes = gca;

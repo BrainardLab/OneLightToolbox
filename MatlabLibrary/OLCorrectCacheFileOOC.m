@@ -42,6 +42,7 @@ function [cacheData olCache openSpectroRadiometerOBJ] = OLCorrectCacheFileOOC(ca
 %                             'NIter'               scalar    number of
 %                                                             iterations
 %                             'lambda'              scalar    Learning rate
+%                             'postreceptoralCombinations'  scalar     Post-receptoral combinations to calculate contrast w.r.t.
 %
 % Output:
 % results (struct) - Results struct. This is different depending on which
@@ -69,6 +70,7 @@ p.addOptional('selectedCalType', [], @isstr);
 p.addOptional('CALCULATE_SPLATTER', true, @islogical);
 p.addOptional('powerLevels', 32, @isnumeric);
 p.addOptional('doCorrection', true, @islogical);
+p.addOptional('postreceptoralCombinations', [], @isnumeric);
 p.addOptional('outDir', [], @isstr);
 
 p.parse(varargin{:});
@@ -276,7 +278,7 @@ try
     
     % Take reference measurements
     if describe.FullOnMeas
-        fprintf('- Fukl-on measurement \n');
+        fprintf('- Full-on measurement \n');
         [starts,stops] = OLSettingsToStartsStops(cal,1*ones(cal.describe.numWavelengthBands, 1));
         results.fullOnMeas.meas = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
         results.fullOnMeas.starts = starts;
@@ -304,7 +306,7 @@ try
     
     if describe.CalStateMeas
         fprintf('- State measurements \n');
-        [~, calStateMeas] = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, true);
+        [~, calStateMeas] = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, 'standAlone',true);
         OLCalibrator.SaveStateMeasurements(cal, calStateMeas);
     end
     
@@ -398,9 +400,19 @@ try
                 %% Determine the primary settings from the measurements
                 bgSpdAll(:, iter) = results.modulationBGMeas.meas.pr650.spectrum;
                 modSpdAll(:, iter) = results.modulationMaxMeas.meas.pr650.spectrum;
-                deltaBackgroundPrimaryInferred = OLSpdToPrimary(cal, (results.modulationBGMeas.meas.pr650.spectrum)-...
+                
+                % Figure out a scaling factor from the first measurement
+                % which puts the measured spectrum into the same range as
+                % the predicted spectrum. This deals with fluctuations with
+                % absolute light level.
+                if iter == 1
+                   % Determine the scale factor
+                   kScale = results.modulationBGMeas.meas.pr650.spectrum \ results.modulationBGMeas.predictedSpd;
+                end
+                
+                deltaBackgroundPrimaryInferred = OLSpdToPrimary(cal, (kScale*results.modulationBGMeas.meas.pr650.spectrum)-...
                     results.modulationBGMeas.predictedSpd, 'differentialMode', true);
-                deltaModulationPrimaryInferred = OLSpdToPrimary(cal, (results.modulationMaxMeas.meas.pr650.spectrum)-...
+                deltaModulationPrimaryInferred = OLSpdToPrimary(cal, (kScale*results.modulationMaxMeas.meas.pr650.spectrum)-...
                     results.modulationMaxMeas.predictedSpd, 'differentialMode', true);
                 
                 backgroundPrimaryCorrected = backgroundPrimary - describe.lambda*deltaBackgroundPrimaryInferred;
@@ -414,9 +426,8 @@ try
                 T_receptors = cacheData.data(describe.REFERENCE_OBSERVER_AGE).describe.T_receptors;
                 
                 % Save out information about the correction
-                postreceptoralCombinations = [1 1 1 0 ; 1 -1 0 0 ; 0 0 1 0];
                 [contrasts(:, iter) postreceptoralContrasts(:, iter)] = ComputeAndReportContrastsFromSpds(['Iteration ' num2str(iter, '%02.0f')] ,theCanonicalPhotoreceptors,T_receptors,...
-                    results.modulationBGMeas.meas.pr650.spectrum,results.modulationMaxMeas.meas.pr650.spectrum,postreceptoralCombinations,true);
+                    results.modulationBGMeas.meas.pr650.spectrum,results.modulationMaxMeas.meas.pr650.spectrum,describe.postreceptoralCombinations,true);
                 
                 backgroundPrimaryCorrectedAll(:, iter) = backgroundPrimaryCorrected;
                 deltaBackgroundPrimaryInferredAll(:, iter)= deltaBackgroundPrimaryInferred;

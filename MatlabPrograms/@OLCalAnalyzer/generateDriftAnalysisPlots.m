@@ -89,6 +89,56 @@ function generateSpectralShiftPlots(obj)
        
     end % peakIndex
     
+    
+    % Temperature analysis
+    if (isfield(cal.raw, 'temperature'))
+        
+        hFig = figure(7); clf;
+        set(hFig, 'Position', [10 10 920 900]);
+
+        subplot(2,2,1);
+        temperatureTimeAxis = (cal.raw.temperature.t-cal.raw.temperature.t(1))/60;
+        oneLightTempTimeSeries = squeeze(cal.raw.temperature.value(:,1));
+        ambientTempTimeSeries = squeeze(cal.raw.temperature.value(:,2));
+        plot(temperatureTimeAxis, ambientTempTimeSeries, 'bs-', 'LineWidth', 2);
+        legend({'Ambient'});
+        xlabel('time (minutes)', 'FontSize', 16, 'FontWeight', 'bold');
+        ylabel('temperature (deg Celcius)', 'FontSize', 16, 'FontWeight', 'bold');
+        axis 'square';
+
+
+        subplot(2,2,2);
+        plot(temperatureTimeAxis, oneLightTempTimeSeries, 'rs-', 'LineWidth', 2);
+        legend({'OneLight'});
+        xlabel('time (minutes)', 'FontSize', 16, 'FontWeight', 'bold');
+        ylabel('temperature (deg Celcius)', 'FontSize', 16, 'FontWeight', 'bold');
+        axis 'square';
+
+
+        subplot(2,2,4);
+        peakIndex = 3;
+        spectralShift = squeeze(fitParams(:,peakIndex,3));
+        plot(timeAxis, spectralShift, 'ks-', 'LineWidth', 2);
+        xlabel('time (minutes)', 'FontSize', 16, 'FontWeight', 'bold');
+        ylabel('spectral shift (nm)', 'FontSize', 16, 'FontWeight', 'bold');
+        axis 'square';
+
+        subplot(2,2,3);
+        timeThreshold = 20;
+        oneLightTempTimeSeries = oneLightTempTimeSeries(1:end-1);
+        indices = find(timeAxis > timeThreshold);
+        plot(oneLightTempTimeSeries, spectralShift, 'ks');
+        hold on;
+        plot(oneLightTempTimeSeries(indices), spectralShift(indices), 'ks', 'MarkerFaceColor', [1.0 0.5 0.5]);
+        rho = corrcoef(oneLightTempTimeSeries, spectralShift);
+        rho2 = corrcoef(oneLightTempTimeSeries(indices), spectralShift(indices));
+        xlabel('OneLight temperature (deg C)','FontSize', 16, 'FontWeight', 'bold'); 
+        ylabel('spectral shift (nm)', 'FontSize', 16, 'FontWeight', 'bold');
+        title(sprintf('R = %2.2f, R(t > %2.1f mins) = %2.2f', rho(1,2), timeThreshold , rho2(1,2)), 'FontSize', 16, 'FontWeight', 'bold');
+        axis 'square';
+        drawnow
+    end
+    
 end
 
 
@@ -97,7 +147,7 @@ end
 function computeDriftCorrectedStateMeasurements(obj)
 
     cal = obj.cal;
-    
+
     for stateMeasIndex = 1:size(cal.raw.spectralShiftsMeas.measSpd,2)-1
         cal.driftCorrectedOLD.powerFluctuationMeas.measSpd(:, stateMeasIndex) = ...
             bsxfun(@times, cal.raw.powerFluctuationMeas.measSpd(:, stateMeasIndex), cal.computed.returnScaleFactorOLD(cal.raw.powerFluctuationMeas.t(:, stateMeasIndex)));
@@ -197,6 +247,6 @@ function generateDriftCorrectedStateMeasurementPlots(obj)
     set(gca, 'YTickLabel', [], 'FontSize', 16);
     title('Drift corrected measurements (piecewise linear)');
     drawnow;
-                    
+                
 end
     

@@ -66,6 +66,7 @@ p.addOptional('REFERENCE_OBSERVER_AGE', 32, @isscalar);
 p.addOptional('selectedCalType', [], @isstr);
 p.addOptional('CALCULATE_SPLATTER', true, @islogical);
 p.addOptional('powerLevels', 32, @isnumeric);
+p.addOptional('postreceptoralCombinations', [], @isnumeric);
 p.addOptional('outDir', [], @isstr);
 p.addOptional('pr670sensitivityMode', 'STANDARD', @isstr);
 
@@ -288,7 +289,7 @@ try
     
     % Take reference measurements
     if describe.FullOnMeas
-        fprintf('- Fukl-on measurement \n');
+        fprintf('- Full-on measurement \n');
         [starts,stops] = OLSettingsToStartsStops(cal,1*ones(cal.describe.numWavelengthBands, 1));
         results.fullOnMeas.meas = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
         results.fullOnMeas.starts = starts;
@@ -316,7 +317,7 @@ try
     
     if describe.CalStateMeas
         fprintf('- State measurements \n');
-        [~, calStateMeas] = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, true);
+        [~, calStateMeas] = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, 'standAlone',true);
         OLCalibrator.SaveStateMeasurements(cal, calStateMeas);
     else
         calStateMeas = [];
@@ -466,7 +467,7 @@ try
     validationPath = fullfile(validationDir, resultsFileName);
     
     % Check if we want to do splatter calculations
-    OLAnalyzeValidationReceptorIsolate(validationPath);
+    OLAnalyzeValidationReceptorIsolate(validationPath, describe.postreceptoralCombinations);
 catch e
     if (~isempty(spectroRadiometerOBJ))
         spectroRadiometerOBJ.shutDown();

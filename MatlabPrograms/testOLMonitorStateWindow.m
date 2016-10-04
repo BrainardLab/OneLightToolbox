@@ -1,6 +1,7 @@
 % Demos how to embed a call to OLMonitorStateWindow within an OL experiment
 %
 % 9/12/16   npc     Wrote it.
+% 9/29/16   npc     Optionally record temperature
 %
 
 function testOLMonitorStateWindow
@@ -18,8 +19,18 @@ spectroRadiometerOBJ = generateSpectroRadiometerOBJ();
 
 
 % ------ CODE TO EMBED TO EXPERIMENTAL PROGRAM (BEFORE DATA COLLECTION BEGINS) --------------
+
+% Query user whether to take temperature measurements
+takeTemperatureMeasurements = GetWithDefault('Take Temperature Measurements ?', false);
+if (takeTemperatureMeasurements ~= true) && (takeTemperatureMeasurements ~= 1)
+    takeTemperatureMeasurements = false;
+else
+    takeTemperatureMeasurements = true;
+end
+
+
 % Collect state data until the user closes the monitoring window
-monitoredStateData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage);
+monitoredStateData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
 
 % Save the monitored state data (optional)
 outDir = fullfile(getpref('OneLight', 'OneLightCalData'), 'MonitoredStateData', char(cal.describe.calType), strrep(strrep(cal.describe.date, ' ', '_'), ':', '_'), datestr(now, 'mmddyy'));
