@@ -240,7 +240,7 @@ if wasRecomputed
 end
 
 if ~(describe.doCorrection)
-   return; % Just return with no correction 
+    return; % Just return with no correction
 end
 
 % Connect to the OceanOptics spectrometer.
@@ -317,6 +317,9 @@ try
     
     % Loop over the stimuli in the cache file and take a measurement with
     % the PR-670.
+    theCanonicalPhotoreceptors = cacheData.data(describe.REFERENCE_OBSERVER_AGE).describe.photoreceptors;
+    T_receptors = cacheData.data(describe.REFERENCE_OBSERVER_AGE).describe.T_receptors;
+    
     iter = 1;
     switch cacheData.computeMethod
         case 'ReceptorIsolate'
@@ -375,56 +378,73 @@ try
                 theMaxIndex = find([results.modulationAllMeas(:).powerLevel] == 1);
                 theMinIndex = find([results.modulationAllMeas(:).powerLevel] == -1);
                 theBGIndex = find([results.modulationAllMeas(:).powerLevel] == 0);
-                if ~isempty(theMaxIndex)
-                    results.modulationMaxMeas = results.modulationAllMeas(theMaxIndex);
-                end
                 
-                if ~isempty(theBGIndex)
-                    results.modulationMinMeas = results.modulationAllMeas(theMinIndex);
-                else % Some times there's no negative excursion. We set it to BG
-                    results.modulationMinMeas = results.modulationAllMeas(theBGIndex);
-                end
-                
+                % Background
                 if ~isempty(theBGIndex)
                     results.modulationBGMeas = results.modulationAllMeas(theBGIndex);
+                    bgSpdAll(:, iter) = results.modulationBGMeas.meas.pr650.spectrum;
+                    
+                    % Figure out a scaling factor from the first measurement
+                    % which puts the measured spectrum into the same range as
+                    % the predicted spectrum. This deals with fluctuations with
+                    % absolute light level.
+                    if iter == 1
+                        % Determine the scale factor
+                        kScale = results.modulationBGMeas.meas.pr650.spectrum \ results.modulationBGMeas.predictedSpd;
+                    end
+                    
+                    % Infer the primaries
+                    deltaBackgroundPrimaryInferred = OLSpdToPrimary(cal, (kScale*results.modulationBGMeas.meas.pr650.spectrum)-...
+                        results.modulationBGMeas.predictedSpd, 'differentialMode', true);
+                    backgroundPrimaryCorrected = backgroundPrimary - describe.lambda*deltaBackgroundPrimaryInferred;
+                    backgroundPrimaryCorrected(backgroundPrimaryCorrected > 1) = 1;
+                    backgroundPrimaryCorrected(backgroundPrimaryCorrected < 0) = 0;
+                    backgroundPrimaryCorrectedAll(:, iter) = backgroundPrimaryCorrected;
+                    deltaBackgroundPrimaryInferredAll(:, iter)= deltaBackgroundPrimaryInferred;
                 end
                 
-                %% Determine the primary settings from the measurements
-                bgSpdAll(:, iter) = results.modulationBGMeas.meas.pr650.spectrum;
-                modSpdAll(:, iter) = results.modulationMaxMeas.meas.pr650.spectrum;
-                
-                % Figure out a scaling factor from the first measurement
-                % which puts the measured spectrum into the same range as
-                % the predicted spectrum. This deals with fluctuations with
-                % absolute light level.
-                if iter == 1
-                   % Determine the scale factor
-                   kScale = results.modulationBGMeas.meas.pr650.spectrum \ results.modulationBGMeas.predictedSpd;
+                % Positive swing
+                if ~isempty(theMaxIndex)
+                    results.modulationMaxMeas = results.modulationAllMeas(theMaxIndex);
+                    modMaxSpdAll(:, iter) = results.modulationMaxMeas.meas.pr650.spectrum;
+                    
+                    % Infer the primaries
+                    deltaModulationPrimaryInferred = OLSpdToPrimary(cal, (kScale*results.modulationMaxMeas.meas.pr650.spectrum)-...
+                        results.modulationMaxMeas.predictedSpd, 'differentialMode', true);
+                    modulationPrimaryPositiveCorrected = modulationPrimary - describe.lambda*deltaModulationPrimaryInferred;
+                    modulationPrimaryPositiveCorrected(modulationPrimaryPositiveCorrected > 1) = 1;
+                    modulationPrimaryPositiveCorrected(modulationPrimaryPositiveCorrected < 0) = 0;
+                    modulationPrimaryPositiveCorrectedAll(:, iter) = modulationPrimaryPositiveCorrected;
+                    deltaModulationPrimaryPositiveInferredAll(:, iter)= deltaModulationPrimaryPositiveInferred;
+                    
+                    [contrastsPos(:, iter) postreceptoralContrastsPos(:, iter)] = ComputeAndReportContrastsFromSpds(['Iteration ' num2str(iter, '%02.0f')] ,theCanonicalPhotoreceptors,T_receptors,...
+                        results.modulationBGMeas.meas.pr650.spectrum,results.modulationMaxMeas.meas.pr650.spectrum,describe.postreceptoralCombinations,true);
                 end
                 
-                deltaBackgroundPrimaryInferred = OLSpdToPrimary(cal, (kScale*results.modulationBGMeas.meas.pr650.spectrum)-...
-                    results.modulationBGMeas.predictedSpd, 'differentialMode', true);
-                deltaModulationPrimaryInferred = OLSpdToPrimary(cal, (kScale*results.modulationMaxMeas.meas.pr650.spectrum)-...
-                    results.modulationMaxMeas.predictedSpd, 'differentialMode', true);
-                
-                backgroundPrimaryCorrected = backgroundPrimary - describe.lambda*deltaBackgroundPrimaryInferred;
-                backgroundPrimaryCorrected(backgroundPrimaryCorrected > 1) = 1;
-                backgroundPrimaryCorrected(backgroundPrimaryCorrected < 0) = 0;
-                modulationPrimaryCorrected = modulationPrimary - describe.lambda*deltaModulationPrimaryInferred;
-                modulationPrimaryCorrected(modulationPrimaryCorrected > 1) = 1;
-                modulationPrimaryCorrected(modulationPrimaryCorrected < 0) = 0;
-                
-                theCanonicalPhotoreceptors = cacheData.data(describe.REFERENCE_OBSERVER_AGE).describe.photoreceptors;
-                T_receptors = cacheData.data(describe.REFERENCE_OBSERVER_AGE).describe.T_receptors;
-                
-                % Save out information about the correction
-                [contrasts(:, iter) postreceptoralContrasts(:, iter)] = ComputeAndReportContrastsFromSpds(['Iteration ' num2str(iter, '%02.0f')] ,theCanonicalPhotoreceptors,T_receptors,...
-                    results.modulationBGMeas.meas.pr650.spectrum,results.modulationMaxMeas.meas.pr650.spectrum,describe.postreceptoralCombinations,true);
-                
-                backgroundPrimaryCorrectedAll(:, iter) = backgroundPrimaryCorrected;
-                deltaBackgroundPrimaryInferredAll(:, iter)= deltaBackgroundPrimaryInferred;
-                modulationPrimaryCorrectedAll(:, iter) = modulationPrimaryCorrected;
-                deltaModulationPrimaryInferredAll(:, iter)= deltaModulationPrimaryInferred;
+                % Negative swing
+                if ~isempty(theMinIndex)
+                    results.modulationMinMeas = results.modulationAllMeas(theMinIndex);
+                    modMinSpdAll(:, iter) = results.modulationMaxMeas.meas.pr650.spectrum;
+                    
+                    % Infer the primaries
+                    deltaModulationPrimaryInferred = OLSpdToPrimary(cal, (kScale*results.modulationMaxMeas.meas.pr650.spectrum)-...
+                        results.modulationMaxMeas.predictedSpd, 'differentialMode', true);
+                    modulationPrimaryNegativeCorrected = modulationPrimary - describe.lambda*deltaModulationPrimaryInferred;
+                    modulationPrimaryNegativeCorrected(modulationPrimaryNegativeCorrected > 1) = 1;
+                    modulationPrimaryNegativeCorrected(modulationPrimaryNegativeCorrected < 0) = 0;
+                    modulationPrimaryNegativeCorrectedAll(:, iter) = modulationPrimaryNegativeCorrected;
+                    deltaModulationPrimaryNegativeInferredAll(:, iter)= deltaModulationPrimaryNegativeInferred;
+                    [contrastsNeg(:, iter) postreceptoralContrastsNeg(:, iter)] = ComputeAndReportContrastsFromSpds(['Iteration ' num2str(iter, '%02.0f')] ,theCanonicalPhotoreceptors,T_receptors,...
+                        results.modulationBGMeas.meas.pr650.spectrum,results.modulationMinMeas.meas.pr650.spectrum,describe.postreceptoralCombinations,true);
+                else
+                    modMinSpdAll = [];
+                    deltaModulationPrimaryInferred = [];
+                    modulationPrimaryNegativeCorrected = [];
+                    modulationPrimaryNegativeCorrectedAll = [];
+                    deltaModulationPrimaryNegativeInferredAll = [];
+                    contrastsNeg = [];
+                    postreceptoralContrastsNeg = [];
+                end
                 
                 % Increment
                 iter = iter+1;
@@ -435,16 +455,30 @@ try
     for ii = 1:length(cacheData.data)
         if ii == describe.REFERENCE_OBSERVER_AGE;
             cacheData.data(ii).backgroundPrimary = backgroundPrimaryCorrectedAll(:, end);
-            cacheData.data(ii).modulationPrimarySignedPositive = modulationPrimaryCorrectedAll(:, end);
-            cacheData.data(ii).differencePrimary = modulationPrimaryCorrectedAll(:, end)-backgroundPrimaryCorrectedAll(:, end);
+            cacheData.data(ii).modulationPrimarySignedPositive = modulationPrimaryPositiveCorrectedAll(:, end);
+            cacheData.data(ii).modulationPrimarySignedNegative = modulationPrimaryNegativeCorrectedAll(:, end);
+            
+            cacheData.data(ii).differencePrimary = modulationPrimaryPositiveCorrectedAll(:, end)-backgroundPrimaryCorrectedAll(:, end);
             cacheData.data(ii).correction.backgroundPrimaryCorrectedAll = backgroundPrimaryCorrectedAll;
             cacheData.data(ii).correction.deltaBackgroundPrimaryInferredAll = deltaBackgroundPrimaryInferredAll;
             cacheData.data(ii).correction.bgSpdAll = bgSpdAll;
-            cacheData.data(ii).correction.modulationPrimaryCorrectedAll = modulationPrimaryCorrectedAll;
-            cacheData.data(ii).correction.deltaModulationPrimaryInferredAll = deltaModulationPrimaryInferredAll;
-            cacheData.data(ii).correction.modSpdAll = modSpdAll;
-            cacheData.data(ii).correction.contrasts = contrasts;
-            cacheData.data(ii).correction.postreceptoralContrasts = postreceptoralContrasts;
+            
+            cacheData.data(ii).correction.modulationPrimaryPositiveCorrectedAll = modulationPrimaryPositiveCorrectedAll;
+            cacheData.data(ii).correction.deltaModulationPrimaryPositiveInferredAll = deltaModulationPrimaryPositiveInferredAll;
+            cacheData.data(ii).correction.modMaxSpdAll = modMaxSpdAll;
+            
+            cacheData.data(ii).correction.modulationPrimaryNegativeCorrectedAll = modulationPrimaryNegativeCorrectedAll;
+            cacheData.data(ii).correction.deltaModulationPrimaryNegativeInferredAll = deltaModulationPrimaryNegativeInferredAll;
+            cacheData.data(ii).correction.modMinSpdAll = modMinSpdAll;
+            
+            cacheData.data(ii).correction.contrastsPos = contrastsPos;
+            cacheData.data(ii).correction.postreceptoralContrastsPos = postreceptoralContrastsPos;
+            
+            cacheData.data(ii).correction.contrastsNeg = contrastsNeg;
+            cacheData.data(ii).correction.postreceptoralContrastsNeg = postreceptoralContrastsNeg;
+            
+            cacheData.data(ii).correction.contrasts = contrastsPos;
+            cacheData.data(ii).correction.postreceptoralContrasts = postreceptoralContrastsPos;
         else
             cacheData.data(ii).describe = [];
             cacheData.data(ii).backgroundPrimary = [];
