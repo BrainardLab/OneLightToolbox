@@ -187,6 +187,9 @@ else
             case 'BackgroundMaxMel'
                 bgCacheData = olCache.load(['Cache-BackgroundMaxMel.mat']);
                 backgroundPrimary = bgCacheData.data(observerAgeInYears).backgroundPrimary;
+            case 'BackgroundMaxMelRodControl'
+                bgCacheData = olCache.load(['Cache-BackgroundMaxMelRodControl.mat']);
+                backgroundPrimary = bgCacheData.data(observerAgeInYears).backgroundPrimary;
             case 'BackgroundMaxRod'
                 bgCacheData = olCache.load(['Cache-BackgroundMaxRod.mat']);
                 backgroundPrimary = bgCacheData.data(observerAgeInYears).backgroundPrimary;

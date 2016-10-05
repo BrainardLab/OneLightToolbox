@@ -54,7 +54,7 @@ switch params.backgroundType
         backgroundPrimary = 0.5*ones(size(cal.computed.pr650M,2),1);
     case 'BackgroundEES'
         backgroundPrimary = InvSolveChrom(cal, [1/3 1/3]);
-    case {'BackgroundOptim' 'BackgroundOptimRod' 'BackgroundOptimMel' 'BackgroundMaxMel' 'BackgroundMaxLMS' 'BackgroundMaxRod' 'BackgroundMaxMelRodSilent'}
+    case {'BackgroundOptim' 'BackgroundOptimRod' 'BackgroundOptimMel' 'BackgroundMaxMel' 'BackgroundMaxLMS' 'BackgroundMaxRod' 'BackgroundMaxMelRodSilent' 'BackgroundMaxMelRodControl'}
         
         %% Parse some of the parameter fields
         photoreceptorClasses = allwords(params.photoreceptorClasses, ',');
