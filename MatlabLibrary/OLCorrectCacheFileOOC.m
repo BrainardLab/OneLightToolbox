@@ -71,6 +71,7 @@ p.addOptional('CALCULATE_SPLATTER', true, @islogical);
 p.addOptional('powerLevels', 32, @isnumeric);
 p.addOptional('doCorrection', true, @islogical);
 p.addOptional('postreceptoralCombinations', [], @isnumeric);
+p.addOptional('srfIncorporateFilter', [], @isnumeric);
 p.addOptional('outDir', [], @isstr);
 
 p.parse(varargin{:});
@@ -139,6 +140,10 @@ if (isempty(spectroRadiometerOBJ))
 end
 openSpectroRadiometerOBJ = spectroRadiometerOBJ;
 
+% Populate the filter with onesif it is passed as empty
+if isempty(p.Results.srfIncorporateFilter)
+    ndFilter = ones(S(3), 1));
+end
 
 % Force the file to be an absolute path instead of a relative one.  We do
 % this because files with relative paths can match anything on the path,
@@ -317,24 +322,7 @@ try
         case 'ReceptorIsolate'
             while iter <= describe.NIter
                 % Set up the power levels to use.
-                if describe.ReducedPowerLevels
-                    % Only take three measurements
-                    if describe.SkipBackground
-                        nPowerLevels = 2
-                        powerLevels = [-1 1];
-                    else
-                        if strcmp(cacheData.data(32).describe.params.receptorIsolateMode, 'PIPR')
-                            nPowerLevels = 2;
-                            powerLevels = [0 1];
-                        else
-                            nPowerLevels = 3;
-                            powerLevels = [-1 0 1];
-                        end
-                    end
-                else
-                    % Take a full set of measurements
-                    nPowerLevels = length(powerLevels);
-                end
+                NPowerLevels = length(powerLevels);
                 
                 % Only get the primaries from the cache file if it's the first
                 % iteration
@@ -349,7 +337,7 @@ try
                 
                 % Refactor the cache data spectrum primaries to the power
                 % level.
-                for i = 1:nPowerLevels
+                for i = 1:NPowerLevels
                     fprintf('- Measuring spectrum %d, level %g...\n', i, powerLevels(i));
                     if powerLevels(i) == 1
                         primaries = modulationPrimary;
@@ -368,6 +356,9 @@ try
                     % Take the measurements
                     results.modulationAllMeas(i).meas = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
                     
+                    % Multiply with filter
+                    results.modulationAllMeas(i).meas.pr650.spectrum = results.modulationAllMeas(i).meas.pr650.spectrum .* srfIncorporateFilter;
+                    
                     % Save out information about this.
                     results.modulationAllMeas(i).powerLevel = powerLevels(i);
                     results.modulationAllMeas(i).primaries = primaries;
@@ -376,6 +367,7 @@ try
                     results.modulationAllMeas(i).stops = stops;
                     if iter == 1
                         results.modulationAllMeas(i).predictedSpd = cal.computed.pr650M*primaries + cal.computed.pr650MeanDark;
+                        results.modulationAllMeas(i).predictedSpd = results.modulationAllMeas(i).meas.pr650.spectrum .* srfIncorporateFilter;
                     end
                 end
                 
