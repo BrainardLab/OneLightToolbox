@@ -138,6 +138,8 @@ try
         correctedPrimaryValues(:, ii) = primariesCorrectedAll{ii}(:, end);
     end
     
+    % Shutdown the spectrometer
+    spectroRadiometerOBJ.shutDown();
 catch e
     if (~isempty(spectroRadiometerOBJ))
         spectroRadiometerOBJ.shutDown();
