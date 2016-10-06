@@ -1,4 +1,4 @@
-function correctedPrimaryValues = OLCorrectPrimaryValues(cal, primaryValues, NIter, lambda, NDFilter, ...
+function [correctedPrimaryValues primariesCorrectedAll measuredSpd measuredSpdRaw predictedSpd] = OLCorrectPrimaryValues(cal, primaryValues, NIter, lambda, NDFilter, ...
     meterType, spectroRadiometerOBJ, spectroRadiometerOBJWillShutdownAfterMeasurement);
 
 try
@@ -79,9 +79,11 @@ try
     ol = OneLight;
     
     iter = 1;
-    while iter <= describe.NIter
+    while iter <= NIter
+        iter
         % Iterate over the primary values to correct
         for ii = 1:NPrimaryValues
+            ii
             % Pull out the primary values
             primaries = primaryValues(:, ii);
             
@@ -100,8 +102,8 @@ try
             [starts, stops] = OLSettingsToStartsStops(cal, settings);
             
             % Take measurement
-            tmpMeas = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
-            measuredSpdRaw{ii}(:, iter) = tmpMeas.meas.pr650.spectrum;
+            tmpMeas = OLTakeMeasurementOOC(ol, [], spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
+            measuredSpdRaw{ii}(:, iter) = tmpMeas.pr650.spectrum;
             measuredSpd{ii}(:, iter) = measuredSpdRaw{ii}(:, iter) .* NDFilter;
             
             % Figure out a scaling factor from the first measurement
