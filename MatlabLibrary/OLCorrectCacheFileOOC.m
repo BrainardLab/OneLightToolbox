@@ -142,7 +142,7 @@ openSpectroRadiometerOBJ = spectroRadiometerOBJ;
 
 % Populate the filter with onesif it is passed as empty
 if isempty(p.Results.srfIncorporateFilter)
-    ndFilter = ones(S(3), 1));
+    ndFilter = ones(S(3), 1);
 end
 
 % Force the file to be an absolute path instead of a relative one.  We do
