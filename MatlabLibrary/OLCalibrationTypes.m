@@ -21,6 +21,7 @@ classdef OLCalibrationTypes
         
         % Stubby Eye piece (scanner)
         BoxBRandomizedLongCableDStubby1_ND00('OLBoxBRandomizedLongCableDStubby1_ND00');
+        BoxBRandomizedLongCableDStubby1_ND02('OLBoxBRandomizedLongCableDStubby1_ND02');
         BoxCRandomizedLongCableDStubby1_ND05('OLBoxCRandomizedLongCableDStubby1_ND05');
         BoxCRandomizedLongCableDStubby1_ND10('OLBoxCRandomizedLongCableDStubby1_ND10');
     end
