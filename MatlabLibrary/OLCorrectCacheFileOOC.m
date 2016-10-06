@@ -143,6 +143,8 @@ openSpectroRadiometerOBJ = spectroRadiometerOBJ;
 % Populate the filter with onesif it is passed as empty
 if isempty(p.Results.srfIncorporateFilter)
     ndFilter = ones(S(3), 1);
+else
+    ndFilter = p.Results.srfIncorporateFilter;
 end
 
 % Force the file to be an absolute path instead of a relative one.  We do
@@ -335,7 +337,7 @@ try
                     modulationPrimary = cacheData.data(describe.REFERENCE_OBSERVER_AGE).backgroundPrimary+cacheData.data(describe.REFERENCE_OBSERVER_AGE).differencePrimary;
                 else
                     backgroundPrimary = backgroundPrimaryCorrected;
-                    modulationPrimary = modulationPrimaryCorrected;
+                    modulationPrimary = modulationPrimaryPositiveCorrected;
                 end
                 
                 % Refactor the cache data spectrum primaries to the power
@@ -360,7 +362,7 @@ try
                     results.modulationAllMeas(i).meas = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
                     
                     % Multiply with filter
-                    results.modulationAllMeas(i).meas.pr650.spectrum = results.modulationAllMeas(i).meas.pr650.spectrum .* srfIncorporateFilter;
+                    results.modulationAllMeas(i).meas.pr650.spectrum = results.modulationAllMeas(i).meas.pr650.spectrum .* ndFilter;
                     
                     % Save out information about this.
                     results.modulationAllMeas(i).powerLevel = powerLevels(i);
@@ -370,7 +372,7 @@ try
                     results.modulationAllMeas(i).stops = stops;
                     if iter == 1
                         results.modulationAllMeas(i).predictedSpd = cal.computed.pr650M*primaries + cal.computed.pr650MeanDark;
-                        results.modulationAllMeas(i).predictedSpd = results.modulationAllMeas(i).meas.pr650.spectrum .* srfIncorporateFilter;
+                        results.modulationAllMeas(i).predictedSpd = results.modulationAllMeas(i).meas.pr650.spectrum .* ndFilter;
                     end
                 end
                 
@@ -409,9 +411,9 @@ try
                     modMaxSpdAll(:, iter) = results.modulationMaxMeas.meas.pr650.spectrum;
                     
                     % Infer the primaries
-                    deltaModulationPrimaryInferred = OLSpdToPrimary(cal, (kScale*results.modulationMaxMeas.meas.pr650.spectrum)-...
+                    deltaModulationPrimaryPositiveInferred = OLSpdToPrimary(cal, (kScale*results.modulationMaxMeas.meas.pr650.spectrum)-...
                         results.modulationMaxMeas.predictedSpd, 'differentialMode', true);
-                    modulationPrimaryPositiveCorrected = modulationPrimary - describe.lambda*deltaModulationPrimaryInferred;
+                    modulationPrimaryPositiveCorrected = modulationPrimary - describe.lambda*deltaModulationPrimaryPositiveInferred;
                     modulationPrimaryPositiveCorrected(modulationPrimaryPositiveCorrected > 1) = 1;
                     modulationPrimaryPositiveCorrected(modulationPrimaryPositiveCorrected < 0) = 0;
                     modulationPrimaryPositiveCorrectedAll(:, iter) = modulationPrimaryPositiveCorrected;
@@ -427,9 +429,9 @@ try
                     modMinSpdAll(:, iter) = results.modulationMaxMeas.meas.pr650.spectrum;
                     
                     % Infer the primaries
-                    deltaModulationPrimaryInferred = OLSpdToPrimary(cal, (kScale*results.modulationMaxMeas.meas.pr650.spectrum)-...
+                    deltaModulationPrimaryNegativeInferred = OLSpdToPrimary(cal, (kScale*results.modulationMaxMeas.meas.pr650.spectrum)-...
                         results.modulationMaxMeas.predictedSpd, 'differentialMode', true);
-                    modulationPrimaryNegativeCorrected = modulationPrimary - describe.lambda*deltaModulationPrimaryInferred;
+                    modulationPrimaryNegativeCorrected = modulationPrimary - describe.lambda*deltaModulationPrimaryNegativeInferred;
                     modulationPrimaryNegativeCorrected(modulationPrimaryNegativeCorrected > 1) = 1;
                     modulationPrimaryNegativeCorrected(modulationPrimaryNegativeCorrected < 0) = 0;
                     modulationPrimaryNegativeCorrectedAll(:, iter) = modulationPrimaryNegativeCorrected;
