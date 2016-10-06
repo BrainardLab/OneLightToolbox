@@ -86,9 +86,9 @@ try
             ii
             % Pull out the primary values
             if iter == 1
-            primaries = primaryValues(:, ii);
+                primaries = primaryValues(:, ii);
             else
-               primaries = primariesCorrected; 
+                primaries = primariesCorrected;
             end
             
             % Predict the spectra
