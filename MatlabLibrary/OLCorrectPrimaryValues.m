@@ -85,7 +85,11 @@ try
         for ii = 1:NPrimaryValues
             ii
             % Pull out the primary values
+            if iter == 1
             primaries = primaryValues(:, ii);
+            else
+               primaries = primariesCorrected; 
+            end
             
             % Predict the spectra
             if iter == 1
@@ -131,7 +135,7 @@ try
     
     %% Assemble the values to be returned
     for ii = 1:NPrimaryValues
-        correctedPrimaryValues(:, ii) = primariesCorrected{ii}(:, end);
+        correctedPrimaryValues(:, ii) = primariesCorrectedAll{ii}(:, end);
     end
     
 catch e
