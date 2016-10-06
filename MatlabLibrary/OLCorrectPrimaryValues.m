@@ -1,4 +1,4 @@
-function [correctedPrimaryValues primariesCorrectedAll measuredSpd measuredSpdRaw predictedSpd] = OLCorrectPrimaryValues(cal, primaryValues, NIter, lambda, NDFilter, ...
+function [correctedPrimaryValues primariesCorrectedAll deltaPrimariesCorrectedAll measuredSpd measuredSpdRaw predictedSpd] = OLCorrectPrimaryValues(cal, primaryValues, NIter, lambda, NDFilter, ...
     meterType, spectroRadiometerOBJ, spectroRadiometerOBJWillShutdownAfterMeasurement);
 
 try
@@ -73,7 +73,7 @@ try
     % Omni. Therefore, we read out the toggle directly from the calibration
     % file. First entry is PR-6xx and is always true. Second entry is omni and
     % can be on or off, depending on content of calibration.
-    meterToggle = [1 cal.describe.useOmni];
+    meterToggle = [1 0];
     
     % Open up the OneLight
     ol = OneLight;
@@ -126,7 +126,7 @@ try
             primariesCorrected(primariesCorrected > 1) = 1;
             primariesCorrected(primariesCorrected < 0) = 0;
             primariesCorrectedAll{ii}(:, iter) = primariesCorrected;
-            deltaPrimariesCorrectedAll{ii}(:, iter)= deltaPrimaryInferred;
+            deltaPrimariesCorrectedAll{ii}(:, iter) = deltaPrimaryInferred;
         end
         
         % Increment
