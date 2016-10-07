@@ -59,8 +59,6 @@ switch params.backgroundType
         %% Parse some of the parameter fields
         photoreceptorClasses = allwords(params.photoreceptorClasses, ',');
         
-        %% Pupil diameter. Our artificial pupil is 4.7 mm, so we set this to be 4.7 mm here.
-        pupilDiameterMm = 4.7; % mm
         
         %% Set up what will be common to all observer ages
         %% Pull out the 'M' matrix
@@ -125,11 +123,11 @@ switch params.backgroundType
         
         %% Get cone spectral sensitivities to use to compute isomerization rates
         lambdaMaxShift = zeros(1, length(photoreceptorClasses));
-        [T_cones, T_quantalIsom]  = GetHumanPhotoreceptorSS(S, {'LCone' 'MCone' 'SCone'}, params.fieldSizeDegrees, observerAgeInYears, pupilDiameterMm, [], []);
-        [T_conesHemo, T_quantalIsomHemo]  = GetHumanPhotoreceptorSS(S, {'LConeTabulatedAbsorbancePenumbral' 'MConeTabulatedAbsorbancePenumbral' 'SConeTabulatedAbsorbancePenumbral'}, params.fieldSizeDegrees, observerAgeInYears, pupilDiameterMm, [], []);
+        [T_cones, T_quantalIsom]  = GetHumanPhotoreceptorSS(S, {'LCone' 'MCone' 'SCone'}, params.fieldSizeDegrees, observerAgeInYears, params.pupilDiameterMm, [], []);
+        [T_conesHemo, T_quantalIsomHemo]  = GetHumanPhotoreceptorSS(S, {'LConeTabulatedAbsorbancePenumbral' 'MConeTabulatedAbsorbancePenumbral' 'SConeTabulatedAbsorbancePenumbral'}, params.fieldSizeDegrees, observerAgeInYears, params.pupilDiameterMm, [], []);
         
         %% Compute irradiance, trolands, etc.
-        pupilAreaMm2 = pi*((pupilDiameterMm/2)^2);
+        pupilAreaMm2 = pi*((params.pupilDiameterMm/2)^2);
         eyeLengthMm = 17;
         degPerMm = RetinalMMToDegrees(1,eyeLengthMm);
         irradianceWattsPerUm2 = RadianceToRetIrradiance(radianceWattsPerM2Sr,S,pupilAreaMm2,eyeLengthMm);
@@ -158,10 +156,8 @@ switch params.backgroundType
             fractionBleachedFromIsom(i) = ComputePhotopigmentBleaching(theLMSIsomerizations(i),'cones','isomerizations','Boynton');
             fractionBleachedFromIsomHemo(i) = ComputePhotopigmentBleaching(theLMSIsomerizationsHemo(i),'cones','isomerizations','Boynton');
         end
-        fprintf('    * Luminance <strong>%0.1f</strong> cd/m2\n',photopicLuminanceCdM2);
-        fprintf('    * Retinal irradiance <strong>%0.1f</strong> ph td / <strong>%0.1f</strong> log ph td\n',irradiancePhotTrolands,log10(irradiancePhotTrolands));
-        fprintf('    * Retinal irradiance <strong>%0.1f</strong> sc td / <strong>%0.1f</strong> log sc td\n',irradianceScotTrolands, log10(irradianceScotTrolands));
-        
+        GetLuminanceAndTrolandsFromSpd(S, radianceWattsPerM2Sr, params.pupilDiameterMm, true);
+
         % We can now assign the fraction bleached for each photoreceptor
         % class.
         for p = 1:length(photoreceptorClasses)
@@ -190,7 +186,7 @@ switch params.backgroundType
         %end
         
         % Construct the receptor matrix
-        T_receptors = GetHumanPhotoreceptorSS(S, photoreceptorClasses, params.fieldSizeDegrees, observerAgeInYears, pupilDiameterMm, lambdaMaxShift, fractionBleached);
+        T_receptors = GetHumanPhotoreceptorSS(S, photoreceptorClasses, params.fieldSizeDegrees, observerAgeInYears, params.pupilDiameterMm, lambdaMaxShift, fractionBleached);
         
         % Calculate the receptor activations to the background
         backgroundReceptors = T_receptors*(B_primary*backgroundPrimary + ambientSpd);
