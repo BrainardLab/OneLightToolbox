@@ -18,7 +18,7 @@ calIn = OLGetCalibrationStructure;
 filterName = GetWithDefault('Enter filter name','ND20');
 filterDate = GetWithDefault('Enter filter measurement date','070313');
 filterFile = ['srf_filter_' filterName '_' filterDate];
-theFilter = load(fullfile(CalDataFolder,'OneLight','xNDFilters',filterFile));
+theFilter = load(fullfile(getpref('OneLight', 'OneLightCalData'),'xNDFilters',filterFile));
 eval(['S_filter = theFilter.S_filter_' filterName ';']);
 eval(['srf_filter = theFilter.srf_filter_' filterName ';']);
 
