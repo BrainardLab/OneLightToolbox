@@ -28,7 +28,6 @@ calOut.describe.filterName = filterName;
 calOut.describe.filterDate = filterDate;
 
 % Get output calibraion type from enumerated list
-oneLightCalSubdir = 'OneLight';
 calTypes = enumeration('OLCalibrationTypes');
 while true
     fprintf('\n- Available output calibration types:\n');
@@ -48,6 +47,5 @@ if (~strcmp([calIn.describe.calType.CalFileName '_' filterName],calOut.describe.
 end
 
 % Save
-oneLightCalSubdir = 'OneLight';
-SaveCalFile(calOut, fullfile(oneLightCalSubdir,calOut.describe.calType.CalFileName));
+SaveCalFile(calOut, calOut.describe.calType.CalFileName, fullfile(getpref('OneLight', 'OneLightCalData')));
     
