@@ -278,9 +278,6 @@ else
                 fractionBleachedFromIsom(i) = ComputePhotopigmentBleaching(theLMSIsomerizations(i),'cones','isomerizations','Boynton');
                 fractionBleachedFromIsomHemo(i) = ComputePhotopigmentBleaching(theLMSIsomerizationsHemo(i),'cones','isomerizations','Boynton');
             end
-            fprintf('    * Luminance <strong>%0.1f</strong> cd/m2\n',photopicLuminanceCdM2);
-            fprintf('    * Retinal irradiance <strong>%0.1f</strong> ph td / <strong>%0.1f</strong> log ph td\n',irradiancePhotTrolands,log10(irradiancePhotTrolands));
-            fprintf('    * Retinal irradiance <strong>%0.1f</strong> sc td / <strong>%0.1f</strong> log sc td\n',irradianceScotTrolands, log10(irradianceScotTrolands));
             
             % We can now assign the fraction bleached for each photoreceptor
             % class.
@@ -429,11 +426,8 @@ else
             fractionBleachedFromIsom(i) = ComputePhotopigmentBleaching(theLMSIsomerizations(i),'cones','isomerizations','Boynton');
             fractionBleachedFromIsomHemo(i) = ComputePhotopigmentBleaching(theLMSIsomerizationsHemo(i),'cones','isomerizations','Boynton');
         end
-        fprintf('    * Luminance <strong>%0.1f</strong> cd/m2\n',photopicLuminanceCdM2);
-        fprintf('    * Retinal irradiance <strong>%0.1f</strong> ph td / <strong>%0.1f</strong> log ph td\n',irradiancePhotTrolands,log10(irradiancePhotTrolands));
-        fprintf('    * Retinal irradiance <strong>%0.1f</strong> sc td / <strong>%0.1f</strong> log sc td\n',irradianceScotTrolands, log10(irradianceScotTrolands));
-        
-        
+
+
         % We can now assign the fraction bleached for each photoreceptor
         % class.
         for p = 1:length(photoreceptorClasses)
@@ -482,16 +476,11 @@ else
         if strfind(cacheFileName, 'LightFlux')
             modulationPrimary = backgroundPrimary+backgroundPrimary*max(desiredContrasts);
         else
-            %
             %% Isolate the receptors by calling the wrapper
             modulationPrimary = ReceptorIsolate(T_receptors, whichReceptorsToIsolate, ...
                 whichReceptorsToIgnore,whichReceptorsToMinimize,B_primary,backgroundPrimary,...
                 initialPrimary,whichPrimariesToPin,params.primaryHeadRoom,params.maxPowerDiff,...
                 desiredContrasts,ambientSpd);
-            %             catch e
-            %                 cacheData = [];
-            %                 return
-            %             end
             
         end
         modulationSpd = B_primary*modulationPrimary + ambientSpd;
@@ -514,17 +503,13 @@ else
         differenceSpdSignedNegative = B_primary*(modulationPrimarySignedNegative-backgroundPrimary);
         differenceReceptors = T_receptors*differenceSpdSignedNegative;
         isolateContrastsSignedNegative = differenceReceptors ./ backgroundReceptors;
-        
-        fprintf('\n> Observer age: %g\n',observerAgeInYears);
-        for j = 1:size(T_receptors,1)
-            fprintf('  - %s: contrast = \t%f / %f\n',photoreceptorClasses{j},isolateContrastsSignedPositive(j),isolateContrastsSignedNegative(j));
-        end
-        
-        plot(SToWls(S), OLPrimaryToSpd(cal, modulationPrimarySignedPositive), '-r'); hold on;
-        plot(SToWls(S), backgroundSpd, '-k');
-        xlim([380 780]);
-        xlabel('Wavelength [nm]'); ylabel('Power'); title('+ve modulation'); pbaspect([1 1 1]);
-        
+
+        % Print out contrasts
+        ComputeAndReportContrastsFromSpds(sprintf('\n> Observer age: %g',observerAgeInYears),photoreceptorClasses,T_receptors,backgroundSpd,modulationSpd,[],[]);
+
+        % Print ouf luminance info.
+        GetLuminanceAndTrolandsFromSpd(S, radianceWattsPerM2Sr, pupilDiameterMm, true);
+
         % Assign all the cache fields
         
         %% Save out important information
