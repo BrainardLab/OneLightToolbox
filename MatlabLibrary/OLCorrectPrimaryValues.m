@@ -120,7 +120,7 @@ try
             end
             
             % Infer the primaries
-            deltaPrimaryInferred = OLSpdToPrimary(cal, (kScale * measuredSpd{ii}(:, iter) .* NDFilter)-...
+            deltaPrimaryInferred = OLSpdToPrimary(cal, (kScale * measuredSpd{ii}(:, iter))-...
                 predictedSpd(:, ii), 'differentialMode', true);
             primariesCorrected = primaries - lambda * deltaPrimaryInferred;
             primariesCorrected(primariesCorrected > 1) = 1;
