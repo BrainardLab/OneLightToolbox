@@ -96,10 +96,27 @@ fprintf(['\n* Running precalculations for ' fileNameSave '\n']);
 backgroundPrimary = cacheData.backgroundPrimary;
 
 % Get the modulation primary
+BIPOLAR_CORRECTION = false; % Assume that the correction hasn't been done for both excursions by default
 if strfind(fileNameSave, 'Background') % Background case
     modulationPrimary = backgroundPrimary;
+    modulationPrimary(:) = 0;
+    diffPrimaryPos = modulationPrimary;
 else
-    modulationPrimary = cacheData.modulationPrimarySignedPositive;
+    if isfield(cacheData, 'correction')
+        if isfield(cacheData.correction, 'modulationPrimaryPositiveCorrectedAll') & isfield(cacheData.correction, 'modulationPrimaryNegativeCorrectedAll')
+            BIPOLAR_CORRECTION = true;
+            modulationPrimary = cacheData.modulationPrimarySignedPositive;
+            diffPrimaryPos = cacheData.modulationPrimarySignedPositive-backgroundPrimary;
+            diffPrimaryNeg = cacheData.modulationPrimarySignedNegative-backgroundPrimary;
+        else
+            BIPOLAR_CORRECTION = false;
+            modulationPrimary = cacheData.modulationPrimarySignedPositivey;
+            diffPrimaryPos = modulationPrimary-backgroundPrimary;
+        end
+    else
+        modulationPrimary = cacheData.modulationPrimarySignedPositive;
+        diffPrimaryPos = modulationPrimary-backgroundPrimary;
+    end
 end
 % Save to specific file
 params.observerAgeInYears = observerAgeInYears;
@@ -163,7 +180,11 @@ for f = 1:params.nFrequencies
             
             fprintf('* Calculating %0.f s of %s, %.2f Hz, %.2f deg, %.1f pct contrast (of max)\n         ', waveform.duration, waveform.direction, waveform.theFrequencyHz, waveform.thePhaseDeg, 100*waveform.theContrastRelMax);
             % Calculate it.
-            modulation(f, p, c) = OLCalculateStartsStopsModulation(waveform, describe.cal, backgroundPrimary, modulationPrimary-backgroundPrimary);
+            if BIPOLAR_CORRECTION % pass both arms of the modulation if both were corrected
+                modulation(f, p, c) = OLCalculateStartsStopsModulation(waveform, describe.cal, backgroundPrimary, diffPrimaryPos, diffPrimaryNeg);
+            else
+                modulation(f, p, c) = OLCalculateStartsStopsModulation(waveform, describe.cal, backgroundPrimary, diffPrimaryPos, []);
+            end
             fprintf('  - Done.\n');
         end
     end
