@@ -96,7 +96,7 @@ try
                 % Make a prediction
                 predictedSpdRaw(:, ii) = cal.computed.pr650M*primaries + cal.computed.pr650MeanDark;
                 % Incorporate the filter
-                predictedSpd(:, ii) = predictedSpdRaw(:, ii) .* NDFilter;
+                predictedSpd(:, ii) = predictedSpdRaw(:, ii);
             end
             
             % Convert the primaries to mirror settings.
@@ -120,7 +120,7 @@ try
             end
             
             % Infer the primaries
-            deltaPrimaryInferred = OLSpdToPrimary(cal, (kScale * measuredSpd{ii}(:, iter))-...
+            deltaPrimaryInferred = OLSpdToPrimary(cal, (kScale * measuredSpd{ii}(:, iter) .* NDFilter)-...
                 predictedSpd(:, ii), 'differentialMode', true);
             primariesCorrected = primaries - lambda * deltaPrimaryInferred;
             primariesCorrected(primariesCorrected > 1) = 1;
