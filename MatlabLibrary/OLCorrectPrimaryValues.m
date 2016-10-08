@@ -82,12 +82,14 @@ try
     % Open up the OneLight
     ol = OneLight;
     
+    % Print out some information
+    fprintf('\n- <strong>Starting correction procedure</strong>...');
     iter = 1;
     while iter <= NIter
-        iter
+        fprintf('\n\n* <strong>Iteration</strong> %g / %g', iter, NIter);
         % Iterate over the primary values to correct
         for ii = 1:NPrimaryValues
-            ii
+            fprintf('\n* <strong>Primary</strong> %g / %g', ii, NPrimaryValues);
             % Pull out the primary values
             if iter == 1
                 primaries = primaryValues(:, ii);
@@ -139,6 +141,7 @@ try
         % Increment
         iter = iter+1;
     end
+    fprintf('\n- <strong>Correction done.</strong>')
     
     %% Assemble the values to be returned
     for ii = 1:NPrimaryValues
