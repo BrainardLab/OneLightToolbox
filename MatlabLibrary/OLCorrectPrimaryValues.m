@@ -86,10 +86,10 @@ try
     fprintf('\n- <strong>Starting correction procedure</strong>...');
     iter = 1;
     while iter <= NIter
-        fprintf('\n\n* <strong>Iteration</strong> %g / %g', iter, NIter);
+        fprintf('\n\n* Iteration\t <strong>%g / %g</strong>', iter, NIter);
         % Iterate over the primary values to correct
         for ii = 1:NPrimaryValues
-            fprintf('\n* <strong>Primary</strong> %g / %g ...', ii, NPrimaryValues);
+            fprintf('\n  * Primary\t <strong>%g / %g</strong> ...', ii, NPrimaryValues);
             % Pull out the primary values
             if iter == 1
                 primaries = primaryValues(:, ii);
@@ -138,7 +138,7 @@ try
             measuredSpd{ii}(:, iter) = measuredSpd{ii}(:, iter) .* NDFilter;
             
             % Some status info.
-            fprintf('Done'.);
+            fprintf('Done.');
         end
         
         % Increment
