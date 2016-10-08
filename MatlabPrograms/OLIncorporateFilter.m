@@ -48,4 +48,3 @@ end
 
 % Save
 SaveCalFile(calOut, calOut.describe.calType.CalFileName, fullfile(getpref('OneLight', 'OneLightCalData')));
-    
