@@ -1,4 +1,4 @@
-function [correctedPrimaryValues primariesCorrectedAll deltaPrimariesCorrectedAll measuredSpd measuredSpdRaw predictedSpd] = OLCorrectPrimaryValues(cal, primaryValues, NIter, lambda, NDFilter, ...
+function [correctedPrimaryValues primariesCorrectedAll deltaPrimariesCorrectedAll measuredSpd measuredSpdRaw predictedSpd] = OLCorrectPrimaryValues(cal, cal0, primaryValues, NIter, lambda, NDFilter, ...
     meterType, spectroRadiometerOBJ, spectroRadiometerOBJWillShutdownAfterMeasurement);
 
 try
@@ -96,19 +96,19 @@ try
                 % Make a prediction
                 predictedSpdRaw(:, ii) = cal.computed.pr650M*primaries + cal.computed.pr650MeanDark;
                 % Incorporate the filter
-                predictedSpd(:, ii) = predictedSpdRaw(:, ii);
+                predictedSpd(:, ii) = predictedSpdRaw(:, ii) ./ NDFilter;
             end
             
             % Convert the primaries to mirror settings.
-            settings = OLPrimaryToSettings(cal, primaries);
+            settings = OLPrimaryToSettings(cal0, primaries);
             
             % Compute the start/stop mirrors.
-            [starts, stops] = OLSettingsToStartsStops(cal, settings);
+            [starts, stops] = OLSettingsToStartsStops(cal0, settings);
             
             % Take measurement
             tmpMeas = OLTakeMeasurementOOC(ol, [], spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
             measuredSpdRaw{ii}(:, iter) = tmpMeas.pr650.spectrum;
-            measuredSpd{ii}(:, iter) = measuredSpdRaw{ii}(:, iter) .* NDFilter;
+            measuredSpd{ii}(:, iter) = measuredSpdRaw{ii}(:, iter);
             
             % Figure out a scaling factor from the first measurement
             % which puts the measured spectrum into the same range as
@@ -120,13 +120,16 @@ try
             end
             
             % Infer the primaries
-            deltaPrimaryInferred = OLSpdToPrimary(cal, (kScale * measuredSpd{ii}(:, iter))-...
-                predictedSpd(:, ii), 'differentialMode', true, 'lambda', 0.1*median(NDFilter));
+            deltaPrimaryInferred = OLSpdToPrimary(cal0, (kScale * measuredSpd{ii}(:, iter))-predictedSpd(:, ii), ...
+                'differentialMode', true);
             primariesCorrected = primaries - lambda * deltaPrimaryInferred;
             primariesCorrected(primariesCorrected > 1) = 1;
             primariesCorrected(primariesCorrected < 0) = 0;
             primariesCorrectedAll{ii}(:, iter) = primariesCorrected;
             deltaPrimariesCorrectedAll{ii}(:, iter) = deltaPrimaryInferred;
+            
+            % Add the filter back in
+            measuredSpd{ii}(:, iter) = measuredSpd{ii}(:, iter) .* NDFilter;
         end
         
         % Increment
