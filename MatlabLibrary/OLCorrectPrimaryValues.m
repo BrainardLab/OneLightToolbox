@@ -1,5 +1,9 @@
-function [correctedPrimaryValues primariesCorrectedAll deltaPrimariesCorrectedAll measuredSpd measuredSpdRaw predictedSpd] = OLCorrectPrimaryValues(cal, cal0, primaryValues, NIter, lambda, NDFilter, ...
-    meterType, spectroRadiometerOBJ, spectroRadiometerOBJWillShutdownAfterMeasurement);
+function [correctedPrimaryValues primariesCorrectedAll deltaPrimariesCorrectedAll measuredSpd measuredSpdRaw predictedSpd] = OLCorrectPrimaryValues(cal, cal0, primaryValues, NIter, lambda, NDFilter, meterType, spectroRadiometerOBJ, spectroRadiometerOBJWillShutdownAfterMeasurement);
+% [correctedPrimaryValues primariesCorrectedAll deltaPrimariesCorrectedAll measuredSpd measuredSpdRaw predictedSpd] = OLCorrectPrimaryValues(cal, cal0, primaryValues, NIter, lambda, NDFilter, meterType, spectroRadiometerOBJ, spectroRadiometerOBJWillShutdownAfterMeasurement);
+%
+% This function corrects abunch of primary settings.
+% 
+% 10/8/16   ms      Wrote it.
 
 try
     %% Open the spectrometer
