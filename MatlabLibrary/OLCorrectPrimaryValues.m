@@ -89,7 +89,7 @@ try
         fprintf('\n\n* <strong>Iteration</strong> %g / %g', iter, NIter);
         % Iterate over the primary values to correct
         for ii = 1:NPrimaryValues
-            fprintf('\n* <strong>Primary</strong> %g / %g', ii, NPrimaryValues);
+            fprintf('\n* <strong>Primary</strong> %g / %g ...', ii, NPrimaryValues);
             % Pull out the primary values
             if iter == 1
                 primaries = primaryValues(:, ii);
@@ -136,6 +136,9 @@ try
             
             % Add the filter back in
             measuredSpd{ii}(:, iter) = measuredSpd{ii}(:, iter) .* NDFilter;
+            
+            % Some status info.
+            fprintf('Done'.);
         end
         
         % Increment
