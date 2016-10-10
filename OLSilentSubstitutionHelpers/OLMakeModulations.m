@@ -110,7 +110,7 @@ else
             diffPrimaryNeg = cacheData.modulationPrimarySignedNegative-backgroundPrimary;
         else
             BIPOLAR_CORRECTION = false;
-            modulationPrimary = cacheData.modulationPrimarySignedPositivey;
+            modulationPrimary = cacheData.modulationPrimarySignedPositive;
             diffPrimaryPos = modulationPrimary-backgroundPrimary;
         end
     else
