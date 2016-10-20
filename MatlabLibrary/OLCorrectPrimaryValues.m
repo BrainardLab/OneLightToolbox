@@ -1,9 +1,22 @@
-function [correctedPrimaryValues primariesCorrectedAll deltaPrimariesCorrectedAll measuredSpd measuredSpdRaw predictedSpd] = OLCorrectPrimaryValues(cal, cal0, primaryValues, NIter, lambda, NDFilter, meterType, spectroRadiometerOBJ, spectroRadiometerOBJWillShutdownAfterMeasurement);
-% [correctedPrimaryValues primariesCorrectedAll deltaPrimariesCorrectedAll measuredSpd measuredSpdRaw predictedSpd] = OLCorrectPrimaryValues(cal, cal0, primaryValues, NIter, lambda, NDFilter, meterType, spectroRadiometerOBJ, spectroRadiometerOBJWillShutdownAfterMeasurement);
+function [correctedPrimaryValues, primariesCorrectedAll, deltaPrimariesCorrectedAll, measuredSpd, measuredSpdRaw, predictedSpd, varargout] = OLCorrectPrimaryValues(cal, cal0, primaryValues, NIter, lambda, NDFilter, meterType, spectroRadiometerOBJ, spectroRadiometerOBJWillShutdownAfterMeasurement, varargin)
+% [correctedPrimaryValues, primariesCorrectedAll, deltaPrimariesCorrectedAll, measuredSpd, measuredSpdRaw, predictedSpd, varargout] = OLCorrectPrimaryValues(cal, cal0, primaryValues, NIter, lambda, NDFilter, meterType, spectroRadiometerOBJ, spectroRadiometerOBJWillShutdownAfterMeasurement);
 %
 % This function corrects abunch of primary settings.
-% 
+% varargin (keyword-value)  - A few keywords which determine the behavior
+%                             'takeTemperatureMeasurements' false  Whether
+%                             to take temperature measurements (requires a
+%                             connected LabJack dev with a temperature
+%                             probe). If set to true, the varagout{1} will
+%                             contain the temperature data
+%
 % 10/8/16   ms      Wrote it.
+% 10/20/16 npc      Added ability to record temperature measurements
+
+% Parse the input
+p = inputParser;
+p.addOptional('takeTemperatureMeasurements', false, @islogical);
+p.parse(varargin{:});
+takeTemperatureMeasurements = p.Results.takeTemperatureMeasurements;
 
 try
     %% Open the spectrometer
@@ -59,6 +72,15 @@ try
             end
             keyboard;
             rethrow(err);
+        end
+        
+        % Attempt to open the LabJack temperature sensing device
+        if (takeTemperatureMeasurements)
+            % Gracefully attempt to open the LabJack
+            [takeTemperatureMeasurements, quitNow] = OLCalibrator.OpenLabJackTemperatureProbe(takeTemperatureMeasurements);
+            if (quitNow)
+                return;
+            end
         end
     end
     openSpectroRadiometerOBJ = spectroRadiometerOBJ;
@@ -137,6 +159,11 @@ try
             % Add the filter back in
             measuredSpd{ii}(:, iter) = measuredSpd{ii}(:, iter) .* NDFilter;
             
+            % Take temperature
+            if (takeTemperatureMeasurements)
+                temperatureData.measuredSPD{ii}(:, iter) = LJTemperatureProbe('measure');
+            end
+        
             % Some status info.
             fprintf('Done.');
         end
@@ -151,8 +178,14 @@ try
         correctedPrimaryValues(:, ii) = primariesCorrectedAll{ii}(:, end);
     end
     
+    %% Return temperature data if so specified
+    if (takeTemperatureMeasurements)
+        varargout{1} = temperatureData;
+    end
+    
     % Shutdown the spectrometer
     spectroRadiometerOBJ.shutDown();
+    
 catch e
     if (~isempty(spectroRadiometerOBJ))
         spectroRadiometerOBJ.shutDown();

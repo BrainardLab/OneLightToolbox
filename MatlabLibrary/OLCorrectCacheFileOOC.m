@@ -43,7 +43,10 @@ function [cacheData olCache openSpectroRadiometerOBJ] = OLCorrectCacheFileOOC(ca
 %                                                             iterations
 %                             'lambda'              scalar    Learning rate
 %                             'postreceptoralCombinations'  scalar     Post-receptoral combinations to calculate contrast w.r.t.
-%
+%                             'takeTemperatureMeasurements' false  Whether
+%                             to take temperature measurements (requires a
+%                             connected LabJack dev with a temperature
+%                             probe)
 % Output:
 % results (struct) - Results struct. This is different depending on which
 % mode is used.
@@ -52,6 +55,7 @@ function [cacheData olCache openSpectroRadiometerOBJ] = OLCorrectCacheFileOOC(ca
 % 1/21/14  dhb, ms  Convert to use OLSettingsToStartsStops.
 % 1/30/14  ms       Added keyword parameters to make this useful.
 % 7/06/16  npc      Adapted to use PR650dev/PR670dev objects
+% 10/20/16 npc      Added ability to record temperature measurements
 
 % Parse the input
 p = inputParser;
@@ -72,10 +76,12 @@ p.addOptional('powerLevels', 32, @isnumeric);
 p.addOptional('doCorrection', true, @islogical);
 p.addOptional('postreceptoralCombinations', [], @isnumeric);
 p.addOptional('outDir', [], @isstr);
+p.addOptional('takeTemperatureMeasurements', false, @islogical);
 
 p.parse(varargin{:});
 describe = p.Results;
 powerLevels = describe.powerLevels;
+takeTemperatureMeasurements = describe.takeTemperatureMeasurements;
 
 if isempty(emailRecipient)
     emailRecipient = GetWithDefault('Send status email to','igdalova@mail.med.upenn.edu');
@@ -135,6 +141,15 @@ if (isempty(spectroRadiometerOBJ))
             ['Calibration failed with the following error' 10 err.message]);
         keyboard;
         rethrow(err);
+    end
+    
+    % Attempt to open the LabJack temperature sensing device
+    if (takeTemperatureMeasurements)
+        % Gracefully attempt to open the LabJack
+        [takeTemperatureMeasurements, quitNow] = OLCalibrator.OpenLabJackTemperatureProbe(takeTemperatureMeasurements);
+        if (quitNow)
+            return;
+        end
     end
 end
 openSpectroRadiometerOBJ = spectroRadiometerOBJ;
@@ -284,6 +299,10 @@ try
         results.fullOnMeas.starts = starts;
         results.fullOnMeas.stops = stops;
         results.fullOnMeas.predictedFromCal = cal.raw.fullOn(:, 1);
+        % Take temperature
+        if (takeTemperatureMeasurements)
+            results.temperature.fullOnMeas = LJTemperatureProbe('measure');
+        end
     end
     
     if describe.HalfOnMeas
@@ -293,6 +312,10 @@ try
         results.halfOnMeas.starts = starts;
         results.halfOnMeas.stops = stops;
         results.halfOnMeas.predictedFromCal = cal.raw.halfOnMeas(:, 1);
+        % Take temperature
+        if (takeTemperatureMeasurements)
+            results.temperature.halfOnMeas = LJTemperatureProbe('measure');
+        end 
     end
     
     if describe.DarkMeas
@@ -302,6 +325,10 @@ try
         results.offMeas.starts = starts;
         results.offMeas.stops = stops;
         results.offMeas.predictedFromCal = cal.raw.darkMeas(:, 1);
+        % Take temperature
+        if (takeTemperatureMeasurements)
+            results.temperature.offMeas = LJTemperatureProbe('measure');
+        end
     end
     
     if describe.CalStateMeas
@@ -377,6 +404,10 @@ try
                     if iter == 1
                         results.modulationAllMeas(i).predictedSpd = cal.computed.pr650M*primaries + cal.computed.pr650MeanDark;
                     end
+                    % Take temperature
+                    if (takeTemperatureMeasurements)
+                        results.temperature.modulationAllMeas(i,:) = LJTemperatureProbe('measure');
+                    end 
                 end
                 
                 % For convenience we pull out the max., min. and background.
@@ -467,6 +498,10 @@ try
             cacheData.data(ii).operatingPoint = [];
             cacheData.data(ii).computeMethod = [];
         end
+    end
+    
+    if (takeTemperatureMeasurements)  
+        cacheData.temperatureData = results.temperature;
     end
     
     % Turn the OneLight mirrors off.
