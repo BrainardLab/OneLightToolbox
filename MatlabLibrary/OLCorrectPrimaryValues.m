@@ -1,8 +1,8 @@
 function [correctedPrimaryValues, primariesCorrectedAll, deltaPrimariesCorrectedAll, measuredSpd, measuredSpdRaw, predictedSpd, varargout] = OLCorrectPrimaryValues(cal, cal0, primaryValues, NIter, lambda, NDFilter, meterType, spectroRadiometerOBJ, spectroRadiometerOBJWillShutdownAfterMeasurement, varargin)
-% [correctedPrimaryValues, primariesCorrectedAll, deltaPrimariesCorrectedAll, measuredSpd, measuredSpdRaw, predictedSpd, varargout] = OLCorrectPrimaryValues(cal, cal0, primaryValues, NIter, lambda, NDFilter, meterType, spectroRadiometerOBJ, spectroRadiometerOBJWillShutdownAfterMeasurement);
+% [correctedPrimaryValues, primariesCorrectedAll, deltaPrimariesCorrectedAll, measuredSpd, measuredSpdRaw, predictedSpd, varargout] = OLCorrectPrimaryValues(cal, cal0, primaryValues, NIter, lambda, NDFilter, meterType, spectroRadiometerOBJ, spectroRadiometerOBJWillShutdownAfterMeasurement, varargin);
 %
 % This function corrects abunch of primary settings.
-% varargin (keyword-value)  - A few keywords which determine the behavior
+% varargin (keyword-value)  - A few keywords which determine the behavior.
 %                             'takeTemperatureMeasurements' false  Whether
 %                             to take temperature measurements (requires a
 %                             connected LabJack dev with a temperature
