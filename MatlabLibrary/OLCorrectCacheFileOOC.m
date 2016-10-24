@@ -301,7 +301,8 @@ try
         results.fullOnMeas.predictedFromCal = cal.raw.fullOn(:, 1);
         % Take temperature
         if (takeTemperatureMeasurements)
-            results.temperature.fullOnMeas = LJTemperatureProbe('measure');
+            printf('Taking temperature for fullOnMeas\n');
+            [status, results.temperature.fullOnMeas] = LJTemperatureProbe('measure');
         end
     end
     
@@ -314,7 +315,7 @@ try
         results.halfOnMeas.predictedFromCal = cal.raw.halfOnMeas(:, 1);
         % Take temperature
         if (takeTemperatureMeasurements)
-            results.temperature.halfOnMeas = LJTemperatureProbe('measure');
+            [status, results.temperature.halfOnMeas] = LJTemperatureProbe('measure');
         end 
     end
     
@@ -327,7 +328,7 @@ try
         results.offMeas.predictedFromCal = cal.raw.darkMeas(:, 1);
         % Take temperature
         if (takeTemperatureMeasurements)
-            results.temperature.offMeas = LJTemperatureProbe('measure');
+            [status, results.temperature.offMeas] = LJTemperatureProbe('measure');
         end
     end
     
@@ -406,7 +407,8 @@ try
                     end
                     % Take temperature
                     if (takeTemperatureMeasurements)
-                        results.temperature.modulationAllMeas(i,:) = LJTemperatureProbe('measure');
+                        [status, tempData] = LJTemperatureProbe('measure');
+                        results.temperature.modulationAllMeas(iter, i, :) = tempData;
                     end 
                 end
                 
