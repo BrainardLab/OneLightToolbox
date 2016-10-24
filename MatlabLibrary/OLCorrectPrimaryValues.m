@@ -161,7 +161,7 @@ try
             
             % Take temperature
             if (takeTemperatureMeasurements)
-                temperatureData.measuredSPD{ii}(:, iter) = LJTemperatureProbe('measure');
+                [status, temperatureData.measuredSPD{ii}(iter,:)] = LJTemperatureProbe('measure');
             end
         
             % Some status info.

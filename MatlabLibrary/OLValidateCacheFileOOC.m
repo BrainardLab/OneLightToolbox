@@ -314,7 +314,7 @@ try
         results.fullOnMeas.predictedFromCal = cal.raw.fullOn(:, 1);
         % Take temperature
         if (takeTemperatureMeasurements)
-            results.temperature.fullOnMeas = LJTemperatureProbe('measure');
+            [status, results.temperature.fullOnMeas] = LJTemperatureProbe('measure');
         end 
     end
     
@@ -327,7 +327,7 @@ try
         results.halfOnMeas.predictedFromCal = cal.raw.halfOnMeas(:, 1);
         % Take temperature
         if (takeTemperatureMeasurements)
-            results.temperature.halfOnMeas = LJTemperatureProbe('measure');
+            [status, results.temperature.halfOnMeas] = LJTemperatureProbe('measure');
         end 
     end
     
@@ -340,7 +340,7 @@ try
         results.offMeas.predictedFromCal = cal.raw.darkMeas(:, 1);
         % Take temperature
         if (takeTemperatureMeasurements)
-            results.temperature.offMeas = LJTemperatureProbe('measure');
+            [status, results.temperature.offMeas] = LJTemperatureProbe('measure');
         end 
     end
     
@@ -403,7 +403,7 @@ try
                 results.modulationAllMeas(i).predictedSpd = cal.computed.pr650M*primaries + cal.computed.pr650MeanDark;
                 % Take temperature
                 if (takeTemperatureMeasurements)
-                    results.temperature.modulationAllMeas(i,:) = LJTemperatureProbe('measure');
+                    [status, results.temperature.modulationAllMeas(i, :)] = LJTemperatureProbe('measure');
                 end 
         
             end
@@ -454,7 +454,7 @@ try
                     results.meas(j, i) = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
                     
                     if (takeTemperatureMeasurements)
-                        results.temperature.meas(j, i, :) = LJTemperatureProbe('measure');
+                        [status, results.temperature.meas(j, i, :)] = LJTemperatureProbe('measure');
                     end 
                     fprintf('Done\n');
                 end
