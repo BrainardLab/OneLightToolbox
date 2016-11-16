@@ -33,9 +33,9 @@ function [spectralShifts, refPeaks, fitParams, paramNames] = OLComputeSpectralSh
         xData = spectralAxis(dataIndicesToFit);
         xDataHiRes = (xData(1):0.1:xData(end))';
         
-        initialParams    = [0   5  peak     6.28   6.28  2.0];
-        paramLowerBounds = [0   0  peak-20  1.00   1.00  1.5]; 
-        paramUpperBounds = [0  10  peak+20 10.00  10.00  4.0];
+        initialParams    = [0   5   peak     6.28   6.28  2.0];
+        paramLowerBounds = [0   0   peak-30  1.00   1.00  1.5]; 
+        paramUpperBounds = [0  100  peak+30 30.00  30.00  10.0];
         
         % Fit the reference SPD peak
         spdData = 1000*theReferenceSPD(dataIndicesToFit);  % in milliWatts

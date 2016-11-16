@@ -2,7 +2,7 @@ function OLAnalyzeCalOOC
 
     calAnalyzer = OLCalAnalyzer(...
         'refitGammaTablesUsingLinearInterpolation', false, ...
-        'forceOLInitCal', false);
+        'forceOLInitCal', true);
     
     %%%%%
     % PLEASE ADD SOME DESCRIPTION OF WHAT EACH OF THESE DOES!!!!!
@@ -11,7 +11,7 @@ function OLAnalyzeCalOOC
     %%%%
     plotDriftAnalysis = true;
     plotCompositeMeasurents = ~true;
-    plotSampledSpectra = ~true;
+    plotSampledSpectra = true;
     plotFullSpectra = ~true;
     plotGammaSPDs = ~true;
     plotGammaTables = ~true;
