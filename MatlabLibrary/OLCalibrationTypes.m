@@ -17,6 +17,7 @@ classdef OLCalibrationTypes
     enumeration
         % Classic eye pieces (pupil/psychophysics)
         BoxBRandomizedLongCableBEyePiece2_ND00('OLBoxBRandomizedLongCableBEyePiece2_ND00');
+        BoxBRandomizedLongCableBEyePiece1_ND02('OLBoxBRandomizedLongCableBEyePiece1_ND02');
         BoxDRandomizedLongCableAEyePiece2_ND03('OLBoxDRandomizedLongCableAEyePiece2_ND03');
         BoxDRandomizedLongCableAEyePiece2_ND06('OLBoxDRandomizedLongCableAEyePiece2_ND06');
         
