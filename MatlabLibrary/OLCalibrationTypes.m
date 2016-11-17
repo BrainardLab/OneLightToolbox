@@ -20,7 +20,7 @@ classdef OLCalibrationTypes
         BoxBRandomizedLongCableBEyePiece1_ND02('OLBoxBRandomizedLongCableBEyePiece1_ND02');
         BoxDRandomizedLongCableAEyePiece2_ND03('OLBoxDRandomizedLongCableAEyePiece2_ND03');
         BoxDRandomizedLongCableAEyePiece2_ND06('OLBoxDRandomizedLongCableAEyePiece2_ND06');
-        
+            
         % Stubby Eye piece (scanner)
         BoxBRandomizedLongCableDStubby1_ND00('OLBoxBRandomizedLongCableDStubby1_ND00');
         BoxBRandomizedLongCableDStubby1_ND02('OLBoxBRandomizedLongCableDStubby1_ND02');
@@ -28,5 +28,8 @@ classdef OLCalibrationTypes
         BoxCRandomizedLongCableDStubby1_ND05('OLBoxCRandomizedLongCableDStubby1_ND05');
         BoxCRandomizedLongCableDStubby1_ND10('OLBoxCRandomizedLongCableDStubby1_ND10');
         BoxARandomizedShortCableBStubby1_ND00('OLBoxARandomizedShortCableBStubby1_ND00');
+        
+        %Hybrid configuration for psychophysics w/ MRI components        
+        BoxBRandomizedLongCableBStubby1_ND02('OLBoxBRandomizedLongCableBStubby1_ND02');
     end
 end
