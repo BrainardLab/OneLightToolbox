@@ -102,7 +102,7 @@ int openUE3device()
         return 0;  // could not open device
     }
     
-    //Getting calibration information from UE9
+    //Getting calibration information from U3
     if( getCalibrationInfo(hDevice, &caliInfo) < 0 ) {
         return 0;  // could not get calibration data
     }
