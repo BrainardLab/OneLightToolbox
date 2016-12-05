@@ -36,6 +36,7 @@ static HANDLE hDevice;
 u3CalibrationInfo caliInfo;
 int isDAC1Enabled;
 
+int amUE3device();
 int openUE3device();
 int closeUE3device();
 double readTemperature(double *tmpData);
@@ -68,7 +69,10 @@ void mexFunction(int nlhs,      /* number of output (return) arguments */
 	else
 		mxGetString(prhs[0], operandName, sizeof(operandName));
     
-    if (strcmp(operandName, "open")==0) {
+    if (strcmp(operandName, "identify")==0) {
+        *status = amUE3device();
+    }
+    else if (strcmp(operandName, "open")==0) {
         *status = openUE3device();
     }
     else if (strcmp(operandName, "close")==0) {
@@ -92,6 +96,12 @@ void mexFunction(int nlhs,      /* number of output (return) arguments */
     else  {
         printf("Unknown command name, %s", operandName);
     }
+}
+
+int amUE3device()
+{
+    // return 1, if UEdev, 0 otherwise
+    return(1);
 }
 
 int openUE3device() 
