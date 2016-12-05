@@ -6,10 +6,20 @@
 //			The u3Feedback.c file to communicate with the sensor
 // *** Date: 11-30-2016
 
-#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <string.h>
 #include <termios.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <dirent.h>
+#include <sys/stat.h>
+#include <sys/ioctl.h>
+#include <sys/time.h>
 #include "u3.h"
-
+#include "mex.h"
+#include "matrix.h"
 
 static struct termios termNew, termOrig;
 static int peek = -1;
@@ -20,6 +30,7 @@ static int peek = -1;
 int configIO_example(HANDLE hDevice, int enable, int *isDAC1Enabled);
 int feedback_setup_example();
 
+#define OPERAND_NAME_LENGTH    32
 
 static HANDLE hDevice;
 u3CalibrationInfo caliInfo;
