@@ -1,0 +1,386 @@
+// *** Filename: U3Temp.c
+// *** Purpose: Read both the internal and Ext temperature 
+//			From the EI-1034 sensor and return it 
+//			to a function. 
+//			Many of the functions are extracted from 
+//			The u3Feedback.c file to communicate with the sensor
+// *** Date: 11-30-2016
+
+#include <unistd.h>
+#include <termios.h>
+#include "u3.h"
+
+
+static struct termios termNew, termOrig;
+static int peek = -1;
+
+//
+// *** Prototypes
+//
+int feedback_setup_example(HANDLE hDevice, u3CalibrationInfo *caliInfo);
+int feedback_loop_example(HANDLE hDevice, u3CalibrationInfo *caliInfo, int isDAC1Enabled);
+void readU3Temp(double *tempdata);
+
+void setTerm();
+int kbhit();
+void unsetTerm();
+
+
+int main(int argc, char **argv)
+{
+    HANDLE hDevice;
+    u3CalibrationInfo caliInfo;
+    int dac1Enabled=0;
+
+    //setting terminal settings
+    setTerm();
+
+    //Opening first found U3 over USB
+    if( (hDevice = openUSBConnection(-1)) == NULL )
+        goto done;
+
+    //Getting calibration information from U3
+    if( getCalibrationInfo(hDevice, &caliInfo) < 0 )
+        goto close;
+
+    if( feedback_setup_example(hDevice, &caliInfo) != 0 )
+            goto close;
+
+   // Get the measurements and display them
+    if( feedback_loop_example(hDevice, &caliInfo, dac1Enabled) != 0 )
+            goto close;
+
+close:
+    closeUSBConnection(hDevice);
+
+done:
+    printf("\nDone\n");
+
+    //Setting terminal settings to previous settings
+    unsetTerm();
+    return 0;
+}
+
+//Sends a Feedback low-level command that configures digital directions, states,
+//timer modes and DAC0 for this example.  Will work with U3 hardware versions
+//1.20, 1.21 and 1.30 LV.
+int feedback_setup_example(HANDLE hDevice, u3CalibrationInfo *caliInfo)
+{
+    uint8 sendBuff[32], recBuff[18];
+    uint16 checksumTotal;
+    int sendChars, recChars;
+
+    sendBuff[1] = (uint8)(0xF8);  //Command byte
+    sendBuff[2] = 13;  //Number of data words (.5 word for echo, 8 words for
+                       //IOTypes and data, and .5 words for the extra byte)
+    sendBuff[3] = (uint8)(0x00);  //Extended command number
+
+    sendBuff[6] = 0;  //Echo
+
+    sendBuff[7] = 13;  //IOType is BitDirWrite
+    sendBuff[8] = 130;  //IONumber (bits 0 - 4) is 2 and Direction (bit 7) is
+                        //output
+
+    sendBuff[9] = 13;  //IOType is BitDirWrite
+    sendBuff[10] = 3;  //IONumber (bits 0 - 4) is 3 and Direction (bit 7) is
+                       //input
+
+    sendBuff[11] = 11;  //IOType is BitStateWrite
+    sendBuff[12] = 2;  //IONumber (bits 0 - 4) is 2 and State (bit 7) is low
+
+    sendBuff[13] = 43;  //IOType is Timer0Config
+    sendBuff[14] = 0;  //TimerMode is 16 bit PWM output (mode 0)
+    sendBuff[15] = 0;  //Value LSB
+    sendBuff[16] = 0;  //Value MSB, Whole value is 32768
+
+    sendBuff[17] = 42;  //IOType is Timer0
+    sendBuff[18] = 1;  //UpdateReset
+    sendBuff[19] = 0;  //Value LSB
+    sendBuff[20] = 128;  //Value MSB, Whole Value is 32768
+
+    sendBuff[21] = 45;  //IOType is Timer1Config
+    sendBuff[22] = 1;  //TimerMode is 8 bit PWM output (mode 1)
+    sendBuff[23] = 0;  //Value LSB
+    sendBuff[24] = 0;  //Value MSB, Whole value is 32768
+
+    sendBuff[25] = 44;  //IOType is Timer1
+    sendBuff[26] = 1;  //UpdateReset
+    sendBuff[27] = 0;  //Value LSB
+    sendBuff[28] = 128;  //Value MSB, Whole Value is 32768
+
+    sendBuff[29] = 34;  //IOType is DAC0 (8-bit)
+
+    //Value is 1.5 volts (in binary form)
+    getDacBinVoltCalibrated8Bit(caliInfo, 0, 1.5, &sendBuff[30]);
+    sendBuff[31] = 0;  //Extra byte
+
+    extendedChecksum(sendBuff, 32);
+
+    //Sending command to U3
+    if( (sendChars = LJUSB_Write(hDevice, sendBuff, 32)) < 32 )
+    {
+        if( sendChars == 0 )
+            printf("Feedback setup error : write failed\n");
+        else
+            printf("Feedback setup error : did not write all of the buffer\n");
+        return -1;
+    }
+
+    //Reading response from U3
+    if( (recChars = LJUSB_Read(hDevice, recBuff, 18)) < 18 )
+    {
+        if( recChars == 0 )
+        {
+            printf("Feedback setup error : read failed\n");
+            return -1;
+        }
+        else
+            printf("Feedback setup error : did not read all of the buffer\n");
+    }
+
+    checksumTotal = extendedChecksum16(recBuff, 18);
+    if( (uint8)((checksumTotal / 256 ) & 0xFF) != recBuff[5] )
+    {
+        printf("Feedback setup error : read buffer has bad checksum16(MSB)\n");
+        return -1;
+    }
+
+    if( (uint8)(checksumTotal & 0xFF) != recBuff[4] )
+    {
+        printf("Feedback setup error : read buffer has bad checksum16(LBS)\n");
+        return -1;
+    }
+
+    if( extendedChecksum8(recBuff) != recBuff[0] )
+    {
+        printf("Feedback setup error : read buffer has bad checksum8\n");
+        return -1;
+    }
+
+    if( recBuff[1] != (uint8)(0xF8) || recBuff[2] != 6 || recBuff[3] != (uint8)(0x00) )
+    {
+        printf("Feedback setup error : read buffer has wrong command bytes \n");
+        return -1;
+    }
+
+    if( recBuff[6] != 0 )
+    {
+        printf("Feedback setup error : received errorcode %d for frame %d in Feedback response. \n", recBuff[6], recBuff[7]);
+        return -1;
+    }
+
+    return 0;
+}
+
+//Calls a Feedback low-level call to read AIN0, AIN1, FIO3, Counter1(FIO6) and
+//temperature.  Will work with U3 hardware versions 1.20, 1.21 and 1.30 LV.
+int feedback_loop_example(HANDLE hDevice, u3CalibrationInfo *caliInfo, int isDAC1Enabled)
+{
+    uint8 sendBuff[32], recBuff[28];
+    uint16 checksumTotal;
+    int sendChars, recChars;
+    long count;
+    double  voltageT,    // Voltage to store the temperature for the Temp Sensor */ 
+            temperature, // Internal sensor Temperature
+            TempData[2]; // both internal and external temperature array
+
+    sendBuff[1] = (uint8)(0xF8);  //Command byte
+    sendBuff[2] = 13;  //Number of data words (.5 word for echo, 12.5 words for
+                       //IOTypes)
+    sendBuff[3] = (uint8)(0x00);  //Extended command number
+
+    sendBuff[6] = 0;  //Echo
+
+    sendBuff[7] = 1;  //IOType is AIN
+    sendBuff[8] = 0;  //Positive channel (bits 0-4) is 0, LongSettling (bit 6)
+                      //is not set and QuickSample (bit 7) is not set
+    sendBuff[9] = 31;  //Negative channel is 31 (SE)
+
+    sendBuff[10] = 1;  //IOType is AIN
+    sendBuff[11] = 1;  //Positive channel (bits 0-4) is 1, LongSettling (bit 6)
+                       //is not set and QuickSample (bit 7) is not set
+    sendBuff[12] = 31;  //Negative channel is 31 (SE)
+
+    sendBuff[13] = 1;  //IOType is AIN
+    sendBuff[14] = 0;  //Positive channel (bits 0-4) is 0, LongSettling (bit 6)
+                       //is not set and QuickSample (bit 7) is not set
+    sendBuff[15] = 1;  //Negative channel is 1 (FIO1)
+
+    sendBuff[16] = 1;  //IOType is AIN
+    sendBuff[17] = 1;  //Positive channel (bits 0-4) is 1, LongSettling (bit 6)
+                       //is not set and QuickSample (bit 7) is not set
+    sendBuff[18] = 0;  //Negative channel is 0 (FIO0)
+
+    sendBuff[19] = 1;  //IOType is AIN
+    sendBuff[20] = 0;  //Positive channel (bits 0-4) is 0, LongSettling (bit 6)
+                       //is not set and QuickSample (bit 7) is not set
+    sendBuff[21] = 30;  //Negative channel is 30 (Vref)
+
+    sendBuff[22] = 1;  //IOType is AIN
+    sendBuff[23] = 1;  //Positive channel (bits 0-4) is 1, LongSettling (bit 6)
+                       //is not set and QuickSample (bit 7) is not set
+    sendBuff[24] = 30;  //Negative channel is 30 (Vref)
+
+    sendBuff[25] = 10;  //IOType is BitStateRead
+    sendBuff[26] = 3;  //IO number is 3 (FIO3)
+
+    sendBuff[27] = 55;  //IOType is Counter1
+    sendBuff[28] = 0;  //Reset (bit 0) is not set
+
+    sendBuff[29] = 1;  //IOType is AIN
+    sendBuff[30] = 30;  //Positive channel is 30 (temp sensor)
+    sendBuff[31] = 31;  //Negative channel is 31 (SE)
+
+    extendedChecksum(sendBuff, 32);
+
+    printf("Running U3Temp calls in a loop:\n** Press any key to stop **\n");
+
+    count = 0;
+    while( !kbhit() )
+    {
+        count++;
+        printf("Iteration %ld\n", count);
+
+        //Sending command to U3
+        if( (sendChars = LJUSB_Write(hDevice,  sendBuff, 32)) < 32 )
+        {
+            if( sendChars == 0 )
+              printf("Feedback loop error : write failed\n");
+            else
+              printf("Feedback loop error : did not write all of the buffer\n");
+            return -1;
+        }
+
+        //Reading response from U3
+        if( (recChars = LJUSB_Read(hDevice, recBuff, 28)) < 28 )
+        {
+            if( recChars == 0 )
+            {
+                printf("Feedback loop error : read failed\n");
+                return -1;
+            }
+            else
+                printf("Feedback loop error : did not read all of the expected buffer\n");
+        }
+
+        if( recChars < 10 )
+        {
+            printf("Feedback loop error : response is not large enough\n");
+            return -1;
+        }
+
+        checksumTotal = extendedChecksum16(recBuff, recChars);
+        if( (uint8)((checksumTotal / 256 ) & 0xFF) != recBuff[5] )
+        {
+            printf("Feedback loop error : read buffer has bad checksum16(MSB)\n");
+            return -1;
+        }
+
+        if( (uint8)(checksumTotal & 0xFF) != recBuff[4] )
+        {
+            printf("Feedback loop error : read buffer has bad checksum16(LBS)\n");
+            return -1;
+        }
+
+        if( extendedChecksum8(recBuff) != recBuff[0] )
+        {
+            printf("Feedback loop error : read buffer has bad checksum8\n");
+            return -1;
+        }
+
+        if( recBuff[1] != (uint8)(0xF8) ||	recBuff[3] != (uint8)(0x00) )
+        {
+            printf("Feedback loop error : read buffer has wrong command bytes \n");
+            return -1;
+        }
+
+        if( recBuff[6] != 0 )
+        {
+            printf("Feedback loop error : received errorcode %d for frame %d ", recBuff[6], recBuff[7]); 
+            switch( recBuff[7] )
+            {
+                case 1: printf("(AIN(SE))\n"); break;
+                case 2: printf("(AIN(SE))\n"); break;
+                case 3: printf("(AIN(Neg. chan. 1))\n"); break;
+                case 4: printf("(AIN(Neg. chan. 0))\n"); break;
+                case 5: printf("(AIN(Neg. chan. Vref))\n"); break;
+                case 6: printf("(AIN(Neg. chan. Vref))\n"); break;
+                case 7: printf("(BitStateRead for FIO3)\n"); break;
+                case 8: printf("(Counter1)\n"); break;
+                case 9: printf("(Temp. Sensor\n"); break;
+                default: printf("(Unknown)\n"); break;
+            }
+            return -1;
+        }
+        // Use FIO0 as the analog input to connect the EI-1034 Temp Sensor
+        getAinVoltCalibrated(caliInfo, isDAC1Enabled, 31, recBuff[9] + recBuff[10]*256, &voltageT);
+
+        //printf("AIN0(SE) : %.3f volts\n", voltageT); 
+
+        // This is the Internal Sensor Temperature in Kelvin
+        getTempKCalibrated(caliInfo, recBuff[26] + recBuff[27]*256, &temperature);
+        
+        //printf("Temperature : %.3f K\n", temperature);
+
+        // Get the voltage value and convert this to Farenheit degrees 
+        // Per manual, Volts * 100 = Farenheit degrees
+        // printf("Temperature Sensor: %.2f Farenheit\n", (voltageT*100));
+        // printf("Temperature Sensor (K): %.2f Kelvin\n\n\n\n", ((55.56*voltageT) + 255.37));
+        
+        TempData[0] = ((1.8)*(temperature-273))+32.0; /* convert K to F */
+        TempData[1] = voltageT*100;
+        readU3Temp(TempData);
+
+        sleep(1);
+    }
+    return 0;
+}
+
+void readU3Temp(double *tempdata)
+{        
+    printf("Temperature Int Sensor : %.2f Farenheit\n", tempdata[0]);        
+    printf("Temperature Ext Sensor : %.2f Farenheit\n", tempdata[1]);
+
+}
+
+void setTerm()
+{
+    tcgetattr(0, &termOrig);
+    termNew = termOrig;
+    termNew.c_lflag &= ~ICANON;
+    termNew.c_lflag &= ~ECHO;
+    termNew.c_lflag &= ~ISIG;
+    termNew.c_cc[VMIN] = 1;
+    termNew.c_cc[VTIME] = 0;
+    tcsetattr(0, TCSANOW, &termNew);
+}
+
+int kbhit()
+{
+    char ch;
+    int nread;
+
+    if( peek != -1 )
+        return 1;
+
+    termNew.c_cc[VMIN] = 0;
+    tcsetattr(0, TCSANOW, &termNew);
+    nread = read(0, &ch, 1);
+    termNew.c_cc[VMIN] = 1;
+    tcsetattr(0, TCSANOW, &termNew);
+
+    if(nread == 1)
+    {
+        peek = ch;
+        return 1;
+    }
+
+    return 0;
+}
+
+void unsetTerm()
+{
+    tcsetattr(0, TCSANOW, &termOrig);
+}
+
+
