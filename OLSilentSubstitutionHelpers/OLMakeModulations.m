@@ -1,4 +1,4 @@
-function OLMakeModulations(configFileName, observerAgeInYears, calType1, calType0, protocolDir, fileSuffix)
+function OLMakeModulations(configFileName, observerAgeInYears, calType1, calType0, fileSuffix)
 % OLMakeModulations - Creates the cache data for a given config file.
 %
 % Syntax:
