@@ -139,13 +139,6 @@ int openUE3device()
     // Success opening the device 
     return 1;
    
-   // status = feedback_setup_example();
-   // if (status!=0) {
-   //     return 0;
-   // }
-   // else {
-   //     return 1;
-   // }
 }
 
 int closeUE3device() 

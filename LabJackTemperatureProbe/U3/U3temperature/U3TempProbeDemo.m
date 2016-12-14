@@ -25,7 +25,7 @@ function U3TempProbeDemo
     figure(1); clf;
     timeSeriesTemperature = [];
     
-    for k = 1:5
+    for k = 1:100
         hold off;
         [status, tempData] = U3TemperatureProbe('measure');
         size(tempData)
