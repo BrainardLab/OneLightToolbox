@@ -11,7 +11,7 @@
 #include <math.h>
 #include <string.h>
 #include <termios.h>
-#include <fcntl.h>
+#include <fcntl.h>  
 #include <unistd.h>
 #include <dirent.h>
 #include <sys/stat.h>
