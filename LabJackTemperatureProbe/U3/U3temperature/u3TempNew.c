@@ -11,7 +11,7 @@
 #include <math.h>
 #include <string.h>
 #include <termios.h>
-#include <fcntl.h>
+#include <fcntl.h>  
 #include <unistd.h>
 #include <dirent.h>
 #include <sys/stat.h>
@@ -28,7 +28,6 @@ static int peek = -1;
 // *** Prototypes
 //
 int configIO_example(HANDLE hDevice, int enable, int *isDAC1Enabled);
-int feedback_setup_example();
 
 #define OPERAND_NAME_LENGTH    32
 
@@ -98,9 +97,26 @@ void mexFunction(int nlhs,      /* number of output (return) arguments */
     }
 }
 
+// 
+// Function to check if there is a UE3 device attached to the computer
+// called from the .m device using the identify string as operandName
+//
 int amUE3device()
 {
-    // return 1, if UEdev, 0 otherwise
+    int status; 
+    
+    printf("Checking for UE3 or UE9 to be connected... \n");
+    
+    // Check for UE3 or UE9 devices connected
+    if(LJUSB_GetDevCount(U3_PRODUCT_ID)) printf("Found UE3 device!\n");
+    else if(LJUSB_GetDevCount(UE9_PRODUCT_ID)){
+        printf("Found UE9 device!\n");
+        return 2; // returning a 2 will inform the 'identify' call is UE9
+    } else { 
+        printf ("No valid Labjack found\n");
+        return 0;
+    }
+    // Default will return a 1 which means U3 device found
     return(1);
 }
 
@@ -120,15 +136,9 @@ int openUE3device()
     if(configIO_example(hDevice, 1, &isDAC1Enabled) != 0 ) {
         return 0;
     }
-
-
-    status = feedback_setup_example();
-    if (status!=0) {
-        return 0;
-    }
-    else {
-        return 1;
-    }
+    // Success opening the device 
+    return 1;
+   
 }
 
 int closeUE3device() 
@@ -263,120 +273,6 @@ int configIO_example(HANDLE hDevice, int enable, int *isDAC1Enabled)
 
     return 0;
 }
-
-//Sends a Feedback low-level command that configures digital directions, states,
-//timer modes and DAC0 for this example.  Will work with U3 hardware versions
-//1.20, 1.21 and 1.30 LV.
-int feedback_setup_example()
-{
-    uint8 sendBuff[32], recBuff[18];
-    uint16 checksumTotal;
-    int sendChars, recChars;
-
-    sendBuff[1] = (uint8)(0xF8);  //Command byte
-    sendBuff[2] = 13;  //Number of data words (.5 word for echo, 8 words for
-                       //IOTypes and data, and .5 words for the extra byte)
-    sendBuff[3] = (uint8)(0x00);  //Extended command number
-
-    sendBuff[6] = 0;  //Echo
-
-    sendBuff[7] = 13;  //IOType is BitDirWrite
-    sendBuff[8] = 130;  //IONumber (bits 0 - 4) is 2 and Direction (bit 7) is
-                        //output
-
-    sendBuff[9] = 13;  //IOType is BitDirWrite
-    sendBuff[10] = 3;  //IONumber (bits 0 - 4) is 3 and Direction (bit 7) is
-                       //input
-
-    sendBuff[11] = 11;  //IOType is BitStateWrite
-    sendBuff[12] = 2;  //IONumber (bits 0 - 4) is 2 and State (bit 7) is low
-
-    sendBuff[13] = 43;  //IOType is Timer0Config
-    sendBuff[14] = 0;  //TimerMode is 16 bit PWM output (mode 0)
-    sendBuff[15] = 0;  //Value LSB
-    sendBuff[16] = 0;  //Value MSB, Whole value is 32768
-
-    sendBuff[17] = 42;  //IOType is Timer0
-    sendBuff[18] = 1;  //UpdateReset
-    sendBuff[19] = 0;  //Value LSB
-    sendBuff[20] = 128;  //Value MSB, Whole Value is 32768
-
-    sendBuff[21] = 45;  //IOType is Timer1Config
-    sendBuff[22] = 1;  //TimerMode is 8 bit PWM output (mode 1)
-    sendBuff[23] = 0;  //Value LSB
-    sendBuff[24] = 0;  //Value MSB, Whole value is 32768
-
-    sendBuff[25] = 44;  //IOType is Timer1
-    sendBuff[26] = 1;  //UpdateReset
-    sendBuff[27] = 0;  //Value LSB
-    sendBuff[28] = 128;  //Value MSB, Whole Value is 32768
-
-    sendBuff[29] = 34;  //IOType is DAC0 (8-bit)
-
-    //Value is 1.5 volts (in binary form)
-    getDacBinVoltCalibrated8Bit(&caliInfo, 0, 1.5, &sendBuff[30]);
-    sendBuff[31] = 0;  //Extra byte
-
-    extendedChecksum(sendBuff, 32);
-
-    //Sending command to U3
-    if( (sendChars = LJUSB_Write(hDevice, sendBuff, 32)) < 32 )
-    {
-        if( sendChars == 0 )
-            printf("Feedback setup error : write failed\n");
-        else
-            printf("Feedback setup error : did not write all of the buffer\n");
-        return -1;
-    }
-
-    //Reading response from U3
-    if( (recChars = LJUSB_Read(hDevice, recBuff, 18)) < 18 )
-    {
-        if( recChars == 0 )
-        {
-            printf("Feedback setup error : read failed\n");
-            return -1;
-        }
-        else
-            printf("Feedback setup error : did not read all of the buffer\n");
-    }
-
-    checksumTotal = extendedChecksum16(recBuff, 18);
-    if( (uint8)((checksumTotal / 256 ) & 0xFF) != recBuff[5] )
-    {
-        printf("Feedback setup error : read buffer has bad checksum16(MSB)\n");
-        return -1;
-    }
-
-    if( (uint8)(checksumTotal & 0xFF) != recBuff[4] )
-    {
-        printf("Feedback setup error : read buffer has bad checksum16(LBS)\n");
-        return -1;
-    }
-
-    if( extendedChecksum8(recBuff) != recBuff[0] )
-    {
-        printf("Feedback setup error : read buffer has bad checksum8\n");
-        return -1;
-    }
-
-    if( recBuff[1] != (uint8)(0xF8) || recBuff[2] != 6 || recBuff[3] != (uint8)(0x00) )
-    {
-        printf("Feedback setup error : read buffer has wrong command bytes \n");
-        return -1;
-    }
-
-    if( recBuff[6] != 0 )
-    {
-        printf("Feedback setup error : received errorcode %d for frame %d in Feedback response. \n", recBuff[6], recBuff[7]);
-        return -1;
-    }
-
-    return 0;
-}
-
-
-
 
 //Calls a Feedback low-level call to read AIN0, AIN1, FIO3, Counter1(FIO6) and
 //temperature.  Will work with U3 hardware versions 1.20, 1.21 and 1.30 LV.
@@ -521,22 +417,22 @@ double readTemperature(double *tempData)
         // This is the Internal Sensor Temperature in Kelvin
         getTempKCalibrated(&caliInfo, recBuff[26] + recBuff[27]*256, &temperature);
         
-        //printf("Temperature : %.3f K\n", temperature);
+        // printf("Temperature : %.3f K\n", temperature);
 
         // Get the voltage value and convert this to Farenheit degrees 
         // Per manual, Volts * 100 = Farenheit degrees
         // printf("Temperature Sensor: %.2f Farenheit\n", (voltageT*100));
         // printf("Temperature Sensor (K): %.2f Kelvin\n\n\n\n", ((55.56*voltageT) + 255.37));
         
-        tempData[0] = ((1.8)*(temperature-273))+32.0; /* convert K to F */
-        tempData[1] = voltageT*100;
- 
-        printf("Temperature Int Sensor : %.2f Farenheit\n", tempData[0]);        
-        printf("Temperature Ext Sensor : %.2f Farenheit\n", tempData[1]);
-
-        int status;
-        status = 0;
-        return(status);
+        tempData[0] = (voltageT*55.56) + 255.37-273.15; /* convert voltage to Celsius */
+        tempData[1] = temperature-273.15; /* convert K to Celsius */
+        
+        printf("Temperature Probe         : %.2f Celsius\n", tempData[0]);        
+        printf("Temperature Int U3 Sensor : %.2f Celsius\n", tempData[1]);
+        
+        //success measuring, now return 0
+       
+        return 0;
 }
 
 

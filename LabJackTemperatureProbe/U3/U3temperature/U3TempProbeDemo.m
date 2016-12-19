@@ -11,11 +11,14 @@ function U3TempProbeDemo
         
     end
 
-    
-    isU3 = U3TemperatureProbe('identify');
+    % isU3orUE9 =1 means it is U3
+    % isU3orUE9 =2 means it is UE9
+    isU3orUE9 = U3TemperatureProbe('identify');
  
-   % isUE9 = UE9TemperatureProbe('identify');
-    
+    if (isU3orUE9 == 0)
+        error('Could not open U3 device. Is it connected ?/n');
+        return;
+    end
     
     status = U3TemperatureProbe('open');
     if (status == 0)
@@ -35,12 +38,12 @@ function U3TempProbeDemo
         subplot(1,2,1);
         plot((1:size(timeSeriesTemperature,2)), timeSeriesTemperature(1,:), 'ks-');
         set(gca, 'YLim', [20 110]);
-        title('temperature, Celcius (sensor probe)')
+        title('temperature, Celsius (sensor probe)')
         
         subplot(1,2,2);
         plot((1:size(timeSeriesTemperature,2)), timeSeriesTemperature(2,:), 'ks-');
         set(gca, 'YLim', [20 40]);
-        title('temperature, Celcius (ambient)')
+        title('temperature, Celsius (ambient)')
         drawnow
     end
     
