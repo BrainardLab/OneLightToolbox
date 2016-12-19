@@ -16,21 +16,20 @@ function LJTempProbeDemo
     figure(1); clf;
     timeSeriesTemperature = [];
     
-    for k = 1:10
+    for k = 1:500   
         hold off;
         [status, tempData] = LJTemperatureProbe('measure');
-        size(tempData)
         timeSeriesTemperature = cat(2, timeSeriesTemperature, tempData(:));
         
         subplot(1,2,1);
         plot((1:size(timeSeriesTemperature,2)), timeSeriesTemperature(1,:), 'ks-');
         set(gca, 'YLim', [20 110]);
-        title('temperature, Celcius (sensor probe)')
+        title('temperature, Celsius (sensor probe)')
         
         subplot(1,2,2);
         plot((1:size(timeSeriesTemperature,2)), timeSeriesTemperature(2,:), 'ks-');
         set(gca, 'YLim', [20 40]);
-        title('temperature, Celcius (ambient)')
+        title('temperature, Celsius (ambient)')
         drawnow
     end
     

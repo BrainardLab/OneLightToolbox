@@ -20,6 +20,9 @@ classdef OLCalibrationTypes
         BoxBRandomizedLongCableBEyePiece1_ND02('OLBoxBRandomizedLongCableBEyePiece1_ND02');
         BoxDRandomizedLongCableAEyePiece2_ND03('OLBoxDRandomizedLongCableAEyePiece2_ND03');
         BoxDRandomizedLongCableAEyePiece2_ND06('OLBoxDRandomizedLongCableAEyePiece2_ND06');
+        %Note: Short RandomizedShortCableA is the collimating lens cable
+        %w/o collimating lens.
+        BoxCRandomizedShortCableAEyePiece1_ND05('OLBoxCRandomizedShortCableAEyePiece1_ND05');
             
         % Stubby Eye piece (scanner)
         BoxBRandomizedLongCableDStubby1_ND00('OLBoxBRandomizedLongCableDStubby1_ND00');
@@ -31,5 +34,6 @@ classdef OLCalibrationTypes
         
         %Hybrid configuration for psychophysics w/ MRI components        
         BoxBRandomizedLongCableBStubby1_ND02('OLBoxBRandomizedLongCableBStubby1_ND02');
+        BoxARandomizedLongCableBStubby1_ND02('OLBoxARandomizedLongCableBStubby1_ND02');
     end
 end

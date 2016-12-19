@@ -1,4 +1,4 @@
-function OLMakeModulations(configFileName, observerAgeInYears, calType, protocolDir, fileSuffix)
+function OLMakeModulations(configFileName, observerAgeInYears, calType1, calType0, fileSuffix)
 % OLMakeModulations - Creates the cache data for a given config file.
 %
 % Syntax:
@@ -54,14 +54,15 @@ params.cacheDir = cacheDir;
 params.modulationDir = modulationDir;
 
 % Load the calibration file.
-if ~isempty(calType)
-    params.calibrationType = calType;
-end
-cType = OLCalibrationTypes.(params.calibrationType);
-params.oneLightCal = LoadCalFile(cType.CalFileName, [], getpref('OneLight', 'OneLightCalData'));
+    params.calibrationType0 = calType0;
+     params.calibrationType1 = calType1;
+cType0 = OLCalibrationTypes.(params.calibrationType0);
+cType1 = OLCalibrationTypes.(params.calibrationType1);
+params.oneLightCal = LoadCalFile(cType0.CalFileName, [], getpref('OneLight', 'OneLightCalData'));
+params.oneLightCal1 = LoadCalFile(cType1.CalFileName, [], getpref('OneLight', 'OneLightCalData'));
 
 % Setup the cache.
-params.olCache = OLCache(params.cacheDir, params.oneLightCal);
+params.olCache = OLCache(params.cacheDir, params.oneLightCal1);
 
 file_names = allwords(params.directionCacheFile,',');
 for i = 1:length(file_names)
