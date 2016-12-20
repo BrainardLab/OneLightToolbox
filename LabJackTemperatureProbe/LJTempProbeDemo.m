@@ -1,24 +1,21 @@
+% Shows how to use the LJTemperatureProbe class
 function LJTempProbeDemo
 
-    compileMexFile = true;
-    if (compileMexFile)
-        [dirName, ~] = fileparts(which(mfilename()));
-        cd(dirName);
-        mex -v -output LJTemperatureProbe LDFLAGS="\$LDFLAGS -weak_library /usr/local/Cellar/exodriver/2.5.3/lib/liblabjackusb.dylib -weak_library /usr/local/Cellar/libusb/1.0.20/lib/libusb-1.0.dylib" CFLAGS="\$CFLAGS -Wall -g" -I/usr/include -I/usr/local/Cellar/exodriver/2.5.3/include -I/usr/local/Cellar/libusb/1.0.20/include/libusb-1.0 "LJTemperatureProbe.c"
-    end
+    % To recompile the mexfiles run CompileMexfiles in the src subdirectory;
     
-	status = LJTemperatureProbe('open');
-    if (status == 0)
-        error('Could not open UE9 device. Is it connected ?\n');
-        return;
-    end
+    % Instantiate a class to handle the UE9 or the U3 labJack device
+    theLJdev = LJTemperatureProbe();
+    
+    % Open the device
+	theLJdev.open()
     
     figure(1); clf;
     timeSeriesTemperature = [];
     
-    for k = 1:500   
+    nMeasurements = 250;
+    for k = 1:nMeasurements  
         hold off;
-        [status, tempData] = LJTemperatureProbe('measure');
+        [status, tempData] = theLJdev.measure();
         timeSeriesTemperature = cat(2, timeSeriesTemperature, tempData(:));
         
         subplot(1,2,1);
@@ -33,7 +30,7 @@ function LJTempProbeDemo
         drawnow
     end
     
-    status = LJTemperatureProbe('close');
-	
+    % Close the device
+	status = theLJdev.close();
 end
 

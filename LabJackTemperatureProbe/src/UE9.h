@@ -1,5 +1,5 @@
-#ifndef _LJTEMPERATUREPROBE_H
-#define _LJTEMPERATUREPROBE_H
+#ifndef _UE9_H
+#define _UE9_H
 
 #include <sys/time.h>
 #include <stdio.h>

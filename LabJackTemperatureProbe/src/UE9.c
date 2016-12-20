@@ -14,7 +14,7 @@
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sys/time.h>
-#include "LJTemperatureProbe.h"
+#include "UE9.h"
 
 #define OPERAND_NAME_LENGTH    32
 
@@ -23,6 +23,7 @@ static HANDLE UE9_devHandle = NULL;
 
 ue9CalibrationInfo caliInfo;
 
+int amUE9device();
 int openUE9device();
 int closeUE9device();
 double readTemperature();
@@ -55,7 +56,11 @@ void mexFunction(int nlhs,      /* number of output (return) arguments */
 	else
 		mxGetString(prhs[0], operandName, sizeof(operandName));
     
-    if (strcmp(operandName, "open")==0) {
+    if (strcmp(operandName, "identify")==0) {
+        *status = amUE9device();
+    }
+    
+    else if (strcmp(operandName, "open")==0) {
         *status = openUE9device();
     }
     else if (strcmp(operandName, "close")==0) {
@@ -81,6 +86,26 @@ void mexFunction(int nlhs,      /* number of output (return) arguments */
     }
 }
 
+
+// 
+// Function to check if there is a UE9 device attached to the computer
+// called from the .m device using the identify string as operandName
+//
+int amUE9device()
+{
+    int status; 
+    
+    printf("Checking for UE9 to be connected... \n");
+    
+    // Check for UE9 devices connected
+    if(LJUSB_GetDevCount(UE9_PRODUCT_ID)){
+        printf("Found UE9 device!\n");
+        return 1;
+    } else { 
+        printf ("No UE9 Labjack found\n");
+        return 0;
+    }
+}
 
 int openUE9device() 
 {
