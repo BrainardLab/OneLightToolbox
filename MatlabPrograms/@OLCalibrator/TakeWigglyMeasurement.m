@@ -5,7 +5,7 @@
 % 8/13/16   npc     Wrote it
 % 9/29/16   npc     Optionally record temperature
 %
-function cal = TakeWigglyMeasurement(measurementIndex, cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, varargin)
+function cal = TakeWigglyMeasurement(measurementIndex, cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, varargin)
 
     p = inputParser;
     p.addParameter('takeTemperatureMeasurements', false, @islogical);
@@ -18,7 +18,7 @@ function cal = TakeWigglyMeasurement(measurementIndex, cal0, ol, od, spectroRadi
 
     % See if we need to take a new set of state measurements
     if (mod(cal.describe.stateTracking.calibrationStimIndex, cal.describe.stateTracking.calibrationStimInterval) == 0)
-        cal = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
+        cal = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
     end
 
     % Update calibration stim index

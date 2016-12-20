@@ -6,7 +6,7 @@
 % 9/29/16   npc     Optionally record temperature
 %
 
-function cal = TakeHalfOnMeasurement(measurementIndex, cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, varargin)
+function cal = TakeHalfOnMeasurement(measurementIndex, cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, varargin)
 
     p = inputParser;
     p.addParameter('takeTemperatureMeasurements', false, @islogical);
@@ -14,13 +14,12 @@ function cal = TakeHalfOnMeasurement(measurementIndex, cal0, ol, od, spectroRadi
     p.parse(varargin{:});
     takeTemperatureMeasurements = p.Results.takeTemperatureMeasurements;
 
-    
     cal = cal0;
     nPrimaries = cal.describe.numWavelengthBands;
 
     % See if we need to take a new set of state measurements
     if (mod(cal.describe.stateTracking.calibrationStimIndex, cal.describe.stateTracking.calibrationStimInterval) == 0)
-        cal = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
+        cal = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
     end
 
     % Update calibration stim index

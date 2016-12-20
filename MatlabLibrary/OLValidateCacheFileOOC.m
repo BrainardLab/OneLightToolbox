@@ -144,7 +144,7 @@ if (isempty(spectroRadiometerOBJ))
     % Attempt to open the LabJack temperature sensing device
     if (takeTemperatureMeasurements)
         % Gracefully attempt to open the LabJack
-        [takeTemperatureMeasurements, quitNow] = OLCalibrator.OpenLabJackTemperatureProbe(takeTemperatureMeasurements);
+        [takeTemperatureMeasurements, quitNow, theLJdev] = OLCalibrator.OpenLabJackTemperatureProbe(takeTemperatureMeasurements);
         if (quitNow)
             return;
         end
@@ -314,7 +314,7 @@ try
         results.fullOnMeas.predictedFromCal = cal.raw.fullOn(:, 1);
         % Take temperature
         if (takeTemperatureMeasurements)
-            [status, results.temperature.fullOnMeas] = LJTemperatureProbe('measure');
+            [status, results.temperature.fullOnMeas] = theLJdev.measure();
         end 
     end
     
@@ -327,26 +327,26 @@ try
         results.halfOnMeas.predictedFromCal = cal.raw.halfOnMeas(:, 1);
         % Take temperature
         if (takeTemperatureMeasurements)
-            [status, results.temperature.halfOnMeas] = LJTemperatureProbe('measure');
+            [status, results.temperature.halfOnMeas] = theLJdev.measure();
         end 
     end
     
     if describe.DarkMeas
         fprintf('- Dark measurement \n');
         [starts,stops] = OLSettingsToStartsStops(cal,0*ones(cal.describe.numWavelengthBands, 1));
-        results.offMeas.meas = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
+        results.offMeas.meas = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage, theLJdev);
         results.offMeas.starts = starts;
         results.offMeas.stops = stops;
         results.offMeas.predictedFromCal = cal.raw.darkMeas(:, 1);
         % Take temperature
         if (takeTemperatureMeasurements)
-            [status, results.temperature.offMeas] = LJTemperatureProbe('measure');
+            [status, results.temperature.offMeas] = theLJdev.measure();
         end 
     end
     
     if describe.CalStateMeas
         fprintf('- State measurements \n');
-        [~, calStateMeas] = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, 'standAlone',true);
+        [~, calStateMeas] = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, 'standAlone',true);
         OLCalibrator.SaveStateMeasurements(cal, calStateMeas);
     else
         calStateMeas = [];
@@ -403,7 +403,7 @@ try
                 results.modulationAllMeas(i).predictedSpd = cal.computed.pr650M*primaries + cal.computed.pr650MeanDark;
                 % Take temperature
                 if (takeTemperatureMeasurements)
-                    [status, results.temperature.modulationAllMeas(i, :)] = LJTemperatureProbe('measure');
+                    [status, results.temperature.modulationAllMeas(i, :)] = theLJdev.measure();
                 end 
         
             end
@@ -454,7 +454,7 @@ try
                     results.meas(j, i) = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
                     
                     if (takeTemperatureMeasurements)
-                        [status, results.temperature.meas(j, i, :)] = LJTemperatureProbe('measure');
+                        [status, results.temperature.meas(j, i, :)] = theLJdev.measure();
                     end 
                     fprintf('Done\n');
                 end

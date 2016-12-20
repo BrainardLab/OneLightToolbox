@@ -77,7 +77,7 @@ try
         % Attempt to open the LabJack temperature sensing device
         if (takeTemperatureMeasurements)
             % Gracefully attempt to open the LabJack
-            [takeTemperatureMeasurements, quitNow] = OLCalibrator.OpenLabJackTemperatureProbe(takeTemperatureMeasurements);
+            [takeTemperatureMeasurements, quitNow, theLJdev] = OLCalibrator.OpenLabJackTemperatureProbe(takeTemperatureMeasurements);
             if (quitNow)
                 return;
             end
@@ -161,7 +161,7 @@ try
             
             % Take temperature
             if (takeTemperatureMeasurements)
-                [status, temperatureData.measuredSPD{ii}(iter,:)] = LJTemperatureProbe('measure');
+                [status, temperatureData.measuredSPD{ii}(iter,:)] = theLJdev.measure();
             end
         
             % Some status info.

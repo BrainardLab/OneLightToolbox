@@ -1,4 +1,4 @@
-% [cal calMeasOnly] = TakeStateMeasurements(cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, standAlone)
+% [cal calMeasOnly] = TakeStateMeasurements(cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, varargin)
 %
 % Takes state measurements for a OneLight calibration. In stand alone mode,
 % the data are added to a barebones calibration structure.
@@ -7,7 +7,7 @@
 % 9/2/16    ms      Some updates
 % 9/29/16   npc     Added parser for optional params: 'standAlone' and 'takeTemperatureMeasurements'
 %
-function [cal, calMeasOnly] = TakeStateMeasurements(cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, varargin)
+function [cal, calMeasOnly] = TakeStateMeasurements(cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, varargin)
 
 p = inputParser;
 p.addParameter('standAlone', false, @islogical);
@@ -34,7 +34,7 @@ if (standAlone)
     calMeasOnly.raw.powerFluctuationMeas.t = measTemp.pr650.time(1);
     % Temperature
     if (takeTemperatureMeasurements)
-        [~, calMeasOnly.raw.temperature.value] = LJTemperatureProbe('measure');
+        [~, calMeasOnly.raw.temperature.value] = theLJdev.measure();
         calMeasOnly.raw.temperature.t = measTemp.pr650.time(1);
     end
 else
@@ -44,7 +44,7 @@ else
     cal.raw.powerFluctuationMeas.t(:, cal.describe.stateTracking.stateMeasurementIndex) = measTemp.pr650.time(1);
     % Temperature
     if (takeTemperatureMeasurements)
-        [~, cal.raw.temperature.value(cal.describe.stateTracking.stateMeasurementIndex,:)] = LJTemperatureProbe('measure');
+        [~, cal.raw.temperature.value(cal.describe.stateTracking.stateMeasurementIndex,:)] = theLJdev.measure();
         cal.raw.temperature.t(cal.describe.stateTracking.stateMeasurementIndex,:) = measTemp.pr650.time(1);
     end
 end

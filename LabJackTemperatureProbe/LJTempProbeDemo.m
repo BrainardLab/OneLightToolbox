@@ -7,7 +7,7 @@ function LJTempProbeDemo
     theLJdev = LJTemperatureProbe();
     
     % Open the device
-	theLJdev.open()
+	theLJdev.open();
     
     figure(1); clf;
     timeSeriesTemperature = [];

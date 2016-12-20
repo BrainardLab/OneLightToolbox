@@ -36,7 +36,7 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
     
     if (takeTemperatureMeasurements)
         % Gracefully attempt to open the LabJack
-        [takeTemperatureMeasurements, quitNow] = OLCalibrator.OpenLabJackTemperatureProbe(takeTemperatureMeasurements);
+        [takeTemperatureMeasurements, quitNow, theLJdev] = OLCalibrator.OpenLabJackTemperatureProbe(takeTemperatureMeasurements);
         if (quitNow)
             return;
         end
@@ -58,7 +58,7 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
     
     if (takeTemperatureMeasurements)
         % Close temperature probe
-        LJTemperatureProbe('close')
+        theLJdev.close();
     end
     
     % Callback function for when the user closes the figure
@@ -93,7 +93,7 @@ function monitoredData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ,
         try 
              % Measure and retrieve the data
              fprintf('Measuring state data (measurement index: %d) ... ', measurementIndex+1);
-             [~, calStateMeas] = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, 'standAlone', true, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
+             [~, calStateMeas] = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, 'standAlone', true, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
     
              % Initialize everything);
              OLCalibrator.SaveStateMeasurements(cal, calStateMeas);

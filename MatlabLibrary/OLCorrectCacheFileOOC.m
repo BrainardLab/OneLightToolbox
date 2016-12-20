@@ -146,7 +146,7 @@ if (isempty(spectroRadiometerOBJ))
     % Attempt to open the LabJack temperature sensing device
     if (takeTemperatureMeasurements)
         % Gracefully attempt to open the LabJack
-        [takeTemperatureMeasurements, quitNow] = OLCalibrator.OpenLabJackTemperatureProbe(takeTemperatureMeasurements);
+        [takeTemperatureMeasurements, quitNow, theLJdev] = OLCalibrator.OpenLabJackTemperatureProbe(takeTemperatureMeasurements);
         if (quitNow)
             return;
         end
@@ -302,7 +302,7 @@ try
         % Take temperature
         if (takeTemperatureMeasurements)
             printf('Taking temperature for fullOnMeas\n');
-            [status, results.temperature.fullOnMeas] = LJTemperatureProbe('measure');
+            [status, results.temperature.fullOnMeas] = theLJdev.measure();
         end
     end
     
@@ -315,7 +315,7 @@ try
         results.halfOnMeas.predictedFromCal = cal.raw.halfOnMeas(:, 1);
         % Take temperature
         if (takeTemperatureMeasurements)
-            [status, results.temperature.halfOnMeas] = LJTemperatureProbe('measure');
+            [status, results.temperature.halfOnMeas] = theLJdev.measure();
         end 
     end
     
@@ -328,7 +328,7 @@ try
         results.offMeas.predictedFromCal = cal.raw.darkMeas(:, 1);
         % Take temperature
         if (takeTemperatureMeasurements)
-            [status, results.temperature.offMeas] = LJTemperatureProbe('measure');
+            [status, results.temperature.offMeas] = theLJdev.measure();
         end
     end
     
@@ -407,7 +407,7 @@ try
                     end
                     % Take temperature
                     if (takeTemperatureMeasurements)
-                        [status, tempData] = LJTemperatureProbe('measure');
+                        [status, tempData] = theLJdev.measure();
                         results.temperature.modulationAllMeas(iter, i, :) = tempData;
                     end 
                 end
