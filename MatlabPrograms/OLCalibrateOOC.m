@@ -175,6 +175,8 @@ try
         if (quitNow)
             return;
         end
+    else
+       theLJdev = []; 
     end
     
     % Ask for email recipient

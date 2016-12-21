@@ -56,6 +56,7 @@ function [results, validationDir, validationPath, openSpectroRadiometerOBJ] = OL
 % 7/06/16  npc      Adapted to use PR650dev/PR670dev objects
 % 9/2/16   ms       Updated with new CalStateMeas option
 % 10/20/16 npc      Added ability to record temperature measurements
+% 12/21/16  npc     Updated for new class @LJTemperatureProbe
 
 % Parse the input
 p = inputParser;
@@ -148,6 +149,8 @@ if (isempty(spectroRadiometerOBJ))
         if (quitNow)
             return;
         end
+    else
+        theLJdev = [];
     end
 end
 openSpectroRadiometerOBJ = spectroRadiometerOBJ;

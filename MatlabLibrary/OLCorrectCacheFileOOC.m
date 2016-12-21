@@ -52,10 +52,11 @@ function [cacheData olCache openSpectroRadiometerOBJ] = OLCorrectCacheFileOOC(ca
 % mode is used.
 % validationDir (str) - Validation directory.
 %
-% 1/21/14  dhb, ms  Convert to use OLSettingsToStartsStops.
-% 1/30/14  ms       Added keyword parameters to make this useful.
-% 7/06/16  npc      Adapted to use PR650dev/PR670dev objects
-% 10/20/16 npc      Added ability to record temperature measurements
+% 1/21/14   dhb, ms  Convert to use OLSettingsToStartsStops.
+% 1/30/14   ms       Added keyword parameters to make this useful.
+% 7/06/16   npc      Adapted to use PR650dev/PR670dev objects
+% 10/20/16  npc      Added ability to record temperature measurements
+% 12/21/16  npc      Updated for new class @LJTemperatureProbe
 
 % Parse the input
 p = inputParser;
@@ -150,6 +151,8 @@ if (isempty(spectroRadiometerOBJ))
         if (quitNow)
             return;
         end
+    else
+        theLJdev = [];
     end
 end
 openSpectroRadiometerOBJ = spectroRadiometerOBJ;
