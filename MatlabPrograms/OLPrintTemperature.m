@@ -27,7 +27,7 @@ function temperatureLoop()
     
     % Open the device
 	theLJdev.open();
-    finishup = onCleanup(@() myCleanupFun(theLJdev));
+    finishup = onCleanup(@() closeLabJackAndSaveData(theLJdev));
     
     % Measure temperature and print it
     timeSeries = {};
@@ -47,7 +47,7 @@ function temperatureLoop()
 	theLJdev.close();
     fprint('Closed LabJack\n');
     
-    function myCleanupFun(theLJdev)
+    function closeLabJackAndSaveData(theLJdev)
         % Close the device
         theLJdev.close();
         fprint('Closed LabJack (on controlC)\n');
