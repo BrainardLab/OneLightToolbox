@@ -1,11 +1,12 @@
-% [cal, primaryMeasurement] = TakePrimaryMeasurement(cal0, primaryIndex, ol, od, spectroRadiometerOBJ, meterToggle, nAverage)
+% [cal, primaryMeasurement] = TakePrimaryMeasurement(cal0, primaryIndex, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev)
 %
 % Takes primary SPD measurements.
 %
 % 8/13/16   npc     Wrote it
 % 9/29/16   npc     Optionally record temperature
-%
-function [cal, primaryMeasurement] = TakePrimaryMeasurement(cal0, primaryIndex, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, varargin)
+% 12/21/16  npc     Updated for new class @LJTemperatureProbe
+
+function [cal, primaryMeasurement] = TakePrimaryMeasurement(cal0, primaryIndex, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, varargin)
 
     p = inputParser;
     p.addParameter('takeTemperatureMeasurements', false, @islogical);
@@ -28,7 +29,7 @@ function [cal, primaryMeasurement] = TakePrimaryMeasurement(cal0, primaryIndex, 
 
         % See if we need to take a new set of state measurements
         if (mod(cal.describe.stateTracking.calibrationStimIndex, cal.describe.stateTracking.calibrationStimInterval) == 0)
-            cal = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
+            cal = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
         end
 
         % Update calibration stim index
@@ -51,7 +52,7 @@ function [cal, primaryMeasurement] = TakePrimaryMeasurement(cal0, primaryIndex, 
 
     % See if we need to take a new set of state measurements
     if (mod(cal.describe.stateTracking.calibrationStimIndex, cal.describe.stateTracking.calibrationStimInterval) == 0)
-        cal = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
+        cal = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
     end
 
     % Update calibration stim index

@@ -1,3 +1,10 @@
+% Class for abstract handling of temperature recording via a UE9 or a U3
+% device.
+% 
+% For example usage, see OLPrintTemperature.m
+%
+% 12/21/16  npc    Wrote it.
+
 classdef LJTemperatureProbe < handle
     
     % Public properties
@@ -28,12 +35,12 @@ classdef LJTemperatureProbe < handle
         end
         
         % Method to open a LabJackDevice
-        function open(obj)
-            
+        function status = open(obj) 
             % First see if there is a UE9 connected
             isUE9 = LJTemperatureProbeUE9('identify');
             if (isUE9 == 1)
                 obj.deviceID = 'UE9';
+                LJTemperatureProbeUE9('close');
                 LJTemperatureProbeUE9('open');
             else
                 % Nope, let's see if there is a U3 connected
@@ -43,8 +50,10 @@ classdef LJTemperatureProbe < handle
                 else
                     error('Did not find a UE9 or a U3 LabJack device. Is one connected ?/n');
                 end
+                LJTemperatureProbeU3('close');
                 LJTemperatureProbeU3('open');
             end
+            status = 1;
         end
         
         % Method to close a LabJackDevice

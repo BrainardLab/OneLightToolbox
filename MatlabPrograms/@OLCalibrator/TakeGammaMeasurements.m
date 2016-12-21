@@ -4,8 +4,9 @@
 %
 % 8/13/16   npc     Wrote it
 % 9/29/16   npc     Optionally record temperature
-%
-function cal = TakeGammaMeasurements(cal0, gammaBandIndex, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, varargin)
+% 12/21/16  npc     Updated for new class @LJTemperatureProbe
+
+function cal = TakeGammaMeasurements(cal0, gammaBandIndex, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, varargin)
 
     p = inputParser;
     p.addParameter('takeTemperatureMeasurements', false, @islogical);
@@ -42,7 +43,7 @@ function cal = TakeGammaMeasurements(cal0, gammaBandIndex, ol, od, spectroRadiom
 
         % See if we need to take a new set of state measurements
         if (mod(cal.describe.stateTracking.calibrationStimIndex, cal.describe.stateTracking.calibrationStimInterval) == 0)
-            cal = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
+            cal = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
         end
 
         % Update calibration stim index
@@ -65,7 +66,7 @@ function cal = TakeGammaMeasurements(cal0, gammaBandIndex, ol, od, spectroRadiom
     for gammaLevelIndex = gammaLevelsIter
         % See if we need to take a new set of state measurements
         if (mod(cal.describe.stateTracking.calibrationStimIndex, cal.describe.stateTracking.calibrationStimInterval) == 0)
-            cal = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
+            cal = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
         end
 
         % Update calibration stim index

@@ -41,6 +41,10 @@ function [results, validationDir, validationPath, openSpectroRadiometerOBJ] = OL
 %                                                             type
 %                             'powerLevels'         scalar    Which power levels
 %                             'pr670sensitivityMode'    string 'STANDARD' or 'EXTENDED'
+%                             'takeTemperatureMeasurements' false  Whether
+%                             to take temperature measurements (requires a
+%                             connected LabJack dev with a temperature
+%                             probe)
 %
 % Output:
 % results (struct) - Results struct. This is different depending on which
@@ -51,6 +55,8 @@ function [results, validationDir, validationPath, openSpectroRadiometerOBJ] = OL
 % 1/30/14  ms       Added keyword parameters to make this useful.
 % 7/06/16  npc      Adapted to use PR650dev/PR670dev objects
 % 9/2/16   ms       Updated with new CalStateMeas option
+% 10/20/16 npc      Added ability to record temperature measurements
+% 12/21/16  npc     Updated for new class @LJTemperatureProbe
 
 % Parse the input
 p = inputParser;
@@ -69,10 +75,12 @@ p.addOptional('powerLevels', 32, @isnumeric);
 p.addOptional('postreceptoralCombinations', [], @isnumeric);
 p.addOptional('outDir', [], @isstr);
 p.addOptional('pr670sensitivityMode', 'STANDARD', @isstr);
+p.addOptional('takeTemperatureMeasurements', false, @islogical);
 
 p.parse(varargin{:});
 describe = p.Results;
 powerLevels = describe.powerLevels;
+takeTemperatureMeasurements = describe.takeTemperatureMeasurements;
 
 if isempty(emailRecipient)
     emailRecipient = GetWithDefault('Send status email to','igdalova@mail.med.upenn.edu');
@@ -83,6 +91,7 @@ persistent S
 persistent nAverage
 persistent theMeterTypeID
 if (isempty(spectroRadiometerOBJ))
+    
     % Open up the radiometer if this is the first cache file we validate
     try
         switch (meterType)
@@ -131,6 +140,17 @@ if (isempty(spectroRadiometerOBJ))
             ['Calibration failed with the following error' 10 err.message]);
         keyboard;
         rethrow(err);
+    end
+    
+    % Attempt to open the LabJack temperature sensing device
+    if (takeTemperatureMeasurements)
+        % Gracefully attempt to open the LabJack
+        [takeTemperatureMeasurements, quitNow, theLJdev] = OLCalibrator.OpenLabJackTemperatureProbe(takeTemperatureMeasurements);
+        if (quitNow)
+            return;
+        end
+    else
+        theLJdev = [];
     end
 end
 openSpectroRadiometerOBJ = spectroRadiometerOBJ;
@@ -295,6 +315,10 @@ try
         results.fullOnMeas.starts = starts;
         results.fullOnMeas.stops = stops;
         results.fullOnMeas.predictedFromCal = cal.raw.fullOn(:, 1);
+        % Take temperature
+        if (takeTemperatureMeasurements)
+            [status, results.temperature.fullOnMeas] = theLJdev.measure();
+        end 
     end
     
     if describe.HalfOnMeas
@@ -304,20 +328,28 @@ try
         results.halfOnMeas.starts = starts;
         results.halfOnMeas.stops = stops;
         results.halfOnMeas.predictedFromCal = cal.raw.halfOnMeas(:, 1);
+        % Take temperature
+        if (takeTemperatureMeasurements)
+            [status, results.temperature.halfOnMeas] = theLJdev.measure();
+        end 
     end
     
     if describe.DarkMeas
         fprintf('- Dark measurement \n');
         [starts,stops] = OLSettingsToStartsStops(cal,0*ones(cal.describe.numWavelengthBands, 1));
-        results.offMeas.meas = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
+        results.offMeas.meas = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage, theLJdev);
         results.offMeas.starts = starts;
         results.offMeas.stops = stops;
         results.offMeas.predictedFromCal = cal.raw.darkMeas(:, 1);
+        % Take temperature
+        if (takeTemperatureMeasurements)
+            [status, results.temperature.offMeas] = theLJdev.measure();
+        end 
     end
     
     if describe.CalStateMeas
         fprintf('- State measurements \n');
-        [~, calStateMeas] = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, 'standAlone',true);
+        [~, calStateMeas] = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, 'standAlone',true);
         OLCalibrator.SaveStateMeasurements(cal, calStateMeas);
     else
         calStateMeas = [];
@@ -372,6 +404,11 @@ try
                 results.modulationAllMeas(i).starts = starts;
                 results.modulationAllMeas(i).stops = stops;
                 results.modulationAllMeas(i).predictedSpd = cal.computed.pr650M*primaries + cal.computed.pr650MeanDark;
+                % Take temperature
+                if (takeTemperatureMeasurements)
+                    [status, results.temperature.modulationAllMeas(i, :)] = theLJdev.measure();
+                end 
+        
             end
             
             % For convenience we pull out the max., min. and background.
@@ -419,6 +456,9 @@ try
                     [starts,stops] = OLSettingsToStartsStops(cal,settings);
                     results.meas(j, i) = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
                     
+                    if (takeTemperatureMeasurements)
+                        [status, results.temperature.meas(j, i, :)] = theLJdev.measure();
+                    end 
                     fprintf('Done\n');
                 end
             end
@@ -455,6 +495,7 @@ try
     results.describe.REFERENCE_OBSERVER_AGE = describe.REFERENCE_OBSERVER_AGE;
     results.describe.S = S;
     results.describe.calStateMeas = calStateMeas;
+    results.describe.takeTemperatureMeasurements = takeTemperatureMeasurements;
     
     % Save the data to the validation folder.
     if results.describe.referenceMode
