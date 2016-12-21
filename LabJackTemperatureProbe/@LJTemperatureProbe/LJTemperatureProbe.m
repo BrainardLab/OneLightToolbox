@@ -1,3 +1,10 @@
+% Class for abstract handling of temperature recording via a UE9 or a U3
+% device.
+% 
+% For example usage, see OLPrintTemperature.m
+%
+% 12/21/16  npc    Wrote it.
+
 classdef LJTemperatureProbe < handle
     
     % Public properties
