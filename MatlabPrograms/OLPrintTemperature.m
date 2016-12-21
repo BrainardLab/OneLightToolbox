@@ -45,18 +45,19 @@ function temperatureLoop()
     
     % Close the device
 	theLJdev.close();
-    fprint('Closed LabJack\n');
+    fprintf('Closed LabJack\n');
     
     function closeLabJackAndSaveData(theLJdev)
         % Close the device
         theLJdev.close();
-        fprint('Closed LabJack (on controlC)\n');
+        fprintf('Closed LabJack (on controlC)\n');
         % Query user whether he/she wants to save the temperature data
         d = GetWithDefault('Save the temperature data', 'Y');
         dataFileName = 'TemperatureData.mat';
         if (strcmp(d, 'y'))
-            save(dataFileName, 'timeSeries');
-            fprintf('Data saved in %s', dataFileName);
+            RecordedTemps = timeSeries;
+            save(dataFileName, 'RecordedTemps');
+            fprintf('Data saved in %s/%s.\n\n', pwd, dataFileName);
         end
        
     end
