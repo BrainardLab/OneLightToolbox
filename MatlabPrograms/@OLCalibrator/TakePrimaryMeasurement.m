@@ -1,4 +1,4 @@
-% [cal, primaryMeasurement] = TakePrimaryMeasurement(cal0, primaryIndex, ol, od, spectroRadiometerOBJ, meterToggle, nAverage)
+% [cal, primaryMeasurement] = TakePrimaryMeasurement(cal0, primaryIndex, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev)
 %
 % Takes primary SPD measurements.
 %
@@ -67,7 +67,7 @@ function [cal, primaryMeasurement] = TakePrimaryMeasurement(cal0, primaryIndex, 
     end
     theSettings(primaryIndex) = 1;
     [starts,stops] = OLSettingsToStartsStops(cal,theSettings);
-    measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage, theLJdev);
+    measTemp = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, cal.describe.S, meterToggle, nAverage);
     primaryMeasurement.lightSpectrum = measTemp.pr650.spectrum;
     primaryMeasurement.time = measTemp.pr650.time(1);
     if (meterToggle(2))
