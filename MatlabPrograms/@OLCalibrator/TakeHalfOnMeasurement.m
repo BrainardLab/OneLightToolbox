@@ -1,10 +1,10 @@
-% cal = TakeHalfOnMeasurement(measurementIndex, cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage)
+% cal = TakeHalfOnMeasurement(measurementIndex, cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, varargin)
 %
 % Takes half ON measurements.
 %
 % 8/13/16   npc     Wrote it
 % 9/29/16   npc     Optionally record temperature
-%
+% 12/21/16  npc     Updated for new class @LJTemperatureProbe
 
 function cal = TakeHalfOnMeasurement(measurementIndex, cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, varargin)
 

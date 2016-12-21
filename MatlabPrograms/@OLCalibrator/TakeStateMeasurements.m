@@ -6,7 +6,8 @@
 % 8/13/16   npc     Wrote it
 % 9/2/16    ms      Some updates
 % 9/29/16   npc     Added parser for optional params: 'standAlone' and 'takeTemperatureMeasurements'
-%
+% 12/21/16  npc     Updated for new class @LJTemperatureProbe
+
 function [cal, calMeasOnly] = TakeStateMeasurements(cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, varargin)
 
 p = inputParser;
