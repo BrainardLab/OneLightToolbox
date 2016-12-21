@@ -37,7 +37,6 @@ function temperatureLoop()
         % Add it to the timeSeries
         timeSeries = cat(1, timeSeries, {datestr(now), temperature(1), temperature(2)});
         % Display it as a table
-        clc
         cell2table(timeSeries, 'VariableNames', {'Time' 'OneLightTemp' 'RoomTemp'})
         % Pause and re-measure, until user presses ^c
         pause(0.5);

@@ -9,31 +9,31 @@ classdef OLCalibrator
     methods (Static = true)    
         % Method to take state measurements for a OneLight calibration. In stand alone mode,
         % the data are added to a barebones calibration structure.
-        [cal, calMeasOnly] = TakeStateMeasurements(cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, standAlone, varargin);
+        [cal, calMeasOnly] = TakeStateMeasurements(cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, standAlone, theLJdev, varargin);
     
         % Method to take full ON measurements.
-        cal = TakeFullOnMeasurement(measurementIndex, cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, varargin);
+        cal = TakeFullOnMeasurement(measurementIndex, cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, varargin);
         
         % Method to take half ON measurements.
-        cal = TakeHalfOnMeasurement(measurementIndex, cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, varargin);
+        cal = TakeHalfOnMeasurement(measurementIndex, cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, varargin);
             
         % Method to take wiggly spectrum measurements.
-        cal = TakeWigglyMeasurement(measurementIndex, cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, varargin);
+        cal = TakeWigglyMeasurement(measurementIndex, cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, varargin);
         
         % Method to take dark measurements.
-        cal = TakeDarkMeasurement(measurementIndex, cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, varargin);
+        cal = TakeDarkMeasurement(measurementIndex, cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, varargin);
         
         % Method to take specified background measurements.
-        cal = TakeSpecifiedBackgroundMeasurement(measurementIndex, cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, varargin);
+        cal = TakeSpecifiedBackgroundMeasurement(measurementIndex, cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, varargin);
     
         % Method to take primary SPD measurements.
-        [cal, primaryMeasurement] = TakePrimaryMeasurement(cal0, primaryIndex, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, varargin);
+        [cal, primaryMeasurement] = TakePrimaryMeasurement(cal0, primaryIndex, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, varargin);
     
         % Method to take gamma measurements.
-        cal = TakeGammaMeasurements(cal0, gammaBandIndex, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, varargin);
+        cal = TakeGammaMeasurements(cal0, gammaBandIndex, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, varargin);
     
         % Method to take measurements that assess primary independence
-        cal = TakeIndependenceMeasurements(cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, varargin);
+        cal = TakeIndependenceMeasurements(cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, varargin);
 
         % Method to save barebones state measurements
         SaveStateMeasurements(cal0, cal1);
@@ -42,6 +42,6 @@ classdef OLCalibrator
         VisualizeStateProgression();      
         
         % Method to gracefull open the LabJackTemperatureProbe
-        [takeTemperatureMeasurements, quitNow] = OpenLabJackTemperatureProbe(takeTemperatureMeasurements0);
+        [takeTemperatureMeasurements, quitNow, theLJdev] = OpenLabJackTemperatureProbe(takeTemperatureMeasurements0);
     end
 end

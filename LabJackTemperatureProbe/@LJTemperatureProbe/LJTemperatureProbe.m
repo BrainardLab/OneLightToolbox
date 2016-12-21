@@ -43,7 +43,7 @@ classdef LJTemperatureProbe < handle
                 else
                     error('Did not find a UE9 or a U3 LabJack device. Is one connected ?/n');
                 end
-                LJTemperatureProbeU3('close')
+                LJTemperatureProbeU3('close');
                 LJTemperatureProbeU3('open');
             end
             status = 1;
