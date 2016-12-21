@@ -1,7 +1,7 @@
 % Shows how to use the LJTemperatureProbe class
 function LJTempProbeDemo
 
-    % To recompile the mexfiles run CompileMexfiles in the src subdirectory;
+    % Note: To recompile the mexfiles run CompileMexfiles in the src subdirectory;
     
     % Instantiate a class to handle the UE9 or the U3 labJack device
     theLJdev = LJTemperatureProbe();
