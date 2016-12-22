@@ -55,7 +55,7 @@ function temperatureLoop()
         dataFileName = 'TemperatureData.mat';
         if (strcmp(d, 'y'))
             RecordedTemps = timeSeries;
-            save(dataFileName, 'RecordedTemps');
+            save(dataFileName, sprintf('%s_RecordedTemps', datestr(now, 30)));
             fprintf('Data saved in %s/%s.\n\n', pwd, dataFileName);
         end
        
