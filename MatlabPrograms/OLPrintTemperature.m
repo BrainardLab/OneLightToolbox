@@ -39,7 +39,7 @@ function temperatureLoop()
         % Display it as a table
         cell2table(timeSeries, 'VariableNames', {'Time' 'OneLightTemp' 'RoomTemp'})
         % Pause and re-measure, until user presses ^c
-        pause(0.5);
+        pause(1.0);
     end
     
     % Close the device
