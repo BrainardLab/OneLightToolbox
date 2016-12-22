@@ -141,20 +141,20 @@ if (isempty(spectroRadiometerOBJ))
         keyboard;
         rethrow(err);
     end
-    
-    % Attempt to open the LabJack temperature sensing device
-    if (takeTemperatureMeasurements)
-        % Gracefully attempt to open the LabJack
-        [takeTemperatureMeasurements, quitNow, theLJdev] = OLCalibrator.OpenLabJackTemperatureProbe(takeTemperatureMeasurements);
-        if (quitNow)
-            return;
-        end
-    else
-        theLJdev = [];
-    end
 end
 openSpectroRadiometerOBJ = spectroRadiometerOBJ;
 
+% Attempt to open the LabJack temperature sensing device
+if (takeTemperatureMeasurements)
+   % Gracefully attempt to open the LabJack
+   [takeTemperatureMeasurements, quitNow, theLJdev] = OLCalibrator.OpenLabJackTemperatureProbe(takeTemperatureMeasurements);
+   if (quitNow)
+      return;
+   end
+else
+   theLJdev = [];
+end
+    
 
 % Force the file to be an absolute path instead of a relative one.  We do
 % this because files with relative paths can match anything on the path,

@@ -93,6 +93,7 @@ end
 persistent S
 persistent nAverage
 persistent theMeterTypeID
+
 if (isempty(spectroRadiometerOBJ))
     % Open up the radiometer if this is the first cache file we validate
     try
@@ -144,18 +145,20 @@ if (isempty(spectroRadiometerOBJ))
         rethrow(err);
     end
     
-    % Attempt to open the LabJack temperature sensing device
-    if (takeTemperatureMeasurements)
-        % Gracefully attempt to open the LabJack
-        [takeTemperatureMeasurements, quitNow, theLJdev] = OLCalibrator.OpenLabJackTemperatureProbe(takeTemperatureMeasurements);
-        if (quitNow)
-            return;
-        end
-    else
-        theLJdev = [];
-    end
+    
 end
 openSpectroRadiometerOBJ = spectroRadiometerOBJ;
+
+% Attempt to open the LabJack temperature sensing device
+if (takeTemperatureMeasurements)
+    % Gracefully attempt to open the LabJack
+    [takeTemperatureMeasurements, quitNow, theLJdev] = OLCalibrator.OpenLabJackTemperatureProbe(takeTemperatureMeasurements);
+    if (quitNow)
+        return;
+     end
+else
+     theLJdev = [];
+end
 
 
 % Force the file to be an absolute path instead of a relative one.  We do
