@@ -333,8 +333,7 @@ try
         OLCalibrator.SaveStateMeasurements(cal, calStateMeas);
     end
     
-    % Loop over the stimuli in the cache file and take a measurement with
-    % the PR-670.
+    % Loop over the stimuli in the cache file and take a measurement with the PR-670.
     iter = 1;
     switch cacheData.computeMethod
         case 'ReceptorIsolate'
@@ -407,7 +406,7 @@ try
                     % when mapped through the calibration, so we just
                     % recrate that calculation here.
                     if iter == 1
-                        results.modulationAllMeas(i).predictedSpd = cal.computed.pr650M*primaries + cal.computed.pr650MeanDark;
+                        results.modulationAllMeas(i).predictedSpd = OLPrimaryToSpd(cal,primaries);
                     end     
                 end
                 
@@ -446,15 +445,24 @@ try
                    kScale = results.modulationBGMeas.meas.pr650.spectrum \ results.modulationBGMeas.predictedSpd;
                 end
                 
+                % Find out how much we missed by in primary space, by
+                % taking the difference between the measured spectrum and
+                % what we wanted to get.
                 deltaBackgroundPrimaryInferred = OLSpdToPrimary(cal, (kScale*results.modulationBGMeas.meas.pr650.spectrum)-...
                     results.modulationBGMeas.predictedSpd, 'differentialMode', true);
                 deltaModulationPrimaryInferred = OLSpdToPrimary(cal, (kScale*results.modulationMaxMeas.meas.pr650.spectrum)-...
                     results.modulationMaxMeas.predictedSpd, 'differentialMode', true);
                 
+                % Take a scaled version of the delta and subtract it from
+                % the primaries we're trying, to get the new desired
+                % primaries.
                 backgroundPrimaryCorrected = backgroundPrimary - describe.lambda*deltaBackgroundPrimaryInferred;
+                modulationPrimaryCorrected = modulationPrimary - describe.lambda*deltaModulationPrimaryInferred;
+                
+                % Make sure new primaries are between 0 and 1 by
+                % truncating.
                 backgroundPrimaryCorrected(backgroundPrimaryCorrected > 1) = 1;
                 backgroundPrimaryCorrected(backgroundPrimaryCorrected < 0) = 0;
-                modulationPrimaryCorrected = modulationPrimary - describe.lambda*deltaModulationPrimaryInferred;
                 modulationPrimaryCorrected(modulationPrimaryCorrected > 1) = 1;
                 modulationPrimaryCorrected(modulationPrimaryCorrected < 0) = 0;
                 
@@ -462,13 +470,13 @@ try
                 T_receptors = cacheData.data(describe.REFERENCE_OBSERVER_AGE).describe.T_receptors;
                 
                 % Save out information about the correction
-                [contrasts(:, iter) postreceptoralContrasts(:, iter)] = ComputeAndReportContrastsFromSpds(['Iteration ' num2str(iter, '%02.0f')] ,theCanonicalPhotoreceptors,T_receptors,...
+                [contrasts(:,iter) postreceptoralContrasts(:,iter)] = ComputeAndReportContrastsFromSpds(['Iteration ' num2str(iter, '%02.0f')] ,theCanonicalPhotoreceptors,T_receptors,...
                     results.modulationBGMeas.meas.pr650.spectrum,results.modulationMaxMeas.meas.pr650.spectrum,describe.postreceptoralCombinations,true);
                 
-                backgroundPrimaryCorrectedAll(:, iter) = backgroundPrimaryCorrected;
-                deltaBackgroundPrimaryInferredAll(:, iter)= deltaBackgroundPrimaryInferred;
-                modulationPrimaryCorrectedAll(:, iter) = modulationPrimaryCorrected;
-                deltaModulationPrimaryInferredAll(:, iter)= deltaModulationPrimaryInferred;
+                backgroundPrimaryCorrectedAll(:,iter) = backgroundPrimaryCorrected;
+                deltaBackgroundPrimaryInferredAll(:,iter)= deltaBackgroundPrimaryInferred;
+                modulationPrimaryCorrectedAll(:,iter) = modulationPrimaryCorrected;
+                deltaModulationPrimaryInferredAll(:,iter)= deltaModulationPrimaryInferred;
                 
                 % Increment
                 iter = iter+1;
@@ -524,6 +532,8 @@ try
     try
         OLAnalyzeValidationReceptorIsolate(validationPath, 'short');
     end
+    
+% Something went wrong, try to close radiometer gracefully
 catch e
     if (~isempty(spectroRadiometerOBJ))
         spectroRadiometerOBJ.shutDown();
