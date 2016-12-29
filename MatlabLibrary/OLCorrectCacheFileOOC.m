@@ -1,16 +1,16 @@
 function [cacheData olCache openSpectroRadiometerOBJ] = OLCorrectCacheFileOOC(cacheFileName, emailRecipient, ...
     meterType, spectroRadiometerOBJ, spectroRadiometerOBJWillShutdownAfterMeasurement, varargin)
 % results = OLCorrectCacheFileOOC(cacheFileName, emailRecipient, ...
-% meterType, spectroRadiometerOBJ, spectroRadiometerOBJWillShutdownAfterMeasurement, varargin)
-% OLCorrectCacheFileOOC - Validates a OneLight cache file.
+%    meterType, spectroRadiometerOBJ, spectroRadiometerOBJWillShutdownAfterMeasurement, varargin)
+%
+% OLCorrectCacheFileOOC - Use iterated procedure to optimize modulations in a cache file
 %
 % Syntax:
 % OLValidateCacheFile(cacheFileName)
 %
 % Description:
-% Validates a OneLight cache file and measures the data it contains in
-% order to see how our computed and predicted spectra compare with the
-% actual spectra as seen by the PR-650 and OmniDriver spectrometers.
+% Uses an iterated procedure to bring a modulation as close as possible to
+% its specified spectrum.
 %
 % Input:
 % cacheFileName (string)    - The name of the cache file to validate.  The
@@ -30,28 +30,22 @@ function [cacheData olCache openSpectroRadiometerOBJ] = OLCorrectCacheFileOOC(ca
 %                                                             to file name
 %                             'FullOnMeas'          true      Full-on
 %                             'HalfOnMeas'          false     Half-on
-%                             'CalStateMeas'    true  State measurements
+%                             'CalStateMeas'        true      State measurements
 %                             'SkipBackground'      false     Background
 %                             'ReducedPowerLevels'  true      Only 3 levels
 %                             'NoAdjustment      '  true      Does not pause
-%                             'REFERENCE_OBSERVER_AGE'         32        Standard obs.
-%                             'selectedCalType'     'EyeTrackerLongCableEyePiece1'
-%                                                             Calibration
-%                                                             type
+%                             'REFERENCE_OBSERVER_AGE' 32     Standard obs.
+%                             'selectedCalType'     'EyeTrackerLongCableEyePiece1' Calibration type
 %                             'powerLevels'         scalar    Which power levels
-%                             'NIter'               scalar    number of
-%                                                             iterations
+%                             'NIter'               scalar    number of iterations
 %                             'lambda'              scalar    Learning rate
-%                             'postreceptoralCombinations'  scalar     Post-receptoral combinations to calculate contrast w.r.t.
-%                             'takeTemperatureMeasurements' false  Whether
-%                             to take temperature measurements (requires a
-%                             connected LabJack dev with a temperature
-%                             probe)
+%                             'postreceptoralCombinations'  scalar Post-receptoral combinations to calculate contrast w.r.t.
+%                             'takeTemperatureMeasurements' false  Whether to take temperature measurements (requires a
+%                                                                  connected LabJack dev with a temperature probe)
 % Output:
-% results (struct) - Results struct. This is different depending on which
-% mode is used.
+% results (struct) - Results struct. This is different depending on which mode is used.
 % validationDir (str) - Validation directory.
-%
+
 % 1/21/14   dhb, ms  Convert to use OLSettingsToStartsStops.
 % 1/30/14   ms       Added keyword parameters to make this useful.
 % 7/06/16   npc      Adapted to use PR650dev/PR670dev objects
@@ -78,7 +72,6 @@ p.addOptional('doCorrection', true, @islogical);
 p.addOptional('postreceptoralCombinations', [], @isnumeric);
 p.addOptional('outDir', [], @isstr);
 p.addOptional('takeTemperatureMeasurements', false, @islogical);
-
 p.parse(varargin{:});
 describe = p.Results;
 powerLevels = describe.powerLevels;
@@ -128,7 +121,7 @@ if (isempty(spectroRadiometerOBJ))
                     'cyclesToAverage',  1, ...          % choose any integer in range [1 99]
                     'sensitivityMode',  'STANDARD', ... % choose between 'STANDARD' and 'EXTENDED'.  'STANDARD': (exposure range: 6 - 6,000 msec, 'EXTENDED': exposure range: 6 - 30,000 msec
                     'exposureTime',     'ADAPTIVE', ... % choose between 'ADAPTIVE' (for adaptive exposure), or a value in the range [6 6000] for 'STANDARD' sensitivity mode, or a value in the range [6 30000] for the 'EXTENDED' sensitivity mode
-                    'apertureSize',     '1 DEG' ...   % choose between '1 DEG', '1/2 DEG', '1/4 DEG', '1/8 DEG'
+                    'apertureSize',     '1 DEG' ...     % choose between '1 DEG', '1/2 DEG', '1/4 DEG', '1/8 DEG'
                     );
             otherwise,
                 error('Unknown meter type');
@@ -160,7 +153,6 @@ else
      theLJdev = [];
 end
 
-
 % Force the file to be an absolute path instead of a relative one.  We do
 % this because files with relative paths can match anything on the path,
 % which may not be what was intended.  The regular expression looks for
@@ -173,9 +165,8 @@ assert(~isempty(m), 'OLValidateCacheFile:InvalidPathDef', ...
 assert(logical(exist(cacheFileName, 'file')), 'OLValidateCacheFile:FileNotFound', ...
     'Cannot find cache file: %s', cacheFileName);
 
-% Deduce the cache directory.
+% Deduce the cache directory and load the cache file
 cacheDir = fileparts(cacheFileName);
-% Load the cache file.
 data = load(cacheFileName);
 assert(isstruct(data), 'OLValidateCacheFile:InvalidCacheFile', ...
     'Specified file doesn''t seem to be a cache file: %s', cacheFileName);
@@ -233,6 +224,7 @@ cacheFileNameFull = cacheFileName;
 [~, cacheFileName] = fileparts(cacheFileName);
 
 %% Determine which meters to measure with
+%
 % It is probably a safe assumption that we will not validate a cache file
 % with the Omni with respect to a calibration that was done without the
 % Omni. Therefore, we read out the toggle directly from the calibration
@@ -305,7 +297,6 @@ try
         results.fullOnMeas.starts = starts;
         results.fullOnMeas.stops = stops;
         results.fullOnMeas.predictedFromCal = cal.raw.fullOn(:, 1);
-        % Take temperature
         if (takeTemperatureMeasurements)
             printf('Taking temperature for fullOnMeas\n');
             [status, results.temperature.fullOnMeas] = theLJdev.measure();
@@ -319,7 +310,6 @@ try
         results.halfOnMeas.starts = starts;
         results.halfOnMeas.stops = stops;
         results.halfOnMeas.predictedFromCal = cal.raw.halfOnMeas(:, 1);
-        % Take temperature
         if (takeTemperatureMeasurements)
             [status, results.temperature.halfOnMeas] = theLJdev.measure();
         end 
@@ -332,7 +322,6 @@ try
         results.offMeas.starts = starts;
         results.offMeas.stops = stops;
         results.offMeas.predictedFromCal = cal.raw.darkMeas(:, 1);
-        % Take temperature
         if (takeTemperatureMeasurements)
             [status, results.temperature.offMeas] = theLJdev.measure();
         end
@@ -370,8 +359,7 @@ try
                     nPowerLevels = length(powerLevels);
                 end
                 
-                % Only get the primaries from the cache file if it's the first
-                % iteration
+                % Only get the primaries from the cache file if it's the first iteration
                 if iter == 1
                     backgroundPrimary = cacheData.data(describe.REFERENCE_OBSERVER_AGE).backgroundPrimary;
                     differencePrimary = cacheData.data(describe.REFERENCE_OBSERVER_AGE).differencePrimary;
@@ -381,8 +369,7 @@ try
                     modulationPrimary = modulationPrimaryCorrected;
                 end
                 
-                % Refactor the cache data spectrum primaries to the power
-                % level.
+                % Refactor the cache data spectrum primaries to the power level.
                 for i = 1:nPowerLevels
                     fprintf('- Measuring spectrum %d, level %g...\n', i, powerLevels(i));
                     if powerLevels(i) == 1
@@ -396,7 +383,7 @@ try
                     % Convert the primaries to mirror settings.
                     settings = OLPrimaryToSettings(cal, primaries);
                     
-                    % Compute the stop mirrors.
+                    % Compute the mirror starts and stops.
                     [starts,stops] = OLSettingsToStartsStops(cal, settings);
                     
                     % Take the measurements
@@ -408,17 +395,23 @@ try
                     results.modulationAllMeas(i).settings = settings;
                     results.modulationAllMeas(i).starts = starts;
                     results.modulationAllMeas(i).stops = stops;
-                    if iter == 1
-                        results.modulationAllMeas(i).predictedSpd = cal.computed.pr650M*primaries + cal.computed.pr650MeanDark;
-                    end
-                    % Take temperature
                     if (takeTemperatureMeasurements)
                         [status, tempData] = theLJdev.measure();
                         results.temperature.modulationAllMeas(iter, i, :) = tempData;
-                    end 
+                    end
+                    
+                    % If this is first time, figure out what spectrum we
+                    % want, based on the stored primaries and the
+                    % calibration data.  The stored primaries were
+                    % generated so that they produced the desired spectrum
+                    % when mapped through the calibration, so we just
+                    % recrate that calculation here.
+                    if iter == 1
+                        results.modulationAllMeas(i).predictedSpd = cal.computed.pr650M*primaries + cal.computed.pr650MeanDark;
+                    end     
                 end
                 
-                % For convenience we pull out the max., min. and background.
+                % For convenience we pull out the max, min and background.
                 theMaxIndex = find([results.modulationAllMeas(:).powerLevel] == 1);
                 theMinIndex = find([results.modulationAllMeas(:).powerLevel] == -1);
                 theBGIndex = find([results.modulationAllMeas(:).powerLevel] == 0);
@@ -426,26 +419,30 @@ try
                     results.modulationMaxMeas = results.modulationAllMeas(theMaxIndex);
                 end
                 
+                % Sometimes there's no negative excursion. We set it to BG
                 if ~isempty(theBGIndex)
                     results.modulationMinMeas = results.modulationAllMeas(theMinIndex);
-                else % Some times there's no negative excursion. We set it to BG
+                else 
                     results.modulationMinMeas = results.modulationAllMeas(theBGIndex);
                 end
                 
+                % One of the measurements should have been the background,
+                % pull that out so we have it handy.
                 if ~isempty(theBGIndex)
                     results.modulationBGMeas = results.modulationAllMeas(theBGIndex);
                 end
                 
-                %% Determine the primary settings from the measurements
-                bgSpdAll(:, iter) = results.modulationBGMeas.meas.pr650.spectrum;
-                modSpdAll(:, iter) = results.modulationMaxMeas.meas.pr650.spectrum;
+                % Determine the new primary settings from the measurements
+                %
+                % First, what spectrum did we measure?
+                bgSpdAll(:,iter) = results.modulationBGMeas.meas.pr650.spectrum;
+                modSpdAll(:,iter) = results.modulationMaxMeas.meas.pr650.spectrum;
                 
                 % Figure out a scaling factor from the first measurement
                 % which puts the measured spectrum into the same range as
                 % the predicted spectrum. This deals with fluctuations with
                 % absolute light level.
                 if iter == 1
-                   % Determine the scale factor
                    kScale = results.modulationBGMeas.meas.pr650.spectrum \ results.modulationBGMeas.predictedSpd;
                 end
                 
