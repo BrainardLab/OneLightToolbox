@@ -77,72 +77,34 @@ describe = p.Results;
 powerLevels = describe.powerLevels;
 takeTemperatureMeasurements = describe.takeTemperatureMeasurements;
 
+%% Set up email recipient
 if isempty(emailRecipient)
     emailRecipient = GetWithDefault('Send status email to','igdalova@mail.med.upenn.edu');
 end
 
+%% Open up a radiometer object
+%
 % All variables assigned in the following if (isempty(..)) block (except
-% spectroRadiometerOBJ) must be declared as persistent
+% spectroRadiometerOBJ) must be declared as persistent.
+%
+% DHB: I DON'T UNDERSTAND THE USE OF PERSISTENT VARIABLES HERE.  CAN'T WE GET
+% THESE OUT OF THE RETURNED OBJECT WHENEVER WE WANT THEM?
 persistent S
 persistent nAverage
 persistent theMeterTypeID
-
 if (isempty(spectroRadiometerOBJ))
-    % Open up the radiometer if this is the first cache file we validate
-    try
-        switch (meterType)
-            case 'PR-650',
-                theMeterTypeID = 1;
-                S = [380 4 101];
-                nAverage = 1;
-                
-                % Instantiate a PR650 object
-                spectroRadiometerOBJ  = PR650dev(...
-                    'verbosity',        1, ...       % 1 -> minimum verbosity
-                    'devicePortString', [] ...       % empty -> automatic port detection)
-                    );
-                spectroRadiometerOBJ.setOptions('syncMode', 'OFF');
-                
-            case 'PR-670',
-                theMeterTypeID = 5;
-                S = [380 2 201];
-                nAverage = 1;
-                
-                % Instantiate a PR670 object
-                spectroRadiometerOBJ  = PR670dev(...
-                    'verbosity',        1, ...       % 1 -> minimum verbosity
-                    'devicePortString', [] ...       % empty -> automatic port detection)
-                    );
-                
-                % Set options Options available for PR670:
-                spectroRadiometerOBJ.setOptions(...
-                    'verbosity',        1, ...
-                    'syncMode',         'OFF', ...      % choose from 'OFF', 'AUTO', [20 400];
-                    'cyclesToAverage',  1, ...          % choose any integer in range [1 99]
-                    'sensitivityMode',  'STANDARD', ... % choose between 'STANDARD' and 'EXTENDED'.  'STANDARD': (exposure range: 6 - 6,000 msec, 'EXTENDED': exposure range: 6 - 30,000 msec
-                    'exposureTime',     'ADAPTIVE', ... % choose between 'ADAPTIVE' (for adaptive exposure), or a value in the range [6 6000] for 'STANDARD' sensitivity mode, or a value in the range [6 30000] for the 'EXTENDED' sensitivity mode
-                    'apertureSize',     '1 DEG' ...     % choose between '1 DEG', '1/2 DEG', '1/4 DEG', '1/8 DEG'
-                    );
-            otherwise,
-                error('Unknown meter type');
-        end
-        
-    catch err
-        if (~isempty(spectroRadiometerOBJ))
-            spectroRadiometerOBJ.shutDown();
-            openSpectroRadiometerOBJ = [];
-        end
-        SendEmail(emailRecipient, 'OLValidateCacheFileOOC Failed', ...
-            ['Calibration failed with the following error' 10 err.message]);
-        keyboard;
-        rethrow(err);
-    end
-    
-    
+    [spectroRadiometerOBJ,S,nAverage,theMeterTypeID] = OLOpenSpectroRadiometerObj(meterType);
 end
+
+%% Save a copy of the radiometer object
+%
+% DHB: I DON'T UNDERSTAND WHY THIS IS NEEDED.
 openSpectroRadiometerOBJ = spectroRadiometerOBJ;
 
-% Attempt to open the LabJack temperature sensing device
+%% Attempt to open the LabJack temperature sensing device
+%
+% DHB: WHAT IS THE QUITNOW VARIABLE?  RETURNING WITHOUT MAKING ANY
+% MEASUREMENTS DOES NOT SEEM LIKE THE RIGHT MOVE HERE.  CHECK.
 if (takeTemperatureMeasurements)
     % Gracefully attempt to open the LabJack
     [takeTemperatureMeasurements, quitNow, theLJdev] = OLCalibrator.OpenLabJackTemperatureProbe(takeTemperatureMeasurements);
@@ -153,6 +115,16 @@ else
      theLJdev = [];
 end
 
+[data,cal,cacheDir] = OLGetModulationCacheData(cacheFileName);
+
+function [data,cal,cacheFileName, cacheDir] = OLGetModulationCacheData(cacheFileName)
+%%OLGetModulationCacheData  Open a modulation cache file and get the data for a particular calibration.
+%    [data,cal,cacheDir] = OLGetModulationCacheData(cacheFileName); 
+%
+%     User is prompoted for desired calibration file.
+
+%% Open cache file and get data
+%
 % Force the file to be an absolute path instead of a relative one.  We do
 % this because files with relative paths can match anything on the path,
 % which may not be what was intended.  The regular expression looks for
@@ -161,22 +133,23 @@ m = regexp(cacheFileName, '^(\.\/|\/).*', 'once');
 assert(~isempty(m), 'OLValidateCacheFile:InvalidPathDef', ...
     'Cache file name must be an absolute path.');
 
-% Make sure the file exists.
+%% Make sure the cache file exists.
 assert(logical(exist(cacheFileName, 'file')), 'OLValidateCacheFile:FileNotFound', ...
     'Cannot find cache file: %s', cacheFileName);
 
-% Deduce the cache directory and load the cache file
+%% Deduce the cache directory and load the cache file
 cacheDir = fileparts(cacheFileName);
 data = load(cacheFileName);
 assert(isstruct(data), 'OLValidateCacheFile:InvalidCacheFile', ...
     'Specified file doesn''t seem to be a cache file: %s', cacheFileName);
 
-% List the available calibration types found in the cache file.
+%% List the available calibration types found in the cache file.
 foundCalTypes = sort(fieldnames(data));
 
-% Make sure the all the calibration types loaded seem legit. We want to
-% make sure that we have at least one calibration type which we know of.
-% Otherwise, we abort.
+%% Check cache calibrations
+%
+% Make sure that at least one of the calibration types in the calibration file
+% is current.
 [~, validCalTypes] = enumeration('OLCalibrationTypes');
 for i = 1:length(foundCalTypes)
     typeExists(i) = any(strcmp(foundCalTypes{i}, validCalTypes));
@@ -184,11 +157,21 @@ end
 assert(any(typeExists), 'OLValidateCacheFile:InvalidCacheFile', ...
     'File contains does not contain at least one valid calibration type');
 
-% Display a list of all the calibration types contained in the file and
-% have the user select one to validate.
+%% Select calibration type to validate
+%
+% Either it was passed and we select that one, or we ask the user.
 while true
-    fprintf('\n- Calibration Types in Cache File (*** = valid)\n\n');
+    % Check if 'selectedCalType' was passed.  Go with that if it was in the
+    % calibration file.
+    %
+    % It might be clever to check that the passed type is valid.
+    if (isfield(describe, 'selectedCalType')) && any(strcmp(foundCalTypes, describe.selectedCalType))
+        selectedCalType = describe.selectedCalType;
+        break;
+    end
     
+    % Prompt user, distinguishing currently valid types in menu.
+    fprintf('\n- Calibration Types in Cache File (*** = valid)\n\n');   
     for i = 1:length(foundCalTypes)
         if typeExists(i)
             typeState = '***';
@@ -197,16 +180,8 @@ while true
         end
         fprintf('%i (%s): %s\n', i, typeState, foundCalTypes{i});
     end
-    fprintf('\n');
-    
-    % Check if 'selectedCalType' was passed.
-    if (isfield(describe, 'selectedCalType')) && any(strcmp(foundCalTypes, describe.selectedCalType))
-        selectedCalType = describe.selectedCalType;
-        break;
-    end
-    
+    fprintf('\n'); 
     t = GetInput('Select a Number', 'number', 1);
-    
     if t >= 1 && t <= length(foundCalTypes) && typeExists(t);
         fprintf('\n');
         selectedCalType = foundCalTypes{t};
@@ -216,12 +191,13 @@ while true
     end
 end
 
-% Load the calibration file associated with this calibration type.
+%% Load the calibration file associated with this calibration type.
 cal = LoadCalFile(OLCalibrationTypes.(selectedCalType).CalFileName, [], getpref('OneLight', 'OneLightCalData'));
 
-% Pull out the file name
+% Pull out the cache file name
 cacheFileNameFull = cacheFileName;
 [~, cacheFileName] = fileparts(cacheFileName);
+end
 
 %% Determine which meters to measure with
 %
