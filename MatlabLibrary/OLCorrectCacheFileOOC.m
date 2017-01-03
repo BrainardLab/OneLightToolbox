@@ -342,12 +342,15 @@ end
             cacheData.data(ii).differencePrimary = modulationPrimaryCorrectedAll(:, end)-backgroundPrimaryCorrectedAll(:, end);
             cacheData.data(ii).correction.backgroundPrimaryCorrectedAll = backgroundPrimaryCorrectedAll;
             cacheData.data(ii).correction.deltaBackgroundPrimaryInferredAll = deltaBackgroundPrimaryInferredAll;
+            cacheData.data(ii).correction.bgDesiredSpd = bgDesiredSpd;
             cacheData.data(ii).correction.bgSpdAll = bgSpdAll;
+            cacheData.data(ii).kScale = kScale;
             cacheData.data(ii).correction.backgroundPrimaryInitial = backgroundPrimaryInitial;
             cacheData.data(ii).correction.differencePrimaryInitial = differencePrimaryInitial;
             cacheData.data(ii).correction. modulationPrimaryInitial =  modulationPrimaryInitial;
             cacheData.data(ii).correction.modulationPrimaryCorrectedAll = modulationPrimaryCorrectedAll;
             cacheData.data(ii).correction.deltaModulationPrimaryInferredAll = deltaModulationPrimaryInferredAll;
+            cacheData.data(ii).correction.modDesiredSpd =  modDesiredSpd;
             cacheData.data(ii).correction.modSpdAll = modSpdAll;
             cacheData.data(ii).correction.contrasts = contrasts;
             cacheData.data(ii).correction.postreceptoralContrasts = postreceptoralContrasts;
