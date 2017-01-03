@@ -3,18 +3,13 @@ function cacheData = OLCorrectCacheFileOOC(cacheData, cal, ol, spectroRadiometer
 % results = OLCorrectCacheFileOOC(cacheFileName, emailRecipient, ...
 %    meterType, spectroRadiometerOBJ, spectroRadiometerOBJWillShutdownAfterMeasurement, varargin)
 %
-% OLCorrectCacheFileOOC - Use iterated procedure to optimize modulations in a cache file
-%
-% Syntax:
-% OLValidateCacheFile(cacheFileName)
-%
 % Description:
 % Uses an iterated procedure to bring a modulation as close as possible to
 % its specified spectrum.
 %
 % Input:
-% cacheFileName (string)    - The name of the cache file to validate.  The
-%                             file name must be an absolute path.  This is
+% cacheFileNameFullPath (string) - The name of the cache file to validate.  The
+%                             file name must be a full absolute path.  This is
 %                             because relative path can match anything on the
 %                             Matlab path, which could lead to unintended
 %                             results.
@@ -23,18 +18,17 @@ function cacheData = OLCorrectCacheFileOOC(cacheData, cal, ol, spectroRadiometer
 % spectroRadiometerOBJ      - A previously open PR650 or PR670 object
 % spectroRadiometerOBJWillShutdownAfterMeasurement - Boolean, indicating
 %                             whether to shutdown the radiometer object
-% varargin (keyword-value)  - A few keywords which determine the behavior
-%                             of the routine.
-%                             Keyword               Default   Behavior
-%                             'ReferenceMode'       true      Adds suffix
-%                                                             to file name
+%
+% varargin (keyword-value)  - Optional key/value pairs
+%                              Keyword              Default   Behavior
+%                             'ReferenceMode'       true      Adds suffix to file name
 %                             'FullOnMeas'          true      Full-on
 %                             'HalfOnMeas'          false     Half-on
 %                             'CalStateMeas'        true      State measurements
 %                             'SkipBackground'      false     Background
+%                             'OBSERVER_AGE'        32        Observer age to correct for.
 %                             'ReducedPowerLevels'  true      Only 3 levels
-%                             'NoAdjustment      '  true      Does not pause
-%                             'OBSERVER_AGE' 32     Standard obs.
+%                             'NoAdjustment '       true      Does not pause
 %                             'selectedCalType'     'EyeTrackerLongCableEyePiece1' Calibration type
 %                             'powerLevels'         scalar    Which power levels
 %                             'NIter'               scalar    number of iterations
@@ -51,6 +45,7 @@ function cacheData = OLCorrectCacheFileOOC(cacheData, cal, ol, spectroRadiometer
 % 7/06/16   npc      Adapted to use PR650dev/PR670dev objects
 % 10/20/16  npc      Added ability to record temperature measurements
 % 12/21/16  npc      Updated for new class @LJTemperatureProbe
+% 01/03/16  dhb      Refactoring, cleaning, documenting.
 
 % Parse the input
 p = inputParser;
@@ -296,7 +291,10 @@ end
             end
     end
     
-    % Replace the old nominal settings with the corrected ones.
+    %% Store information about corrected modulations for return.
+    %
+    % Since this routine only does the correction for one age, we set the data for that and zero out all
+    % the rest, just to avoid accidently thinking we have corrected spectra where we do not.
     for ii = 1:length(cacheData.data)
         if ii == describe.OBSERVER_AGE;
             cacheData.data(ii).backgroundPrimary = backgroundPrimaryCorrectedAll(:, end);
