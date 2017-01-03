@@ -1,20 +1,16 @@
-function [cacheData olCache openSpectroRadiometerOBJ] = OLCorrectCacheFileOOC(cacheFileName, emailRecipient, ...
+function [cacheData olCache openSpectroRadiometerOBJ] = OLCorrectCacheFileOOC(cacheFileNameFullPath, emailRecipient, ...
     meterType, spectroRadiometerOBJ, spectroRadiometerOBJWillShutdownAfterMeasurement, varargin)
-% results = OLCorrectCacheFileOOC(cacheFileName, emailRecipient, ...
+%%OLCorrectCacheFileOOC - Use iterated procedure to optimize modulations in a cache file
+%    results = OLCorrectCacheFileOOC(cacheFileNameFullPath, emailRecipient, ...
 %    meterType, spectroRadiometerOBJ, spectroRadiometerOBJWillShutdownAfterMeasurement, varargin)
-%
-% OLCorrectCacheFileOOC - Use iterated procedure to optimize modulations in a cache file
-%
-% Syntax:
-% OLValidateCacheFile(cacheFileName)
 %
 % Description:
 % Uses an iterated procedure to bring a modulation as close as possible to
 % its specified spectrum.
 %
 % Input:
-% cacheFileName (string)    - The name of the cache file to validate.  The
-%                             file name must be an absolute path.  This is
+% cacheFileNameFullPath (string) - The name of the cache file to validate.  The
+%                             file name must be a full absolute path.  This is
 %                             because relative path can match anything on the
 %                             Matlab path, which could lead to unintended
 %                             results.
@@ -23,18 +19,17 @@ function [cacheData olCache openSpectroRadiometerOBJ] = OLCorrectCacheFileOOC(ca
 % spectroRadiometerOBJ      - A previously open PR650 or PR670 object
 % spectroRadiometerOBJWillShutdownAfterMeasurement - Boolean, indicating
 %                             whether to shutdown the radiometer object
-% varargin (keyword-value)  - A few keywords which determine the behavior
-%                             of the routine.
-%                             Keyword               Default   Behavior
-%                             'ReferenceMode'       true      Adds suffix
-%                                                             to file name
+%
+% varargin (keyword-value)  - Optional key/value pairs
+%                              Keyword              Default   Behavior
+%                             'ReferenceMode'       true      Adds suffix to file name
 %                             'FullOnMeas'          true      Full-on
 %                             'HalfOnMeas'          false     Half-on
 %                             'CalStateMeas'        true      State measurements
 %                             'SkipBackground'      false     Background
+%                             'OBSERVER_AGE'        32        Observer age to correct for.
 %                             'ReducedPowerLevels'  true      Only 3 levels
-%                             'NoAdjustment      '  true      Does not pause
-%                             'REFERENCE_OBSERVER_AGE' 32     Standard obs.
+%                             'NoAdjustment '       true      Does not pause
 %                             'selectedCalType'     'EyeTrackerLongCableEyePiece1' Calibration type
 %                             'powerLevels'         scalar    Which power levels
 %                             'NIter'               scalar    number of iterations
@@ -51,6 +46,7 @@ function [cacheData olCache openSpectroRadiometerOBJ] = OLCorrectCacheFileOOC(ca
 % 7/06/16   npc      Adapted to use PR650dev/PR670dev objects
 % 10/20/16  npc      Added ability to record temperature measurements
 % 12/21/16  npc      Updated for new class @LJTemperatureProbe
+% 01/03/16  dhb      Refactoring, cleaning, documenting.
 
 % Parse the input
 p = inputParser;
@@ -62,7 +58,7 @@ p.addOptional('CalStateMeas', false, @islogical);
 p.addOptional('SkipBackground', false, @islogical);
 p.addOptional('ReducedPowerLevels', true, @islogical);
 p.addOptional('NoAdjustment', false, @islogical);
-p.addOptional('REFERENCE_OBSERVER_AGE', 32, @isscalar);
+p.addOptional('OBSERVER_AGE', 32, @isscalar);
 p.addOptional('NIter', 20, @isscalar);
 p.addOptional('lambda', 0.8, @isscalar);
 p.addOptional('selectedCalType', [], @isstr);
@@ -84,6 +80,8 @@ end
 
 %% Open up a radiometer object
 %
+% Set meterToggle so that we don't use the Omni radiometer here.
+%
 % All variables assigned in the following if (isempty(..)) block (except
 % spectroRadiometerOBJ) must be declared as persistent.
 %
@@ -95,6 +93,7 @@ persistent theMeterTypeID
 if (isempty(spectroRadiometerOBJ))
     [spectroRadiometerOBJ,S,nAverage,theMeterTypeID] = OLOpenSpectroRadiometerObj(meterType);
 end
+meterToggle = [true false];
 
 %% Save a copy of the radiometer object
 %
@@ -115,141 +114,24 @@ else
      theLJdev = [];
 end
 
-[data,cal,cacheDir] = OLGetModulationCacheData(cacheFileName);
+%% Get cached modulation data as well as calibration file
+[cacheData,cal,cacheDir,cacheFileName] = OLGetModulationCacheData(cacheFileNameFullPath);
 
-function [data,cal,cacheFileName, cacheDir] = OLGetModulationCacheData(cacheFileName)
-%%OLGetModulationCacheData  Open a modulation cache file and get the data for a particular calibration.
-%    [data,cal,cacheDir] = OLGetModulationCacheData(cacheFileName); 
+%% We might not want to seek
 %
-%     User is prompoted for desired calibration file.
-
-%% Open cache file and get data
+% If we aren't seeking just return now.
 %
-% Force the file to be an absolute path instead of a relative one.  We do
-% this because files with relative paths can match anything on the path,
-% which may not be what was intended.  The regular expression looks for
-% string that begins with '/' or './'.
-m = regexp(cacheFileName, '^(\.\/|\/).*', 'once');
-assert(~isempty(m), 'OLValidateCacheFile:InvalidPathDef', ...
-    'Cache file name must be an absolute path.');
-
-%% Make sure the cache file exists.
-assert(logical(exist(cacheFileName, 'file')), 'OLValidateCacheFile:FileNotFound', ...
-    'Cannot find cache file: %s', cacheFileName);
-
-%% Deduce the cache directory and load the cache file
-cacheDir = fileparts(cacheFileName);
-data = load(cacheFileName);
-assert(isstruct(data), 'OLValidateCacheFile:InvalidCacheFile', ...
-    'Specified file doesn''t seem to be a cache file: %s', cacheFileName);
-
-%% List the available calibration types found in the cache file.
-foundCalTypes = sort(fieldnames(data));
-
-%% Check cache calibrations
-%
-% Make sure that at least one of the calibration types in the calibration file
-% is current.
-[~, validCalTypes] = enumeration('OLCalibrationTypes');
-for i = 1:length(foundCalTypes)
-    typeExists(i) = any(strcmp(foundCalTypes{i}, validCalTypes));
-end
-assert(any(typeExists), 'OLValidateCacheFile:InvalidCacheFile', ...
-    'File contains does not contain at least one valid calibration type');
-
-%% Select calibration type to validate
-%
-% Either it was passed and we select that one, or we ask the user.
-while true
-    % Check if 'selectedCalType' was passed.  Go with that if it was in the
-    % calibration file.
-    %
-    % It might be clever to check that the passed type is valid.
-    if (isfield(describe, 'selectedCalType')) && any(strcmp(foundCalTypes, describe.selectedCalType))
-        selectedCalType = describe.selectedCalType;
-        break;
-    end
-    
-    % Prompt user, distinguishing currently valid types in menu.
-    fprintf('\n- Calibration Types in Cache File (*** = valid)\n\n');   
-    for i = 1:length(foundCalTypes)
-        if typeExists(i)
-            typeState = '***';
-        else
-            typeState = '---';
-        end
-        fprintf('%i (%s): %s\n', i, typeState, foundCalTypes{i});
-    end
-    fprintf('\n'); 
-    t = GetInput('Select a Number', 'number', 1);
-    if t >= 1 && t <= length(foundCalTypes) && typeExists(t);
-        fprintf('\n');
-        selectedCalType = foundCalTypes{t};
-        break;
-    else
-        fprintf('\n*** Invalid selection try again***\n\n');
-    end
-end
-
-%% Load the calibration file associated with this calibration type.
-cal = LoadCalFile(OLCalibrationTypes.(selectedCalType).CalFileName, [], getpref('OneLight', 'OneLightCalData'));
-
-% Pull out the cache file name
-cacheFileNameFull = cacheFileName;
-[~, cacheFileName] = fileparts(cacheFileName);
-end
-
-%% Determine which meters to measure with
-%
-% It is probably a safe assumption that we will not validate a cache file
-% with the Omni with respect to a calibration that was done without the
-% Omni. Therefore, we read out the toggle directly from the calibration
-% file. First entry is PR-6xx and is always true. Second entry is omni and
-% can be on or off, depending on content of calibration.
-meterToggle = [1 cal.describe.useOmni];
-
-% Setup the OLCache object.
-olCache = OLCache(cacheDir, cal);
-
-% Load the calibration data.  We do it through the cache object so that we
-% make sure that the cache is current against the latest calibration data.
-[~, simpleCacheFileName] = fileparts(cacheFileName);
-[cacheData, wasRecomputed] = olCache.load(simpleCacheFileName);
-
-% If we recomputed the cache data, save it.  We'll load the cache data
-% after we save it because cache data is uniquely time stamped upon save.
-if wasRecomputed
-    olCache.save(simpleCacheFileName, cacheData);
-    cacheData = olCache.load(simpleCacheFileName);
-end
-
+% DHB: SHOULD THE RADIOMETER STAY OPEN IN THIS CASE?  DO WE EVER USE THIS
+% OR CAN IT BE DELETED?
 if ~(describe.doCorrection)
-   return; % Just return with no correction 
+   return; 
 end
 
-% Connect to the OceanOptics spectrometer.
-if (cal.describe.useOmni)
-    od = OmniDriver;
-    od.Debug = true;
-    % Turn on some averaging and smoothing for the spectrum acquisition.
-    od.ScansToAverage = 10;
-    od.BoxcarWidth = 2;
-    
-    % Make sure electrical dark correction is enabled.
-    od.CorrectForElectricalDark = true;
-    
-    % Set the OmniDriver integration time to match up with what's in the
-    % calibration file.
-    od.IntegrationTime = cal.describe.omniDriver.integrationTime;
-else
-    od = [];
-end
-
-% Open up the OneLight
+%% Open up the OneLight
+%
+% And let user get the radiometer set up if desired.
 ol = OneLight;
-
-% Turn the mirrors full on so the user can focus the radiometer.
-if describe.NoAdjustment
+if ~describe.NoAdjustment
     ol.setAll(true);
     pauseDuration = 0;
     fprintf('- Focus the radiometer and press enter to pause %d seconds and start measuring.\n', ...
@@ -266,6 +148,9 @@ try
     fprintf('- Performing radiometer measurements.\n');
     
     % Take reference measurements
+    %
+    % DHB: DO WE NEED ALL OF THESE, OR DO THE CALSTATEMEASUREMENTS SUBSUME
+    % THE OTHERS?
     if describe.FullOnMeas
         fprintf('- Full-on measurement \n');
         [starts,stops] = OLSettingsToStartsStops(cal,1*ones(cal.describe.numWavelengthBands, 1));
@@ -318,7 +203,7 @@ try
                 if describe.ReducedPowerLevels
                     % Only take three measurements
                     if describe.SkipBackground
-                        nPowerLevels = 2
+                        nPowerLevels = 2;
                         powerLevels = [-1 1];
                     else
                         if strcmp(cacheData.data(32).describe.params.receptorIsolateMode, 'PIPR')
@@ -336,9 +221,9 @@ try
                 
                 % Only get the primaries from the cache file if it's the first iteration
                 if iter == 1
-                    backgroundPrimary = cacheData.data(describe.REFERENCE_OBSERVER_AGE).backgroundPrimary;
-                    differencePrimary = cacheData.data(describe.REFERENCE_OBSERVER_AGE).differencePrimary;
-                    modulationPrimary = cacheData.data(describe.REFERENCE_OBSERVER_AGE).backgroundPrimary+cacheData.data(describe.REFERENCE_OBSERVER_AGE).differencePrimary;
+                    backgroundPrimary = cacheData.data(describe.OBSERVER_AGE).backgroundPrimary;
+                    differencePrimary = cacheData.data(describe.OBSERVER_AGE).differencePrimary;
+                    modulationPrimary = cacheData.data(describe.OBSERVER_AGE).backgroundPrimary+cacheData.data(describe.OBSERVER_AGE).differencePrimary;
                 else
                     backgroundPrimary = backgroundPrimaryCorrected;
                     modulationPrimary = modulationPrimaryCorrected;
@@ -442,8 +327,8 @@ try
                 modulationPrimaryCorrected(modulationPrimaryCorrected > 1) = 1;
                 modulationPrimaryCorrected(modulationPrimaryCorrected < 0) = 0;
                 
-                theCanonicalPhotoreceptors = cacheData.data(describe.REFERENCE_OBSERVER_AGE).describe.photoreceptors;
-                T_receptors = cacheData.data(describe.REFERENCE_OBSERVER_AGE).describe.T_receptors;
+                theCanonicalPhotoreceptors = cacheData.data(describe.OBSERVER_AGE).describe.photoreceptors;
+                T_receptors = cacheData.data(describe.OBSERVER_AGE).describe.T_receptors;
                 
                 % Save out information about the correction
                 [contrasts(:,iter) postreceptoralContrasts(:,iter)] = ComputeAndReportContrastsFromSpds(['Iteration ' num2str(iter, '%02.0f')] ,theCanonicalPhotoreceptors,T_receptors,...
@@ -459,9 +344,12 @@ try
             end
     end
     
-    % Replace the old nominal settings with the corrected ones.
+    %% Store information about corrected modulations for return.
+    %
+    % Since this routine only does the correction for one age, we set the data for that and zero out all
+    % the rest, just to avoid accidently thinking we have corrected spectra where we do not.
     for ii = 1:length(cacheData.data)
-        if ii == describe.REFERENCE_OBSERVER_AGE;
+        if ii == describe.OBSERVER_AGE;
             cacheData.data(ii).backgroundPrimary = backgroundPrimaryCorrectedAll(:, end);
             cacheData.data(ii).modulationPrimarySignedPositive = modulationPrimaryCorrectedAll(:, end);
             cacheData.data(ii).differencePrimary = modulationPrimaryCorrectedAll(:, end)-backgroundPrimaryCorrectedAll(:, end);

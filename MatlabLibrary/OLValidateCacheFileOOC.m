@@ -35,7 +35,7 @@ function [results, validationDir, validationPath, openSpectroRadiometerOBJ] = OL
 %                             'SkipBackground'      false     Background
 %                             'ReducedPowerLevels'  true      Only 3 levels
 %                             'NoAdjustment      '  true      Does not pause
-%                             'REFERENCE_OBSERVER_AGE'  32    Standard obs.
+%                             'OBSERVER_AGE'  32    Standard obs.
 %                             'selectedCalType'     'EyeTrackerLongCableEyePiece1'
 %                                                             Calibration
 %                                                             type
@@ -68,7 +68,7 @@ p.addOptional('CalStateMeas', false, @islogical);
 p.addOptional('SkipBackground', false, @islogical);
 p.addOptional('ReducedPowerLevels', true, @islogical);
 p.addOptional('NoAdjustment', false, @islogical);
-p.addOptional('REFERENCE_OBSERVER_AGE', 32, @isscalar);
+p.addOptional('OBSERVER_AGE', 32, @isscalar);
 p.addOptional('selectedCalType', [], @isstr);
 p.addOptional('CALCULATE_SPLATTER', true, @islogical);
 p.addOptional('powerLevels', 32, @isnumeric);
@@ -381,8 +381,8 @@ try
             end
             
             % Refactor the cache data spectrum primaries to the power level.
-            backgroundPrimary = cacheData.data(describe.REFERENCE_OBSERVER_AGE).backgroundPrimary;
-            differencePrimary = cacheData.data(describe.REFERENCE_OBSERVER_AGE).differencePrimary;
+            backgroundPrimary = cacheData.data(describe.OBSERVER_AGE).backgroundPrimary;
+            differencePrimary = cacheData.data(describe.OBSERVER_AGE).differencePrimary;
             
             for i = 1:nPowerLevels
                 fprintf('- Measuring spectrum %d, level %g...\n', i, powerLevels(i));
@@ -483,7 +483,7 @@ try
     results.describe.cal = cal;
     results.describe.cache.data = cacheData.data;
     results.describe.cache.cacheFileName = cacheFileName;
-    results.describe.cache.REFERENCE_OBSERVER_AGE = describe.REFERENCE_OBSERVER_AGE;
+    results.describe.cache.OBSERVER_AGE = describe.OBSERVER_AGE;
     results.describe.validationDate = validationDate;
     results.describe.validationTime = validationTime;
     results.describe.startMeas = startMeas;
@@ -492,7 +492,7 @@ try
     results.describe.referenceMode = describe.ReferenceMode;
     results.describe.meterType = theMeterTypeID;
     results.describe.meterToggle = meterToggle;
-    results.describe.REFERENCE_OBSERVER_AGE = describe.REFERENCE_OBSERVER_AGE;
+    results.describe.OBSERVER_AGE = describe.OBSERVER_AGE;
     results.describe.S = S;
     results.describe.calStateMeas = calStateMeas;
     results.describe.takeTemperatureMeasurements = takeTemperatureMeasurements;
