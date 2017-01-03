@@ -145,10 +145,19 @@ end
     iter = 1;
     switch cacheData.computeMethod
         case 'ReceptorIsolate'
-            while iter <= describe.NIter
-                % Set up the power levels to use.
+            for iter = 1:describe.NIter
+                
+                % Set up the power levels to use.  The cache file specifies
+                % a full contrast modulation, but we can do seeking for
+                % reduced contrast cases, which here are called power
+                % levels.
+                %
+                % Reduced power levels just means do the high and low
+                % moduation, plus the background or not as specified.
+                %
+                % If we're not doing reduced, then we just do what is in
+                % the list given in vector powerLevels.
                 if describe.ReducedPowerLevels
-                    % Only take three measurements
                     if describe.SkipBackground
                         nPowerLevels = 2;
                         powerLevels = [-1 1];
@@ -162,21 +171,28 @@ end
                         end
                     end
                 else
-                    Take a full set of measurements
                     nPowerLevels = length(powerLevels);
                 end
                 
-                % Only get the primaries from the cache file if it's the first iteration
+                % Only get the primaries from the cache file if it's the
+                % first iteration.  In this case we also store them for
+                % future reference, since they are replaced on every
+                % iteration.
                 if iter == 1
                     backgroundPrimary = cacheData.data(describe.OBSERVER_AGE).backgroundPrimary;
                     differencePrimary = cacheData.data(describe.OBSERVER_AGE).differencePrimary;
                     modulationPrimary = cacheData.data(describe.OBSERVER_AGE).backgroundPrimary+cacheData.data(describe.OBSERVER_AGE).differencePrimary;
+                    
+                    backgroundPrimaryInitial = cacheData.data(describe.OBSERVER_AGE).backgroundPrimary;
+                    differencePrimaryInitial = cacheData.data(describe.OBSERVER_AGE).differencePrimary;
+                    modulationPrimaryInitial = cacheData.data(describe.OBSERVER_AGE).backgroundPrimary+cacheData.data(describe.OBSERVER_AGE).differencePrimary;
                 else
                     backgroundPrimary = backgroundPrimaryCorrected;
                     modulationPrimary = modulationPrimaryCorrected;
                 end
                 
-                % Refactor the cache data spectrum primaries to the power level.
+                % Refactor the cache data spectrum primaries to the power
+                % level and make a measurement for each one.
                 for i = 1:nPowerLevels
                     fprintf('- Measuring spectrum %d, level %g...\n', i, powerLevels(i));
                     if powerLevels(i) == 1
@@ -207,18 +223,23 @@ end
                         results.temperature.modulationAllMeas(iter, i, :) = tempData;
                     end
                     
-                    % If this is first time, figure out what spectrum we
-                    % want, based on the stored primaries and the
-                    % calibration data.  The stored primaries were
+                    % If this is first time through the seeking, figure out
+                    % what spectrum we want, based on the stored primaries
+                    % and the calibration data.  The stored primaries were
                     % generated so that they produced the desired spectrum
                     % when mapped through the calibration, so we just
-                    % recrate that calculation here.
+                    % recreate the desired spectrum from the calibration
+                    % and the primaries. On the first iteration, the
+                    % primaries match those from the cache file, possibly
+                    % scaled by the appropriate power level.
                     if iter == 1
                         results.modulationAllMeas(i).predictedSpd = OLPrimaryToSpd(cal,primaries);
                     end     
                 end
                 
-                % For convenience we pull out the max, min and background.
+                % For convenience we pull out from the set of power level
+                % measurements those corresonding to the max power, min
+                % power and background.
                 theMaxIndex = find([results.modulationAllMeas(:).powerLevel] == 1);
                 theMinIndex = find([results.modulationAllMeas(:).powerLevel] == -1);
                 theBGIndex = find([results.modulationAllMeas(:).powerLevel] == 0);
@@ -226,7 +247,13 @@ end
                     results.modulationMaxMeas = results.modulationAllMeas(theMaxIndex);
                 end
                 
-                % Sometimes there's no negative excursion. We set it to BG
+                % Sometimes there's no negative excursion, so we set the min one to the 
+                % background measurement.
+                %
+                % DHB: THIS CODE LOOKS WRONG BECAUSE IT IS CHECKING WHETHER
+                % THE BG INDEX IS EMPTY RATHER THAN WHETHER THE MIN INDEX
+                % IS EMPTY.  IF THE BG INDEX IS EMPTY I THINK THIS WILL
+                % CRASH.
                 if ~isempty(theBGIndex)
                     results.modulationMinMeas = results.modulationAllMeas(theMinIndex);
                 else 
@@ -235,35 +262,47 @@ end
                 
                 % One of the measurements should have been the background,
                 % pull that out so we have it handy.
+                %
+                % DHB: THERE IS A CASE IN THE POWER LEVELS ABOVE WHERE THE
+                % BACKGROUND IS NOT MEASURED.  WILL THIS CRASH FOR THAT
+                % CASE, SINCE THE BG MEAS WILL NOT BE SET.
                 if ~isempty(theBGIndex)
                     results.modulationBGMeas = results.modulationAllMeas(theBGIndex);
                 end
                 
-                % Determine the new primary settings from the measurements
-                %
-                % First, what spectrum did we measure?
-                bgSpdAll(:,iter) = results.modulationBGMeas.meas.pr650.spectrum;
-                modSpdAll(:,iter) = results.modulationMaxMeas.meas.pr650.spectrum;
+                % DHB: STARTING HERE THE CODE SEEMS TO ASSUME THAT THERE IS
+                % A BACKGROUND AND A SINGLE POSITIVE (POWERLEVEL == 1)
+                % MODULATION, AS THE SEEKING ONLY HAPPENS ON THOSE TWO
+                % SPECTRA.
                 
-                % Figure out a scaling factor from the first measurement
-                % which puts the measured spectrum into the same range as
-                % the predicted spectrum. This deals with fluctuations with
-                % absolute light level.
+                % If first time through, figure out a scaling factor from
+                % the first measurement which puts the measured spectrum
+                % into the same range as the predicted spectrum. This deals
+                % with fluctuations with absolute light level.
+                %
+                % While we're at it, tuck away the spectra we are trying in
+                % the end to produce.
                 if iter == 1
-                   kScale = results.modulationBGMeas.meas.pr650.spectrum \ results.modulationBGMeas.predictedSpd;
+                    kScale = results.modulationBGMeas.meas.pr650.spectrum \ results.modulationBGMeas.predictedSpd;
+                    bgDesiredSpd = results.modulationBGMeas.predictedSpd;
+                    modDesiredSpd = results.modulationMaxMeas.predictedSpd;
                 end
                 
                 % Find out how much we missed by in primary space, by
                 % taking the difference between the measured spectrum and
                 % what we wanted to get.
+                %
+                % DHB: WHY IS KSCALE ONLY APPLIED TO THE MEASUREMENT AND
+                % NOT TO THE DESIRED HERE?  THIS IS MYSTERIOUS AND SEEMS
+                % LIKE IT COULD SCREW THINGS UP.
                 deltaBackgroundPrimaryInferred = OLSpdToPrimary(cal, (kScale*results.modulationBGMeas.meas.pr650.spectrum)-...
                     results.modulationBGMeas.predictedSpd, 'differentialMode', true);
                 deltaModulationPrimaryInferred = OLSpdToPrimary(cal, (kScale*results.modulationMaxMeas.meas.pr650.spectrum)-...
                     results.modulationMaxMeas.predictedSpd, 'differentialMode', true);
                 
-                % Take a scaled version of the delta and subtract it from
-                % the primaries we're trying, to get the new desired
-                % primaries.
+                % Take a learning-rate-scaled version of the delta and
+                % subtract it from the primaries we're trying, to get the
+                % new desired primaries.
                 backgroundPrimaryCorrected = backgroundPrimary - describe.lambda*deltaBackgroundPrimaryInferred;
                 modulationPrimaryCorrected = modulationPrimary - describe.lambda*deltaModulationPrimaryInferred;
                 
@@ -281,13 +320,14 @@ end
                 [contrasts(:,iter) postreceptoralContrasts(:,iter)] = ComputeAndReportContrastsFromSpds(['Iteration ' num2str(iter, '%02.0f')] ,theCanonicalPhotoreceptors,T_receptors,...
                     results.modulationBGMeas.meas.pr650.spectrum,results.modulationMaxMeas.meas.pr650.spectrum,'doPostreceptoral',true);
                 
+                % Save the information in a convenient form for keeping
+                % later.
+                bgSpdAll(:,iter) = results.modulationBGMeas.meas.pr650.spectrum;
+                modSpdAll(:,iter) = results.modulationMaxMeas.meas.pr650.spectrum;
                 backgroundPrimaryCorrectedAll(:,iter) = backgroundPrimaryCorrected;
                 deltaBackgroundPrimaryInferredAll(:,iter)= deltaBackgroundPrimaryInferred;
                 modulationPrimaryCorrectedAll(:,iter) = modulationPrimaryCorrected;
                 deltaModulationPrimaryInferredAll(:,iter)= deltaModulationPrimaryInferred;
-                
-                % Increment
-                iter = iter+1;
             end
     end
     
@@ -303,6 +343,9 @@ end
             cacheData.data(ii).correction.backgroundPrimaryCorrectedAll = backgroundPrimaryCorrectedAll;
             cacheData.data(ii).correction.deltaBackgroundPrimaryInferredAll = deltaBackgroundPrimaryInferredAll;
             cacheData.data(ii).correction.bgSpdAll = bgSpdAll;
+            cacheData.data(ii).correction.backgroundPrimaryInitial = backgroundPrimaryInitial;
+            cacheData.data(ii).correction.differencePrimaryInitial = differencePrimaryInitial;
+            cacheData.data(ii).correction. modulationPrimaryInitial =  modulationPrimaryInitial;
             cacheData.data(ii).correction.modulationPrimaryCorrectedAll = modulationPrimaryCorrectedAll;
             cacheData.data(ii).correction.deltaModulationPrimaryInferredAll = deltaModulationPrimaryInferredAll;
             cacheData.data(ii).correction.modSpdAll = modSpdAll;
