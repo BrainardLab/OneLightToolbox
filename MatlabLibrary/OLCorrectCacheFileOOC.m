@@ -115,7 +115,7 @@ else
 end
 
 %% Get cached modulation data as well as calibration file
-[cacheData,cal,cacheDir,cacheFileName] = OLGetModulationCacheData(cacheFileNameFullPath, describe);
+[olCache,cacheData,cal,cacheDir,cacheFileName] = OLGetModulationCacheData(cacheFileNameFullPath, describe);
 
 %% We might not want to seek
 %

@@ -1,6 +1,6 @@
-function [cacheData,cal, cacheDir, cacheFileName] = OLGetModulationCacheData(cacheFileNameFullPath, describe)
+function [olCache, cacheData,cal, cacheDir, cacheFileName] = OLGetModulationCacheData(cacheFileNameFullPath, describe)
 %%OLGetModulationCacheData  Open a modulation cache file and get the data for a particular calibration.
-%    [cacheData,cal,cacheDir,cacheFileName] = OLGetModulationCacheData(cacheFileNameFullPath, describe);
+%    [olCache, cacheData,cal,cacheDir,cacheFileName] = OLGetModulationCacheData(cacheFileNameFullPath, describe);
 %
 % DHB: NEED TO FIGURE OUT WHAT FIELDS OF DESCRIBE ARE NEEDED AND DOCUMENT
 % THEM HERE.
