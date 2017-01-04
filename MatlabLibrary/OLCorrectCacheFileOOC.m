@@ -261,7 +261,7 @@ try
                     modulationPrimary = modulationPrimaryCorrected;
                     differencePrimary = modulationPrimary-backgroundPrimary;
                 end
-                if (any(modulationPrimary ~= backgroundPrimary + differencePrimary))
+                if (max(abs(modulationPrimary(:) - (backgroundPrimary(:) + differencePrimary(:)))) > 1e-8)
                     error('Inconsistency between background, difference, and modulation');
                 end
                 
