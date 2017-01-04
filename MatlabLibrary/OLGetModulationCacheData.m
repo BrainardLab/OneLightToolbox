@@ -1,6 +1,9 @@
-function [cacheData,cal,cacheFileName, cacheDir, cacheFileName] = OLGetModulationCacheData(cacheFileNameFullPath)
+function [cacheData,cal, cacheDir, cacheFileName] = OLGetModulationCacheData(cacheFileNameFullPath, describe)
 %%OLGetModulationCacheData  Open a modulation cache file and get the data for a particular calibration.
-%    [cacheData,cal,cacheDir,cacheFileName] = OLGetModulationCacheData(cacheFileNameFullPath); 
+%    [cacheData,cal,cacheDir,cacheFileName] = OLGetModulationCacheData(cacheFileNameFullPath, describe);
+%
+% DHB: NEED TO FIGURE OUT WHAT FIELDS OF DESCRIBE ARE NEEDED AND DOCUMENT
+% THEM HERE.
 %
 %     User is prompoted for desired calibration file.
 
@@ -82,7 +85,7 @@ olCache = OLCache(cacheDir,cal);
 %
 % We do it through the cache object so that we make sure that the cache is
 % current against the latest calibration data.
-[cacheData, wasRecomputed] = olCache.load(scacheFileName);
+[cacheData, wasRecomputed] = olCache.load(cacheFileName);
 
 % If we recomputed the cache data, save it.  We'll load the cache data
 % after we save it because cache data is uniquely time stamped upon save.
