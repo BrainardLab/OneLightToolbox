@@ -360,6 +360,7 @@ try
                 % the end to produce.
                 if iter == 1
                     kScale = results.modulationBGMeas.meas.pr650.spectrum \ bgDesiredSpd;
+                    kScale = 1;
                 end
                 
                 % Find out how much we missed by in primary space, by
@@ -369,6 +370,10 @@ try
                     bgDesiredSpd, 'differentialMode', true);
                 deltaModulationPrimaryInferred = OLSpdToPrimary(cal, (kScale*results.modulationMaxMeas.meas.pr650.spectrum)-...
                     modDesiredSpd, 'differentialMode', true);
+                
+                % Also convert measured spds into  measured primaries, but
+                backgroundPrimaryInferred = OLSpdToPrimary(results.modulationBGMeas.meas.pr650.spectrum);
+                modulationPrimaryInferred = OLSpdToPrimary(results.modulationBGMeas.meas.pr650.spectrum);
                 
                 % Take a learning-rate-scaled version of the delta and
                 % subtract it from the primaries we're trying, to get the
@@ -398,11 +403,11 @@ try
                 backgroundPrimaryCorrectedNotTruncatedAll(:,iter) = backgroundPrimaryCorrectedNotTruncated;
                 backgroundPrimaryCorrectedAll(:,iter) = backgroundPrimaryCorrected;
                 deltaBackgroundPrimaryInferredAll(:,iter) = deltaBackgroundPrimaryInferred;
+                backgroundPrimaryInferredAll(:,iter) = backgroundPrimaryInferred;
                 modulationPrimaryCorrectedNotTruncatedAll(:,iter) = modulationPrimaryCorrectedNotTruncated;
                 modulationPrimaryCorrectedAll(:,iter) = modulationPrimaryCorrected;
                 deltaModulationPrimaryInferredAll(:,iter)= deltaModulationPrimaryInferred;
-            end
-            
+                modulationPrimaryInferredAll(:,iter) = modulationPrimaryInferred;           
         otherwise
             error('Unknown computeMethod specified');
     end
@@ -419,6 +424,7 @@ try
             cacheData.data(ii).correction.backgroundPrimaryCorrectedNotTruncatedAll = backgroundPrimaryCorrectedNotTruncatedAll;
             cacheData.data(ii).correction.backgroundPrimaryCorrectedAll = backgroundPrimaryCorrectedAll;
             cacheData.data(ii).correction.deltaBackgroundPrimaryInferredAll = deltaBackgroundPrimaryInferredAll;
+            cacheData.data(ii).correction.backgroundPrimaryInferredAll = backgroundPrimaryInferredAll;
             cacheData.data(ii).correction.bgDesiredSpd = bgDesiredSpd;
             cacheData.data(ii).correction.bgSpdAll = bgSpdAll;
             cacheData.data(ii).correction.kScale = kScale;
@@ -428,6 +434,7 @@ try
             cacheData.data(ii).correction.modulationPrimaryCorrectedNotTruncatedAll = modulationPrimaryCorrectedNotTruncatedAll;
             cacheData.data(ii).correction.modulationPrimaryCorrectedAll = modulationPrimaryCorrectedAll;
             cacheData.data(ii).correction.deltaModulationPrimaryInferredAll = deltaModulationPrimaryInferredAll;
+            cacheData.data(ii).correction.modulationPrimaryInferredAll = modulationPrimaryInferredAll;
             cacheData.data(ii).correction.modDesiredSpd =  modDesiredSpd;
             cacheData.data(ii).correction.modSpdAll = modSpdAll;
             cacheData.data(ii).correction.contrasts = contrasts;
