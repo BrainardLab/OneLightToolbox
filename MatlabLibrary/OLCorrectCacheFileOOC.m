@@ -397,7 +397,7 @@ try
                 modSpdAll(:,iter) = results.modulationMaxMeas.meas.pr650.spectrum;
                 backgroundPrimaryCorrectedNotTruncatedAll(:,iter) = backgroundPrimaryCorrectedNotTruncated;
                 backgroundPrimaryCorrectedAll(:,iter) = backgroundPrimaryCorrected;
-                deltaBackgroundPrimaryInferredAll(:,iter)= deltaBackgroundPrimaryInferred;
+                deltaBackgroundPrimaryInferredAll(:,iter) = deltaBackgroundPrimaryInferred;
                 modulationPrimaryCorrectedNotTruncatedAll(:,iter) = modulationPrimaryCorrectedNotTruncated;
                 modulationPrimaryCorrectedAll(:,iter) = modulationPrimaryCorrected;
                 deltaModulationPrimaryInferredAll(:,iter)= deltaModulationPrimaryInferred;
