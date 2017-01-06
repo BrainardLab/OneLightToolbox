@@ -63,7 +63,7 @@ p.addOptional('NIter', 20, @isscalar);
 p.addOptional('lambda', 0.8, @isscalar);
 p.addOptional('selectedCalType', [], @isstr);
 p.addOptional('CALCULATE_SPLATTER', true, @islogical);
-p.addOptional('powerLevels', 32, @isnumeric);
+p.addOptional('powerLevels', [0 1], @isnumeric);
 p.addOptional('doCorrection', true, @islogical);
 p.addOptional('postreceptoralCombinations', [], @isnumeric);
 p.addOptional('outDir', [], @isstr);
@@ -97,7 +97,8 @@ meterToggle = [true false];
 
 %% Save a copy of the radiometer object
 %
-% DHB: I DON'T UNDERSTAND WHY THIS IS NEEDED.
+% DHB: I DON'T UNDERSTAND WHY THIS IS NEEDED.  CAN'T WE JUST PASS BACK THE
+% ONE WE HAVE?
 openSpectroRadiometerOBJ = spectroRadiometerOBJ;
 
 %% Attempt to open the LabJack temperature sensing device
@@ -109,9 +110,9 @@ if (takeTemperatureMeasurements)
     [takeTemperatureMeasurements, quitNow, theLJdev] = OLCalibrator.OpenLabJackTemperatureProbe(takeTemperatureMeasurements);
     if (quitNow)
         return;
-     end
+    end
 else
-     theLJdev = [];
+    theLJdev = [];
 end
 
 %% Get cached modulation data as well as calibration file
@@ -119,12 +120,14 @@ end
 
 %% We might not want to seek
 %
-% If we aren't seeking just return now.
+% If we aren't seeking just return now.  The reason we might do this is to
+% get an uncorrected cache file with all the same naming conventions as a
+% corrected one, so that we can run with uncorrected modulations using the
+% same downstream naming conventions as code as if we had corrected.
 %
-% DHB: SHOULD THE RADIOMETER STAY OPEN IN THIS CASE?  DO WE EVER USE THIS
-% OR CAN IT BE DELETED?
+% DHB: SHOULD THE RADIOMETER STAY OPEN IN THIS CASE?
 if ~(describe.doCorrection)
-   return; 
+    return;
 end
 
 %% Open up the OneLight
@@ -151,6 +154,9 @@ try
     %
     % DHB: DO WE NEED ALL OF THESE, OR DO THE CALSTATEMEASUREMENTS SUBSUME
     % THE OTHERS?
+    %
+    % MS: THE FIRST THREE CAN GO AWAY, WE THINK.  LET'S IMPLEMENT SOMETIME
+    % SAFE AND SEE WHAT BREAKS.
     if describe.FullOnMeas
         fprintf('- Full-on measurement \n');
         [starts,stops] = OLSettingsToStartsStops(cal,1*ones(cal.describe.numWavelengthBands, 1));
@@ -173,7 +179,7 @@ try
         results.halfOnMeas.predictedFromCal = cal.raw.halfOnMeas(:, 1);
         if (takeTemperatureMeasurements)
             [status, results.temperature.halfOnMeas] = theLJdev.measure();
-        end 
+        end
     end
     
     if describe.DarkMeas
@@ -215,6 +221,8 @@ try
                 % GENERAL PURPOSE AND IN PARTICULAR MEAN THAT IT DID NOT
                 % NEED TO KNOW WHAT 'PIPR' IS.  ANY REASON NOT TO MAKE THIS
                 % CHANGE?
+                %
+                % MS: OK
                 if describe.ReducedPowerLevels
                     if describe.SkipBackground
                         nPowerLevels = 2;
@@ -317,7 +325,7 @@ try
                     modDesiredSpd = desiredSpds(:,theMaxIndex);
                 end
                 
-                % Sometimes there's no negative excursion, so we set the min one to the 
+                % Sometimes there's no negative excursion, so we set the min one to the
                 % background measurement.
                 %
                 % DHB: THIS CODE LOOKS WRONG BECAUSE IT IS CHECKING WHETHER
@@ -326,7 +334,7 @@ try
                 % CRASH.
                 if ~isempty(theBGIndex)
                     results.modulationMinMeas = results.modulationAllMeas(theMinIndex);
-                else 
+                else
                     results.modulationMinMeas = results.modulationAllMeas(theBGIndex);
                 end
                 
@@ -371,7 +379,7 @@ try
                 deltaModulationPrimaryInferred = OLSpdToPrimary(cal, (kScale*results.modulationMaxMeas.meas.pr650.spectrum)-...
                     modDesiredSpd, 'differentialMode', true);
                 
-                % Also convert measured spds into  measured primaries, but
+                % Also convert measured spds into  measured primaries.
                 backgroundPrimaryInferred = OLSpdToPrimary(results.modulationBGMeas.meas.pr650.spectrum);
                 modulationPrimaryInferred = OLSpdToPrimary(results.modulationBGMeas.meas.pr650.spectrum);
                 
@@ -389,7 +397,7 @@ try
                 modulationPrimaryCorrected = modulationPrimaryCorrectedNotTruncated;
                 modulationPrimaryCorrected(modulationPrimaryCorrected > 1) = 1;
                 modulationPrimaryCorrected(modulationPrimaryCorrected < 0) = 0;
-                  
+                
                 % Compute and print out information about the correction
                 theCanonicalPhotoreceptors = cacheData.data(describe.OBSERVER_AGE).describe.photoreceptors;
                 T_receptors = cacheData.data(describe.OBSERVER_AGE).describe.T_receptors;
@@ -407,7 +415,8 @@ try
                 modulationPrimaryCorrectedNotTruncatedAll(:,iter) = modulationPrimaryCorrectedNotTruncated;
                 modulationPrimaryCorrectedAll(:,iter) = modulationPrimaryCorrected;
                 deltaModulationPrimaryInferredAll(:,iter)= deltaModulationPrimaryInferred;
-                modulationPrimaryInferredAll(:,iter) = modulationPrimaryInferred;           
+                modulationPrimaryInferredAll(:,iter) = modulationPrimaryInferred;
+            end
         otherwise
             error('Unknown computeMethod specified');
     end
@@ -438,7 +447,7 @@ try
             cacheData.data(ii).correction.modDesiredSpd =  modDesiredSpd;
             cacheData.data(ii).correction.modSpdAll = modSpdAll;
             cacheData.data(ii).correction.contrasts = contrasts;
-            cacheData.data(ii).correction.postreceptoralContrasts = postreceptoralContrasts;   
+            cacheData.data(ii).correction.postreceptoralContrasts = postreceptoralContrasts;
         else
             % DHB: THIS IS PROBABLY STORING MORE STUFF THAN NEEDED, SINCE
             % THIS PROGRAM NEVER PRODUCES ANYTHING FOR A NEGATIVE
@@ -458,7 +467,7 @@ try
         end
     end
     
-    if (takeTemperatureMeasurements)  
+    if (takeTemperatureMeasurements)
         cacheData.temperatureData = results.temperature;
     end
     
@@ -476,13 +485,13 @@ try
     % Check if we want to do splatter calculations
     try
         OLAnalyzeValidationReceptorIsolate(validationPath, 'short');
+        
+        
+        % Something went wrong, try to close radiometer gracefully
+    catch e
+        if (~isempty(spectroRadiometerOBJ))
+            spectroRadiometerOBJ.shutDown();
+            openSpectroRadiometerOBJ = [];
+        end
+        rethrow(e)
     end
-    
-% Something went wrong, try to close radiometer gracefully
-catch e
-    if (~isempty(spectroRadiometerOBJ))
-        spectroRadiometerOBJ.shutDown();
-        openSpectroRadiometerOBJ = [];
-    end
-    rethrow(e)
-end
