@@ -62,7 +62,7 @@ p.addOptional('NIter', 20, @isscalar);
 p.addOptional('lambda', 0.8, @isscalar);
 p.addOptional('selectedCalType', [], @isstr);
 p.addOptional('CALCULATE_SPLATTER', true, @islogical);
-p.addOptional('powerLevels', 32, @isnumeric);
+p.addOptional('powerLevels', [0 1], @isnumeric);
 p.addOptional('doCorrection', true, @islogical);
 p.addOptional('postreceptoralCombinations', [], @isnumeric);
 p.addOptional('outDir', [], @isstr);
@@ -87,9 +87,9 @@ if (takeTemperatureMeasurements)
     [takeTemperatureMeasurements, quitNow, theLJdev] = OLCalibrator.OpenLabJackTemperatureProbe(takeTemperatureMeasurements);
     if (quitNow)
         return;
-     end
+    end
 else
-     theLJdev = [];
+    theLJdev = [];
 end
 
 
@@ -267,7 +267,7 @@ end
                     modDesiredSpd = desiredSpds(:,theMaxIndex);
                 end
                 
-                % Sometimes there's no negative excursion, so we set the min one to the 
+                % Sometimes there's no negative excursion, so we set the min one to the
                 % background measurement.
                 %
                 % DHB: THIS CODE LOOKS WRONG BECAUSE IT IS CHECKING WHETHER
@@ -276,7 +276,7 @@ end
                 % CRASH.
                 if ~isempty(theBGIndex)
                     results.modulationMinMeas = results.modulationAllMeas(theMinIndex);
-                else 
+                else
                     results.modulationMinMeas = results.modulationAllMeas(theBGIndex);
                 end
                 
