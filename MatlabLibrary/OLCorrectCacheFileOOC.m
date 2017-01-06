@@ -380,8 +380,8 @@ try
                     modDesiredSpd, 'differentialMode', true);
                 
                 % Also convert measured spds into  measured primaries.
-                backgroundPrimaryInferred = OLSpdToPrimary(results.modulationBGMeas.meas.pr650.spectrum);
-                modulationPrimaryInferred = OLSpdToPrimary(results.modulationBGMeas.meas.pr650.spectrum);
+                backgroundPrimaryInferred = OLSpdToPrimary(cal, results.modulationBGMeas.meas.pr650.spectrum);
+                modulationPrimaryInferred = OLSpdToPrimary(cal, results.modulationBGMeas.meas.pr650.spectrum);
                 
                 % Take a learning-rate-scaled version of the delta and
                 % subtract it from the primaries we're trying, to get the
