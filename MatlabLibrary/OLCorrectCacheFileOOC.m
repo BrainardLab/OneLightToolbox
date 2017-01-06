@@ -485,13 +485,15 @@ try
     % Check if we want to do splatter calculations
     try
         OLAnalyzeValidationReceptorIsolate(validationPath, 'short');
-        
-        
-        % Something went wrong, try to close radiometer gracefully
-    catch e
-        if (~isempty(spectroRadiometerOBJ))
-            spectroRadiometerOBJ.shutDown();
-            openSpectroRadiometerOBJ = [];
-        end
-        rethrow(e)
+    catch
+        fprintf('Caught error during call to OLAnalyuzeValidationReceptorIsolate\n');
     end
+    
+    % Something went wrong, try to close radiometer gracefully
+catch e
+    if (~isempty(spectroRadiometerOBJ))
+        spectroRadiometerOBJ.shutDown();
+        openSpectroRadiometerOBJ = [];
+    end
+    rethrow(e)
+end
