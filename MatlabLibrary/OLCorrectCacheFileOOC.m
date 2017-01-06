@@ -163,6 +163,8 @@ end
                 % GENERAL PURPOSE AND IN PARTICULAR MEAN THAT IT DID NOT
                 % NEED TO KNOW WHAT 'PIPR' IS.  ANY REASON NOT TO MAKE THIS
                 % CHANGE?
+                %
+                % MS: OK
                 if describe.ReducedPowerLevels
                     if describe.SkipBackground
                         nPowerLevels = 2;
@@ -319,9 +321,9 @@ end
                 deltaModulationPrimaryInferred = OLSpdToPrimary(cal, (kScale*results.modulationMaxMeas.meas.pr650.spectrum)-...
                     modDesiredSpd, 'differentialMode', true);
                 
-                % Also convert measured spds into  measured primaries, but
-                backgroundPrimaryInferred = OLSpdToPrimary(results.modulationBGMeas.meas.pr650.spectrum);
-                modulationPrimaryInferred = OLSpdToPrimary(results.modulationBGMeas.meas.pr650.spectrum);
+                % Also convert measured spds into  measured primaries.
+                backgroundPrimaryInferred = OLSpdToPrimary(cal, results.modulationBGMeas.meas.pr650.spectrum);
+                modulationPrimaryInferred = OLSpdToPrimary(cal, results.modulationBGMeas.meas.pr650.spectrum);
                 
                 % Take a learning-rate-scaled version of the delta and
                 % subtract it from the primaries we're trying, to get the
@@ -355,6 +357,7 @@ end
                 modulationPrimaryCorrectedNotTruncatedAll(:,iter) = modulationPrimaryCorrectedNotTruncated;
                 modulationPrimaryCorrectedAll(:,iter) = modulationPrimaryCorrected;
                 deltaModulationPrimaryInferredAll(:,iter)= deltaModulationPrimaryInferred;
+                modulationPrimaryInferredAll(:,iter) = modulationPrimaryInferred;
             end
     end
     
