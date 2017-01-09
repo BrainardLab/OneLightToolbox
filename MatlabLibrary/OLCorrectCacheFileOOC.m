@@ -486,7 +486,7 @@ try
     try
         OLAnalyzeValidationReceptorIsolate(validationPath, 'short');
     catch
-        fprintf('Caught error during call to OLAnalyuzeValidationReceptorIsolate\n');
+        fprintf('Caught error during call to OLAnalyzeValidationReceptorIsolate\n');
     end
     
     % Something went wrong, try to close radiometer gracefully
