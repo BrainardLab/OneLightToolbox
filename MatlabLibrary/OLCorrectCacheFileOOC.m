@@ -199,19 +199,19 @@ end
                 % CURRENTLY WRITTEN DOES THAT MUCH FOR THE REDUCED POWER
                 % CASES.
                 if iter == 1
-                    backgroundPrimary = cacheData.data(describe.OBSERVER_AGE).backgroundPrimary;
-                    differencePrimary = cacheData.data(describe.OBSERVER_AGE).differencePrimary;
-                    modulationPrimary = cacheData.data(describe.OBSERVER_AGE).backgroundPrimary+cacheData.data(describe.OBSERVER_AGE).differencePrimary;
+                    backgroundPrimaryMeasured = cacheData.data(describe.OBSERVER_AGE).backgroundPrimary;
+                    differencePrimaryMeasured = cacheData.data(describe.OBSERVER_AGE).differencePrimary;
+                    modulationPrimaryMeasured = cacheData.data(describe.OBSERVER_AGE).backgroundPrimary+cacheData.data(describe.OBSERVER_AGE).differencePrimary;
                     
                     backgroundPrimaryInitial = cacheData.data(describe.OBSERVER_AGE).backgroundPrimary;
                     differencePrimaryInitial = cacheData.data(describe.OBSERVER_AGE).differencePrimary;
                     modulationPrimaryInitial = cacheData.data(describe.OBSERVER_AGE).backgroundPrimary+cacheData.data(describe.OBSERVER_AGE).differencePrimary;
                 else
-                    backgroundPrimary = backgroundPrimaryCorrected;
-                    modulationPrimary = modulationPrimaryCorrected;
-                    differencePrimary = modulationPrimary-backgroundPrimary;
+                    backgroundPrimaryMeasured = backgroundPrimaryCorrected;
+                    modulationPrimaryMeasured = modulationPrimaryCorrected;
+                    differencePrimaryMeasured = modulationPrimaryMeasured-backgroundPrimaryMeasured;
                 end
-                if (max(abs(modulationPrimary(:) - (backgroundPrimary(:) + differencePrimary(:)))) > 1e-8)
+                if (max(abs(modulationPrimaryMeasured(:) - (backgroundPrimaryMeasured(:) + differencePrimaryMeasured(:)))) > 1e-8)
                     error('Inconsistency between background, difference, and modulation');
                 end
                 
@@ -220,7 +220,7 @@ end
                     fprintf('- Measuring spectrum %d, level %g...\n', i, powerLevels(i));
                     
                     % Get primary values for this power level.
-                    primaries = backgroundPrimary+powerLevels(i).*differencePrimary;
+                    primaries = backgroundPrimaryMeasured+powerLevels(i).*differencePrimaryMeasured;
                     
                     % Convert the primaries to mirror settings.
                     settings = OLPrimaryToSettings(cal, primaries);
@@ -323,13 +323,13 @@ end
                 
                 % Also convert measured spds into  measured primaries.
                 backgroundPrimaryInferred = OLSpdToPrimary(cal, results.modulationBGMeas.meas.pr650.spectrum);
-                modulationPrimaryInferred = OLSpdToPrimary(cal, results.modulationBGMeas.meas.pr650.spectrum);
+                modulationPrimaryInferred = OLSpdToPrimary(cal, results.modulationMaxMeas.meas.pr650.spectrum);
                 
                 % Take a learning-rate-scaled version of the delta and
                 % subtract it from the primaries we're trying, to get the
                 % new desired primaries.
-                backgroundPrimaryCorrectedNotTruncated = backgroundPrimary - describe.lambda*deltaBackgroundPrimaryInferred;
-                modulationPrimaryCorrectedNotTruncated = modulationPrimary - describe.lambda*deltaModulationPrimaryInferred;
+                backgroundPrimaryCorrectedNotTruncated = backgroundPrimaryMeasured - describe.lambda*deltaBackgroundPrimaryInferred;
+                modulationPrimaryCorrectedNotTruncated = modulationPrimaryMeasured - describe.lambda*deltaModulationPrimaryInferred;
                 
                 % Make sure new primaries are between 0 and 1 by
                 % truncating.
@@ -350,10 +350,12 @@ end
                 % later.
                 bgSpdAll(:,iter) = results.modulationBGMeas.meas.pr650.spectrum;
                 modSpdAll(:,iter) = results.modulationMaxMeas.meas.pr650.spectrum;
+                backgroundPrimaryMeasuredAll(:,iter) = backgroundPrimaryMeasured;
                 backgroundPrimaryCorrectedNotTruncatedAll(:,iter) = backgroundPrimaryCorrectedNotTruncated;
                 backgroundPrimaryCorrectedAll(:,iter) = backgroundPrimaryCorrected;
                 deltaBackgroundPrimaryInferredAll(:,iter) = deltaBackgroundPrimaryInferred;
                 backgroundPrimaryInferredAll(:,iter) = backgroundPrimaryInferred;
+                modulationPrimaryMeasuredAll(:,iter) = modulationPrimaryMeasured;
                 modulationPrimaryCorrectedNotTruncatedAll(:,iter) = modulationPrimaryCorrectedNotTruncated;
                 modulationPrimaryCorrectedAll(:,iter) = modulationPrimaryCorrected;
                 deltaModulationPrimaryInferredAll(:,iter)= deltaModulationPrimaryInferred;
@@ -367,12 +369,14 @@ end
     % the rest, just to avoid accidently thinking we have corrected spectra where we do not.
     for ii = 1:length(cacheData.data)
         if ii == describe.OBSERVER_AGE;
+            cacheData.data(ii).cal = cal;
             cacheData.data(ii).backgroundPrimary = backgroundPrimaryCorrectedAll(:, end);
             cacheData.data(ii).modulationPrimarySignedPositive = modulationPrimaryCorrectedAll(:, end);
             cacheData.data(ii).differencePrimary = modulationPrimaryCorrectedAll(:, end)-backgroundPrimaryCorrectedAll(:, end);
+            cacheData.data(ii).correction.backgroundPrimaryMeasuredAll = backgroundPrimaryCorrectedMeasuredAll;
             cacheData.data(ii).correction.backgroundPrimaryCorrectedNotTruncatedAll = backgroundPrimaryCorrectedNotTruncatedAll;
             cacheData.data(ii).correction.backgroundPrimaryCorrectedAll = backgroundPrimaryCorrectedAll;
-            cacheData.data(ii).correction.deltaBackgroundPrimaryInferredAll = deltaBackgroundPrimaryInferredAll;
+            cacheData.data(ii).correction.cal = deltaBackgroundPrimaryInferredAll;
             cacheData.data(ii).correction.backgroundPrimaryInferredAll = backgroundPrimaryInferredAll;
             cacheData.data(ii).correction.bgDesiredSpd = bgDesiredSpd;
             cacheData.data(ii).correction.bgSpdAll = bgSpdAll;
@@ -380,6 +384,7 @@ end
             cacheData.data(ii).correction.backgroundPrimaryInitial = backgroundPrimaryInitial;
             cacheData.data(ii).correction.differencePrimaryInitial = differencePrimaryInitial;
             cacheData.data(ii).correction.modulationPrimaryInitial =  modulationPrimaryInitial;
+            cacheData.data(ii).correction.modulationPrimaryMeasuredAll = modulationPrimaryCorrectedMeasuredAll;
             cacheData.data(ii).correction.modulationPrimaryCorrectedNotTruncatedAll = modulationPrimaryCorrectedNotTruncatedAll;
             cacheData.data(ii).correction.modulationPrimaryCorrectedAll = modulationPrimaryCorrectedAll;
             cacheData.data(ii).correction.deltaModulationPrimaryInferredAll = deltaModulationPrimaryInferredAll;
