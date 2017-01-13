@@ -10,8 +10,8 @@ function [effectivePrimary primary] = OLSpdToPrimary(oneLightCal, targetSpd, var
 % Convert a spectral power distribution to the linear 0-1 fraction of light
 % that we need from each column of mirrors.  No gamma correction is applied
 % to the primary settings.
-% This program also allows for a 'differentialMode' which is true unless
-% the 'differential' keyword is passed.
+% This program also allows for a 'differentialMode' which is false unless
+% the 'differentialMode' keyword is passed.
 %
 % Input:
 % oneLightCal (struct) - OneLight calibration file after it has been
