@@ -317,9 +317,9 @@ end
                 % taking the difference between the measured spectrum and
                 % what we wanted to get.
                 deltaBackgroundPrimaryInferred = OLSpdToPrimary(cal, (kScale*results.modulationBGMeas.meas.pr650.spectrum)-...
-                    bgDesiredSpd, 'differentialMode', true);
+                    bgDesiredSpd, 'differentialMode', true, 'lambda', 0);
                 deltaModulationPrimaryInferred = OLSpdToPrimary(cal, (kScale*results.modulationMaxMeas.meas.pr650.spectrum)-...
-                    modDesiredSpd, 'differentialMode', true);
+                    modDesiredSpd, 'differentialMode', true, 'lambda', 0);
                 
                 % Also convert measured spds into  measured primaries.
                 backgroundPrimaryInferred = OLSpdToPrimary(cal, results.modulationBGMeas.meas.pr650.spectrum);
@@ -373,7 +373,7 @@ end
             cacheData.data(ii).backgroundPrimary = backgroundPrimaryCorrectedAll(:, end);
             cacheData.data(ii).modulationPrimarySignedPositive = modulationPrimaryCorrectedAll(:, end);
             cacheData.data(ii).differencePrimary = modulationPrimaryCorrectedAll(:, end)-backgroundPrimaryCorrectedAll(:, end);
-            cacheData.data(ii).correction.backgroundPrimaryMeasuredAll = backgroundPrimaryCorrectedMeasuredAll;
+            cacheData.data(ii).correction.backgroundPrimaryMeasuredAll = backgroundPrimaryMeasuredAll;
             cacheData.data(ii).correction.backgroundPrimaryCorrectedNotTruncatedAll = backgroundPrimaryCorrectedNotTruncatedAll;
             cacheData.data(ii).correction.backgroundPrimaryCorrectedAll = backgroundPrimaryCorrectedAll;
             cacheData.data(ii).correction.cal = deltaBackgroundPrimaryInferredAll;
@@ -384,7 +384,7 @@ end
             cacheData.data(ii).correction.backgroundPrimaryInitial = backgroundPrimaryInitial;
             cacheData.data(ii).correction.differencePrimaryInitial = differencePrimaryInitial;
             cacheData.data(ii).correction.modulationPrimaryInitial =  modulationPrimaryInitial;
-            cacheData.data(ii).correction.modulationPrimaryMeasuredAll = modulationPrimaryCorrectedMeasuredAll;
+            cacheData.data(ii).correction.modulationPrimaryMeasuredAll = modulationPrimaryMeasuredAll;
             cacheData.data(ii).correction.modulationPrimaryCorrectedNotTruncatedAll = modulationPrimaryCorrectedNotTruncatedAll;
             cacheData.data(ii).correction.modulationPrimaryCorrectedAll = modulationPrimaryCorrectedAll;
             cacheData.data(ii).correction.deltaModulationPrimaryInferredAll = deltaModulationPrimaryInferredAll;
