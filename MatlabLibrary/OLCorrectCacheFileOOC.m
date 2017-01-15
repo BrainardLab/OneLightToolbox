@@ -317,11 +317,13 @@ end
                 % taking the difference between the measured spectrum and
                 % what we wanted to get.
                 deltaBackgroundPrimaryInferred = OLSpdToPrimary(cal, (kScale*results.modulationBGMeas.meas.pr650.spectrum)-...
-                    bgDesiredSpd, 'differentialMode', true, 'lambda', 0);
+                    bgDesiredSpd, 'differentialMode', true, 'lambda', 0.001);
                 deltaModulationPrimaryInferred = OLSpdToPrimary(cal, (kScale*results.modulationMaxMeas.meas.pr650.spectrum)-...
-                    modDesiredSpd, 'differentialMode', true, 'lambda', 0);
+                    modDesiredSpd, 'differentialMode', true, 'lambda', 0.001);
                 
                 % Also convert measured spds into  measured primaries.
+                % These are a mess, because the smoothness parameter is too
+                % smooth for these spectra.
                 backgroundPrimaryInferred = OLSpdToPrimary(cal, results.modulationBGMeas.meas.pr650.spectrum);
                 modulationPrimaryInferred = OLSpdToPrimary(cal, results.modulationMaxMeas.meas.pr650.spectrum);
                 
@@ -370,13 +372,14 @@ end
     for ii = 1:length(cacheData.data)
         if ii == describe.OBSERVER_AGE;
             cacheData.data(ii).cal = cal;
+            cacheData.data(ii).describe = describe;
             cacheData.data(ii).backgroundPrimary = backgroundPrimaryCorrectedAll(:, end);
             cacheData.data(ii).modulationPrimarySignedPositive = modulationPrimaryCorrectedAll(:, end);
             cacheData.data(ii).differencePrimary = modulationPrimaryCorrectedAll(:, end)-backgroundPrimaryCorrectedAll(:, end);
             cacheData.data(ii).correction.backgroundPrimaryMeasuredAll = backgroundPrimaryMeasuredAll;
             cacheData.data(ii).correction.backgroundPrimaryCorrectedNotTruncatedAll = backgroundPrimaryCorrectedNotTruncatedAll;
             cacheData.data(ii).correction.backgroundPrimaryCorrectedAll = backgroundPrimaryCorrectedAll;
-            cacheData.data(ii).correction.cal = deltaBackgroundPrimaryInferredAll;
+            cacheData.data(ii).correction.deltaBackgroundPrimaryInferredAll = deltaBackgroundPrimaryInferredAll;
             cacheData.data(ii).correction.backgroundPrimaryInferredAll = backgroundPrimaryInferredAll;
             cacheData.data(ii).correction.bgDesiredSpd = bgDesiredSpd;
             cacheData.data(ii).correction.bgSpdAll = bgSpdAll;
