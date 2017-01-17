@@ -432,7 +432,6 @@ try
     for ii = 1:length(cacheData.data)
         if ii == describe.OBSERVER_AGE;
             cacheData.data(ii).cal = cal;
-            cacheData.data(ii).describe = describe;
             cacheData.data(ii).backgroundPrimary = backgroundPrimaryCorrectedAll(:, end);
             cacheData.data(ii).modulationPrimarySignedPositive = modulationPrimaryCorrectedAll(:, end);
             cacheData.data(ii).differencePrimary = modulationPrimaryCorrectedAll(:, end)-backgroundPrimaryCorrectedAll(:, end);
