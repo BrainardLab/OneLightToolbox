@@ -34,7 +34,7 @@ function [cacheData olCache openSpectroRadiometerOBJ] = OLCorrectCacheFileOOC(ca
 %                             'SkipBackground'      false     Background
 %                             'ReducedPowerLevels'  true      Only 3 levels
 %                             'NoAdjustment      '  true      Does not pause
-%                             'REFERENCE_OBSERVER_AGE' 32     Standard obs.
+%                             'OBSERVER_AGE' 32     Standard obs.
 %                             'selectedCalType'     'EyeTrackerLongCableEyePiece1' Calibration type
 %                             'powerLevels'         scalar    Which power levels
 %                             'NIter'               scalar    number of iterations
@@ -62,7 +62,7 @@ p.addOptional('CalStateMeas', false, @islogical);
 p.addOptional('SkipBackground', false, @islogical);
 p.addOptional('ReducedPowerLevels', true, @islogical);
 p.addOptional('NoAdjustment', false, @islogical);
-p.addOptional('REFERENCE_OBSERVER_AGE', 32, @isscalar);
+p.addOptional('OBSERVER_AGE', 32, @isscalar);
 p.addOptional('NIter', 20, @isscalar);
 p.addOptional('lambda', 0.8, @isscalar);
 p.addOptional('selectedCalType', [], @isstr);
@@ -360,9 +360,9 @@ try
                 
                 % Only get the primaries from the cache file if it's the first iteration
                 if iter == 1
-                    backgroundPrimary = cacheData.data(describe.REFERENCE_OBSERVER_AGE).backgroundPrimary;
-                    differencePrimary = cacheData.data(describe.REFERENCE_OBSERVER_AGE).differencePrimary;
-                    modulationPrimary = cacheData.data(describe.REFERENCE_OBSERVER_AGE).backgroundPrimary+cacheData.data(describe.REFERENCE_OBSERVER_AGE).differencePrimary;
+                    backgroundPrimary = cacheData.data(describe.OBSERVER_AGE).backgroundPrimary;
+                    differencePrimary = cacheData.data(describe.OBSERVER_AGE).differencePrimary;
+                    modulationPrimary = cacheData.data(describe.OBSERVER_AGE).backgroundPrimary+cacheData.data(describe.OBSERVER_AGE).differencePrimary;
                 else
                     backgroundPrimary = backgroundPrimaryCorrected;
                     modulationPrimary = modulationPrimaryCorrected;
@@ -466,8 +466,8 @@ try
                 modulationPrimaryCorrected(modulationPrimaryCorrected > 1) = 1;
                 modulationPrimaryCorrected(modulationPrimaryCorrected < 0) = 0;
                 
-                theCanonicalPhotoreceptors = cacheData.data(describe.REFERENCE_OBSERVER_AGE).describe.photoreceptors;
-                T_receptors = cacheData.data(describe.REFERENCE_OBSERVER_AGE).describe.T_receptors;
+                theCanonicalPhotoreceptors = cacheData.data(describe.OBSERVER_AGE).describe.photoreceptors;
+                T_receptors = cacheData.data(describe.OBSERVER_AGE).describe.T_receptors;
                 
                 % Save out information about the correction
                 [contrasts(:,iter) postreceptoralContrasts(:,iter)] = ComputeAndReportContrastsFromSpds(['Iteration ' num2str(iter, '%02.0f')] ,theCanonicalPhotoreceptors,T_receptors,...
@@ -485,7 +485,7 @@ try
     
     % Replace the old nominal settings with the corrected ones.
     for ii = 1:length(cacheData.data)
-        if ii == describe.REFERENCE_OBSERVER_AGE;
+        if ii == describe.OBSERVER_AGE;
             cacheData.data(ii).backgroundPrimary = backgroundPrimaryCorrectedAll(:, end);
             cacheData.data(ii).modulationPrimarySignedPositive = modulationPrimaryCorrectedAll(:, end);
             cacheData.data(ii).differencePrimary = modulationPrimaryCorrectedAll(:, end)-backgroundPrimaryCorrectedAll(:, end);
