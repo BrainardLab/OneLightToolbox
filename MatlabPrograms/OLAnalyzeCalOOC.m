@@ -4,18 +4,29 @@ function OLAnalyzeCalOOC
         'refitGammaTablesUsingLinearInterpolation', false, ...
         'forceOLInitCal', true);
     
-    %%%%%
-    % PLEASE ADD SOME DESCRIPTION OF WHAT EACH OF THESE DOES!!!!!
-    % ALSO NEEDS SOME TUNING FOR CALIBRATIONS DONE AROUND A SPECIFIED
-    % BACKGROUND.
-    %%%%
+    % Select what to plot
+    % 1. Analyis of how FULLON and COMB spectra vary overtime
     plotDriftAnalysis = true;
-    plotCompositeMeasurents = ~true;
+    
+    % 2. Results of composite SPD measurements
+    plotCompositeMeasurents = true;
+    
+    % 3. SPDs of a subset of the primaries
     plotSampledSpectra = true;
+    
+    % 4. SPDs of all primaries
     plotFullSpectra = ~true;
+    
+    % 5. SPDs at different gamma values
     plotGammaSPDs = ~true;
+    
+    % 6. The gamma tables
     plotGammaTables = ~true;
+    
+    % 7. The predicted SPDs
     plotPredictions = ~true;
+    
+    % 8. Results from the primary additivity tests
     plotAdditivityCheck = ~true;
   
     if (plotDriftAnalysis)
