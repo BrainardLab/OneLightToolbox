@@ -2,6 +2,7 @@ function plotGamma(obj, varargin)
     
     parser = inputParser;
     parser.addRequired('gammaType', @ischar);
+    parser.addParameter('plotRatios', false, @islogical);
     
     % Execute the parser
     parser.parse(varargin{:});
@@ -143,147 +144,149 @@ function plotGamma(obj, varargin)
     drawnow;
     
 
-    genVideo = false;
-    if (genVideo)
-    % Generate ratios video
-    
-    % Open video stream
-    videoFilename = sprintf('%s_Ratios.m4v', gammaType);
-    writerObj = VideoWriter(videoFilename, 'MPEG-4'); % H264 format
-    writerObj.FrameRate = 15; 
-    writerObj.Quality = 100;
-    writerObj.open();
-    
-    hFig = figure; clf;
-    figurePrefix = sprintf('%s_GammaScalarsVideoFig', gammaType);
-    obj.figsList.(figurePrefix) = hFig;
-    set(hFig, 'Position', [10 1000 1024 768], 'Name', figurePrefix,  'Color', [1 1 1]);
     
     
-    for gammaBandIter = 1:size(obj.cal.computed.gammaTableMeasuredBands,1)
+    
+    if (p.plotRatios)
+        % Plot ratios figures
+        for gammaBandIter = 1: size(obj.cal.computed.gammaTableMeasuredBands,2)
+
+            hFig = figure; clf;
+            figurePrefix = sprintf('%s_GammaScalarsBandNo%d', gammaType, gammaBandIndices(gammaBandIter));
+            obj.figsList.(figurePrefix) = hFig;
+            set(hFig, 'Position', [10 1000 2520 1250], 'Name', figurePrefix,  'Color', [1 1 1]);
+
+            subplotPosVectors = NicePlot.getSubPlotPosVectors(...
+                       'rowsNum', 4, ...
+                       'colsNum', ceil(0.25*numel(gammaInRawValues)), ...
+                       'heightMargin',   0.03, ...
+                       'widthMargin',    0.02, ...
+                       'leftMargin',     0.03, ...
+                       'rightMargin',    0.01, ...
+                       'bottomMargin',   0.03, ...
+                       'topMargin',      0.02);
+
+            for gammaInputIter = 1:numel(gammaInRawValues)
+
+                row = 1 + floor((gammaInputIter-1)/size(subplotPosVectors,2));
+                col = 1 + mod((gammaInputIter-1),size(subplotPosVectors,2));
+                subplot('position',subplotPosVectors(row,col).v);
+
+                plot([obj.waveAxis(1) obj.waveAxis(end)], obj.cal.computed.gammaTableMeasuredBands(gammaInputIter,gammaBandIter)*[1 1], 'r-', 'LineWidth', 2.0);
+                hold on
+                [~, correspondingFittedGammaPointIter] = min(abs(gammaInRawValues(gammaInputIter) - obj.cal.computed.gammaInput));
+                plot([obj.waveAxis(1) obj.waveAxis(end)], obj.cal.computed.gammaTableMeasuredBandsFit(correspondingFittedGammaPointIter,gammaBandIter)*[1 1], 'b--', 'LineWidth', 2.0);
+                plot(obj.cal.computed.gammaRatios(gammaBandIter,gammaInputIter).wavelengths, obj.cal.computed.gammaRatios(gammaBandIter,gammaInputIter).ratios, 'ks-', 'LineWidth', 1.5);
+                plot(obj.waveAxis, obj.cal.computed.pr650M(:,gammaBandIndices(gammaBandIter))/max(squeeze(obj.cal.computed.pr650M(:,gammaBandIndices(gammaBandIter))))*0.2 + obj.cal.computed.gammaTableMeasuredBands(gammaInputIter,gammaBandIter)-0.1, 'b-', 'LineWidth', 1.5, 'Color', [0.3 0.3 0.3]);
+                hold off
+
+                set(gca, 'XLim', [obj.waveAxis(1) obj.waveAxis(end)], 'YLim', obj.cal.computed.gammaTableMeasuredBands(gammaInputIter,gammaBandIter)+[-0.1 0.1]);
+                hL = legend({'uni-spectral ratio', 'uni-spectral ratio (fit)', 'wavelength-by-wavelength ratios'});
+                title(sprintf('gamma in: %2.3f (band: %d)', gammaInRawValues(gammaInputIter), gammaBandIndices(gammaBandIter)));
+            end
+            drawnow
+        end  % gammaBandIter
         
-        gammaOutMax = squeeze(obj.cal.raw.gamma.rad(gammaBandIter).meas(:, end)) - obj.cal.computed.pr650MeanDark;
-        gammaOutMax(gammaOutMax<0) = 0;
-            
-        if (max(gammaOutMax) > 0)
-           threshold = 1/100;
-           localUnispectralRatioWaveIndices = find(gammaOutMax/max(gammaOutMax)>threshold);
-        else
-           localUnispectralRatioWaveIndices = [];
-        end
-            
-        for gammaInputIter = 1:numel(gammaInRawValues)
-            
-            gammaComputedScalar = obj.cal.computed.gammaTableMeasuredBands(gammaInputIter,gammaBandIter);
-            ratiosRange = gammaComputedScalar+[-0.2 0.2];
-            
-            if (gammaInputIter == 1)
-                gammaOutAtThisLevel = obj.cal.computed.pr650MeanDark*0.0;
-            else
-                gammaOutAtThisLevel = squeeze(obj.cal.raw.gamma.rad(gammaBandIter).meas(:, gammaInputIter-1)) - obj.cal.computed.pr650MeanDark;
-                gammaOutAtThisLevel(gammaOutAtThisLevel<0) = 0;
-            end
-            ratiosAtIndividualWavelengths = gammaOutAtThisLevel * 0;
-            idx = find(gammaOutMax>0);
-            ratiosAtIndividualWavelengths(idx) = gammaOutAtThisLevel(idx) ./ gammaOutMax(idx);
-            ratiosAtIndividualWavelengths(ratiosAtIndividualWavelengths>ratiosRange(2)) = ratiosRange(2);
-            ratiosAtIndividualWavelengths(ratiosAtIndividualWavelengths<ratiosRange(1)) = ratiosRange(1);
-            
-            x = [obj.waveAxis(1) obj.waveAxis' obj.waveAxis(end)];
-            y = [0 0.985*gammaOutMax'/max(gammaOutMax) 0];
-            
-            clf;
-            subplot('Position', [0.06 0.06, 0.66 0.93]);
-            
-            patch(x,y, 'green', 'FaceColor', [0.3 0.8 0.9], 'EdgeColor', [0.2 0.2 0.2], 'EdgeAlpha', 0.5, 'LineWidth', 2.0);
-            hold on;
-            plot([obj.waveAxis(1) obj.waveAxis(end)], gammaComputedScalar*[1 1], 'b-', 'Color', [0 0 1 0.5], 'LineWidth', 2.0);
-            if (~isempty(localUnispectralRatioWaveIndices))
-                plot(obj.waveAxis(localUnispectralRatioWaveIndices), ratiosAtIndividualWavelengths(localUnispectralRatioWaveIndices), 'rs', 'MarkerFaceColor', [1 0 0], 'MarkerSize', 6, 'LineWidth', 1.0);
-            end
-            %plot(obj.waveAxis, gammaOutMax/max(gammaOutMax), 'b-', 'LineWidth', 2.0);
-            hold off
+        genVideo = false;
+        if (genVideo)
+            % Generate ratios video
 
-            set(gca, 'XTick', [300:50:900], 'YTick', [0:0.2:1.0]);
-            set(gca, 'XLim', [obj.waveAxis(1) obj.waveAxis(end)], 'YLim', [0 1]);
-            set(gca, 'FontSize', 14);
-            grid on
-            box on
-            xlabel('wavelength (nm)', 'FontSize', 18, 'FontWeight', 'bold');
-            ylabel('SPD  power ratio (gamma out)',  'FontSize', 18, 'FontWeight', 'bold');
-            if (gammaBandIndices(gammaBandIter) < 27)
-                legendLocation = 'SouthEast';
-            else
-                legendLocation = 'SouthWest';
+            % Open video stream
+            videoFilename = sprintf('%s_Ratios.m4v', gammaType);
+            writerObj = VideoWriter(videoFilename, 'MPEG-4'); % H264 format
+            writerObj.FrameRate = 15; 
+            writerObj.Quality = 100;
+            writerObj.open();
+
+            hFig = figure; clf;
+            figurePrefix = sprintf('%s_GammaScalarsVideoFig', gammaType);
+            obj.figsList.(figurePrefix) = hFig;
+            set(hFig, 'Position', [10 1000 1024 768], 'Name', figurePrefix,  'Color', [1 1 1]);
+
+
+            for gammaBandIter = 1:size(obj.cal.computed.gammaTableMeasuredBands,1)
+
+                gammaOutMax = squeeze(obj.cal.raw.gamma.rad(gammaBandIter).meas(:, end)) - obj.cal.computed.pr650MeanDark;
+                gammaOutMax(gammaOutMax<0) = 0;
+
+                if (max(gammaOutMax) > 0)
+                   threshold = 1/100;
+                   localUnispectralRatioWaveIndices = find(gammaOutMax/max(gammaOutMax)>threshold);
+                else
+                   localUnispectralRatioWaveIndices = [];
+                end
+
+                for gammaInputIter = 1:numel(gammaInRawValues)
+
+                    gammaComputedScalar = obj.cal.computed.gammaTableMeasuredBands(gammaInputIter,gammaBandIter);
+                    ratiosRange = gammaComputedScalar+[-0.2 0.2];
+
+                    if (gammaInputIter == 1)
+                        gammaOutAtThisLevel = obj.cal.computed.pr650MeanDark*0.0;
+                    else
+                        gammaOutAtThisLevel = squeeze(obj.cal.raw.gamma.rad(gammaBandIter).meas(:, gammaInputIter-1)) - obj.cal.computed.pr650MeanDark;
+                        gammaOutAtThisLevel(gammaOutAtThisLevel<0) = 0;
+                    end
+                    ratiosAtIndividualWavelengths = gammaOutAtThisLevel * 0;
+                    idx = find(gammaOutMax>0);
+                    ratiosAtIndividualWavelengths(idx) = gammaOutAtThisLevel(idx) ./ gammaOutMax(idx);
+                    ratiosAtIndividualWavelengths(ratiosAtIndividualWavelengths>ratiosRange(2)) = ratiosRange(2);
+                    ratiosAtIndividualWavelengths(ratiosAtIndividualWavelengths<ratiosRange(1)) = ratiosRange(1);
+
+                    x = [obj.waveAxis(1) obj.waveAxis' obj.waveAxis(end)];
+                    y = [0 0.985*gammaOutMax'/max(gammaOutMax) 0];
+
+                    clf;
+                    subplot('Position', [0.06 0.06, 0.66 0.93]);
+
+                    patch(x,y, 'green', 'FaceColor', [0.3 0.8 0.9], 'EdgeColor', [0.2 0.2 0.2], 'EdgeAlpha', 0.5, 'LineWidth', 2.0);
+                    hold on;
+                    plot([obj.waveAxis(1) obj.waveAxis(end)], gammaComputedScalar*[1 1], 'b-', 'Color', [0 0 1 0.5], 'LineWidth', 2.0);
+                    if (~isempty(localUnispectralRatioWaveIndices))
+                        plot(obj.waveAxis(localUnispectralRatioWaveIndices), ratiosAtIndividualWavelengths(localUnispectralRatioWaveIndices), 'rs', 'MarkerFaceColor', [1 0 0], 'MarkerSize', 6, 'LineWidth', 1.0);
+                    end
+                    %plot(obj.waveAxis, gammaOutMax/max(gammaOutMax), 'b-', 'LineWidth', 2.0);
+                    hold off
+
+                    set(gca, 'XTick', [300:50:900], 'YTick', [0:0.2:1.0]);
+                    set(gca, 'XLim', [obj.waveAxis(1) obj.waveAxis(end)], 'YLim', [0 1]);
+                    set(gca, 'FontSize', 14);
+                    grid on
+                    box on
+                    xlabel('wavelength (nm)', 'FontSize', 18, 'FontWeight', 'bold');
+                    ylabel('SPD  power ratio (gamma out)',  'FontSize', 18, 'FontWeight', 'bold');
+                    if (gammaBandIndices(gammaBandIter) < 27)
+                        legendLocation = 'SouthEast';
+                    else
+                        legendLocation = 'SouthWest';
+                    end
+
+                    hL = legend({sprintf('band %d spd (normalized)', gammaBandIndices(gammaBandIter)), sprintf('uni-spectral ratio (gamma in: %2.3f)', gammaInRawValues(gammaInputIter)), 'wavelength-by-wavelength ratios'}, 'Location', legendLocation);
+                    hL.FontSize = 14;
+                    hL.FontName = 'Menlo'; 
+
+                    subplot('Position', [0.745 0.06, 0.25 0.93]);
+                    plot(gammaInRawValues(1:gammaInputIter), obj.cal.computed.gammaTableMeasuredBands(1:gammaInputIter,gammaBandIter), 'bo-', 'LineWidth', 2.0, 'MarkerSize', 14, 'MarkerFaceColor', [0.5 0.5 1.0]);
+                    hold on
+                    if (~isempty(localUnispectralRatioWaveIndices))
+                        plot(gammaInRawValues(gammaInputIter), ratiosAtIndividualWavelengths(localUnispectralRatioWaveIndices), 'rs', 'MarkerFaceColor', [1 0 0], 'MarkerSize', 6, 'LineWidth', 1.0);
+                    end
+                    hold off
+                    set(gca, 'XLim', [0 1], 'YLim', [0 1]);
+                    set(gca, 'FontSize', 14);
+                    xlabel('gamma in', 'FontSize', 18, 'FontWeight', 'bold');
+                    ylabel('',  'FontSize', 18, 'FontWeight', 'bold');
+                    set(gca, 'XTick', [0:0.2:1.0], 'YTick', [0:0.2:1.0], 'YTickLabel', {});
+                    grid on
+                    box on
+                    drawnow;
+                    writerObj.writeVideo(getframe(hFig));
+                end
             end
-            
-            hL = legend({sprintf('band %d spd (normalized)', gammaBandIndices(gammaBandIter)), sprintf('uni-spectral ratio (gamma in: %2.3f)', gammaInRawValues(gammaInputIter)), 'wavelength-by-wavelength ratios'}, 'Location', legendLocation);
-            hL.FontSize = 14;
-            hL.FontName = 'Menlo'; 
-                
-            subplot('Position', [0.745 0.06, 0.25 0.93]);
-            plot(gammaInRawValues(1:gammaInputIter), obj.cal.computed.gammaTableMeasuredBands(1:gammaInputIter,gammaBandIter), 'bo-', 'LineWidth', 2.0, 'MarkerSize', 14, 'MarkerFaceColor', [0.5 0.5 1.0]);
-            hold on
-            if (~isempty(localUnispectralRatioWaveIndices))
-                plot(gammaInRawValues(gammaInputIter), ratiosAtIndividualWavelengths(localUnispectralRatioWaveIndices), 'rs', 'MarkerFaceColor', [1 0 0], 'MarkerSize', 6, 'LineWidth', 1.0);
-            end
-            hold off
-            set(gca, 'XLim', [0 1], 'YLim', [0 1]);
-            set(gca, 'FontSize', 14);
-            xlabel('gamma in', 'FontSize', 18, 'FontWeight', 'bold');
-            ylabel('',  'FontSize', 18, 'FontWeight', 'bold');
-            set(gca, 'XTick', [0:0.2:1.0], 'YTick', [0:0.2:1.0], 'YTickLabel', {});
-            grid on
-            box on
-            drawnow;
-            writerObj.writeVideo(getframe(hFig));
-        end
-    end
-    % Close video stream
-    writerObj.close();
-    end % genVideo
-    
-    
-    % Plot ratios figures
-    for gammaBandIter = 1: size(obj.cal.computed.gammaTableMeasuredBands,2)
- 
-        hFig = figure; clf;
-        figurePrefix = sprintf('%s_GammaScalarsBandNo%d', gammaType, gammaBandIndices(gammaBandIter));
-        obj.figsList.(figurePrefix) = hFig;
-        set(hFig, 'Position', [10 1000 2520 1250], 'Name', figurePrefix,  'Color', [1 1 1]);
-    
-        subplotPosVectors = NicePlot.getSubPlotPosVectors(...
-                   'rowsNum', 4, ...
-                   'colsNum', ceil(0.25*numel(gammaInRawValues)), ...
-                   'heightMargin',   0.03, ...
-                   'widthMargin',    0.02, ...
-                   'leftMargin',     0.03, ...
-                   'rightMargin',    0.01, ...
-                   'bottomMargin',   0.03, ...
-                   'topMargin',      0.02);
-           
-
-        for gammaInputIter = 1:numel(gammaInRawValues)
-    
-            row = 1 + floor((gammaInputIter-1)/size(subplotPosVectors,2));
-            col = 1 + mod((gammaInputIter-1),size(subplotPosVectors,2));
-            subplot('position',subplotPosVectors(row,col).v);
-
-            plot([obj.waveAxis(1) obj.waveAxis(end)], obj.cal.computed.gammaTableMeasuredBands(gammaInputIter,gammaBandIter)*[1 1], 'r-', 'LineWidth', 2.0);
-            hold on
-            [~, correspondingFittedGammaPointIter] = min(abs(gammaInRawValues(gammaInputIter) - obj.cal.computed.gammaInput));
-            plot([obj.waveAxis(1) obj.waveAxis(end)], obj.cal.computed.gammaTableMeasuredBandsFit(correspondingFittedGammaPointIter,gammaBandIter)*[1 1], 'b--', 'LineWidth', 2.0);
-            plot(obj.cal.computed.gammaRatios(gammaBandIter,gammaInputIter).wavelengths, obj.cal.computed.gammaRatios(gammaBandIter,gammaInputIter).ratios, 'ks-', 'LineWidth', 1.5);
-            plot(obj.waveAxis, obj.cal.computed.pr650M(:,gammaBandIndices(gammaBandIter))/max(squeeze(obj.cal.computed.pr650M(:,gammaBandIndices(gammaBandIter))))*0.2 + obj.cal.computed.gammaTableMeasuredBands(gammaInputIter,gammaBandIter)-0.1, 'b-', 'LineWidth', 1.5, 'Color', [0.3 0.3 0.3]);
-            hold off
-
-            set(gca, 'XLim', [obj.waveAxis(1) obj.waveAxis(end)], 'YLim', obj.cal.computed.gammaTableMeasuredBands(gammaInputIter,gammaBandIter)+[-0.1 0.1]);
-            hL = legend({'uni-spectral ratio', 'uni-spectral ratio (fit)', 'wavelength-by-wavelength ratios'});
-            title(sprintf('gamma in: %2.3f (band: %d)', gammaInRawValues(gammaInputIter), gammaBandIndices(gammaBandIter)));
-        end
-        drawnow
-    end
-    
+            % Close video stream
+            writerObj.close();
+        end % genVideo
+    end  % plotRatios
 end
 
     

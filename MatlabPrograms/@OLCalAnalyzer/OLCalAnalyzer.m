@@ -54,6 +54,7 @@ classdef OLCalAnalyzer < handle
             parser = inputParser;
             parser.addParameter('refitGammaTablesUsingLinearInterpolation', false, @islogical);
             parser.addParameter('forceOLInitCal', false, @islogical);
+            parser.addParameter('cal', []);
             %Execute the parser
             parser.parse(varargin{:});
             % Create a standard Matlab structure from the parser results.
@@ -64,7 +65,7 @@ classdef OLCalAnalyzer < handle
             end
             
             obj.init();
-            obj.importCalData();
+            obj.importCalData(p.cal);
             obj.importResources();
             obj.generateSummaryData();
         end
@@ -86,7 +87,7 @@ classdef OLCalAnalyzer < handle
     end
     
     methods (Access = private)
-        importCalData(obj);
+        importCalData(obj, cal);
         luminance = luminanceFromSPD(obj, spd);
     end
     

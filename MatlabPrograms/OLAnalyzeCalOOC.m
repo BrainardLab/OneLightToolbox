@@ -1,21 +1,35 @@
 function OLAnalyzeCalOOC
 
+    cal = OLGetCalibrationStructure;
+    
     calAnalyzer = OLCalAnalyzer(...
         'refitGammaTablesUsingLinearInterpolation', false, ...
-        'forceOLInitCal', true);
+        'forceOLInitCal', true, ...
+        'cal', cal);
     
-    %%%%%
-    % PLEASE ADD SOME DESCRIPTION OF WHAT EACH OF THESE DOES!!!!!
-    % ALSO NEEDS SOME TUNING FOR CALIBRATIONS DONE AROUND A SPECIFIED
-    % BACKGROUND.
-    %%%%
-    plotDriftAnalysis = true;
-    plotCompositeMeasurents = ~true;
-    plotSampledSpectra = true;
+    % Select what to plot
+    % 1. Analyis of how FULLON and COMB spectra vary overtime
+    plotDriftAnalysis = false;
+    
+    % 2. Results of composite SPD measurements
+    plotCompositeMeasurents = false;
+    
+    % 3. SPDs of a subset of the primaries
+    plotSampledSpectra = false;
+    
+    % 4. SPDs of all primaries
     plotFullSpectra = ~true;
+    
+    % 5. SPDs at different gamma values
     plotGammaSPDs = ~true;
-    plotGammaTables = ~true;
+    
+    % 6. The gamma tables
+    plotGammaTables = true;
+    
+    % 7. The predicted SPDs
     plotPredictions = ~true;
+    
+    % 8. Results from the primary additivity tests
     plotAdditivityCheck = ~true;
   
     if (plotDriftAnalysis)
@@ -78,7 +92,7 @@ function OLAnalyzeCalOOC
     if (plotGammaTables)
         % Two views of the measured and fitted gamma tables
         gammaType = 'computed';
-        calAnalyzer.plotGamma(gammaType);
+        calAnalyzer.plotGamma(gammaType, 'plotRatios', false);
     end
     
     

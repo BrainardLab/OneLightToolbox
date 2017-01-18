@@ -1,7 +1,10 @@
-function importCalData(obj)
-    % Get the calibration file
-    cal = OLGetCalibrationStructure;
+function importCalData(obj, cal)
 
+    if (isempty(cal))
+        % Get the calibration file
+        cal = OLGetCalibrationStructure;
+    end
+    
     % Backwards compatibility via OLInitCal
     if (~isfield(cal.describe,'numWavelengthBands'))
         fprintf('This is an old calibration file.  Running OLInit (but not saving)\n');
