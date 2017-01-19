@@ -1,5 +1,5 @@
 function primary = OLSettingsToPrimary(cal, settings, verbose)
-% OLPrimaryToSettings - Converts OneLight primary mirror values to gamma corrected mirror settings.
+% SettingsToPrimary Convert OneLight settings (gamma corrected) values back to linear primary values.
 %
 % Syntax:
 % primary = OLSettingsToPrimary(cal, settings)
