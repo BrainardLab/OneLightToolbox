@@ -33,7 +33,6 @@ function [cacheData olCache openSpectroRadiometerOBJ] = OLCorrectCacheFileOOC(ca
 %     'ReducedPowerLevels'  true      Only 3 levels
 %     'NoAdjustment '       true      Does not pause
 %     'selectedCalType'     'EyeTrackerLongCableEyePiece1' Calibration type
-%     'powerLevels'         scalar    Which power levels
 %     'NIter'               scalar    number of iterations
 %     'learningRate'        0.8       Learning rate
 %     'smoothness'          0.001     Smoothness parameter for OLSpdToPrimary
@@ -66,7 +65,6 @@ p.addParameter('smoothness', 0.001, @isscalar);
 p.addParameter('iterativeSearch',false, @islogical);
 p.addParameter('selectedCalType', [], @isstr);
 p.addParameter('CALCULATE_SPLATTER', true, @islogical);
-p.addParameter('powerLevels', [0 1], @isnumeric);
 p.addParameter('doCorrection', true, @islogical);
 p.addParameter('postreceptoralCombinations', [], @isnumeric);
 p.addParameter('outDir', [], @isstr);
@@ -200,61 +198,18 @@ try
     end
     
     %% Do the seeking for modulation background pairs
+    %
+    % This routine assumes only two power levels, 0 and 1.
+    describe.powerLevels = [0 1];
+    nPowerLevels = length(describe.powerLevels;
     switch cacheData.computeMethod
         case 'ReceptorIsolate'
             for iter = 1:describe.NIter
-                
-                % Set up the power levels to use.  The cache file specifies
-                % a full contrast modulation, but we can do seeking for
-                % reduced contrast cases, which here are called power
-                % levels.
-                %
-                % Reduced power levels just means do the high and low
-                % moduation, plus the background or not as specified.
-                %
-                % If we're not doing reduced, then we just do what is in
-                % the list given in vector describe.powerLevels.
-                %
-                % DHB: I THINK THIS LOGIC SHOULD BE MOVED TO THE CALLING
-                % PROGRAM, AND NOT HANDLED HERE.  THAT WOULD KEEP THIS MORE
-                % GENERAL PURPOSE AND IN PARTICULAR MEAN THAT IT DID NOT
-                % NEED TO KNOW WHAT 'PIPR' IS.  ANY REASON NOT TO MAKE THIS
-                % CHANGE?
-                %
-                % MS: OK
-                if describe.ReducedPowerLevels
-                    if describe.SkipBackground
-                        nPowerLevels = 2;
-                        describe.powerLevels = [-1 1];
-                    else
-                        if strcmp(cacheData.data(32).describe.params.receptorIsolateMode, 'PIPR')
-                            nPowerLevels = 2;
-                            describe.powerLevels = [0 1];
-                        else
-                            nPowerLevels = 3;
-                            describe.powerLevels = [-1 0 1];
-                        end
-                    end
-                else
-                    nPowerLevels = length(describe.powerLevels);
-                end
                 
                 % Only get the primaries from the cache file if it's the
                 % first iteration.  In this case we also store them for
                 % future reference, since they are replaced on every
                 % iteration.
-                %
-                % DHB: EVENTUALLY PROBABLY ONLY WANT TO CARRY AROUND TWO OF
-                % THESE THREE MUTUALLY DEPENDENT VALUES AND COMPUTE THE
-                % THIRD ON THE FLY AS NEEDED.  THAT WOULD BE CLEARER.
-                %
-                % DHB: IT APPEARS THAT FOR REDUCED POWER, ON EACH
-                % ITERATION THIS RESETS THE FULL ON PRIMARY BEING SOUGHT
-                % AND THEN SEEKS SCALED VERSIONS OF THAT.  AN ALTERNATIVE
-                % MIGHT BE TO SEEK INDIVIDUALLY ON THE SCALED VERSIONS FOR
-                % EACH POWER.  INDEED, IT ISN'T CLEAR THAT THE WAY THIS IS
-                % CURRENTLY WRITTEN DOES THAT MUCH FOR THE REDUCED POWER
-                % CASES.
                 if iter == 1
                     backgroundPrimaryUsed = cacheData.data(describe.OBSERVER_AGE).backgroundPrimary;
                     differencePrimaryUsed = cacheData.data(describe.OBSERVER_AGE).differencePrimary;
@@ -311,49 +266,25 @@ try
                     % primaries match those from the cache file, possibly
                     % scaled by the appropriate power level.
                     if (iter == 1)
-                        spdsWeWant(:,i) = OLPrimaryToSpd(cal,primariesThisIter);
+                        spdsDesired(:,i) = OLPrimaryToSpd(cal,primariesThisIter);
                     end
                 end
                 
                 % For convenience we pull out from the set of power level
-                % measurements those corresonding to the max power, min
-                % power and background.
+                % measurements those corresonding to the background
+                % (powerLevel == 0) and max (powerLevel == 1).
                 theMaxIndex = find([results.modulationAllMeas(:).powerLevel] == 1);
-                theMinIndex = find([results.modulationAllMeas(:).powerLevel] == -1);
                 theBGIndex = find([results.modulationAllMeas(:).powerLevel] == 0);
-                if ~isempty(theMaxIndex)
-                    results.modulationMaxMeas = results.modulationAllMeas(theMaxIndex);
-                    modulationSpdWeWant = spdsWeWant(:,theMaxIndex);
+                if (isempty(theMaxIndex) || isempty(theBgIndex))
+                    error('Should have measurements for power levels 0 and 1');
                 end
+                results.modulationMaxMeas = results.modulationAllMeas(theMaxIndex);
+                modulationSpdDesired = spdsDesired(:,theMaxIndex);
+                modulationSpdMeasured = results.modulationMaxMeas.meas.pr650.spectrum;
                 
-                % Sometimes there's no negative excursion, so we set the min one to the
-                % background measurement.
-                %
-                % DHB: THIS CODE LOOKS WRONG BECAUSE IT IS CHECKING WHETHER
-                % THE BG INDEX IS EMPTY RATHER THAN WHETHER THE MIN INDEX
-                % IS EMPTY.  IF THE BG INDEX IS EMPTY I THINK THIS WILL
-                % CRASH.
-                if ~isempty(theBGIndex)
-                    results.modulationMinMeas = results.modulationAllMeas(theMinIndex);
-                else
-                    results.modulationMinMeas = results.modulationAllMeas(theBGIndex);
-                end
-                
-                % One of the measurements should have been the background,
-                % pull that out so we have it handy.
-                %
-                % DHB: THERE IS A CASE IN THE POWER LEVELS SETTINGS ABOVE WHERE THE
-                % BACKGROUND IS NOT MEASURED.  WILL THIS CRASH FOR THAT
-                % CASE, SINCE THE BG MEAS WILL NOT BE SET.
-                if ~isempty(theBGIndex)
-                    results.modulationBGMeas = results.modulationAllMeas(theBGIndex);
-                    backgroundSpdWeWant = spdsWeWant(:,theBGIndex);
-                end
-                
-                % DHB: STARTING HERE THE CODE SEEMS TO ASSUME THAT THERE IS
-                % A BACKGROUND AND A SINGLE POSITIVE (POWERLEVEL == 1)
-                % MODULATION, AS THE SEEKING ONLY HAPPENS ON THOSE TWO
-                % SPECTRA.
+                results.modulationBGMeas = results.modulationAllMeas(theBGIndex);
+                backgroundSpdDesired = spdsDesired(:,theBGIndex);
+                backgroundSpdMeasured = results.modulationBGMeas.meas.pr650.spectrum;
                 
                 % If first time through, figure out a scaling factor from
                 % the first measurement which puts the measured spectrum
@@ -368,82 +299,70 @@ try
                 % While we're at it, tuck away the spectra we are trying in
                 % the end to produce.
                 if iter == 1
-                    kScale = results.modulationBGMeas.meas.pr650.spectrum \ backgroundSpdWeWant;
+                    kScale = backgroundSpdMeasured \ backgroundSpdDesired;
                     kScale = 1;
                 end
                 
                 % Find out how much we missed by in primary space, by
                 % taking the difference between the measured spectrum and
-                % what we wanted to get 
-                backgroundDeltaPrimaryIdealized = OLSpdToPrimary(cal, backgroundSpdWeWant - kScale*results.modulationBGMeas.meas.pr650.spectrum,...
+                % what we wanted to get and converting to primaries.
+                % Multiply by learning rate.
+                backgroundDeltaPrimaryNotTruncatedLearningRate = describe.learningRate*OLSpdToPrimary(cal, backgroundSpdDesired - kScale*backgroundSpdMeasured,...
                     'differentialMode', true, 'learningRate', describe.smoothness);
-                modulationDeltaPrimaryIdealized = OLSpdToPrimary(cal, modulationSpdWeWant - kScale*results.modulationMaxMeas.meas.pr650.spectrum, ...
+                modulationDeltaPrimaryNotTruncatedLearningRate = describe.learningRate*OLSpdToPrimary(cal, modulationSpdDesired - kScale*modulationSpdMeasured, ...
                     'differentialMode', true, 'learningRate', describe.smoothness);
                 
-                % Take a learning-rate-scaled version of the delta and
-                % subtract it from the primaries we're trying, to get the
-                % new desired primaries.
-                backgroundNextPrimaryNotTruncatedLearningRate = backgroundPrimaryUsed + describe.learningRate*backgroundDeltaPrimaryIdealized;
-                modulationNextPrimaryNotTruncatedLearningRate = modulationPrimaryUsed + describe.learningRate*modulationDeltaPrimaryIdealized;
-     
-                % THINK HARDER ABOUT WHERE LEARNING RATE COMES INTO SEARCH
-                % CALCULATION!!!!
-                %
-                % Now have the option of doing fmincon to improve the
-                % iterative choice.
+                % Make sure new primaries are between 0 and 1 by
+                % truncating and doing and undoing gamma correction.
+                backgroundDeltaPrimaryTruncatedLearningRate = OLTruncatedDeltaPrimaries(backgroundDeltaPrimaryNotTruncatedLearningRate,backgroundPrimaryUsed,cal);
+                modulationDeltaPrimaryTruncatedLearningRate = OLTruncatedDeltaPrimaries(modulationDeltaPrimaryNotTruncatedLearningRate,modulationPrimaryUsed,cal);
+
+                % Optinally use fmincon to improve the truncated learning
+                % rate delta primaries by iterative search.
+                % Put that in your pipe and smoke it!
                 if (describe.iterativeSearch)   
-                    % Make sure new primaries are between 0 and 1 by
-                    % truncating and doing and undoing gamma correction.
-                    % These are good places to start the search.  Don't
-                    % multiply by learning rate yet!
-                    backgroundDeltaPrimaryTruncatedLearningRate = OLTruncatedDeltaPrimaries(backgroundDeltaPrimaryIdealized,backgroundPrimaryUsed,cal);
-                    modulationDeltaPrimaryTruncatedLearningRate = OLTruncatedDeltaPrimaries(modulationDeltaPrimaryIdealized,modulationPrimaryUsed,cal);
-                    
                     options = optimset('fmincon');
                     options = optimset(options,'Diagnostics','off','Display','off','LargeScale','off','Algorithm','active-set');
                     vlb = zeros(size(backgroundDeltaPrimaryTruncatedLearningRate));
                     vub = ones(size(backgroundDeltaPrimaryTruncatedLearningRate));
                     
+                    backgroundSpectrumDesiredLearningRate =  backgroundSpdMeasured + descibe.learningRate*(backgroundSpdDesired - backgroundSpdMeasured);
                     x0 = backgroundDeltaPrimaryTruncatedLearningRate;
-                    xFmincon = fmincon(@(x)OLIterativeDeltaPrimariesErrorFunction(x,backgroundPrimariesWeUsed,backgroundSpdWeMeasured,backgroundSpdWeWant,cal,describe.smoothness),...
+                    xFmincon = fmincon(@(x)OLIterativeDeltaPrimariesErrorFunction(x,backgroundPrimariesWeUsed,backgroundSpdMeasured,backgroundSpectrumDesiredLearningRate,cal,describe.smoothness),...
                         x0,[],[],[],[],vlb,vub,[],options);
                     backgroundDeltaPrimaryTruncatedLearningRate = OLTruncatedDeltaPrimaries(xFmincon,backgroundPrimaryUsed,cal);
                     
+                    modulationSpectrumDesiredLearningRate =  modulationSpdMeasured + descibe.learningRate*(modulationSpdDesired - modulationSpdMeasured);
                     x0 = modulationDeltaPrimaryTruncatedLearningRate;
-                    xFmincon = fmincon(@(x)OLIterativeDeltaPrimariesErrorFunction(x,modulationPrimariesWeUsed,modulationSpdWeMeasured,modulationSpdWeWant,cal,describe.smoothness),...
+                    xFmincon = fmincon(@(x)OLIterativeDeltaPrimariesErrorFunction(x,modulationPrimariesWeUsed,modulationSpdMeasured,modulationSpectrumDesiredLearningRate,cal,describe.smoothness),...
                         x0,[],[],[],[],vlb,vub,[],options);
                     modulationDeltaPrimaryTruncatedLearningRate = OLTruncatedDeltaPrimaries(xFmincon,modulationPrimaryUsed,cal);
-                else
-                    % Make sure new primaries are between 0 and 1 by
-                    % truncating and doing and undoing gamma correction.
-                    % These are good places to start the search.  Since
-                    % we're not searching, we take learning rate into
-                    % account.
-                    backgroundDeltaPrimaryTruncatedLearningRate = OLTruncatedDeltaPrimaries(desribe.learningRate*backgroundDeltaPrimaryIdealized,backgroundPrimaryUsed,cal);
-                    modulationDeltaPrimaryTruncatedLearningRate = OLTruncatedDeltaPrimaries(desribe.learningRate*modulationDeltaPrimaryIdealized,modulationPrimaryUsed,cal);
                 end
                 
-                backgroundNextPrimaryTruncatedLearningRate = backgroundPrimaryUsed + describe.learningRate*backgroundDeltaPrimaryTruncatedLearningRate;       
-                modulationNextPrimaryTruncatedLearningRate = modulationPrimaryUsed + describe.learningRate*modulationDeltaPrimaryTruncatedLearningRate;
+                % Compute and store the settings to use next time through
+                backgroundNextPrimaryTruncatedLearningRate = backgroundPrimaryUsed + backgroundDeltaPrimaryTruncatedLearningRate;
+                modulationNextPrimaryTruncatedLearningRate = modulationPrimaryUsed + modulationDeltaPrimaryTruncatedLearningRate;
 
-                % Compute and print out information about the correction
+                % Compute and print out information about the quality of
+                % the current measurement, in contrast terms.
                 theCanonicalPhotoreceptors = cacheData.data(describe.OBSERVER_AGE).describe.photoreceptors;
                 T_receptors = cacheData.data(describe.OBSERVER_AGE).describe.T_receptors;
                 [contrasts(:,iter) postreceptoralContrasts(:,iter)] = ComputeAndReportContrastsFromSpds(['Iteration ' num2str(iter, '%02.0f')] ,theCanonicalPhotoreceptors,T_receptors,...
-                    results.modulationBGMeas.meas.pr650.spectrum,results.modulationMaxMeas.meas.pr650.spectrum,describe.postreceptoralCombinations,true);
+                    backgroundSpdMeasured,modulationSpdMeasured,describe.postreceptoralCombinations,true);
                 
-                % Save the information in a convenient form for keeping
-                % later.
-                bgSpdAll(:,iter) = results.modulationBGMeas.meas.pr650.spectrum;
-                modSpdAll(:,iter) = results.modulationMaxMeas.meas.pr650.spectrum;
-                backgroundPrimaryUsedAll(:,iter) = backgroundPrimaryspdsWeWant;
+                % Save the information in a convenient form for later.
+                backgroundSpdMeasuredAll(:,iter) = backgroundSpdMeasured;
+                modulationSpdMeasuredAll(:,iter) = modulationSpdMeasured;
+                backgroundPrimaryUsedAll(:,iter) = backgroundPrimaryUsed;
                 backgroundNextPrimaryNotTruncatedLearningRateAll(:,iter) = backgroundNextPrimaryNotTruncatedLearningRate;
                 backgroundNextPrimaryTruncatedLearningRateAll(:,iter) = backgroundNextPrimaryTruncatedLearningRate;
-                deltaBackgroundPrimaryAll(:,iter) = backgroundDeltaPrimaryIdealized;
+                backgroundDeltaPrimaryNotTruncatedLearningRateAll(:,iter) = backgroundDeltaPrimaryNotTruncatedLearningRate;
+                backgroundDeltaPrimaryTruncatedLearningRateAll(:,iter) = backgroundDeltaPrimaryTruncatedLearningRate;
                 modulationPrimaryUsedAll(:,iter) = modulationPrimaryUsed;
                 modulationNextPrimaryNotTruncatedAllLearningRate(:,iter) = modulationNextPrimaryNotTruncatedLearningRate;
                 modulationNextPrimaryTruncatedLearningRateAll(:,iter) = modulationNextPrimaryTruncatedLearningRate;
-                deltaModulationPrimaryAll(:,iter)= modulationDeltaPrimaryIdealized;
+                modulationDeltaPrimaryNotTruncatedLearningRateAll(:,iter)= modulationDeltaPrimaryNotTruncatedLearningRate;
+                modulationDeltaPrimaryTruncatedLearningRateAll(:,iter)= modulationDeltaPrimaryTruncatedLearningRate;
             end
         otherwise
             error('Unknown computeMethod specified');
@@ -456,31 +375,40 @@ try
     for ii = 1:length(cacheData.data)
         if ii == describe.OBSERVER_AGE;
             cacheData.data(ii).cal = cal;
+            cacheData.data(ii).correction.kScale = kScale;
+            
+            % Store the answer after the iteration.  This is storing the
+            % next prediction.  We probably want to comb through everything
+            % and pick the best we've seen so far.
             cacheData.data(ii).backgroundPrimary = backgroundNextPrimaryTruncatedLearningRateAll(:, end);
             cacheData.data(ii).modulationPrimarySignedPositive = modulationNextPrimaryTruncatedLearningRateAll(:, end);
             cacheData.data(ii).differencePrimary = modulationNextPrimaryTruncatedLearningRateAll(:, end)-backgroundNextPrimaryTruncatedLearningRateAll(:, end);
-            cacheData.data(ii).correction.backgroundPrimaryUsedAll = backgroundPrimaryUsedAll;
-            cacheData.data(ii).correction.backgroundNextPrimaryNotTruncatedLearningRateAll = backgroundNextPrimaryNotTruncatedLearningRateAll;
-            cacheData.data(ii).correction.backgroundNextPrimaryTruncatedLearningRateAll = backgroundNextPrimaryTruncatedLearningRateAll;
-            cacheData.data(ii).correction.deltaBackgroundPrimaryAll = deltaBackgroundPrimaryAll;
-            cacheData.data(ii).correction.backgroundSpdWeWant = backgroundSpdWeWant;
-            cacheData.data(ii).correction.bgSpdAll = bgSpdAll;
-            cacheData.data(ii).correction.kScale = kScale;
+            cacheData.data(ii).modulationPrimarySignedNegative = [];
+
+            % Store target spectra and initial primaries used.
+            cacheData.data(ii).correction.backgroundSpdDesired = backgroundSpdDesired;
+            cacheData.data(ii).correction.modulationSpdDesired =  modulationSpdDesired;
             cacheData.data(ii).correction.backgroundPrimaryInitial = backgroundPrimaryInitial;
             cacheData.data(ii).correction.differencePrimaryInitial = differencePrimaryInitial;
             cacheData.data(ii).correction.modulationPrimaryInitial =  modulationPrimaryInitial;
+            
+            cacheData.data(ii).correction.backgroundPrimaryUsedAll = backgroundPrimaryUsedAll;
+            cacheData.data(ii).correction.backgroundSpdMeasuredAll = backgroundSpdMeasuredAll;
+            cacheData.data(ii).correction.backgroundNextPrimaryNotTruncatedLearningRateAll = backgroundNextPrimaryNotTruncatedLearningRateAll;
+            cacheData.data(ii).correction.backgroundNextPrimaryTruncatedLearningRateAll = backgroundNextPrimaryTruncatedLearningRateAll;
+            cacheData.data(ii).correction.backgroundDeltaPrimaryNotTruncatedLearningRateAll = backgroundDeltaPrimaryNotTruncatedLearningRateAll;
+            cacheData.data(ii).correction.backgroundDeltaPrimaryTruncatedLearningRateAll = backgroundDeltaPrimaryTruncatedLearningRateAll;
+
             cacheData.data(ii).correction.modulationPrimaryUsedAll = modulationPrimaryUsedAll;
+            cacheData.data(ii).correction.modulationSpdMeasuredAll = modulationSpdMeasuredAll;
             cacheData.data(ii).correction.modulationNextPrimaryNotTruncatedLearningRateAll = modulationNextPrimaryNotTruncatedAllLearningRate;
             cacheData.data(ii).correction.modulationNextPrimaryTruncatedLearningRateAll = modulationNextPrimaryTruncatedLearningRateAll;
-            cacheData.data(ii).correction.deltaModulationPrimaryAll = deltaModulationPrimaryAll;
-            cacheData.data(ii).correction.modulationSpdWeWant =  modulationSpdWeWant;
-            cacheData.data(ii).correction.modSpdAll = modSpdAll;
+            cacheData.data(ii).correction.modulationDeltaPrimaryNotTruncatedLearningRateAll = modulationDeltaPrimaryNotTruncatedLearningRateAll;
+            cacheData.data(ii).correction.modulationDeltaPrimaryNotTruncatedLearningRateAll = modulationDeltaPrimaryTruncatedLearningRateAll;
+            
             cacheData.data(ii).correction.contrasts = contrasts;
             cacheData.data(ii).correction.postreceptoralContrasts = postreceptoralContrasts;
         else
-            % DHB: THIS IS PROBABLY STORING MORE STUFF THAN NEEDED, SINCE
-            % THIS PROGRAM NEVER PRODUCES ANYTHING FOR A NEGATIVE
-            % MODULATION.
             cacheData.data(ii).describe = [];
             cacheData.data(ii).backgroundPrimary = [];
             cacheData.data(ii).backgroundSpd = [];
