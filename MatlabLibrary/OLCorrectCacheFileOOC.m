@@ -80,6 +80,9 @@ end
 %% Get cached modulation data as well as calibration file
 [olCache,cacheData,cal,cacheDir,cacheFileName] = OLGetModulationCacheData(cacheFileNameFullPath, describe);
 
+%% Force useAverageGamma?
+% cal.useAverageGamma = 1;
+
 %% We might not want to seek
 %
 % If we aren't seeking just return now.  The reason we might do this is to
@@ -201,7 +204,7 @@ try
     %
     % This routine assumes only two power levels, 0 and 1.
     describe.powerLevels = [0 1];
-    nPowerLevels = length(describe.powerLevels;
+    nPowerLevels = length(describe.powerLevels);
     switch cacheData.computeMethod
         case 'ReceptorIsolate'
             for iter = 1:describe.NIter
@@ -275,7 +278,7 @@ try
                 % (powerLevel == 0) and max (powerLevel == 1).
                 theMaxIndex = find([results.modulationAllMeas(:).powerLevel] == 1);
                 theBGIndex = find([results.modulationAllMeas(:).powerLevel] == 0);
-                if (isempty(theMaxIndex) || isempty(theBgIndex))
+                if (isempty(theMaxIndex) || isempty(theBGIndex))
                     error('Should have measurements for power levels 0 and 1');
                 end
                 results.modulationMaxMeas = results.modulationAllMeas(theMaxIndex);
@@ -308,9 +311,9 @@ try
                 % what we wanted to get and converting to primaries.
                 % Multiply by learning rate.
                 backgroundDeltaPrimaryNotTruncatedLearningRate = describe.learningRate*OLSpdToPrimary(cal, backgroundSpdDesired - kScale*backgroundSpdMeasured,...
-                    'differentialMode', true, 'learningRate', describe.smoothness);
+                    'differentialMode', true, 'lambda', describe.smoothness);
                 modulationDeltaPrimaryNotTruncatedLearningRate = describe.learningRate*OLSpdToPrimary(cal, modulationSpdDesired - kScale*modulationSpdMeasured, ...
-                    'differentialMode', true, 'learningRate', describe.smoothness);
+                    'differentialMode', true, 'lambda', describe.smoothness);
                 
                 % Make sure new primaries are between 0 and 1 by
                 % truncating and doing and undoing gamma correction.
@@ -322,21 +325,43 @@ try
                 % Put that in your pipe and smoke it!
                 if (describe.iterativeSearch)   
                     options = optimset('fmincon');
-                    options = optimset(options,'Diagnostics','off','Display','off','LargeScale','off','Algorithm','active-set');
-                    vlb = zeros(size(backgroundDeltaPrimaryTruncatedLearningRate));
+                    options = optimset(options,'Diagnostics','off','Display','iter','LargeScale','off','Algorithm','active-set');
+                    vlb = -1*ones(size(backgroundDeltaPrimaryTruncatedLearningRate));
                     vub = ones(size(backgroundDeltaPrimaryTruncatedLearningRate));
                     
-                    backgroundSpectrumDesiredLearningRate =  backgroundSpdMeasured + descibe.learningRate*(backgroundSpdDesired - backgroundSpdMeasured);
+                    backgroundSpectrumDesiredLearningRate =  backgroundSpdMeasured + describe.learningRate*(backgroundSpdDesired - backgroundSpdMeasured);
                     x0 = backgroundDeltaPrimaryTruncatedLearningRate;
-                    xFmincon = fmincon(@(x)OLIterativeDeltaPrimariesErrorFunction(x,backgroundPrimariesWeUsed,backgroundSpdMeasured,backgroundSpectrumDesiredLearningRate,cal,describe.smoothness),...
+                    xFmincon = fmincon(@(x)OLIterativeDeltaPrimariesErrorFunction(x,backgroundPrimaryUsed,backgroundSpdMeasured,backgroundSpectrumDesiredLearningRate,cal,describe.smoothness),...
                         x0,[],[],[],[],vlb,vub,[],options);
-                    backgroundDeltaPrimaryTruncatedLearningRate = OLTruncatedDeltaPrimaries(xFmincon,backgroundPrimaryUsed,cal);
                     
-                    modulationSpectrumDesiredLearningRate =  modulationSpdMeasured + descibe.learningRate*(modulationSpdDesired - modulationSpdMeasured);
+                    % When we search, we evaluate error based on the
+                    % truncated version, so we just truncate here so that
+                    % the effect matches that of the search.  Could enforce
+                    % a non-linear constraint in the search to keep the
+                    % searched on deltas within gamut, but not sure we'd
+                    % gain anything by doing that.
+                    backgroundDeltaPrimaryTruncatedLearningRate = OLTruncatedDeltaPrimaries(xFmincon,backgroundPrimaryUsed,cal);
+                                        
+                    % Debugging figures
+                    figure(10); clf;
+                    subplot(2,1,1); hold on
+                    plot(x0,'b');
+                    plot(xFmincon,'r');
+                    plot(backgroundDeltaPrimaryTruncatedLearningRate,'g');
+                    
+                    modulationSpectrumDesiredLearningRate =  modulationSpdMeasured + describe.learningRate*(modulationSpdDesired - modulationSpdMeasured);
                     x0 = modulationDeltaPrimaryTruncatedLearningRate;
-                    xFmincon = fmincon(@(x)OLIterativeDeltaPrimariesErrorFunction(x,modulationPrimariesWeUsed,modulationSpdMeasured,modulationSpectrumDesiredLearningRate,cal,describe.smoothness),...
+                    xFmincon = fmincon(@(x)OLIterativeDeltaPrimariesErrorFunction(x,modulationPrimaryUsed,modulationSpdMeasured,modulationSpectrumDesiredLearningRate,cal,describe.smoothness),...
                         x0,[],[],[],[],vlb,vub,[],options);
+                    
+                    % See comment above for background search
                     modulationDeltaPrimaryTruncatedLearningRate = OLTruncatedDeltaPrimaries(xFmincon,modulationPrimaryUsed,cal);
+
+                    figure(10);
+                    subplot(2,1,2); hold on
+                    plot(x0,'b');
+                    plot(xFmincon,'r');
+                    plot(modulationDeltaPrimaryTruncatedLearningRate,'g');
                 end
                 
                 % Compute and store the settings to use next time through
@@ -354,14 +379,10 @@ try
                 backgroundSpdMeasuredAll(:,iter) = backgroundSpdMeasured;
                 modulationSpdMeasuredAll(:,iter) = modulationSpdMeasured;
                 backgroundPrimaryUsedAll(:,iter) = backgroundPrimaryUsed;
-                backgroundNextPrimaryNotTruncatedLearningRateAll(:,iter) = backgroundNextPrimaryNotTruncatedLearningRate;
                 backgroundNextPrimaryTruncatedLearningRateAll(:,iter) = backgroundNextPrimaryTruncatedLearningRate;
-                backgroundDeltaPrimaryNotTruncatedLearningRateAll(:,iter) = backgroundDeltaPrimaryNotTruncatedLearningRate;
                 backgroundDeltaPrimaryTruncatedLearningRateAll(:,iter) = backgroundDeltaPrimaryTruncatedLearningRate;
                 modulationPrimaryUsedAll(:,iter) = modulationPrimaryUsed;
-                modulationNextPrimaryNotTruncatedAllLearningRate(:,iter) = modulationNextPrimaryNotTruncatedLearningRate;
                 modulationNextPrimaryTruncatedLearningRateAll(:,iter) = modulationNextPrimaryTruncatedLearningRate;
-                modulationDeltaPrimaryNotTruncatedLearningRateAll(:,iter)= modulationDeltaPrimaryNotTruncatedLearningRate;
                 modulationDeltaPrimaryTruncatedLearningRateAll(:,iter)= modulationDeltaPrimaryTruncatedLearningRate;
             end
         otherwise
@@ -391,20 +412,14 @@ try
             cacheData.data(ii).correction.backgroundPrimaryInitial = backgroundPrimaryInitial;
             cacheData.data(ii).correction.differencePrimaryInitial = differencePrimaryInitial;
             cacheData.data(ii).correction.modulationPrimaryInitial =  modulationPrimaryInitial;
-            
             cacheData.data(ii).correction.backgroundPrimaryUsedAll = backgroundPrimaryUsedAll;
             cacheData.data(ii).correction.backgroundSpdMeasuredAll = backgroundSpdMeasuredAll;
-            cacheData.data(ii).correction.backgroundNextPrimaryNotTruncatedLearningRateAll = backgroundNextPrimaryNotTruncatedLearningRateAll;
             cacheData.data(ii).correction.backgroundNextPrimaryTruncatedLearningRateAll = backgroundNextPrimaryTruncatedLearningRateAll;
-            cacheData.data(ii).correction.backgroundDeltaPrimaryNotTruncatedLearningRateAll = backgroundDeltaPrimaryNotTruncatedLearningRateAll;
             cacheData.data(ii).correction.backgroundDeltaPrimaryTruncatedLearningRateAll = backgroundDeltaPrimaryTruncatedLearningRateAll;
 
             cacheData.data(ii).correction.modulationPrimaryUsedAll = modulationPrimaryUsedAll;
             cacheData.data(ii).correction.modulationSpdMeasuredAll = modulationSpdMeasuredAll;
-            cacheData.data(ii).correction.modulationNextPrimaryNotTruncatedLearningRateAll = modulationNextPrimaryNotTruncatedAllLearningRate;
             cacheData.data(ii).correction.modulationNextPrimaryTruncatedLearningRateAll = modulationNextPrimaryTruncatedLearningRateAll;
-            cacheData.data(ii).correction.modulationDeltaPrimaryNotTruncatedLearningRateAll = modulationDeltaPrimaryNotTruncatedLearningRateAll;
-            cacheData.data(ii).correction.modulationDeltaPrimaryNotTruncatedLearningRateAll = modulationDeltaPrimaryTruncatedLearningRateAll;
             
             cacheData.data(ii).correction.contrasts = contrasts;
             cacheData.data(ii).correction.postreceptoralContrasts = postreceptoralContrasts;
@@ -467,7 +482,7 @@ function f = OLIterativeDeltaPrimariesErrorFunction(deltaPrimaries,primariesUsed
 
 predictedSpd = OLPredictSpdFromDeltaPrimaries(deltaPrimaries,primariesUsed,spdMeasured,cal,smoothness);
 diff = spdWant-predictedSpd;
-f = sqrt(mean(diff(:).^2));
+f = 1000*sqrt(mean(diff(:).^2));
 end
 
 
@@ -480,7 +495,7 @@ function [predictedSpd,truncatedDeltaPrimaries] = OLPredictSpdFromDeltaPrimaries
 % account.
 
     truncatedDeltaPrimaries = OLTruncatedDeltaPrimaries(deltaPrimaries,primariesUsed,cal);
-    predictedSpd = spdMeasured + OLPrimaryToSpd(cal,truncatedDeltaPrimaries,'differentialMode',true,'lambda',smoothness);
+    predictedSpd = spdMeasured + OLPrimaryToSpd(cal,truncatedDeltaPrimaries,'differentialMode',true);
 end
 
 function [truncatedDeltaPrimaries,truncatedPrimaries] = OLTruncatedDeltaPrimaries(deltaPrimaries,primariesUsed,cal)
