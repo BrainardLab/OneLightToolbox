@@ -29,7 +29,6 @@ p.addParameter('targetCalType', 'BoxDRandomizedLongCableAStubby1_ND02', @ischar)
 p.addParameter('rootDir', '/Users1/DropBoxLinks/DropboxAguirreBrainardLabs/MELA_materials', @ischar);
 p.parse(varargin{:});
 
-p.Results
 % Fetch and plot the temperature data
 retrieveAndPlotTemperatureData(p.Results.rootDir, p.Results.targetCalType);
 end
