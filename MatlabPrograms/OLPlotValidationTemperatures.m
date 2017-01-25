@@ -1,7 +1,7 @@
 function OLPlotValidationTemperatures
 
 % Cal type to look for
-theTargetCalType = 'BoxDRandomizedLongCableAEyePiece2_ND03';
+theTargetCalType = 'BoxDRandomizedLongCableAStubby1_ND02';
 
 % Where MELA_materials is located
 rootDir = '/Users1/DropBoxLinks/DropboxAguirreBrainardLabs/MELA_materials';
