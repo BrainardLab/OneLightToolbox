@@ -23,22 +23,22 @@ function OLAnalyzeCalOOC
     plotCompositeMeasurents = false;
     
     % 3. SPDs of a subset of the primaries
-    plotSampledSpectra = ~true;
+    plotSampledSpectra = true;
     
     % 4. SPDs of all primaries
-    plotFullSpectra = ~true;
+    plotFullSpectra = true;
     
     % 5. SPDs at different gamma values
-    plotGammaSPDs = ~true;
+    plotGammaSPDs = true;
     
     % 6. The gamma tables
-    plotGammaTables = ~true;
+    plotGammaTables = true;
     
     % 7. The predicted SPDs
-    plotPredictions = ~true;
+    plotPredictions = true;
     
     % 8. Results from the primary additivity tests
-    plotAdditivityCheck = ~true;
+    plotAdditivityCheck = true;
   
     % Action !
     if (plotTemperatureMeasurements)
