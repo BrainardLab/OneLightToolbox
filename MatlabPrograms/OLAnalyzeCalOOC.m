@@ -7,31 +7,45 @@ function OLAnalyzeCalOOC
         'forceOLInitCal', true, ...
         'cal', cal);
     
+    
+    describe = calAnalyzer.cal.describe;
+    describe
+    
     % Select what to plot
-    % 1. Analyis of how FULLON and COMB spectra vary overtime
+    
+    % 0. Plot temperature during the course of the calibration
+    plotTemperatureMeasurements = true;
+    
+    % 1. Analysis of how FULLON and COMB spectra vary over time
     plotDriftAnalysis = false;
     
     % 2. Results of composite SPD measurements
     plotCompositeMeasurents = false;
     
     % 3. SPDs of a subset of the primaries
-    plotSampledSpectra = false;
+    plotSampledSpectra = true;
     
     % 4. SPDs of all primaries
-    plotFullSpectra = ~true;
+    plotFullSpectra = true;
     
     % 5. SPDs at different gamma values
-    plotGammaSPDs = ~true;
+    plotGammaSPDs = true;
     
     % 6. The gamma tables
     plotGammaTables = true;
     
     % 7. The predicted SPDs
-    plotPredictions = ~true;
+    plotPredictions = true;
     
     % 8. Results from the primary additivity tests
-    plotAdditivityCheck = ~true;
+    plotAdditivityCheck = true;
   
+    % Action !
+    if (plotTemperatureMeasurements)
+        plotValidationTemperatureMeasurements = true;
+        calAnalyzer.plotTemperatureMeasurements();
+    end
+    
     if (plotDriftAnalysis)
         calAnalyzer.generateDriftAnalysisPlots();
     end
@@ -68,19 +82,11 @@ function OLAnalyzeCalOOC
     end
     
     if (plotFullSpectra)
-        % Full set of spectral measurements
-%         for bandIndex = 1:calAnalyzer.cal.describe.numWavelengthBands
-%             startCol = calAnalyzer.cal.describe.primaryStartCols(bandIndex);
-%             stopCol  = calAnalyzer.cal.describe.primaryStopCols(bandIndex);
-%             fprintf('band:%2d, mirror cols:%d-%d (total mirror cols: %d)\n', bandIndex, startCol, stopCol, calAnalyzer.cal.describe.numColMirrors);
-%         end
-        
         spdType = 'computed';
         calAnalyzer.plotSPD(spdType, 'pr650M', 'bandIndicesToPlot', []);
         spdType = 'raw';
         calAnalyzer.plotSPD(spdType, 'lightMeas', 'bandIndicesToPlot', []);
     end
-    
     
     if (plotGammaSPDs)
         % SPDs at different gamma values
@@ -88,13 +94,11 @@ function OLAnalyzeCalOOC
         calAnalyzer.plotGammaSPD(gammaSPDType, 'rad');
     end
     
-    
     if (plotGammaTables)
         % Two views of the measured and fitted gamma tables
         gammaType = 'computed';
         calAnalyzer.plotGamma(gammaType, 'plotRatios', false);
     end
-    
     
     if (plotPredictions)
         spdType = 'raw';
@@ -112,7 +116,6 @@ function OLAnalyzeCalOOC
     if (plotAdditivityCheck)
         calAnalyzer.plotAdditivityCheck();
     end
-    
         
     if (calAnalyzer.cal.describe.specifiedBackground)
         fprintf('Specified background figure, how repeatable - NOT IMPLEMENTED YET\n');
@@ -124,5 +127,4 @@ function OLAnalyzeCalOOC
         fileFormat = GetWithDefault('File format (png or pdf):', 'png');
         calAnalyzer.exportFigs(fileFormat);
     end
-    
 end

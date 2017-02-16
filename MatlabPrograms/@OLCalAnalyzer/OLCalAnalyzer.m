@@ -82,6 +82,9 @@ classdef OLCalAnalyzer < handle
         % Method to plot the various measured and predicted SPDs
         plotPredictions(obj, varargin);
         
+        % Method to plot the collected (if any) temperature measurements
+        plotTemperatureMeasurements(obj, varargin);
+        
         % Method to export all the generated figs
         exportFigs(obj, varargin);
     end
