@@ -85,7 +85,7 @@ end
 [olCache,cacheData,cal,cacheDir,cacheFileName] = OLGetModulationCacheData(cacheFileNameFullPath, correctDescribe);
 
 %% Force useAverageGamma?
- cal.useAverageGamma = 1;
+cal.useAverageGamma = 1;
 
 %% We might not want to seek
 %
