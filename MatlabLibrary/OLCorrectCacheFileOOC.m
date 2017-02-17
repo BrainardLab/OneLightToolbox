@@ -33,7 +33,7 @@ function [cacheData olCache openSpectroRadiometerOBJ] = OLCorrectCacheFileOOC(ca
 %     'ReducedPowerLevels'  true      Only 3 levels
 %     'NoAdjustment '       true      Does not pause
 %     'selectedCalType'     'EyeTrackerLongCableEyePiece1' Calibration type
-%     'NIter'               scalar    number of iterations
+%     'nIter'               scalar    number of iterations
 %     'learningRate'        0.8       Learning rate
 %     'learningRateDecrease' true     Decrease learning rate over iterations?
 %     'smoothness'          0.001     Smoothness parameter for OLSpdToPrimary
@@ -61,7 +61,7 @@ p.addParameter('SkipBackground', false, @islogical);
 p.addParameter('ReducedPowerLevels', true, @islogical);
 p.addParameter('NoAdjustment', false, @islogical);
 p.addParameter('OBSERVER_AGE', 32, @isscalar);
-p.addParameter('NIter', 20, @isscalar);
+p.addParameter('nIter', 20, @isscalar);
 p.addParameter('learningRate', 0.8, @isscalar);
 p.addParameter('learningRateDecrease',true,@islogical);
 p.addParameter('smoothness', 0.001, @isscalar);
@@ -211,7 +211,7 @@ try
     nPowerLevels = length(correctDescribe.powerLevels);
     switch cacheData.computeMethod
         case 'ReceptorIsolate'
-            for iter = 1:correctDescribe.NIter
+            for iter = 1:correctDescribe.nIter
                 
                 % Only get the primaries from the cache file if it's the
                 % first iteration.  In this case we also store them for
@@ -235,7 +235,11 @@ try
                 end
                 
                 % Set learning rate to use this iteration
-                learningRateThisIter = correctDescribe.learningRate*(1-iter*0.75/nIter);
+                if (p.Results.learningRateDecrease)
+                    learningRateThisIter = correctDescribe.learningRate*(1-(iter-1)*0.75/(correctDescribe.nIter-1));
+                else
+                    learningRateThisIter = correctDescribe.learningRate;
+                end
                 
                 % Get the desired primaries for each power level and make a measurement for each one.
                 for i = 1:nPowerLevels
