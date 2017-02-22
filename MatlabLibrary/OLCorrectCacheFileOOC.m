@@ -73,6 +73,7 @@ p.addParameter('doCorrection', true, @islogical);
 p.addParameter('postreceptoralCombinations', [], @isnumeric);
 p.addParameter('outDir', [], @isstr);
 p.addParameter('takeTemperatureMeasurements', false, @islogical);
+p.addParameter('powerLevels', [0 1.0000], @isnumeric);
 p.parse(varargin{:});
 correctDescribe = p.Results;
 
