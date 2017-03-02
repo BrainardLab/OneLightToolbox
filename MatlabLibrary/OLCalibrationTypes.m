@@ -38,5 +38,6 @@ classdef OLCalibrationTypes
         BoxBRandomizedLongCableBStubby1_ND02('OLBoxBRandomizedLongCableBStubby1_ND02');
         BoxARandomizedLongCableBStubby1_ND02('OLBoxARandomizedLongCableBStubby1_ND02');
         BoxDRandomizedLongCableAStubby1_ND02('OLBoxDRandomizedLongCableAStubby1_ND02');
+        BoxDRandomizedLongCableAStubby1_ND01('OLBoxDRandomizedLongCableAStubby1_ND01');
     end
 end
