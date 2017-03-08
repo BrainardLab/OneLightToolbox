@@ -305,20 +305,11 @@ try
                 % the first measurement which puts the measured spectrum
                 % into the same range as the predicted spectrum. This deals
                 % with fluctuations with absolute light level.
-                %
-                % Note that on the first iteration, the field predictedSpd
-                % is also the desired spd, because the prediction for the
-                % first iteration is based on the primaries that we
-                % actually want.
-                %
-                % While we're at it, tuck away the spectra we are trying in
-                % the end to produce.
                 if iter == 1
                     kScale = backgroundSpdMeasured \ backgroundSpdDesired;
                     %kScale = 1;
                 end
-                
-                
+                        
                 % Find out how much we missed by in primary space, by
                 % taking the difference between the measured spectrum and
                 % what we wanted to get and converting to primaries.
@@ -342,9 +333,9 @@ try
                     vlb = -1*ones(size(backgroundDeltaPrimaryTruncatedLearningRate));
                     vub = ones(size(backgroundDeltaPrimaryTruncatedLearningRate));
                     
-                    backgroundSpectrumDesiredLearningRate =  backgroundSpdMeasured + learningRateThisIter*(backgroundSpdDesired - backgroundSpdMeasured);
+                    backgroundSpectrumDesiredLearningRate =  kScale*backgroundSpdMeasured + learningRateThisIter*(backgroundSpdDesired - kScale*backgroundSpdMeasured);
                     x0 = backgroundDeltaPrimaryTruncatedLearningRate;
-                    xFmincon = fmincon(@(x)OLIterativeDeltaPrimariesErrorFunction(x,backgroundPrimaryUsed,backgroundSpdMeasured,backgroundSpectrumDesiredLearningRate,cal,correctDescribe.smoothness),...
+                    xFmincon = fmincon(@(x)OLIterativeDeltaPrimariesErrorFunction(x,backgroundPrimaryUsed,kScale*backgroundSpdMeasured,backgroundSpectrumDesiredLearningRate,cal,correctDescribe.smoothness),...
                         x0,[],[],[],[],vlb,vub,[],options);
                     
                     % When we search, we evaluate error based on the
@@ -362,9 +353,9 @@ try
                     plot(xFmincon,'r');
                     plot(backgroundDeltaPrimaryTruncatedLearningRate,'g');
                     
-                    modulationSpectrumDesiredLearningRate =  modulationSpdMeasured + learningRateThisIter*(modulationSpdDesired - modulationSpdMeasured);
+                    modulationSpectrumDesiredLearningRate =  kScale*modulationSpdMeasured + learningRateThisIter*(modulationSpdDesired - kScale*modulationSpdMeasured);
                     x0 = modulationDeltaPrimaryTruncatedLearningRate;
-                    xFmincon = fmincon(@(x)OLIterativeDeltaPrimariesErrorFunction(x,modulationPrimaryUsed,modulationSpdMeasured,modulationSpectrumDesiredLearningRate,cal,correctDescribe.smoothness),...
+                    xFmincon = fmincon(@(x)OLIterativeDeltaPrimariesErrorFunction(x,modulationPrimaryUsed,kScale*modulationSpdMeasured,modulationSpectrumDesiredLearningRate,cal,correctDescribe.smoothness),...
                         x0,[],[],[],[],vlb,vub,[],options);
                     
                     % See comment above for background search
