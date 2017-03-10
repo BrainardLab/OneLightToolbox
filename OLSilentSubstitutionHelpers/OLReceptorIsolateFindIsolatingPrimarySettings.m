@@ -552,7 +552,7 @@ else
         
     end
     
-    contrastVector = cacheData.data(params.REFERENCE_OBSERVER_AGE).describe.contrast;
+    contrastVector = cacheData.data(params.OBSERVER_AGE).describe.contrast;
     
     % Calculate the spaltter
     [calID calIDTitle] = OLGetCalID(cal);
@@ -561,7 +561,7 @@ else
         fprintf('> Requested to calculate splatter as per params.CALCULATE_SPLATTER flag...\n');
         
         % Pull out the data for the reference observer
-        data = cacheData.data(params.REFERENCE_OBSERVER_AGE);
+        data = cacheData.data(params.OBSERVER_AGE);
         
         %% Make plot of spectra and save as csv
         theSpectraFig = figure;
@@ -619,13 +619,13 @@ else
             % Calculate the splatter
             lambdaMaxRange = [];
             ageRange = [];
-            [contrastMap, nominalLambdaMax, ageRange, lambdaMaxShiftRange] = CalculateSplatter(S, backgroundSpd, modulationSpd, theCanonicalPhotoreceptors, data.describe.params.fieldSizeDegrees, [], pupilDiameterMm, [], cacheData.data(params.REFERENCE_OBSERVER_AGE).describe.fractionBleached);
+            [contrastMap, nominalLambdaMax, ageRange, lambdaMaxShiftRange] = CalculateSplatter(S, backgroundSpd, modulationSpd, theCanonicalPhotoreceptors, data.describe.params.fieldSizeDegrees, [], pupilDiameterMm, [], cacheData.data(params.OBSERVER_AGE).describe.fractionBleached);
             
             % Plot the splatter
             SAVEPLOTS = 0;
-            theFig = PlotSplatter(figure, contrastMap, theCanonicalPhotoreceptors, nominalLambdaMax, params.REFERENCE_OBSERVER_AGE, ageRange, lambdaMaxShiftRange, targetContrasts, [], 1, 2, SAVEPLOTS, titleSuffix, [], 32);
+            theFig = PlotSplatter(figure, contrastMap, theCanonicalPhotoreceptors, nominalLambdaMax, params.OBSERVER_AGE, ageRange, lambdaMaxShiftRange, targetContrasts, [], 1, 2, SAVEPLOTS, titleSuffix, [], 32);
             % Save out the splatter
-            SaveSplatter(docDir, [fileNameSuffix '_' calID], contrastMap, theCanonicalPhotoreceptors, nominalLambdaMax, params.REFERENCE_OBSERVER_AGE, ageRange, lambdaMaxShiftRange, targetContrasts);
+            SaveSplatter(docDir, [fileNameSuffix '_' calID], contrastMap, theCanonicalPhotoreceptors, nominalLambdaMax, params.OBSERVER_AGE, ageRange, lambdaMaxShiftRange, targetContrasts);
             SaveSplatterConfidenceBounds(docDir, [fileNameSuffix '_95CI_' calID], contrastMap, theCanonicalPhotoreceptors, nominalLambdaMax, ageRange, lambdaMaxShiftRange, targetContrasts, 0.9545);
             SaveSplatterConfidenceBounds(docDir, [fileNameSuffix '_99CI_' calID], contrastMap, theCanonicalPhotoreceptors, nominalLambdaMax, ageRange, lambdaMaxShiftRange, targetContrasts, 0.9973);
             
@@ -642,10 +642,10 @@ else
             % Calculate the splatter
             lambdaMaxRange = [];
             ageRange = [];
-            [contrastMap, nominalLambdaMax, ageRange, lambdaMaxShiftRange] = CalculateSplatter(S, backgroundSpd, modulationSpd, theCanonicalPhotoreceptors, data.describe.params.fieldSizeDegrees, ageRange, pupilDiameterMm, [], cacheData.data(params.REFERENCE_OBSERVER_AGE).describe.fractionBleached);
+            [contrastMap, nominalLambdaMax, ageRange, lambdaMaxShiftRange] = CalculateSplatter(S, backgroundSpd, modulationSpd, theCanonicalPhotoreceptors, data.describe.params.fieldSizeDegrees, ageRange, pupilDiameterMm, [], cacheData.data(params.OBSERVER_AGE).describe.fractionBleached);
             
             % Plot the splatter
-            theFig = PlotSplatter(theFig, contrastMap, theCanonicalPhotoreceptors, nominalLambdaMax, params.REFERENCE_OBSERVER_AGE, ageRange, lambdaMaxShiftRange, targetContrasts, [], 2, 2, SAVEPLOTS, titleSuffix, [], 32);
+            theFig = PlotSplatter(theFig, contrastMap, theCanonicalPhotoreceptors, nominalLambdaMax, params.OBSERVER_AGE, ageRange, lambdaMaxShiftRange, targetContrasts, [], 2, 2, SAVEPLOTS, titleSuffix, [], 32);
             
             % Add a suplabel
             figure(theFig);
@@ -664,7 +664,7 @@ else
             fprintf('  - Contrast plot saved to %s.\n', fullfile(docDir, ['Splatter_' calID]));
             
             % Save out the splatter
-            SaveSplatter(docDir, [fileNameSuffix '_' calID], contrastMap, theCanonicalPhotoreceptors, nominalLambdaMax, params.REFERENCE_OBSERVER_AGE, ageRange, lambdaMaxShiftRange, targetContrasts);
+            SaveSplatter(docDir, [fileNameSuffix '_' calID], contrastMap, theCanonicalPhotoreceptors, nominalLambdaMax, params.OBSERVER_AGE, ageRange, lambdaMaxShiftRange, targetContrasts);
             SaveSplatterConfidenceBounds(docDir, [fileNameSuffix '_95CI_' calID], contrastMap, theCanonicalPhotoreceptors, nominalLambdaMax, ageRange, lambdaMaxShiftRange, targetContrasts, 0.9545);
             SaveSplatterConfidenceBounds(docDir, [fileNameSuffix '_99CI_' calID], contrastMap, theCanonicalPhotoreceptors, nominalLambdaMax, ageRange, lambdaMaxShiftRange, targetContrasts, 0.9973);
             
