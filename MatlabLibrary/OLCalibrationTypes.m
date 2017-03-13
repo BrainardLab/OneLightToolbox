@@ -35,6 +35,7 @@ classdef OLCalibrationTypes
         BoxARandomizedShortCableBStubby1_ND00('OLBoxARandomizedShortCableBStubby1_ND00');
         
         %Hybrid configuration for psychophysics w/ MRI components        
+        BoxDRandomizedLongCableAStubby1_ND03('OLBoxDRandomizedLongCableAStubby1_ND03');
         BoxBRandomizedLongCableBStubby1_ND02('OLBoxBRandomizedLongCableBStubby1_ND02');
         BoxARandomizedLongCableBStubby1_ND02('OLBoxARandomizedLongCableBStubby1_ND02');
         BoxDRandomizedLongCableAStubby1_ND02('OLBoxDRandomizedLongCableAStubby1_ND02');
