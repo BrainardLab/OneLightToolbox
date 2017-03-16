@@ -335,7 +335,7 @@ try
                     
                     backgroundSpectrumDesiredLearningRate =  kScale*backgroundSpdMeasured + learningRateThisIter*(backgroundSpdDesired - kScale*backgroundSpdMeasured);
                     x0 = backgroundDeltaPrimaryTruncatedLearningRate;
-                    xFmincon = fmincon(@(x)OLIterativeDeltaPrimariesErrorFunction(x,backgroundPrimaryUsed,kScale*backgroundSpdMeasured,backgroundSpectrumDesiredLearningRate,cal,correctDescribe.smoothness),...
+                    xFmincon = fmincon(@(x)OLIterativeDeltaPrimariesErrorFunction(x,backgroundPrimaryUsed,kScale*backgroundSpdMeasured,backgroundSpectrumDesiredLearningRate,cal),...
                         x0,[],[],[],[],vlb,vub,[],options);
                     
                     % When we search, we evaluate error based on the
@@ -355,7 +355,7 @@ try
                     
                     modulationSpectrumDesiredLearningRate =  kScale*modulationSpdMeasured + learningRateThisIter*(modulationSpdDesired - kScale*modulationSpdMeasured);
                     x0 = modulationDeltaPrimaryTruncatedLearningRate;
-                    xFmincon = fmincon(@(x)OLIterativeDeltaPrimariesErrorFunction(x,modulationPrimaryUsed,kScale*modulationSpdMeasured,modulationSpectrumDesiredLearningRate,cal,correctDescribe.smoothness),...
+                    xFmincon = fmincon(@(x)OLIterativeDeltaPrimariesErrorFunction(x,modulationPrimaryUsed,kScale*modulationSpdMeasured,modulationSpectrumDesiredLearningRate,cal),...
                         x0,[],[],[],[],vlb,vub,[],options);
                     
                     % See comment above for background search
@@ -479,43 +479,20 @@ end
 
 end
 
-function f = OLIterativeDeltaPrimariesErrorFunction(deltaPrimaries,primariesUsed,spdMeasured,spdWant,cal,smoothness)
+function f = OLIterativeDeltaPrimariesErrorFunction(deltaPrimaries,primariesUsed,spdMeasured,spdWant,cal)
 % OLIterativeDeltaPrimariesErrorFunction  Error function for delta primary iterated search
-%   f = OLIterativeDeltaPrimariesErrorFunction(deltaPrimaries,primariesUsed,spdWant,spdMeasured,cal,smoothness)
+%   f = OLIterativeDeltaPrimariesErrorFunction(deltaPrimaries,primariesUsed,spdWant,spdMeasured,cal)
 %
 % Figures out how close the passed delta primaries come to producing the
 % desired spectrum, using small signal approximation and taking gamut
 % limitations and gamma correction into account.
 
-predictedSpd = OLPredictSpdFromDeltaPrimaries(deltaPrimaries,primariesUsed,spdMeasured,cal,smoothness);
+predictedSpd = OLPredictSpdFromDeltaPrimaries(deltaPrimaries,primariesUsed,spdMeasured,cal);
 diff = spdWant-predictedSpd;
 f = 1000*sqrt(mean(diff(:).^2));
 end
 
 
-function [predictedSpd,truncatedDeltaPrimaries] = OLPredictSpdFromDeltaPrimaries(deltaPrimaries,primariesUsed,spdMeasured,cal,smoothness)
-% OLPredictSpdFromDeltaPrimaries  Predict spectrum from primary change
-%   predictedSpd,truncatedDeltaPrimaries] = OLPredictSpdFromDeltaPrimaries(deltaPrimaries,primariesUsed,spdMeasured,cal,smoothness)
-%
-% Takes current primary values and measured spd into account and makes the
-% small signal prediction, taking gamut limits and gamma correction into
-% account.
 
-    truncatedDeltaPrimaries = OLTruncatedDeltaPrimaries(deltaPrimaries,primariesUsed,cal);
-    predictedSpd = spdMeasured + OLPrimaryToSpd(cal,truncatedDeltaPrimaries,'differentialMode',true);
-end
 
-function [truncatedDeltaPrimaries,truncatedPrimaries] = OLTruncatedDeltaPrimaries(deltaPrimaries,primariesUsed,cal)
-% OLTruncatedDeltaPrimaries  Figure out truncated delta primaries
-%  [truncatedDeltaPrimaries,truncatedPrimaries] = OLTruncatedDeltaPrimaries(primariesUsed,deltaPrimaries,cal)
-%
-% Determine what deltaPrimaries will actually be added to primariesUsed,
-% given input deltaPrimaries and the fact that the OneLight primaries need
-% to go between 0 and 1, plus the effect of gamma correction.
 
-truncatedPrimaries = primariesUsed + deltaPrimaries;
-truncatedPrimaries(truncatedPrimaries < 0) = 0;
-truncatedPrimaries(truncatedPrimaries > 1) = 1;
-truncatedPrimaries = OLSettingsToPrimary(cal,OLPrimaryToSettings(cal,truncatedPrimaries));
-truncatedDeltaPrimaries = truncatedPrimaries - primariesUsed;
-end
