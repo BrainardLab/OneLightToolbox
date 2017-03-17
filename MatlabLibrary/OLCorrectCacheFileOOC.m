@@ -307,65 +307,19 @@ try
                 % with fluctuations with absolute light level.
                 if iter == 1
                     kScale = backgroundSpdMeasured \ backgroundSpdDesired;
-                    %kScale = 1;
                 end
-                        
-                % Find out how much we missed by in primary space, by
-                % taking the difference between the measured spectrum and
-                % what we wanted to get and converting to primaries.
-                % Multiply by learning rate.
-                backgroundDeltaPrimaryNotTruncatedLearningRate = learningRateThisIter*OLSpdToPrimary(cal, backgroundSpdDesired - kScale*backgroundSpdMeasured,...
-                    'differentialMode', true, 'lambda', correctDescribe.smoothness);
-                modulationDeltaPrimaryNotTruncatedLearningRate = learningRateThisIter*OLSpdToPrimary(cal, modulationSpdDesired - kScale*modulationSpdMeasured, ...
-                    'differentialMode', true, 'lambda', correctDescribe.smoothness);
                 
-                % Make sure new primaries are between 0 and 1 by
-                % truncating and doing and undoing gamma correction.
-                backgroundDeltaPrimaryTruncatedLearningRate = OLTruncatedDeltaPrimaries(backgroundDeltaPrimaryNotTruncatedLearningRate,backgroundPrimaryUsed,cal);
-                modulationDeltaPrimaryTruncatedLearningRate = OLTruncatedDeltaPrimaries(modulationDeltaPrimaryNotTruncatedLearningRate,modulationPrimaryUsed,cal);
+                % Find delta primaries using small signal linear methods.
+                backgroundDeltaPrimaryTruncatedLearningRate = OLLinearDeltaPrimaries(backgroundPrimaryUsed,kScale*backgroundSpdMeasured,backgroundSpdDesired,learningRateThisIter,correctDescribe.smoothness,cal);
+                modulationDeltaPrimaryTruncatedLearningRate = OLLinearDeltaPrimaries(modulationPrimaryUsed,kScale*modulationSpdMeasured,modulationSpdDesired,learningRateThisIter,correctDescribe.smoothness,cal);
 
                 % Optionally use fmincon to improve the truncated learning
                 % rate delta primaries by iterative search.
+                %
                 % Put that in your pipe and smoke it!
                 if (correctDescribe.iterativeSearch)   
-                    options = optimset('fmincon');
-                    options = optimset(options,'Diagnostics','off','Display','iter','LargeScale','off','Algorithm','active-set');
-                    vlb = -1*ones(size(backgroundDeltaPrimaryTruncatedLearningRate));
-                    vub = ones(size(backgroundDeltaPrimaryTruncatedLearningRate));
-                    
-                    backgroundSpectrumDesiredLearningRate =  kScale*backgroundSpdMeasured + learningRateThisIter*(backgroundSpdDesired - kScale*backgroundSpdMeasured);
-                    x0 = backgroundDeltaPrimaryTruncatedLearningRate;
-                    xFmincon = fmincon(@(x)OLIterativeDeltaPrimariesErrorFunction(x,backgroundPrimaryUsed,kScale*backgroundSpdMeasured,backgroundSpectrumDesiredLearningRate,cal),...
-                        x0,[],[],[],[],vlb,vub,[],options);
-                    
-                    % When we search, we evaluate error based on the
-                    % truncated version, so we just truncate here so that
-                    % the effect matches that of the search.  Could enforce
-                    % a non-linear constraint in the search to keep the
-                    % searched on deltas within gamut, but not sure we'd
-                    % gain anything by doing that.
-                    backgroundDeltaPrimaryTruncatedLearningRate = OLTruncatedDeltaPrimaries(xFmincon,backgroundPrimaryUsed,cal);
-                                        
-                    % Debugging figures
-                    figure(10); clf;
-                    subplot(2,1,1); hold on
-                    plot(x0,'b');
-                    plot(xFmincon,'r');
-                    plot(backgroundDeltaPrimaryTruncatedLearningRate,'g');
-                    
-                    modulationSpectrumDesiredLearningRate =  kScale*modulationSpdMeasured + learningRateThisIter*(modulationSpdDesired - kScale*modulationSpdMeasured);
-                    x0 = modulationDeltaPrimaryTruncatedLearningRate;
-                    xFmincon = fmincon(@(x)OLIterativeDeltaPrimariesErrorFunction(x,modulationPrimaryUsed,kScale*modulationSpdMeasured,modulationSpectrumDesiredLearningRate,cal),...
-                        x0,[],[],[],[],vlb,vub,[],options);
-                    
-                    % See comment above for background search
-                    modulationDeltaPrimaryTruncatedLearningRate = OLTruncatedDeltaPrimaries(xFmincon,modulationPrimaryUsed,cal);
-
-                    figure(10);
-                    subplot(2,1,2); hold on
-                    plot(x0,'b');
-                    plot(xFmincon,'r');
-                    plot(modulationDeltaPrimaryTruncatedLearningRate,'g');
+                    backgroundDeltaPrimaryTruncatedLearningRate = OLIterativeDeltaPrimaries(backgroundDeltaPrimaryTruncatedLearningRate,backgroundPrimaryUsed,kScale*backgroundSpdMeasured,backgroundSpdDesired,learningRateThisIter,cal);
+                    modulationDeltaPrimaryTruncatedLearningRate = OLIterativeDeltaPrimaries(modulationDeltaPrimaryTruncatedLearningRate,modulationPrimaryUsed,kScale*modulationSpdMeasured,modulationSpdDesired,learningRateThisIter,cal);
                 end
                 
                 % Compute and store the settings to use next time through
@@ -479,18 +433,7 @@ end
 
 end
 
-function f = OLIterativeDeltaPrimariesErrorFunction(deltaPrimaries,primariesUsed,spdMeasured,spdWant,cal)
-% OLIterativeDeltaPrimariesErrorFunction  Error function for delta primary iterated search
-%   f = OLIterativeDeltaPrimariesErrorFunction(deltaPrimaries,primariesUsed,spdWant,spdMeasured,cal)
-%
-% Figures out how close the passed delta primaries come to producing the
-% desired spectrum, using small signal approximation and taking gamut
-% limitations and gamma correction into account.
 
-predictedSpd = OLPredictSpdFromDeltaPrimaries(deltaPrimaries,primariesUsed,spdMeasured,cal);
-diff = spdWant-predictedSpd;
-f = 1000*sqrt(mean(diff(:).^2));
-end
 
 
 
