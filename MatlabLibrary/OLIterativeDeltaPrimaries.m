@@ -10,7 +10,13 @@ function [deltaPrimaries,predictedSpd] = OLIterativeDeltaPrimaries(deltaPrimarie
 % Otherwise at the passed value of deltaPrimaries0.
 
 % Options for fmincon, and reasonable bounds
-options = optimoptions('fmincon','Diagnostics','off','Display','iter','Algorithm','active-set','OptimalityTolerance',1e-3,'MaxFunctionEvaluations',200);
+if (verLessThan('matlab','2016a'))
+    options = optimoptions('fmincon','Diagnostics','off','Display','iter','Algorithm','active-set');
+    options.MaxFunEvals = 200;
+    options.TolFun = 1e-3;
+else
+    options = optimoptions('fmincon','Diagnostics','off','Display','iter','Algorithm','active-set','OptimalityTolerance',1e-3,'MaxFunctionEvaluations',200);
+end
 
 % These bounds keep deltas in range 0-1.
 vlb = -primariesUsed;
