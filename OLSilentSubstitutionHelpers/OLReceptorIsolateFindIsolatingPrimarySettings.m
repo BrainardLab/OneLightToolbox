@@ -552,7 +552,7 @@ else
         
     end
     
-    contrastVector = cacheData.data(params.REFERENCE_OBSERVER_AGE).describe.contrast;
+    contrastVector = cacheData.data(params.OBSERVER_AGE).describe.contrast;
     
     % Calculate the spaltter
     [calID calIDTitle] = OLGetCalID(cal);
