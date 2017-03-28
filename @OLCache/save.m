@@ -19,6 +19,25 @@ error(nargchk(3, 3, nargin));
 % Make sure that cacheData is a struct.
 assert(isstruct(cacheData), 'OLCache:save:InvalidInput', 'cacheData must be a struct.');
 
+% Sometimes the cacheData.cal.describe.calType ends up as a struct. Or at
+% least this happened once.  We don't know why.  But this will check for
+% it, and print a possibly useful error message if it happens again.
+if (~isa(cacheData.cal.describe.calType,'OLCalibrationTypes'))
+    fprintf('Field calType of cacheData.cal.describe is not an enumeration of class OLCalibrationTypes\n');
+    fprintf('Probably it ended up as a struct.\n');
+    fprintf('This should not happen, but has happened in the past for unknown reasons.\n');
+    fprintf('The assertion that is about to run below will probably fail for this reason.\n');
+    fprintf('Rebuilding the cache file may make the problem go away.\n');
+end
+
+% Might as well check the field in the stashed cal file as well
+if (~isa(obj.CalibrationData.describe.calType,'OLCalibrationTypes'))
+    fprintf('Field calType of obj.CalibrationData.describe is not an enumeration of class OLCalibrationTypes\n');
+    fprintf('This is indicative of a problem, but one whose origin we do not completely understand.\n');
+    fprintf('The assertion that is about to run below will probably fail for this reason.\n');
+    fprintf('Try loading in the calibration file and making sure that the type is right when loaded directly\n');   
+end
+
 % Make sure the cache data were saving is of the same type as that of the
 % OLCache object.
 assert(cacheData.cal.describe.calType == obj.CalibrationData.describe.calType, ...
