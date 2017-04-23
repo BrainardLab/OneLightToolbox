@@ -88,6 +88,11 @@ end
 %% Force useAverageGamma?
 cal.useAverageGamma = 1;
 
+%% Clean up cal file primaries by zeroing out light we don't think is really there.    
+zeroItWLRangeMinus = 20;
+zeroItWLRangePlus = 60;
+cal = OLZeroCalPrimariesAwayFromPeak(cal,zeroItWLRangeMinus,zeroItWLRangePlus);
+
 %% We might not want to seek
 %
 % If we aren't seeking just return now.  The reason we might do this is to
