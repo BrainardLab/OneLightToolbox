@@ -14,7 +14,7 @@ function OLAnalyzeCalOOC
     % Select what to plot
     
     % 0. Plot temperature during the course of the calibration
-    plotTemperatureMeasurements = true;
+    plotTemperatureMeasurements = false;
     
     % 1. Analysis of how FULLON and COMB spectra vary over time
     plotDriftAnalysis = false;
