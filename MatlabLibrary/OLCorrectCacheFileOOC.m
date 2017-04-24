@@ -89,8 +89,8 @@ end
 cal.useAverageGamma = 1;
 
 %% Clean up cal file primaries by zeroing out light we don't think is really there.    
-zeroItWLRangeMinus = 20;
-zeroItWLRangePlus = 60;
+zeroItWLRangeMinus = 100;
+zeroItWLRangePlus = 100;
 cal = OLZeroCalPrimariesAwayFromPeak(cal,zeroItWLRangeMinus,zeroItWLRangePlus);
 
 %% We might not want to seek
