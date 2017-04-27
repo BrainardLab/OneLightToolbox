@@ -423,8 +423,9 @@ try
     % Check if we want to do splatter calculations
     try
         OLAnalyzeValidationReceptorIsolate(validationPath, 'short');
-    catch
+    catch e
         fprintf('Caught error during call to OLAnalyzeValidationReceptorIsolate\n');
+        fprintf('The orignal error message was: %s\n',e.message);
     end
     
     % Something went wrong, try to close radiometer gracefully
