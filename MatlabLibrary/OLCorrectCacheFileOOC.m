@@ -86,7 +86,7 @@ end
 [olCache,cacheData,cal,cacheDir,cacheFileName] = OLGetModulationCacheData(cacheFileNameFullPath, correctDescribe);
 
 %% Force useAverageGamma?
-cal.useAverageGamma = 1;
+cal.describe.useAverageGamma = 1;
 
 %% Clean up cal file primaries by zeroing out light we don't think is really there.    
 zeroItWLRangeMinus = 100;
