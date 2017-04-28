@@ -223,6 +223,14 @@ end
 % Load the calibration file associated with this calibration type.
 cal = LoadCalFile(OLCalibrationTypes.(selectedCalType).CalFileName, [], getpref('OneLight', 'OneLightCalData'));
 
+% Force useAverageGamma?
+cal.describe.useAverageGamma = 1;
+
+% Clean up cal file primaries by zeroing out light we don't think is really there.    
+zeroItWLRangeMinus = 100;
+zeroItWLRangePlus = 100;
+cal = OLZeroCalPrimariesAwayFromPeak(cal,zeroItWLRangeMinus,zeroItWLRangePlus);
+
 % Pull out the file name
 cacheFileNameFull = cacheFileName;
 [~, cacheFileName] = fileparts(cacheFileName);
