@@ -11,7 +11,7 @@ function [deltaPrimaries,predictedSpd] = OLIterativeDeltaPrimaries(deltaPrimarie
 
 % Options for fmincon, and reasonable bounds
 if (verLessThan('matlab','2016a'))
-    options = optimoptions('fmincon','Diagnostics','off','Display','iter','Algorithm','active-set');
+    options = optimoptions('fmincon','Diagnostics','off','Display','off','Algorithm','active-set');
     options.MaxFunEvals = 200;
     options.TolFun = 1e-3;
 else
