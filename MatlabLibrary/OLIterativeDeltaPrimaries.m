@@ -15,7 +15,7 @@ if (verLessThan('matlab','2016a'))
     options.MaxFunEvals = 200;
     options.TolFun = 1e-3;
 else
-    options = optimoptions('fmincon','Diagnostics','off','Display','iter','Algorithm','active-set','OptimalityTolerance',1e-3,'MaxFunctionEvaluations',200);
+    options = optimoptions('fmincon','Diagnostics','off','Display','off','Algorithm','active-set','OptimalityTolerance',1e-3,'MaxFunctionEvaluations',200);
 end
 
 % These bounds keep deltas in range 0-1.
