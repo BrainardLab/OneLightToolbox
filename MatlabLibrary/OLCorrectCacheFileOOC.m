@@ -36,6 +36,8 @@ function [cacheData olCache openSpectroRadiometerOBJ] = OLCorrectCacheFileOOC(ca
 %     'NIter'               scalar    number of iterations
 %     'learningRate'        0.8       Learning rate
 %     'learningRateDecrease' true     Decrease learning rate over iterations?
+%     'asympLearningRateFactor' 0.5   If learningRateDecrease is true, the
+%                                     asymptotic learning rate is (1-asympLearningRateFactor)*learningRate
 %     'smoothness'          0.001     Smoothness parameter for OLSpdToPrimary
 %     'iterativeSearch'     false     Do iterative search?
 %     'regressionPredict'   false     Use regression to make predictions, rather than calibration
@@ -64,6 +66,7 @@ p.addParameter('OBSERVER_AGE', 32, @isscalar);
 p.addParameter('NIter', 20, @isscalar);
 p.addParameter('learningRate', 0.8, @isscalar);
 p.addParameter('learningRateDecrease',true,@islogical);
+p.addParameter('asympLearningRateFactor',0.5,@isnumeric);
 p.addParameter('smoothness', 0.001, @isscalar);
 p.addParameter('iterativeSearch',false, @islogical);
 p.addParameter('regressionPredict',false, @islogical);
@@ -242,7 +245,7 @@ try
                 
                 % Set learning rate to use this iteration
                 if (p.Results.learningRateDecrease)
-                    learningRateThisIter = correctDescribe.learningRate*(1-(iter-1)*0.75/(correctDescribe.NIter-1));
+                    learningRateThisIter = correctDescribe.learningRate*(1-(iter-1)*correctDescribe.asympLearningRateFactor/(correctDescribe.NIter-1));
                 else
                     learningRateThisIter = correctDescribe.learningRate;
                 end
