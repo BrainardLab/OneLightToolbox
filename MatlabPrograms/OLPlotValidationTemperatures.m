@@ -27,7 +27,7 @@ function OLPlotValidationTemperatures(varargin)
 % Parse inputs
 p = inputParser;
 p.addParameter('targetCalType', [], @ischar);
-p.addParameter('rootDir', '/Users1/DropBoxLinks/DropboxAguirreBrainardLabs/MELA_materials', @ischar);
+p.addParameter('rootDir', '/Users1/DropBoxLinks/DropboxAguirreBrainardLabs/MELA_materials/OneLightCalData', @ischar);
 p.parse(varargin{:});
 
 % Fetch and plot the temperature data
@@ -60,27 +60,56 @@ function retrieveAndPlotTemperatureData(rootDir, theTargetCalType)
     s = s.(theTargetCalType);
 
     % Attempt to extract temperature data
-    for measurementIndex = 1:numel(s)
-        theMeasurementData = s{measurementIndex};
+    for calibrationIndex = 1:numel(s)
+        foundTemperatureData(calibrationIndex) = false;
+        
+        theMeasurementData = s{calibrationIndex};
         if (~isstruct(theMeasurementData))
             fprintf(2, ' ''theMeasurementData'' is not a struct. A struct is expected. Skipping ...\n');
         else
             if (isfield(theMeasurementData, 'temperatureData'))
-                allTemperatureData(measurementIndex,:,:,:) = theMeasurementData.temperatureData.modulationAllMeas;
+                allTemperatureData(calibrationIndex,:,:,:) = theMeasurementData.temperatureData.modulationAllMeas;
+                foundTemperatureData(calibrationIndex) = true;
             elseif (isfield(theMeasurementData, 'temperature'))
                 allFieldNames = fieldnames(theMeasurementData.temperature);
                 for k = 1:numel(allFieldNames)
-                    allTemperatureData(measurementIndex,k,:,:) = theMeasurementData.temperature.(allFieldNames{k});
+                    allTemperatureData(calibrationIndex,k,:,:) = theMeasurementData.temperature.(allFieldNames{k});
                 end
-            else
-                fprintf(2,'There were no ''temperatureData'' or ''temperature'' fields found in ''theMeasurementData'' struct of ''%s''.\n', fullfile(pathName,theValidationCacheFile));
+                foundTemperatureData(calibrationIndex) = true;
+            elseif (isfield(theMeasurementData, 'raw')) && (isfield(theMeasurementData.raw, 'temperature'))
+                allFieldNames = fieldnames(theMeasurementData.raw.temperature);
+                if (ismember('value', allFieldNames))
+                    allTemperatureData(calibrationIndex,1,:,:) = theMeasurementData.raw.temperature.value;
+                    foundTemperatureData(calibrationIndex) = true;
+                else
+                    allFieldNames
+                    error('Did not find ''value'' field.');
+                end
+            else 
+                fprintf('[calibration index: %d]: There were no ''temperatureData'' or ''temperature'' fields found in ''theMeasurementData'' struct of ''%s''.\n', calibrationIndex, fullfile(pathName,theValidationCacheFile));
                 theMeasurementData
-                return;
             end
         end
+        
+        if (isfield(theMeasurementData, 'date'))
+            dateString{calibrationIndex} = sprintf('%s\nDate:%s', strrep(theTargetCalType, '_', ''),theMeasurementData.date);
+        elseif (isfield(theMeasurementData,'describe')) &&  (isfield(theMeasurementData.describe, 'validationDate'))
+            dateString{calibrationIndex} = sprintf('%s\nDate:%s', strrep(theTargetCalType, '_', ''), theMeasurementData.describe.validationDate);
+        elseif (isfield(theMeasurementData, 'describe')) && (isfield(theMeasurementData.describe, 'date'))
+            dateString{calibrationIndex} = sprintf('%s\nDate:%s', strrep(theTargetCalType, '_', ''), theMeasurementData.describe.date);
+        else
+            dateString{calibrationIndex} = sprintf('%s\nDate: could not be determined from the data file. Contact Nicolas.\n', strrep(theTargetCalType, '_', ''));
+        end
+        
     end
+    
+    if (any(foundTemperatureData) == 0)
+        fprintf('None of the %d calibrations contain temperature data. Exiting\n', numel(s));
+        return;
+    end
+  
     if (ndims(allTemperatureData) ~= 4)
-        error('Something went wrong with the assumption of how temperature data are stored. Contact Nicolas\n');
+        error('Something went wrong with the assumption of how temperature data are stored.\n');
     end
     clear 's'
 
@@ -91,8 +120,8 @@ function retrieveAndPlotTemperatureData(rootDir, theTargetCalType)
     hFig = figure(1); clf;
     set(hFig, 'Position', [10 10 1150 540]);
 
-    for measurementIndex = 1:size(allTemperatureData,1)
-        theTemperatureData = allTemperatureData(measurementIndex,:,:,:);
+    for calibrationIndex = 1:size(allTemperatureData,1)
+        theTemperatureData = allTemperatureData(calibrationIndex,:,:,:);
         theOneLightTemp = [];
         theAmbientTemp = [];
         for iter1 = 1:size(theTemperatureData,2)
@@ -102,7 +131,7 @@ function retrieveAndPlotTemperatureData(rootDir, theTargetCalType)
             end
         end
 
-        subplot(1,size(allTemperatureData,1), measurementIndex)
+        subplot(1,size(allTemperatureData,1), calibrationIndex)
         plot(1:numel(theOneLightTemp), theOneLightTemp(:), 'ro-', 'LineWidth', 1.5, 'MarkerSize', 10, 'MarkerFaceColor', [1 0.7 0.7]);
         hold on
         plot(1:numel(theOneLightTemp), theAmbientTemp(:), 'bo-', 'LineWidth', 1.5, 'MarkerSize', 10, 'MarkerFaceColor', [0.7 0.7 1.0]);
@@ -120,12 +149,6 @@ function retrieveAndPlotTemperatureData(rootDir, theTargetCalType)
         xlabel('measurement index', 'FontSize', 14, 'FontWeight', 'bold');
         ylabel('temperature (deg Celcius)', 'FontSize', 14, 'FontWeight', 'bold');
         drawnow;
-        if (isfield(theMeasurementData, 'date'))
-            title(sprintf('%s\nDate:%s', strrep(theTargetCalType, '_', ''),theMeasurementData.date));
-        elseif (isfield(theMeasurementData,'describe')) &&  (isfield(theMeasurementData.describe, 'validationDate'))
-            title(sprintf('%s\nDate:%s', strrep(theTargetCalType, '_', ''), theMeasurementData.describe.validationDate));
-        else
-            title(sprintf('%s\nDate: could not be determined from the data file. Contact Nicolas.\n', strrep(theTargetCalType, '_', '')));
-        end
+        title(dateString{calibrationIndex});
     end
 end
