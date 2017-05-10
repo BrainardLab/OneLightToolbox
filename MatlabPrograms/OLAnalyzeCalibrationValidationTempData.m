@@ -1,0 +1,13 @@
+function OLAnalyzeCalibrationValidationTempData
+
+    tempAnalyzer = OLTempAnalyzer(...
+        'rootDir', '/Users1/DropBoxLinks/DropboxAguirreBrainardLabs/MELA_materials', ...
+        'calibrationFile', 'OneLightCalData/OLBoxDRandomizedLongCableAEyePiece2_ND02.mat', ...
+        'testFile', 'cache/stimuli/Cache-LMSDirectedSuperMaxLMS_MELA_0085_041317' ...
+        );
+
+    tempAnalyzer.plotTemperatureData('calibration');
+    tempAnalyzer.plotTemperatureData('test');
+    
+end
+
