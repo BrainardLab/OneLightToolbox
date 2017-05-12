@@ -17,9 +17,18 @@ classdef OLTempAnalyzer < handle
         
         calData;
         testData;
+        combSPDPlotColors = [...
+            0.2 0.4 1.0; ...
+            0.4 0.8 0.8; ...
+            0.7 0.4 0.4; ...
+            1.0 0.3 0.1 ...
+            ];
+        combSPDNominalPeaks = [497 556 614 670];
+        combSPDActualPeaks;
     end
     
     properties (Access = private)
+        gui
     end
     
     properties (Constant)
@@ -50,11 +59,14 @@ classdef OLTempAnalyzer < handle
             obj.importData();
         end
         
-        % Method to plot a temperature data set
-        plotTemperatureData(obj, dataSetName);
     end
     
     methods (Access = private)
         importData(obj);
+        [allTemperatureData, stabilitySpectra, dateStrings, fileName] = retrieveData(obj, dataFile, theTargetCalType);
+        [combPeakTimeSeries, combSPDActualPeaks] = computeSpectralShiftTimeSeries(obj, stabilitySpectra, entryIndex);
+        presentGUI(obj);
+        plotTemperatureData(obj, dataSetName, entryIndex, plotAxes, dataSetNameEditBox);
+        plotSpectralStabilityData(obj, dataSetName, entryIndex, plotAxes, dataSetNameEditBox);
     end
 end
