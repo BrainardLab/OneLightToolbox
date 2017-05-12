@@ -19,12 +19,6 @@ function OLAnalyzeCalibrationValidationTempData
         'calibrationFile', fullfile('OneLightCalData', calFile), ...
         'testFile', testFile ...
         );
-
-%     tempAnalyzer.plotTemperatureData('calibration');
-%     tempAnalyzer.plotSpectralStabilityData('calibration');
-%     
-%     tempAnalyzer.plotTemperatureData('test');
-%     tempAnalyzer.plotSpectralStabilityData('test');
     
 end
 
