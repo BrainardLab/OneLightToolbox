@@ -1,8 +1,9 @@
-function [combPeakTimeSeries, combSPDActualPeaks] = computeSpectralShiftTimeSeries(obj, stabilitySpectra, entryIndex)
+function [combPeakTimeSeries, initialPeaks, gainTimeSeries] = computeSpectralShiftTimeSeries(obj, stabilitySpectra, entryIndex)
     
     if (isempty(stabilitySpectra))
         combPeakTimeSeries = [];
-        combSPDActualPeaks = [];
+        initialPeaks = [];
+        gainTimeSeries = [];
         return;
     end
     
@@ -20,15 +21,17 @@ function [combPeakTimeSeries, combSPDActualPeaks] = computeSpectralShiftTimeSeri
     set(tax,'fontsize',14)
     for timePointIndex = 1:size(spectraShiftsData,2)
         waitbar(timePointIndex/size(spectraShiftsData,2),h);
-        combPeakTimeSeries(:, timePointIndex) = findPeaks(squeeze(spectraShiftsData(:, timePointIndex)), stabilitySpectra{entryIndex}.wavelengthSupport, combSPDNominalPeaks);
+        [combPeakTimeSeries(:, timePointIndex), gainTimeSeries(:, timePointIndex)] = findPeaks(squeeze(spectraShiftsData(:, timePointIndex)), stabilitySpectra{entryIndex}.wavelengthSupport, combSPDNominalPeaks);
     end
     close(h);
-    combSPDActualPeaks = squeeze(combPeakTimeSeries(:,1));
-    combPeakTimeSeries = bsxfun(@minus, combPeakTimeSeries, combSPDActualPeaks);
+    initialPeaks = squeeze(combPeakTimeSeries(:,1));
+    combPeakTimeSeries = bsxfun(@minus, combPeakTimeSeries, initialPeaks);
+    initialGain = squeeze(gainTimeSeries(:,1));
+    gainTimeSeries = bsxfun(@times, gainTimeSeries, 1./initialGain);
 end
 
 
-function combPeakTimeSeries = findPeaks(spd, spectralAxis, combSPDNominalPeaks)
+function [combPeakTimeSeries, gainTimeSeries] = findPeaks(spd, spectralAxis, combSPDNominalPeaks)
 
     for peakIndex = 1:numel(combSPDNominalPeaks)
         % nominal peak
@@ -54,7 +57,8 @@ function combPeakTimeSeries = findPeaks(spd, spectralAxis, combSPDNominalPeaks)
         % Fit the reference SPD peak
         spdData = 1000*spd(dataIndicesToFit);  % in milliWatts
         fitParamsRef = fitGaussianToData(xData, spdData, initialParams, paramLowerBounds, paramUpperBounds);
-        combPeakTimeSeries(peakIndex) = fitParamsRef(3); 
+        combPeakTimeSeries(peakIndex) = fitParamsRef(3);
+        gainTimeSeries(peakIndex) = fitParamsRef(2); 
     end % peakIndex
 end
 

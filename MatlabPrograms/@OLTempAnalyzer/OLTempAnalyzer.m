@@ -64,9 +64,9 @@ classdef OLTempAnalyzer < handle
     methods (Access = private)
         importData(obj);
         [allTemperatureData, stabilitySpectra, dateStrings, fileName] = retrieveData(obj, dataFile, theTargetCalType);
-        [combPeakTimeSeries, combSPDActualPeaks] = computeSpectralShiftTimeSeries(obj, stabilitySpectra, entryIndex);
+        [combPeakTimeSeries, combSPDActualPeaks, gainTimeSeries] = computeSpectralShiftTimeSeries(obj, stabilitySpectra, entryIndex);
         presentGUI(obj);
-        plotTemperatureData(obj, dataSetName, entryIndex, plotAxes, dataSetNameEditBox);
+        plotTemperatureData(obj, dataSetName, entryIndex, plotAxes, dataSetNameEditBox, secondaryPlotDataSet);
         plotSpectralStabilityData(obj, dataSetName, entryIndex, plotAxes, dataSetNameEditBox);
     end
 end

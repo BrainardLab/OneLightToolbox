@@ -100,7 +100,7 @@ function [allTemperatureData, stabilitySpectra, dateStrings, fileName] = retriev
             end
         end
 
-        [stabilitySpectra{entryIndex}.combPeakTimeSeries, obj.combSPDActualPeaks{entryIndex}] = obj.computeSpectralShiftTimeSeries(stabilitySpectra, entryIndex);
+        [stabilitySpectra{entryIndex}.combPeakTimeSeries, obj.combSPDActualPeaks{entryIndex}, stabilitySpectra{entryIndex}.gainTimeSeries] = obj.computeSpectralShiftTimeSeries(stabilitySpectra, entryIndex);
         
         if (isfield(theMeasurementData, 'date'))
             dateStrings{entryIndex} = theMeasurementData.date;

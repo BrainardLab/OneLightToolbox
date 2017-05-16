@@ -1,5 +1,5 @@
 % Method to plot the temperature data set
-function plotTemperatureData(obj, dataSetName, entryIndex, plotAxes, dataSetNameEditBox)
+function plotTemperatureData(obj, dataSetName, entryIndex, plotAxes, dataSetNameEditBox, secondaryPlotDataSet)
     
     switch dataSetName
         case 'calibration'
@@ -12,17 +12,10 @@ function plotTemperatureData(obj, dataSetName, entryIndex, plotAxes, dataSetName
     
     if (isempty(data.stabilitySpectra{entryIndex}.combPeakTimeSeries))
         theSpectralShiftData = [];
+        theGainShiftData = [];
     else
         theSpectralShiftData = squeeze(data.stabilitySpectra{entryIndex}.combPeakTimeSeries);
-    end
-    
-    if (~isfield(data, 'allTemperatureData'))
-        fprintf(2, 'No temperature data found!!\n');
-        return;
-    end
-    if (isempty(data.allTemperatureData))
-        fprintf(2, 'No temperature data found!!\n');
-        return;
+        theGainShiftData = squeeze(data.stabilitySpectra{entryIndex}.gainTimeSeries);
     end
     
     theTemperatureData = data.allTemperatureData(entryIndex,:,:,:);
@@ -58,7 +51,7 @@ function plotTemperatureData(obj, dataSetName, entryIndex, plotAxes, dataSetName
     xlabel(plotAxes,'measurement index', 'FontSize', 14, 'FontWeight', 'bold');
     ylabel(plotAxes, 'temperature (deg Celcius)', 'FontSize', 14, 'FontWeight', 'bold');
     
-    if (~isempty(theSpectralShiftData))
+    if (~isempty(theSpectralShiftData)) && (strcmp(secondaryPlotDataSet, 'spectral shift time series'))
         % Spectral shift data
         yyaxis(plotAxes, 'right');
         plot(plotAxes, 1:size(theSpectralShiftData,2), theSpectralShiftData(1,:), 'ks-', 'LineWidth', 1.5, 'MarkerSize', 2, 'Color', squeeze(obj.combSPDPlotColors(1,:)), 'MarkerFaceColor', squeeze(obj.combSPDPlotColors(1,:)));
@@ -69,7 +62,20 @@ function plotTemperatureData(obj, dataSetName, entryIndex, plotAxes, dataSetName
         hold(plotAxes, 'off')
         set(plotAxes, 'YColor', [0 0 0], 'YLim', [min(theSpectralShiftData(:))-0.1 max(theSpectralShiftData(:))+0.1]);
         ylabel(plotAxes, 'spectral shift (nm)', 'FontWeight', 'bold');
+
+    elseif (~isempty(theGainShiftData)) && (strcmp(secondaryPlotDataSet, 'gain shift time series'))
+        % gain shift data
+        yyaxis(plotAxes, 'right');
+        plot(plotAxes, 1:size(theGainShiftData,2), theGainShiftData(1,:), 'ks-', 'LineWidth', 1.5, 'MarkerSize', 2, 'Color', squeeze(obj.combSPDPlotColors(1,:)), 'MarkerFaceColor', squeeze(obj.combSPDPlotColors(1,:)));
+        hold(plotAxes, 'on');
+        plot(plotAxes, 1:size(theGainShiftData,2), theGainShiftData(2,:), 'ks-', 'LineWidth', 1.5, 'MarkerSize', 2, 'Color', squeeze(obj.combSPDPlotColors(2,:)), 'MarkerFaceColor', squeeze(obj.combSPDPlotColors(2,:)));
+        plot(plotAxes, 1:size(theGainShiftData,2), theGainShiftData(3,:), 'ks-', 'LineWidth', 1.5, 'MarkerSize', 2, 'Color', squeeze(obj.combSPDPlotColors(3,:)), 'MarkerFaceColor', squeeze(obj.combSPDPlotColors(3,:)));
+        plot(plotAxes, 1:size(theGainShiftData,2), theGainShiftData(4,:), 'ks-', 'LineWidth', 1.5, 'MarkerSize', 2, 'Color', squeeze(obj.combSPDPlotColors(4,:)), 'MarkerFaceColor', squeeze(obj.combSPDPlotColors(4,:)));
+        hold(plotAxes, 'off')
+        set(plotAxes, 'YColor', [0 0 0], 'YLim', [min(theGainShiftData(:))/1.01 max(theGainShiftData(:))*1.01]);
+        ylabel(plotAxes, 'gain fluctuation', 'FontWeight', 'bold');
     end
+    
     
     idx = strfind(fullFileName, 'materials');
     reducedFileName = strrep(fullFileName(idx(end)+10:end), '\_', '_');
@@ -78,13 +84,13 @@ function plotTemperatureData(obj, dataSetName, entryIndex, plotAxes, dataSetName
     hL = legend(plotAxes, ...
         {sprintf('onelight temp'), ...
          sprintf('ambient temp'), ...
-         sprintf('shift (%2.1f)', referenceCombPeaks(1)), ...
-         sprintf('shift (%2.1f)', referenceCombPeaks(2)), ...
-         sprintf('shift (%2.1f)', referenceCombPeaks(3)), ...
-         sprintf('shift (%2.1f)', referenceCombPeaks(4)), ...
+         sprintf('%2.1fnm', referenceCombPeaks(1)), ...
+         sprintf('%2.1fnm', referenceCombPeaks(2)), ...
+         sprintf('%2.1fnm', referenceCombPeaks(3)), ...
+         sprintf('%2.1fnm', referenceCombPeaks(4)), ...
          }, ...
          'Location', 'northoutside', 'Orientation', 'Horizontal');
-    hL.FontSize = 12;
+    hL.FontSize = 14;
     hL.FontName = 'Menlo';  
     drawnow;
 end

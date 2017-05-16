@@ -12,7 +12,7 @@ function OLAnalyzeCalibrationValidationTempData
     %testFile = 'cache/stimuli/Cache-MelanopsinDirectedSuperMaxMel_MELA_0085_041317.mat';
     
     calFile = 'OLBoxDRandomizedLongCableAEyePiece2_ND02.mat';
-    %calFile = 'OLBoxDRandomizedLongCableAEyePiece2_ND03.mat';
+    %calFile = 'OLBoxDRandomizedLongCableAEyePiece2_ND01.mat';
     
     tempAnalyzer = OLTempAnalyzer(...
         'rootDir', '/Users1/DropBoxLinks/DropboxAguirreBrainardLabs/MELA_materials', ...
