@@ -44,6 +44,10 @@ function [cacheData olCache openSpectroRadiometerOBJ] = OLCorrectCacheFileOOC(ca
 %     'postreceptoralCombinations'  scalar Post-receptoral combinations to calculate contrast w.r.t.
 %     'takeTemperatureMeasurements' false  Whether to take temperature measurements (requires a
 %                                          connected LabJack dev with a temperature probe)
+%     'useAverageGamma'     false     Force the useAverageGamma mode in the
+%                                     calibration.  When false, the value that was in the calibration file
+%                                     is used.  When true, useAverageGamma is set to true.
+%     'zeroPrimariesAwayFromPeak' false    Zero out calibrated primaries well away from their peaks.
 
 % 1/21/14   dhb, ms  Convert to use OLSettingsToStartsStops.
 % 1/30/14   ms       Added keyword parameters to make this useful.
@@ -77,6 +81,9 @@ p.addParameter('postreceptoralCombinations', [], @isnumeric);
 p.addParameter('outDir', [], @isstr);
 p.addParameter('takeTemperatureMeasurements', false, @islogical);
 p.addParameter('powerLevels', [0 1.0000], @isnumeric);
+p.addParameter('useAverageGamma', false, @islogical);
+p.addParameter('zeroPrimariesAwayFromPeak', false, @islogical);
+
 p.parse(varargin{:});
 correctDescribe = p.Results;
 
@@ -89,12 +96,16 @@ end
 [olCache,cacheData,cal,cacheDir,cacheFileName] = OLGetModulationCacheData(cacheFileNameFullPath, correctDescribe);
 
 %% Force useAverageGamma?
-cal.describe.useAverageGamma = 1;
+if (correctDescribe.useAverageGamma)
+    cal.describe.useAverageGamma = 1;
+end
 
-%% Clean up cal file primaries by zeroing out light we don't think is really there.    
-zeroItWLRangeMinus = 100;
-zeroItWLRangePlus = 100;
-cal = OLZeroCalPrimariesAwayFromPeak(cal,zeroItWLRangeMinus,zeroItWLRangePlus);
+%% Clean up cal file primaries by zeroing out light we don't think is really there.
+if (correctDescribe.zeroPrimariesAwayFromPeak)
+    zeroItWLRangeMinus = 100;
+    zeroItWLRangePlus = 100;
+    cal = OLZeroCalPrimariesAwayFromPeak(cal,zeroItWLRangeMinus,zeroItWLRangePlus);
+end
 
 %% We might not want to seek
 %
