@@ -1,6 +1,9 @@
 function [settings, primaries, predictedSpds] = OLSpdToSettings(oneLightCal, targetSpds, lambda, verbose)
 % OLSpdToSettings - Converts spectra into OneLight calibrated mirror settings.
 %
+% AS OF JUNE 1, 2017, DHB BELIEVES THIS ROUTINE IS DEPRECATED AND HAS
+% INSERTED AN ERROR STATEMENT.
+%
 % Syntax:
 % [settings, primaries] = OLSpdToSettings(oneLightCal, targetSpds, lambda)
 % [settings, primaries] = OLSpdToSettings(oneLightCal, targetSpds, lambda, verbose)
@@ -29,6 +32,8 @@ function [settings, primaries, predictedSpds] = OLSpdToSettings(oneLightCal, tar
 %     OneLight.
 % predictedSpds (1xN) - The predicted target spectra for the PR-650 and
 %     OmniDriver spectrometers.
+
+error('I think this routine is deprecated and should not be called.  David.  June 1, 2017');
 
 % Validate the number of inputs.
 error(nargchk(3, 4, nargin));
