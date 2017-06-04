@@ -1,4 +1,3 @@
-function [effectivePrimary primary] = OLSpdToPrimary(oneLightCal, targetSpd, varargin)
 function effectivePrimary = OLSpdToPrimary(oneLightCal, targetSpd, varargin)
 % OLSpdToPrimary - Converts a spectrum into normalized primary OneLight mirror settings.
 %
@@ -108,8 +107,10 @@ if params.differentialMode
     b = [];
     vlb = []; % Allow primaries to <0 if we are in differential mode
 else
-    A = -oneLightCal.computed.D;
-    b = zeros(size(targetPrimary))-eps;
+    %A = -oneLightCal.computed.D;
+    %b = zeros(size(targetPrimary))-eps;
+    A = [];
+    b = [];
     vlb = zeros(size(targetEffectivePrimary));
 end
 options = optimset('lsqlin');
@@ -122,6 +123,7 @@ end
 if ~params.differentialMode
     targeteffectivePrimary1(targeteffectivePrimary1 < 0) = 0; % Bound to 0
 end
+
 primary = oneLightCal.computed.D * targeteffectivePrimary1;
 effectivePrimary = targeteffectivePrimary1;
 if ~params.differentialMode
