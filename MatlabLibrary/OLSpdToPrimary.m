@@ -1,33 +1,49 @@
 function [effectivePrimary primary] = OLSpdToPrimary(oneLightCal, targetSpd, varargin)
+function effectivePrimary = OLSpdToPrimary(oneLightCal, targetSpd, varargin)
 % OLSpdToPrimary - Converts a spectrum into normalized primary OneLight mirror settings.
 %
-% Syntax:
+% Examples:
 % effectivePrimary = OLSpdToPrimary(oneLightCal, targetSpd)
-% effectivePrimary = OLSpdToPrimary(oneLightCal, targetSpd, params.lambda)
-% effectivePrimary = OLSpdToPrimary(oneLightCal, targetSpd, params.lambda, verbose)
+% effectivePrimary = OLSpdToPrimary(oneLightCal, targetSpd, 'lambda', 0.2)
+% effectivePrimary = OLSpdToPrimary(oneLightCal, targetSpd, 'verbose, true)
 %
 % Description:
 % Convert a spectral power distribution to the linear 0-1 fraction of light
 % that we need from each column of mirrors.  No gamma correction is applied
 % to the primary settings.
-% This program also allows for a 'differentialMode' which is false unless
-% the 'differentialMode' keyword is passed.
+%
+% This routine also allows for a 'differentialMode' which is false unless
+% the 'differentialMode' key value pair is passed.
 %
 % Input:
 % oneLightCal (struct) - OneLight calibration file after it has been
 %     processed by OLInitCal.
-% primary (Nx1) - The normalized power level for each column of the
-%     OneLight.  These values are not gamma corrected.  N is the number
-%     of columns specified by the OneLight object, and corresponds to
-%     the number of columns on its DLP chip.
+% targetSpd (nWlsx1) - The target spectrum, sampled at the wavelengths
+%     used in the calibration file (typically 380 to 780 nm in 2 nm steps.)
 %
 % Output:
-% effectivePrimary (Nx1) - The normalized power level for effective primary
+% effectivePrimary (Nx1) - The [0-1] primary value for each effective primary
 %     of the OneLight. N is the number of effective primaries. Not gamma corrected.
+%     What we mean by effective primaries is the number of column groups
+%     that were set up at calibration time.  Often these consiste of 16
+%     physical columns of the DLP chip.
+%
+% Optional Key-Value Pairs:
+%  'verbose' - true/false (default false). Provide more diagnostic output.
+%  'lambda' - value (default 0.1). Value of smoothing parameter.
+%  'differentialMode' - true/false (default false). Run in differential
+%                       mode.  This means, don't subtract dark light.
+%                       Useful when we want to find delta primaries that
+%                       produce a predicted delta spd.%
+%
+% NOTE: This routine contains vestigal code which is computing values thar
+% are never used or returned.  Could use some cleaning.
 %
 % 3/29/13  dhb  Changed some variable names to make this cleaner (Settings -> Primary).
 % 11/08/15 dhb  Specify explicitly that lsqlin algorithm should be 'active-set', ...
 %               to satisfy warning in newer versions of Matlab
+% 06/01/17 dhb  Remove primary return argument, because I don't think it
+%               should be used.
 %
 
 % Parse the input
@@ -35,7 +51,6 @@ p = inputParser;
 p.addOptional('verbose', false, @islogical);
 p.addOptional('lambda', 0.1, @isscalar);
 p.addOptional('differentialMode', false, @islogical);
-
 p.parse(varargin{:});
 params = p.Results;
 
@@ -60,10 +75,10 @@ end
 % Find column input values for targetSpd without enforcing any constraints.  It's
 % not completely clear why we do this, as the only way we use the answer is to
 % determine the size of some vectors below, and for debugging.
-targeteffectivePrimary = pinv(oneLightCal.computed.pr650M) * (targetSpd - darkSpd);
-targetPrimary = oneLightCal.computed.D * targeteffectivePrimary;
+targetEffectivePrimary = pinv(oneLightCal.computed.pr650M) * (targetSpd - darkSpd);
+%targetPrimary = oneLightCal.computed.D * targeteffectivePrimary;
 if params.verbose
-    fprintf('Pinv settings: min = %g, max = %g\n', min(targetPrimary(:)), max(targetPrimary(:)));
+    fprintf('Pinv settings: min = %g, max = %g\n', min(targetEffectivePrimary(:)), max(targetEffectivePrimary(:)));
 end
 
 % Use lsqlin to enforce constraints.
@@ -79,12 +94,12 @@ end
 % calibrate.
 C1 = oneLightCal.computed.pr650M;
 d1 = targetSpd - darkSpd;
-C2 = zeros(length(targeteffectivePrimary)-1, length(targeteffectivePrimary));
-for i = 1:length(targeteffectivePrimary)-1
+C2 = zeros(length(targetEffectivePrimary)-1, length(targetEffectivePrimary));
+for i = 1:length(targetEffectivePrimary)-1
     C2(i,i) = params.lambda;
     C2(i,i+1) = -params.lambda;
 end
-d2 = zeros(length(targeteffectivePrimary)-1, 1);
+d2 = zeros(length(targetEffectivePrimary)-1, 1);
 C = [C1 ; C2];
 d = [d1 ; d2];
 
@@ -95,11 +110,12 @@ if params.differentialMode
 else
     A = -oneLightCal.computed.D;
     b = zeros(size(targetPrimary))-eps;
-    vlb = zeros(size(targeteffectivePrimary));
+    vlb = zeros(size(targetEffectivePrimary));
 end
 options = optimset('lsqlin');
 options = optimset(options,'Diagnostics','off','Display','off','LargeScale','off','Algorithm','active-set');
 targeteffectivePrimary1 = lsqlin(C,d,A,b,[],[],vlb,[],[],options);
+
 if params.verbose
     fprintf('Lsqlin effective settings: min = %g, max = %g\n', min(targeteffectivePrimary1(:)), max(targeteffectivePrimary1(:)));
 end

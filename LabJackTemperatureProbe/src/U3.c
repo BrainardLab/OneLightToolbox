@@ -796,7 +796,7 @@ long isCalibrationInfoValid(u3CalibrationInfo *caliInfo)
         goto invalid;
     return 1;
 invalid:
-    printf("Error: Invalid calibration info.\n");
+    printf("Error: Invalid LABJACK calibration info. If a LabJack device is plugged in, please unplug it and replug it.\n");
     return 0;
 }
 
@@ -809,7 +809,7 @@ long isTdacCalibrationInfoValid(u3TdacCalibrationInfo *caliInfo)
         goto invalid;
     return 1;
 invalid:
-    printf("Error: Invalid LJTDAC calibration info.\n");
+    printf("Error: Invalid LABJACK (LJTDAC) calibration info.\n");
     return 0;
 }
 
@@ -906,19 +906,19 @@ long getCalibrationInfo(HANDLE hDevice, u3CalibrationInfo *caliInfo)
     return 0;
 
 writeError0:
-    printf("Error : getCalibrationInfo write failed\n");
+    printf("Error : LABJACK getCalibrationInfo write failed\n");
     return -1;
 writeError1:
-    printf("Error : getCalibrationInfo did not write all of the buffer\n");
+    printf("Error : LABJACK getCalibrationInfo did not write all of the buffer\n");
     return -1;
 readError0:
-    printf("Error : getCalibrationInfo read failed\n");
+    printf("Error : LABJACK getCalibrationInfo read failed\n");
     return -1;
 readError1:
-    printf("Error : getCalibrationInfo did not read all of the buffer\n");
+    printf("Error : LABJACK getCalibrationInfo did not read all of the buffer\n");
     return -1;
 commandByteError:
-    printf("Error : getCalibrationInfo received wrong command bytes for ReadMem\n");
+    printf("Error : LABJACK getCalibrationInfo received wrong command bytes for ReadMem\n");
     return -1;
 }
 
@@ -954,7 +954,7 @@ long getTdacCalibrationInfo( HANDLE hDevice, u3TdacCalibrationInfo *caliInfo, ui
 
     if( errorcode != 0 )
     {
-        printf("Getting LJTDAC calibration info error : received errorcode %d in response\n", errorcode);
+        printf("Getting LABJACK (LJTDAC) calibration info error : received errorcode %d in response\n", errorcode);
         err = -1;
     }
 
@@ -1021,7 +1021,7 @@ long getAinVoltCalibrated(u3CalibrationInfo *caliInfo, int dacEnabled, uint8 neg
     }
     else
     {
-        printf("getAinVoltCalibrated error: invalid negative channel.\n");
+        printf("LABJACK getAinVoltCalibrated error: invalid negative channel.\n");
         return -1;
     }
 
@@ -1098,7 +1098,7 @@ long getDacBinVoltCalibrated8Bit(u3CalibrationInfo *caliInfo, int dacNumber, dou
 
     if( dacNumber < 0 || dacNumber > 2 )
     {
-        printf("getDacBinVoltCalibrated8Bit error: invalid channelNumber.\n");
+        printf("LABJACK getDacBinVoltCalibrated8Bit error: invalid channelNumber.\n");
         return -1;
     }
     tBytesVolt = analogVolt*caliInfo->ccConstants[4 + dacNumber*2] +   caliInfo->ccConstants[5 + dacNumber*2];
@@ -1126,7 +1126,7 @@ long getDacBinVoltCalibrated16Bit(u3CalibrationInfo *caliInfo, int dacNumber, do
 
     if( dacNumber < 0 || dacNumber > 2 )
     {
-        printf("getDacBinVoltCalibrated16Bit error: invalid channelNumber.\n");
+        printf("LABJACK getDacBinVoltCalibrated16Bit error: invalid channelNumber.\n");
         return -1;
     }
 
@@ -1160,7 +1160,7 @@ long getTdacBinVoltCalibrated(u3TdacCalibrationInfo *caliInfo, int dacNumber, do
 
     if( dacNumber < 0 || dacNumber > 2 )
     {
-        printf("getTdacBinVoltCalibrated error: invalid channelNumber.\n");
+        printf("LABJACK getTdacBinVoltCalibrated error: invalid channelNumber.\n");
         return -1;
     }
 
@@ -1369,7 +1369,7 @@ long eAIN(HANDLE Handle, u3CalibrationInfo *CalibrationInfo, long ConfigIO, long
 
     if( isCalibrationInfoValid(CalibrationInfo) == 0 )
     {
-        printf("eAIN error: calibration information is required");
+        printf("LABJACK eAIN error: calibration information is required");
         return -1;
     }
 
@@ -1378,7 +1378,7 @@ long eAIN(HANDLE Handle, u3CalibrationInfo *CalibrationInfo, long ConfigIO, long
 
     if( ChannelP < 0 || (ChannelP > 15 && ChannelP != 30 && ChannelP != 31) )
     {
-        printf("eAIN error: Invalid positive channel\n");
+        printf("LABJACK eAIN error: Invalid positive channel\n");
         return -1;
     }
 
@@ -1387,7 +1387,7 @@ long eAIN(HANDLE Handle, u3CalibrationInfo *CalibrationInfo, long ConfigIO, long
         (hwver >= 1.30 && hv == 1 && ((ChannelP < 4 && ChannelN != 31 && ChannelN != 32) ||
         ChannelN < 4)) )
     {
-        printf("eAIN error: Invalid negative channel\n");
+        printf("LABJACK eAIN error: Invalid negative channel\n");
         return -1;
     }
     if( ChannelN == 32 )
@@ -1488,13 +1488,13 @@ long eDAC(HANDLE Handle, u3CalibrationInfo *CalibrationInfo, long ConfigIO, long
 
     if( isCalibrationInfoValid(CalibrationInfo) == 0 )
     {
-        printf("eDAC error: calibration information is required");
+        printf("LABJACK eDAC error: calibration information is required");
         return -1;
     }
 
     if( Channel < 0 || Channel > 1 )
     {
-        printf("eDAC error: Invalid DAC channel\n");
+        printf("LABJACK eDAC error: Invalid DAC channel\n");
         return -1;
     }
 
@@ -1549,7 +1549,7 @@ long eDI(HANDLE Handle, long ConfigIO, long Channel, long *State)
 
     if( Channel < 0 || Channel > 19 )
     {
-        printf("eDI error: Invalid DI channel\n");
+        printf("LABJACK eDI error: Invalid DI channel\n");
         return -1;
     }
 
@@ -1608,7 +1608,7 @@ long eDO(HANDLE Handle, long ConfigIO, long Channel, long State)
 
     if( Channel < 0 || Channel > 19 )
     {
-        printf("eD0 error: Invalid DI channel\n");
+        printf("LABJACK eD0 error: Invalid DI channel\n");
         return -1;
     }
 
@@ -1667,7 +1667,7 @@ long eTCConfig(HANDLE Handle, long *aEnableTimers, long *aEnableCounters, long T
 
     if( TCPinOffset < 0 && TCPinOffset > 8 )
     {
-        printf("eTCConfig error: Invalid TimerCounterPinOffset\n");
+        printf("LABJACK eTCConfig error: Invalid TimerCounterPinOffset\n");
         return -1;
     }
 
@@ -1852,9 +1852,9 @@ long ehConfigIO(HANDLE hDevice, uint8 inWriteMask, uint8 inTimerCounterConfig, u
     if( (sendChars = LJUSB_Write(hDevice, sendBuff, 12)) < 12 )
     {
         if( sendChars == 0 )
-            printf("ehConfigIO error : write failed\n");
+            printf("LABJACK ehConfigIO error : write failed\n");
         else
-            printf("ehConfigIO error : did not write all of the buffer\n");
+            printf("LABJACK ehConfigIO error : did not write all of the buffer\n");
         return -1;
     }
 
@@ -1862,40 +1862,40 @@ long ehConfigIO(HANDLE hDevice, uint8 inWriteMask, uint8 inTimerCounterConfig, u
     if( (recChars = LJUSB_Read(hDevice, recBuff, 12)) < 12 )
     {
         if( recChars == 0 )
-            printf("ehConfigIO error : read failed\n");
+            printf("LABJACK ehConfigIO error : read failed\n");
         else
-            printf("ehConfigIO error : did not read all of the buffer\n");
+            printf("LABJACK ehConfigIO error : did not read all of the buffer\n");
         return -1;
     }
 
     checksumTotal = extendedChecksum16(recBuff, 12);
     if( (uint8)((checksumTotal / 256 ) & 0xff) != recBuff[5] )
     {
-        printf("ehConfigIO error : read buffer has bad checksum16(MSB)\n");
+        printf("LABJACK ehConfigIO error : read buffer has bad checksum16(MSB)\n");
         return -1;
     }
 
     if( (uint8)(checksumTotal & 0xff) != recBuff[4] )
     {
-        printf("ehConfigIO error : read buffer has bad checksum16(LBS)\n");
+        printf("LABJACK ehConfigIO error : read buffer has bad checksum16(LBS)\n");
         return -1;
     }
 
     if( extendedChecksum8(recBuff) != recBuff[0] )
     {
-        printf("ehConfigIO error : read buffer has bad checksum8\n");
+        printf("LABJACK ehConfigIO error : read buffer has bad checksum8\n");
         return -1;
     }
 
     if( recBuff[1] != (uint8)(0xF8) || recBuff[2] != (uint8)(0x03) || recBuff[3] != (uint8)(0x0B) )
     {
-        printf("ehConfigIO error : read buffer has wrong command bytes\n");
+        printf("LABJACK ehConfigIO error : read buffer has wrong command bytes\n");
         return -1;
     }
 
     if( recBuff[6] != 0 )
     {
-        printf("ehConfigIO error : read buffer received errorcode %d\n", recBuff[6]);
+        printf("LABJACK ehConfigIO error : read buffer received errorcode %d\n", recBuff[6]);
         return (int)recBuff[6];
     }
 
@@ -1933,9 +1933,9 @@ long ehConfigTimerClock(HANDLE hDevice, uint8 inTimerClockConfig, uint8 inTimerC
     if( (sendChars = LJUSB_Write(hDevice, sendBuff, 10)) < 10 )
     {
         if( sendChars == 0 )
-            printf("ehConfigTimerClock error : write failed\n");
+            printf("LABJACK ehConfigTimerClock error : write failed\n");
         else
-            printf("ehConfigTimerClock error : did not write all of the buffer\n");
+            printf("LABJACK ehConfigTimerClock error : did not write all of the buffer\n");
         return -1;
     }
 
@@ -1943,34 +1943,34 @@ long ehConfigTimerClock(HANDLE hDevice, uint8 inTimerClockConfig, uint8 inTimerC
     if( (recChars = LJUSB_Read(hDevice, recBuff, 10)) < 10 )
     {
         if( recChars == 0 )
-            printf("ehConfigTimerClock error : read failed\n");
+            printf("LABJACK ehConfigTimerClock error : read failed\n");
         else
-            printf("ehConfigTimerClock error : did not read all of the buffer\n");
+            printf("LABJACK ehConfigTimerClock error : did not read all of the buffer\n");
         return -1;
     }
 
     checksumTotal = extendedChecksum16(recBuff, 10);
     if( (uint8)((checksumTotal / 256 ) & 0xff) != recBuff[5] )
     {
-        printf("ehConfigTimerClock error : read buffer has bad checksum16(MSB)\n");
+        printf("LABJACK ehConfigTimerClock error : read buffer has bad checksum16(MSB)\n");
         return -1;
     }
 
     if( (uint8)(checksumTotal & 0xff) != recBuff[4] )
     {
-        printf("ehConfigTimerClock error : read buffer has bad checksum16(LBS)\n");
+        printf("LABJACK ehConfigTimerClock error : read buffer has bad checksum16(LBS)\n");
         return -1;
     }
 
     if( extendedChecksum8(recBuff) != recBuff[0] )
     {
-        printf("ehConfigTimerClock error : read buffer has bad checksum8\n");
+        printf("LABJACK ehConfigTimerClock error : read buffer has bad checksum8\n");
         return -1;
     }
 
     if( recBuff[1] != (uint8)(0xF8) || recBuff[2] != (uint8)(0x02) || recBuff[3] != (uint8)(0x0A) )
     {
-        printf("ehConfigTimerClock error : read buffer has wrong command bytes\n");
+        printf("LABJACK ehConfigTimerClock error : read buffer has wrong command bytes\n");
         return -1;
     }
 
@@ -1982,7 +1982,7 @@ long ehConfigTimerClock(HANDLE hDevice, uint8 inTimerClockConfig, uint8 inTimerC
 
     if( recBuff[6] != 0 )
     {
-        printf("ehConfigTimerClock error : read buffer received errorcode %d\n", recBuff[6]);
+        printf("LABJACK ehConfigTimerClock error : read buffer received errorcode %d\n", recBuff[6]);
         return recBuff[6];
     }
 
@@ -2032,9 +2032,9 @@ long ehFeedback(HANDLE hDevice, uint8 *inIOTypesDataBuff, long inIOTypesDataSize
     if( (sendChars = LJUSB_Write(hDevice, sendBuff, (sendDWSize+commandBytes))) < sendDWSize+commandBytes )
     {
         if( sendChars == 0 )
-            printf("ehFeedback error : write failed\n");
+            printf("LABJACK ehFeedback error : write failed\n");
         else
-            printf("ehFeedback error : did not write all of the buffer\n");
+            printf("LABJACK ehFeedback error : did not write all of the buffer\n");
         ret = -1;
         goto cleanmem;
     }
@@ -2044,45 +2044,45 @@ long ehFeedback(HANDLE hDevice, uint8 *inIOTypesDataBuff, long inIOTypesDataSize
     {
         if( recChars == -1 )
         {
-            printf("ehFeedback error : read failed\n");
+            printf("LABJACK ehFeedback error : read failed\n");
             ret = -1;
             goto cleanmem;
         }
         else if( recChars < 8 )
         {
-            printf("ehFeedback error : response buffer is too small\n");
+            printf("LABJACK ehFeedback error : response buffer is too small\n");
             ret = -1;
             goto cleanmem;
         }
         else
-            printf("ehFeedback error : did not read all of the expected buffer (received %d, expected %d )\n", recChars, commandBytes+recDWSize);
+            printf("LABJACK ehFeedback error : did not read all of the expected buffer (received %d, expected %d )\n", recChars, commandBytes+recDWSize);
     }
 
     checksumTotal = extendedChecksum16(recBuff, recChars);
     if( (uint8)((checksumTotal / 256 ) & 0xff) != recBuff[5] )
     {
-        printf("ehFeedback error : read buffer has bad checksum16(MSB)\n");
+        printf("LABJACK ehFeedback error : read buffer has bad checksum16(MSB)\n");
         ret = -1;
         goto cleanmem;
     }
 
     if( (uint8)(checksumTotal & 0xff) != recBuff[4] )
     {
-        printf("ehFeedback error : read buffer has bad checksum16(LBS)\n");
+        printf("LABJACK ehFeedback error : read buffer has bad checksum16(LBS)\n");
         ret = -1;
         goto cleanmem;
     }
 
     if( extendedChecksum8(recBuff) != recBuff[0] )
     {
-        printf("ehFeedback error : read buffer has bad checksum8\n");
+        printf("LABJACK ehFeedback error : read buffer has bad checksum8\n");
         ret = -1;
         goto cleanmem;
     }
 
     if( recBuff[1] != (uint8)(0xF8) || recBuff[3] != (uint8)(0x00) )
     {
-        printf("ehFeedback error : read buffer has wrong command bytes \n");
+        printf("LABJACK ehFeedback error : read buffer has wrong command bytes \n");
         ret = -1;
         goto cleanmem;
     }

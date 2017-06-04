@@ -13,7 +13,7 @@ function settings = OLPrimaryToSettings(cal, primary, verbose)
 % turn on. These are computed on the assumption that the mirrors will be
 % turned on in same order as they were during measurement of gamma.
 %
-% Note that this routine does not need to know about the numbre of columns
+% Note that this routine does not need to know about the number of columns
 % on the DLP chip, just the number of primaries that we are using as we operate
 % it.
 %

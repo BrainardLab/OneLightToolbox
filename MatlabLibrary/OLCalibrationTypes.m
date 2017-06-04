@@ -18,6 +18,7 @@ classdef OLCalibrationTypes
         % Classic eye pieces (pupil/psychophysics)
         BoxBRandomizedLongCableBEyePiece2_ND00('OLBoxBRandomizedLongCableBEyePiece2_ND00');
         BoxBRandomizedLongCableBEyePiece1_ND02('OLBoxBRandomizedLongCableBEyePiece1_ND02');
+        BoxDRandomizedLongCableAEyePiece2_ND01('OLBoxDRandomizedLongCableAEyePiece2_ND01');
         BoxDRandomizedLongCableAEyePiece2_ND02('OLBoxDRandomizedLongCableAEyePiece2_ND02');
         BoxDRandomizedLongCableAEyePiece2_ND03('OLBoxDRandomizedLongCableAEyePiece2_ND03');
         BoxDRandomizedLongCableAEyePiece2_ND06('OLBoxDRandomizedLongCableAEyePiece2_ND06');
@@ -34,8 +35,10 @@ classdef OLCalibrationTypes
         BoxARandomizedShortCableBStubby1_ND00('OLBoxARandomizedShortCableBStubby1_ND00');
         
         %Hybrid configuration for psychophysics w/ MRI components        
+        BoxDRandomizedLongCableAStubby1_ND03('OLBoxDRandomizedLongCableAStubby1_ND03');
         BoxBRandomizedLongCableBStubby1_ND02('OLBoxBRandomizedLongCableBStubby1_ND02');
         BoxARandomizedLongCableBStubby1_ND02('OLBoxARandomizedLongCableBStubby1_ND02');
         BoxDRandomizedLongCableAStubby1_ND02('OLBoxDRandomizedLongCableAStubby1_ND02');
+        BoxDRandomizedLongCableAStubby1_ND01('OLBoxDRandomizedLongCableAStubby1_ND01');
     end
 end

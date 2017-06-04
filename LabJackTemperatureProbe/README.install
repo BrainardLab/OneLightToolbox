@@ -1,3 +1,6 @@
+0. If brew is not installed, install it using the following command:
+   /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+   (To check if brew is installed just type brew in a Terminal.app)
 1. brew install liblabjackusb
 2. cd /Users/Shared/Matlab/Toolboxes/OneLightToolbox/LabJackTemperatureProbe 
 3. run LJTempProbeDemo to compile the mex file and test it

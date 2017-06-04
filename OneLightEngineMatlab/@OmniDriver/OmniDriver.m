@@ -276,6 +276,7 @@ classdef OmniDriver < handle
 	methods (Static = true, Access = protected)
 		function w = GetWrapperObject
 			persistent wrapper;
+            javaclasspath('/Users/melanopsin/Documents/MATLAB/Toolboxes/OneLightDriver/xOceanOpticsJava/OmniDriver.jar');
 			
 			% Lock the class so that we can reuse the Wrapper object.
 			% Communication with the spectrometer is flaky if we start
@@ -284,7 +285,7 @@ classdef OmniDriver < handle
 			mlock;
 			
 			if isempty(wrapper)
-				wrapper = com.oceanoptics.omnidriver.api.wrapper.Wrapper;
+                wrapper = com.oceanoptics.omnidriver.api.wrapper.Wrapper;
 			end
 			
 			w = wrapper;
