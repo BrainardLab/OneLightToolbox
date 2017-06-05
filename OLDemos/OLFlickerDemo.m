@@ -25,6 +25,7 @@ function keyPress = OLFlickerDemo(varargin)
 %     spectra to display.  Default: 1
 % 'GaussianWindowWidth' (scalar) - The number of cycles to window the set of
 %     spectra in the 'GaussianWindow' stim type.  Default: 30.
+% 'simulate' (logical) - Run in simulation mode? Default: false.
 %
 % Examples:
 % % Don't use the cache.
@@ -43,6 +44,7 @@ p.addParamValue('StimType', 'ShowSpectrum');
 p.addParamValue('GaussianWindowWidth', 30);
 p.addParamValue('Hz', 1);
 p.addParamValue('ProcessOnly', false);
+p.addParamValue('simulate', false);
 p.parse(varargin{:});
 inputParams = p.Results;
 
@@ -73,7 +75,7 @@ calFileName = 'OneLight';
 
 % Create the OneLight object.
 if ~inputParams.ProcessOnly
-	ol = OneLight;
+	ol = OneLight('simulate',inputParams.simulate);
 end
 
 % Load the calibration file.
