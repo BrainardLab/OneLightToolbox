@@ -55,6 +55,7 @@ function [cacheData olCache openSpectroRadiometerOBJ] = OLCorrectCacheFileOOC(ca
 % 10/20/16  npc      Added ability to record temperature measurements
 % 12/21/16  npc      Updated for new class @LJTemperatureProbe
 % 01/03/16  dhb      Refactoring, cleaning, documenting.
+% 06/05/17  dhb      Remove old style verbose arg from calls to OLSettingsToStartsStops
 
 % Parse the input
 p = inputParser;
@@ -183,7 +184,7 @@ try
     % SAFE AND SEE WHAT BREAKS.
     if correctDescribe.FullOnMeas
         fprintf('- Full-on measurement \n');
-        [starts,stops] = OLSettingsToStartsStops(cal,1*ones(cal.describe.numWavelengthBands, 1));
+        [starts,stops] = OLSettingsToStartsStops(cal,1*ones(cal.describe.numWavelengthBands));
         results.fullOnMeas.meas = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
         results.fullOnMeas.starts = starts;
         results.fullOnMeas.stops = stops;
@@ -196,7 +197,7 @@ try
     
     if correctDescribe.HalfOnMeas
         fprintf('- Half-on measurement \n');
-        [starts,stops] = OLSettingsToStartsStops(cal,0.5*ones(cal.describe.numWavelengthBands, 1));
+        [starts,stops] = OLSettingsToStartsStops(cal,0.5*ones(cal.describe.numWavelengthBands));
         results.halfOnMeas.meas = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
         results.halfOnMeas.starts = starts;
         results.halfOnMeas.stops = stops;
@@ -208,7 +209,7 @@ try
     
     if correctDescribe.DarkMeas
         fprintf('- Dark measurement \n');
-        [starts,stops] = OLSettingsToStartsStops(cal,0*ones(cal.describe.numWavelengthBands, 1));
+        [starts,stops] = OLSettingsToStartsStops(cal,0*ones(cal.describe.numWavelengthBands));
         results.offMeas.meas = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
         results.offMeas.starts = starts;
         results.offMeas.stops = stops;

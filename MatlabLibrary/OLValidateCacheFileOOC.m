@@ -50,13 +50,14 @@ function [results, validationDir, validationPath, openSpectroRadiometerOBJ] = OL
 % results (struct) - Results struct. This is different depending on which
 % mode is used.
 % validationDir (str) - Validation directory.
-%
+
 % 1/21/14  dhb, ms  Convert to use OLSettingsToStartsStops.
 % 1/30/14  ms       Added keyword parameters to make this useful.
 % 7/06/16  npc      Adapted to use PR650dev/PR670dev objects
 % 9/2/16   ms       Updated with new CalStateMeas option
 % 10/20/16 npc      Added ability to record temperature measurements
-% 12/21/16  npc     Updated for new class @LJTemperatureProbe
+% 12/21/16 npc      Updated for new class @LJTemperatureProbe
+% 06/05/17 dhb      Remove old verbose arg to OLSettingsToStartsStops
 
 % Parse the input
 p = inputParser;
@@ -318,7 +319,7 @@ try
     % Take reference measurements
     if describe.FullOnMeas
         fprintf('- Full-on measurement \n');
-        [starts,stops] = OLSettingsToStartsStops(cal,1*ones(cal.describe.numWavelengthBands, 1));
+        [starts,stops] = OLSettingsToStartsStops(cal,1*ones(cal.describe.numWavelengthBands));
         results.fullOnMeas.meas = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
         results.fullOnMeas.starts = starts;
         results.fullOnMeas.stops = stops;
@@ -331,7 +332,7 @@ try
     
     if describe.HalfOnMeas
         fprintf('- Half-on measurement \n');
-        [starts,stops] = OLSettingsToStartsStops(cal,0.5*ones(cal.describe.numWavelengthBands, 1));
+        [starts,stops] = OLSettingsToStartsStops(cal,0.5*ones(cal.describe.numWavelengthBands));
         results.halfOnMeas.meas = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
         results.halfOnMeas.starts = starts;
         results.halfOnMeas.stops = stops;
@@ -344,7 +345,7 @@ try
     
     if describe.DarkMeas
         fprintf('- Dark measurement \n');
-        [starts,stops] = OLSettingsToStartsStops(cal,0*ones(cal.describe.numWavelengthBands, 1));
+        [starts,stops] = OLSettingsToStartsStops(cal,0*ones(cal.describe.numWavelengthBands));
         results.offMeas.meas = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage, theLJdev);
         results.offMeas.starts = starts;
         results.offMeas.stops = stops;

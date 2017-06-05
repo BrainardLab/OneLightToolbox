@@ -3,6 +3,9 @@ function OLSpdToPrimaryTest
 %
 % Tests OLSpdToPrimary and OLPrimaryToSpd.
 %
+% This could be expanded to test differential mode and to include a
+% spectrum that requires smoothing to come back sensibly.
+%
 % 6/2/17  dhb  Wrote this in order to start cleaning.
 
 %% Clear
@@ -14,30 +17,45 @@ cal = OLGetCalibrationStructure('CalibrationType','BoxDRandomizedLongCableAStubb
 
 %% Let's generate a spectrum to try to find the primaries for
 %
-% The function hard coded below returns some primaries that were at one
-% point in the gamut of BoxD
+% The function hard coded below returns some primaries as a starting point.
+% This could be expanded to take an argument and to return a wider range of primaries for
+% a more extensive test.  
 primaryTarget = GenerateTestPrimary;
-spdTarget = OLPrimaryToSpd(cal,primaryTarget);
+spdTargetRaw = OLPrimaryToSpd(cal,primaryTarget);
+
+% Add a little noise to the target spectrum, just so it isn't so smooth.
+fractionNoise = 0.01;
+spdTarget = spdTargetRaw + normrnd(zeros(size(spdTargetRaw)),fractionNoise*max(spdTargetRaw));
 
 %% Plot of the target
 theFigure = figure; clf; hold on;
-plot(SToWls(cal.describe.S),spdTarget,'k','LineWidth',3);
+plot(SToWls(cal.describe.S),spdTarget,'k','LineWidth',4);
 
 %% Let's try to find good primaries with default smoothness
 primaryFound1 = OLSpdToPrimary(cal,spdTarget);
 spdPredicted1 = OLPrimaryToSpd(cal,primaryFound1);
 plot(SToWls(cal.describe.S),spdPredicted1,'r','LineWidth',2);
 
-%% Let's try to find good primaries with only a little smoothing
-primaryFound2 = OLSpdToPrimary(cal,spdTarget,'lambda',0.001);
+%% Let's try to find good primaries with less smoothing
+primaryFound2 = OLSpdToPrimary(cal,spdTarget,'lambda',0.05);
 spdPredicted2 = OLPrimaryToSpd(cal,primaryFound2);
 plot(SToWls(cal.describe.S),spdPredicted2,'g','LineWidth',2);
 
-%% And no smoothing at all
-primaryFound3 = OLSpdToPrimary(cal,spdTarget,'lambda',0.00);
+%% And very little smoothing
+primaryFound3 = OLSpdToPrimary(cal,spdTarget,'lambda',0.001);
 spdPredicted3 = OLPrimaryToSpd(cal,primaryFound3);
-plot(SToWls(cal.describe.S),spdPredicted2,'c','LineWidth',2);
+plot(SToWls(cal.describe.S),spdPredicted3,'c','LineWidth',2);
 
+%% Make sure OLSpdToSettings and OLSettingsToStartsStops don't crash
+[settingsTest, primariesTest, spdsPredictedTest] = OLSpdToSettings(cal,[spdTargetRaw spdTarget]);
+[startsTest,stopsTest] = OLSettingsToStartsStops(cal,settingsTest);
+if (any(primariesTest(:,2) ~= primaryFound1))
+    error('Inconsistency in primary computations');
+end
+if (any(spdsPredictedTest(:,2) ~= spdPredicted1))
+    error('Inconsistency in spd predictions');
+end
+    
 
 end
 

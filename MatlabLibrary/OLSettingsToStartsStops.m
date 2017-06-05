@@ -1,9 +1,9 @@
-function [starts,stops] = OLSettingsToStartsStops(cal, settings, verbose)
+function [starts,stops] = OLSettingsToStartsStops(cal, settings, varargin)
 % OLSettingsToStartsStops - Converts OneLight settings values to starts and stops.
 %
 % Syntax:
 % [starts,stops] = OLSettingsToStartsStops(oneLightCal, settings)
-% [starts,stops] = OLSettingsToStartsStops(oneLightCal, settings, verbose)
+% [starts,stops] = OLSettingsToStartsStops(oneLightCal, settings, 'verbose', true)
 %
 % Description:
 % Take one light settings values, which are 0-1 numbers that give the gamma
@@ -35,25 +35,27 @@ function [starts,stops] = OLSettingsToStartsStops(cal, settings, verbose)
 % Output:
 % starts (nSpectra x nCols)         - The starts values for the OneLight, where NumCols is the number
 %                                     of columns on the DMD chip in the OneLight.
-% stops (nSpectrax nCols)           - The stops values for the OneLight.
+% stops (nSpectra x nCols)          - The stops values for the OneLight.
 %
 % Note that the output is transposed from the input by convention, to match what the setMirrors method
 % expects.
 %
-% See also: OLSettingsToStartsStopsTest, OLPrimaryToSettings
+% Optional key/value pairs:
+%   'verbose' - true/false (default false). Provide more diagnostic output.
 %
+% See also: OLSettingsToStartsStopsTest, OLPrimaryToSettings
+
 % 1/17/14  dhb, ms    Wrote it.
 % 2/16/14  dhb        Convert to take settings for each primary, not each mirror.
 %                     Getting clever about how to fill up the mirrors within the full
 %                     set of columns within a primary.
+% 6/5/17   dhb        Use input parse.
 
-% Validate the number of inputs.
-error(nargchk(2, 3, nargin));
-
-% Setup some defaults.
-if ~exist('verbose', 'var') || isempty(verbose)
-    verbose = false;
-end
+%% Parse the input
+p = inputParser;
+p.addOptional('verbose', false, @islogical);
+p.parse(varargin{:});
+params = p.Results;
 
 % Make sure that the calibration file has been processed by OLInitCal.
 %assert(isfield(cal, 'computed'), 'OLSettingsToStartStops:InvalidCalFile', ...
@@ -226,7 +228,7 @@ for i = 1:nSpectra
                 end
                 
                  % Debugging printout
-                if (verbose)
+                if (params.verbose)
                     fprintf('Spectrum %d, raw primary column %d, actual primary column %d\n',i,k,whichColumn);
                     fprintf('\tPrimary type %s\n',columnTypeOrder{columnTypeIndex});
                     fprintf('\tSettings value this primary %g, total mirrors on %d, mirrors on this column %d\n',...

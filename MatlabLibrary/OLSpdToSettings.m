@@ -1,64 +1,60 @@
-function [settings, primaries, predictedSpds] = OLSpdToSettings(oneLightCal, targetSpds, lambda, verbose)
-% OLSpdToSettings - Converts spectra into OneLight calibrated mirror settings.
-%
-% AS OF JUNE 1, 2017, DHB BELIEVES THIS ROUTINE IS DEPRECATED AND HAS
-% INSERTED AN ERROR STATEMENT.
+function [settings, primaries, predictedSpds] = OLSpdToSettings(oneLightCal, targetSpds, varargin)
+%OLSpdToSettings - Converts spectra into OneLight calibrated mirror settings.
 %
 % Syntax:
-% [settings, primaries] = OLSpdToSettings(oneLightCal, targetSpds, lambda)
-% [settings, primaries] = OLSpdToSettings(oneLightCal, targetSpds, lambda, verbose)
+% [settings, primaries] = OLSpdToSettings(oneLightCal, targetSpds)
+% [settings, primaries] = OLSpdToSettings(oneLightCal, targetSpds, 'lambda', '001')
 %
 % Description:
 % Essentially a convience wrapper around OLSpdToPrimary and
-% OLPrimaryToSettings.  Returns both the settings and the primaries.
+% OLPrimaryToSettings.  Returns settings, primaries and predicted
+% spectra.
 %
 % Input:
 % oneLightCal (struct) - OneLight calibration file after it has been
-%     processed by OLInitCal.
-% targetSpds (MxN) - Target spectra.  Should be on the same wavelength
-%     spacing and power units as the PR-650 field of the calibration
-%     structure.
-% lambda (scalar) - Determines how much smoothing we apply to the settings.
-%     Needed because there are more columns than wavelengths on the PR-650.
-%     Defaults to 0.1.
-% verbose (logical) - Enables/disables verbose diagnostic information.
-%     Defaults to false.
+%   processed by OLInitCal.
+% targetSpds (nWls x nSpectra) - Target spectra.  Should be on the same wavelength
+%   spacing and power units as the PR-650 field of the calibration structure.
 %
 % Output:
-% settings (CxN) - The normalized [0,1], gamma corrected power level for each
-%     column of the OneLight.  Each column is a single set of mirror
-%     settings.
-% primaries (C*N) - The normalized power level for each column of the
-%     OneLight.
-% predictedSpds (1xN) - The predicted target spectra for the PR-650 and
-%     OmniDriver spectrometers.
+% settings (nPrimaries x nSpectra) - The [0,1], gamma corrected power level for each
+%   effective primary of the OneLight.  Each column is a single set of
+%   primary values.
+% primaries (nPrimaries x nSpectra) - The normalized power level for each column of the
+%   OneLight.
+% predictedSpds (nWls x nSpectra) - The predicted spectra 
+%
+% Optional key/value pairs:
+%   'lambda' - scalar (default 0.1) - Determines how much smoothing we apply to the settings.
+%    verbose' - true/false (default false) - Enables/disables verbose diagnostic information.
 
-error('I think this routine is deprecated and should not be called.  David.  June 1, 2017');
 
-% Validate the number of inputs.
-error(nargchk(3, 4, nargin));
+% 6/5/17  dhb  This could not have been working as it was sitting.  I
+%              updated so it now conforms to our current conventions.
 
-if nargin == 3
-	verbose = true;
+%% Parse the input
+p = inputParser;
+p.addOptional('verbose', false, @islogical);
+p.addOptional('lambda', 0.1, @isscalar);
+p.parse(varargin{:});
+params = p.Results;
+
+%% Check wavelength sampling
+nWls = size(targetSpds,1);
+if (nWls ~= oneLightCal.describe.S(3))
+    error('Wavelength sampling inconsistency between passed spectrum and calibration');
 end
 
-numSpectra = size(targetSpds, 2);
-
 % Convert the spectra into primaries.
-primaries = zeros(oneLightCal.describe.numColMirrors, numSpectra);
+nPrimaries = size(oneLightCal.computed.pr650M,2);
+numSpectra = size(targetSpds, 2);
+primaries = zeros(nPrimaries, numSpectra);
 for i = 1:numSpectra
 	% Convert to primaries.
-	[primaries(:,i), predictedSpds(:,i), outOfRange] = OLSpdToPrimary(oneLightCal, targetSpds(:,i), lambda, verbose); %#ok<AGROW>
-	
-	if verbose
-		% Look to see if we had any out of range values.
-		if outOfRange.low
-			fprintf('\n*** WARNING *** Some values of the targetSpd were less than the dark measurement.\n\n');
-		end
-		if outOfRange.high
-			fprintf('\n*** WARNING *** Some values of the computed primary exceed 1.\n\n');
-		end
-	end
+	primaries(:,i) = OLSpdToPrimary(oneLightCal, targetSpds(:,i), 'lambda',params.lambda, 'verbose', params.verbose);
+    
+    % Convert to spectra
+    predictedSpds(:,i) = OLPrimaryToSpd(oneLightCal,primaries(:,i));
 end
 
 % Convert from primaries to settings.

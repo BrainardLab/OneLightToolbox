@@ -47,7 +47,7 @@ for i = 1:nTestLevels
     settings(testPrimary,i) = theSettingsVals(i);
 end
 
-[starts,stops] = OLSettingsToStartsStops(cal,settings,false);
+[starts,stops] = OLSettingsToStartsStops(cal,settings,'verbose',false);
 
 figure; clf;
 colExpandFactor = 20;

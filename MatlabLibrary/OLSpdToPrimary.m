@@ -14,22 +14,24 @@ function effectivePrimary = OLSpdToPrimary(oneLightCal, targetSpd, varargin)
 % This routine also allows for a 'differentialMode' which is false unless
 % the 'differentialMode' key value pair is passed.
 %
-% This routine will return values that are greater than 1, which can be
-% useful if one wants to use it to scale input into gamut.
+% This routine truncates values into the range [0,1] in normal mode, and into
+% range [-1,1] in differential mode.
 %
 % Input:
 % oneLightCal (struct) - OneLight calibration file after it has been
-%     processed by OLInitCal.
+%                        processed by OLInitCal.
 % targetSpd (nWlsx1) - The target spectrum, sampled at the wavelengths
-%     used in the calibration file (typically 380 to 780 nm in 2 nm steps.)
+%                      used in the calibration file (typically 380 to 780 nm in 2 nm steps).
 %
 % Output:
-% effectivePrimary (Nx1) - The [0-1] primary value for each effective primary
-%     of the OneLight. N is the number of effective primaries. Not gamma corrected.
-%     What we mean by effective primaries is the number of column groups
-%     that were set up at calibration time.  Often these consiste of 16
-%     physical columns of the DLP chip.
+% effectivePrimary (nPrimariesx1) - The [0-1] primary value for each effective primary
+%                                   of the OneLight. nPrimaries is the number of effective primaries.
+%                                   Not gamma corrected.
 %
+% What we mean by effective primaries is the number of column groups
+% that were set up at calibration time.  Often these consiste of 16
+% physical columns of the DLP chip.
+% 
 % Optional Key-Value Pairs:
 %  'verbose' - true/false (default false). Provide more diagnostic output.
 %  'lambda' - value (default 0.1). Value of smoothing parameter.  Smaller
@@ -38,6 +40,7 @@ function effectivePrimary = OLSpdToPrimary(oneLightCal, targetSpd, varargin)
 %                       mode.  This means, don't subtract dark light.
 %                       Useful when we want to find delta primaries that
 %                       produce a predicted delta spd.
+%
 % See also:
 %   OLPrimaryToSpd, OLPrimaryToSettings, OLSettingsToStartsStops, OLSpdToPrimaryTest
 %
@@ -49,7 +52,7 @@ function effectivePrimary = OLSpdToPrimary(oneLightCal, targetSpd, varargin)
 % 06/04/17 dhb  Got rid of old code that dated from before we switched to
 %               effective primaries concept.
 
-% Parse the input
+%% Parse the input
 p = inputParser;
 p.addOptional('verbose', false, @islogical);
 p.addOptional('lambda', 0.1, @isscalar);
@@ -57,68 +60,86 @@ p.addOptional('differentialMode', false, @islogical);
 p.parse(varargin{:});
 params = p.Results;
 
+%% Check wavelength sampling
+nWls = size(targetSpd,1);
+if (nWls ~= oneLightCal.describe.S(3))
+    error('Wavelength sampling inconsistency between passed spectrum and calibration');
+end
+
+%% In differential mode, we ignore the dark light, otherwise we snag it from
+% the calibration file.
 if params.differentialMode
     darkSpd = zeros(size(oneLightCal.computed.pr650MeanDark));
 else
     darkSpd = oneLightCal.computed.pr650MeanDark;
 end
 
-% Make sure that the calibration file has been processed by OLInitCal.
+%% Make sure that the calibration file has been processed by OLInitCal.
 assert(isfield(oneLightCal, 'computed'), 'OLSpdToPrimary:InvalidCalFile', ...
     'The calibration file needs to be processed by OLInitCal.');
 
-% Find column input values for targetSpd without enforcing any constraints.  It's
-% not completely clear why we do this, as the only way we use the answer is to
-% determine the size of some vectors below, and for debugging.
-targetEffectivePrimary = pinv(oneLightCal.computed.pr650M) * (targetSpd - darkSpd);
-if params.verbose
-    fprintf('Pinv settings: min = %g, max = %g\n', min(targetEffectivePrimary(:)), max(targetEffectivePrimary(:)));
+%% Find primaries the linear way, without any constraints
+%
+% This would be the most straightforward way to find the primaries, but for many
+% spectra the primary values really ring, which is why we use the search based
+% method below and enforce a smoothing regularization constraint.
+%
+% We skip this step unless we are debuging.
+DEBUG = 0;
+if (DEBUG)
+    pinvEffectivePrimary = pinv(oneLightCal.computed.pr650M) * (targetSpd - darkSpd);
+    if params.verbose
+        fprintf('Pinv settings: min = %g, max = %g\n', min(pinvEffectivePrimary(:)), max(pinvEffectivePrimary(:)));
+    end
 end
 
-% Use lsqlin to enforce constraints.
-% We will assume that the D matrix has non-overlapping sets of 1's in each of its
-% columns, which is how we currently do our calibration.  When this is true, we can
-% enforce positivity in the effective settings domain and be guaranteed that it will
-% also hold in the returned (column by column) domain.  This simplifies our life
-% a little, because it means that the predicted spectrum is actually the predicted
-% spectrum.
+%% Use lsqlin to enforce constraints.
 %
-% We do check and throw an error if this assumption turns out not to be valid, which
-% could happen if at some point in the future we change the conditions we use to
-% calibrate.
+% This first constraint (C1,d1) minimizes the error between the predicted spectrum
+% and the desired spectrum.
 C1 = oneLightCal.computed.pr650M;
 d1 = targetSpd - darkSpd;
-C2 = zeros(length(targetEffectivePrimary)-1, length(targetEffectivePrimary));
-for i = 1:length(targetEffectivePrimary)-1
+
+% The second constraint computes the difference between between neighboring
+% settings values and tries to make this small.  How much this is weighted 
+% depends on the value of params.lambda.  The bigger params.lambda, the
+% more this constraint kicks in.
+nPrimaries = size(oneLightCal.computed.pr650M,2);
+C2 = zeros(nPrimaries -1, nPrimaries );
+for i = 1:nPrimaries -1
     C2(i,i) = params.lambda;
     C2(i,i+1) = -params.lambda;
 end
-d2 = zeros(length(targetEffectivePrimary)-1, 1);
+d2 = zeros(nPrimaries-1,1);
+
+% Paste together the target and smoothness constraints
 C = [C1 ; C2];
 d = [d1 ; d2];
 
+% In differential mode, the bounds on primaries are [-1,1].
+% Otherwise they are [0,1].
 if params.differentialMode
-    A = [];
-    b = [];
-    vlb = []; % Allow primaries to <0 if we are in differential mode
+    vlb = -ones(nPrimaries,1);
+    vub = ones(nPrimaries,1);
 else
-    A = [];
-    b = [];
-    vlb = zeros(size(targetEffectivePrimary));
+    vlb = zeros(nPrimaries,1);
+    vub = ones(nPrimaries,1);
 end
+
+% Call into lsqlin
 options = optimset('lsqlin');
 options = optimset(options,'Diagnostics','off','Display','off','LargeScale','off','Algorithm','active-set');
-targetEffectivePrimary1 = lsqlin(C,d,A,b,[],[],vlb,[],[],options);
+effectivePrimary = lsqlin(C,d,[],[],[],[],vlb,vub,[],options);
 if params.verbose
-    fprintf('Lsqlin effective primaries: min = %g, max = %g\n', min(targetEffectivePrimary1(:)), max(targetEffectivePrimary1(:)));
-end
-if ~params.differentialMode
-    targetEffectivePrimary1(targetEffectivePrimary1 < 0) = 0;
+    fprintf('Lsqlin effective primaries: min = %g, max = %g\n', min(effectivePrimary(:)), max(effectivePrimary(:)));
 end
 
-% Set return values
-effectivePrimary = targetEffectivePrimary1;
-
-if params.verbose
-    fprintf('Number of target settings less than 0: %d, number greater than 1: %d\n', length(find(effectivePrimary < 0)), length(find(effectivePrimary > 1)));
+%% Make sure we enforce bounds, in case lsqlin has a bit of numerical slop
+if params.differentialMode
+    effectivePrimary(effectivePrimary < -1) = -1;
+else
+    effectivePrimary(effectivePrimary < 0) = 0;
 end
+effectivePrimary(effectivePrimary > 1) = 1;
+
+
