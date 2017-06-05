@@ -3,7 +3,7 @@ function effectivePrimary = OLSpdToPrimary(oneLightCal, targetSpd, varargin)
 %
 % Examples:
 % effectivePrimary = OLSpdToPrimary(oneLightCal, targetSpd)
-% effectivePrimary = OLSpdToPrimary(oneLightCal, targetSpd, 'lambda', 0.2)
+% effectivePrimary = OLSpdToPrimary(oneLightCal, targetSpd, 'lambda', 0.01)
 % effectivePrimary = OLSpdToPrimary(oneLightCal, targetSpd, 'verbose, true)
 %
 % Description:
@@ -13,6 +13,9 @@ function effectivePrimary = OLSpdToPrimary(oneLightCal, targetSpd, varargin)
 %
 % This routine also allows for a 'differentialMode' which is false unless
 % the 'differentialMode' key value pair is passed.
+%
+% This routine will return values that are greater than 1, which can be
+% useful if one wants to use it to scale input into gamut.
 %
 % Input:
 % oneLightCal (struct) - OneLight calibration file after it has been
@@ -29,21 +32,22 @@ function effectivePrimary = OLSpdToPrimary(oneLightCal, targetSpd, varargin)
 %
 % Optional Key-Value Pairs:
 %  'verbose' - true/false (default false). Provide more diagnostic output.
-%  'lambda' - value (default 0.1). Value of smoothing parameter.
+%  'lambda' - value (default 0.1). Value of smoothing parameter.  Smaller
+%             lead to less smoothing, with 0 doing no smoothing at all.
 %  'differentialMode' - true/false (default false). Run in differential
 %                       mode.  This means, don't subtract dark light.
 %                       Useful when we want to find delta primaries that
-%                       produce a predicted delta spd.%
-%
-% NOTE: This routine contains vestigal code which is computing values thar
-% are never used or returned.  Could use some cleaning.
+%                       produce a predicted delta spd.
+% See also:
+%   OLPrimaryToSpd, OLPrimaryToSettings, OLSettingsToStartsStops, OLSpdToPrimaryTest
 %
 % 3/29/13  dhb  Changed some variable names to make this cleaner (Settings -> Primary).
 % 11/08/15 dhb  Specify explicitly that lsqlin algorithm should be 'active-set', ...
 %               to satisfy warning in newer versions of Matlab
 % 06/01/17 dhb  Remove primary return argument, because I don't think it
 %               should be used.
-%
+% 06/04/17 dhb  Got rid of old code that dated from before we switched to
+%               effective primaries concept.
 
 % Parse the input
 p = inputParser;
@@ -63,19 +67,10 @@ end
 assert(isfield(oneLightCal, 'computed'), 'OLSpdToPrimary:InvalidCalFile', ...
     'The calibration file needs to be processed by OLInitCal.');
 
-% Look to see if any of the targetSpd wavelengths are less than the dark
-% measurement.
-if any((targetSpd - darkSpd) < 0)
-    outOfRange.low = true;
-else
-    outOfRange.low = false;
-end
-
 % Find column input values for targetSpd without enforcing any constraints.  It's
 % not completely clear why we do this, as the only way we use the answer is to
 % determine the size of some vectors below, and for debugging.
 targetEffectivePrimary = pinv(oneLightCal.computed.pr650M) * (targetSpd - darkSpd);
-%targetPrimary = oneLightCal.computed.D * targeteffectivePrimary;
 if params.verbose
     fprintf('Pinv settings: min = %g, max = %g\n', min(targetEffectivePrimary(:)), max(targetEffectivePrimary(:)));
 end
@@ -107,46 +102,23 @@ if params.differentialMode
     b = [];
     vlb = []; % Allow primaries to <0 if we are in differential mode
 else
-    %A = -oneLightCal.computed.D;
-    %b = zeros(size(targetPrimary))-eps;
     A = [];
     b = [];
     vlb = zeros(size(targetEffectivePrimary));
 end
 options = optimset('lsqlin');
 options = optimset(options,'Diagnostics','off','Display','off','LargeScale','off','Algorithm','active-set');
-targeteffectivePrimary1 = lsqlin(C,d,A,b,[],[],vlb,[],[],options);
-
+targetEffectivePrimary1 = lsqlin(C,d,A,b,[],[],vlb,[],[],options);
 if params.verbose
-    fprintf('Lsqlin effective settings: min = %g, max = %g\n', min(targeteffectivePrimary1(:)), max(targeteffectivePrimary1(:)));
+    fprintf('Lsqlin effective primaries: min = %g, max = %g\n', min(targetEffectivePrimary1(:)), max(targetEffectivePrimary1(:)));
 end
 if ~params.differentialMode
-    targeteffectivePrimary1(targeteffectivePrimary1 < 0) = 0; % Bound to 0
+    targetEffectivePrimary1(targetEffectivePrimary1 < 0) = 0;
 end
 
-primary = oneLightCal.computed.D * targeteffectivePrimary1;
-effectivePrimary = targeteffectivePrimary1;
-if ~params.differentialMode
-    if (any(primary < 0))
-        error('D matrix used in calibration does not have assumed properties.  Read comments in source.');
-    end
-end
-index1 = find(primary < 0);
-index2 = find(primary > 1);
-
-% Store the number of out of range values.
-outOfRange.numLow = length(index1);
-outOfRange.numHigh = length(index2);
+% Set return values
+effectivePrimary = targetEffectivePrimary1;
 
 if params.verbose
-    fprintf('Number of target settings less than 0: %d, number greater than 1: %d\n', outOfRange.numLow, outOfRange.numHigh);
+    fprintf('Number of target settings less than 0: %d, number greater than 1: %d\n', length(find(effectivePrimary < 0)), length(find(effectivePrimary > 1)));
 end
-
-% Look to see if any of the computed primary settings exceed 1.
-if any(primary > 1)
-    outOfRange.high = true;
-else
-    outOfRange.high = false;
-end
-
-predictedSpd.pr650 = oneLightCal.computed.pr650M * targeteffectivePrimary1 + darkSpd;
