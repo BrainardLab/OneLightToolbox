@@ -14,7 +14,7 @@ function save(obj, cacheFileName, cacheData)
 % cacheData (struct) - The cache data to save.
 
 % Validate the number of inputs.
-error(nargchk(3, 3, nargin));
+narginchk(3, 3, );
 
 % Make sure that cacheData is a struct.
 assert(isstruct(cacheData), 'OLCache:save:InvalidInput', 'cacheData must be a struct.');

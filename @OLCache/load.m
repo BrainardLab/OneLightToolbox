@@ -29,7 +29,7 @@ function [cacheData, wasRecomputed] = load(obj, cacheFileName, doRecompute)
 % wasRecomputed (logical) - True if the cache data was recomputed.
 
 % Validate the number of inputs.
-error(nargchk(2, 3, nargin));
+narginchk(2, 3, );
 
 if nargin == 2
 	doRecompute = false;

@@ -33,7 +33,7 @@ classdef OLCache
 			% Output:
 			% obj (OLCache) - The OLCache object.
 			
-			error(nargchk(2, 2, nargin));
+			narginchk(2, 2);
 			
 			% Force the cache directory to be an absolute path instead of a
 			% relative one in order to avoid false matches on the Matlab

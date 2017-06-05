@@ -30,7 +30,7 @@ function [maxSpd, scaleFactor, maxVal] = OLFindMaxSpectrum(oneLightCal, targetSp
 % maxVal (scalar) - The maximum primary value resulting from 'maxSpd'.
 
 % Validate the number of input arguments.
-error(nargchk(2, 4, nargin));
+narginchk(2, 4, );
 
 if ~exist('lambda', 'var')
 	lambda = 0.1;

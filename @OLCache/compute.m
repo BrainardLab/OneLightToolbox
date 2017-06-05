@@ -39,7 +39,7 @@ function cacheData = compute(computeMethod, varargin)
 % cacheData = OLCache.compute(OLComputeMethods.Standard, calData, targetSpds, lambda, verbose);
 
 % Validate the number of inputs.
-error(nargchk(1, Inf, nargin));
+narginchk(1, Inf, );
 
 % Set default parameters for 'lambda' and 'verbose'.
 if (nargin < 3)

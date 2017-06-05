@@ -44,7 +44,7 @@ p.addParamValue('StimType', 'ShowSpectrum');
 p.addParamValue('GaussianWindowWidth', 30);
 p.addParamValue('Hz', 1);
 p.addParamValue('ProcessOnly', false);
-p.addParamValue('simulate', false);
+p.addParamValue('simulate', true);
 p.parse(varargin{:});
 inputParams = p.Results;
 

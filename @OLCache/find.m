@@ -25,7 +25,7 @@ function [cacheData, validationData] = find(cacheFileName, calibrationType, cach
 %     data.  Empty if nothing was found.
 
 % Validate the number of inputs.
-error(nargchk(3, 3, nargin));
+narginchk(3, 3, );
 
 % Force the file to be an absolute path instead of a relative one.  We do
 % this because files with relative paths can match anything on the path,

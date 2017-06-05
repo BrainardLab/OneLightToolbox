@@ -44,7 +44,7 @@ function [meas, omniSpectrumSaturated] = OLTakeMeasurementOOC(ol, od, prOBJ, sta
 verboseInfo = false;
 
 % Check the number of input arguments.
-error(nargchk(6, 8, nargin));
+narginchk(6, 8, );
 
 % Take a measurement with both meters if not specified.
 if (nargin <= 6 | isempty(meterToggle))
