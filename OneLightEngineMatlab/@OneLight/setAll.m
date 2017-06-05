@@ -15,4 +15,6 @@ error(nargchk(2, 2, nargin));
 % Validate the input.
 assert(isscalar(allOn), 'OneLight:setAll:InvalidInput', 'Input must be a logical scalar.');
 
-OneLightEngine(OneLightFunctions.SetAll.UInt32, obj.DeviceID, logical(allOn));
+if (~obj.Simulate)
+    OneLightEngine(OneLightFunctions.SetAll.UInt32, obj.DeviceID, logical(allOn));
+end
