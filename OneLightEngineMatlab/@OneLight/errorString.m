@@ -15,7 +15,7 @@ function codeString = errorString(errorCode)
 % Output:
 % codeString (string) - The description corresponding to the error code.
 
-narginchk(1, 1, );
+narginchk(1, 1);
 
 assert(isscalar(errorCode) && isnumeric(errorCode), 'OneLight:errorString:InvalidInput', ...
 	'Input must be a numeric scalar value.');

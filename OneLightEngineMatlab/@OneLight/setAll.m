@@ -10,7 +10,7 @@ function setAll(obj, allOn)
 % Input:
 % allOn (logical) - True = all on, false = all off.
 
-narginchk(2, 2, );
+narginchk(2, 2);
 
 % Validate the input.
 assert(isscalar(allOn), 'OneLight:setAll:InvalidInput', 'Input must be a logical scalar.');

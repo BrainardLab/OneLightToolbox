@@ -17,5 +17,5 @@ if (~obj.Simulate)
         OneLightEngine(OneLightFunctions.Open.UInt32, obj.DeviceID);
     end
 else
-    obj.IsOpen = true;
+    obj.SimFig = figure; clf;
 end

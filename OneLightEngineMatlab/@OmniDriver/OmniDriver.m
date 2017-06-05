@@ -69,7 +69,7 @@ classdef OmniDriver < handle
 	methods
 		function obj = OmniDriver(targetSpectrometer)
 			% Check that number of input arguments.
-			narginchk(0, 1, );
+			narginchk(0, 1);
 			
 			if nargin == 1
 				obj.TargetSpectrometer = targetSpectrometer;

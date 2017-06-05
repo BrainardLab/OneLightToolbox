@@ -21,7 +21,7 @@ function OLInitAndSaveCal(calFileName,varargin)
 %
 % 3/31/14  dhb  Pass options through.
 
-narginchk(0, Inf, );
+narginchk(0, Inf);
 
 if nargin == 0
 	% Get the calibration file.

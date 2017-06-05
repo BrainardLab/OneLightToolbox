@@ -51,6 +51,7 @@ classdef OneLight < hgsetget
 		NumCols;
 		NumRows;
         Simulate;
+        SimFig;
 	end
 	
 	properties (SetAccess = private, Dependent = true)
@@ -92,6 +93,7 @@ classdef OneLight < hgsetget
                 obj.OutputPatternBuffer = 0;
                 obj.NumRows = 768;
                 obj.NumCols = 1024;
+                obj.open;
                 return;
             else
                 obj.Simulate = false;

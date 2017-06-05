@@ -22,7 +22,7 @@ function OLPlotCacheValidationResults(validationFileName, cacheFileName)
 %   OLPlotCacheValidationResults('/Users/Shared/Matlab/Experiments/OneLight/OLPupilDiameter/code/cache/validation/receptorIsolationValidation10Deg-EyeTrackerLongCable.mat', '/Users/Shared/Matlab/Experiments/OneLight/OLPupilDiameter/code/cache/receptorIsolationValidation10deg.mat')
 
 %% Validate the number of inputs.
-narginchk(2, 2, );
+narginchk(2, 2);
 
 if ischar(validationFileName)
     % Force the file to be an absolute path instead of a relative one.  We do

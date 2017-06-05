@@ -18,7 +18,7 @@ function calOut = OLFilterizeCal(calIn, S_filter, srf_filter)
 % 7/3/13  dhb  Wrote it.
 
 % Check for the number of arguments.
-narginchk(3, 3, );
+narginchk(3, 3);
 
 % Initialize
 calOut = calIn;

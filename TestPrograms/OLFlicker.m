@@ -1,4 +1,4 @@
-function keyPress = OLFlicker(ol, settings, frameDurationSecs, numIterations)
+function keyPress = OLFlicker(ol, starts, stops, frameDurationSecs, numIterations)
 % OLFlicker - Flickers the OneLight.
 %
 % Syntax:
@@ -20,9 +20,6 @@ function keyPress = OLFlicker(ol, settings, frameDurationSecs, numIterations)
 % keyPress (char|empty) - If in continuous mode, the key the user pressed
 %     to end the script.  In regular mode, this will always be empty.
 
-% We always use the same start mirrors (all zeros).
-starts = zeros(1, ol.NumCols);
-
 try
 	% Suppress keypresses going to the Matlab window.
 	ListenChar(2);
@@ -37,19 +34,19 @@ try
 	% Make sure our input and output pattern buffers are setup right.
 	ol.InputPatternBuffer = 0;
 	ol.OutputPatternBuffer = 0;
-	
-	% Convert the settings from [0,1] to [0,NumRows-1].
-	settings = round(settings * (ol.NumRows-1));
 
 	% Send over the first settings.
-	ol.setMirrors(starts, settings(:,1));
+	ol.setMirrors(starts(1,:), stops(1,:));
 	
 	% Counters to keep track of which of the settings to display and which
 	% iteration we're on.
 	iterationCount = 0;
 	setCount = 0;
 	
-	numSettings = size(settings, 2);
+	numSettings = size(starts, 1);
+    if (size(stops,1) ~= numSettings)
+        error('starts and stops matrices must have same number of rows');e
+    end
 	
 	t = zeros(1, 10000);
 	i = 1;
@@ -74,10 +71,11 @@ try
 			% the list.
 			if setCount == 0
 				iterationCount = iterationCount + 1;
+                setCount = 1;
 			end
 			
 			% Send over the new settings.
-			ol.setMirrors(starts, settings(:, setCount+1));
+			ol.setMirrors(starts(setCount,:), stops(setCount,:));
 		end
 		
 		% If we're using keyboard mode, check for a keypress.

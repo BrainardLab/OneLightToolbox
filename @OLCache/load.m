@@ -17,7 +17,7 @@ function [cacheData, wasRecomputed] = load(obj, cacheFileName, doRecompute)
 % OLCache.compute function.  Note that this function does not save the data
 % for you.  If you want to save recomputed data, you must do that in your
 % program.
-%
+%tb
 % Input:
 % cacheFileName (string) - Name of the cache file in the cache directory to
 %     load.
@@ -29,7 +29,7 @@ function [cacheData, wasRecomputed] = load(obj, cacheFileName, doRecompute)
 % wasRecomputed (logical) - True if the cache data was recomputed.
 
 % Validate the number of inputs.
-narginchk(2, 3, );
+narginchk(2, 3);
 
 if nargin == 2
 	doRecompute = false;

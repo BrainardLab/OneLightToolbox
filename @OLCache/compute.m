@@ -39,7 +39,7 @@ function cacheData = compute(computeMethod, varargin)
 % cacheData = OLCache.compute(OLComputeMethods.Standard, calData, targetSpds, lambda, verbose);
 
 % Validate the number of inputs.
-narginchk(1, Inf, );
+narginchk(1, Inf );
 
 % Set default parameters for 'lambda' and 'verbose'.
 if (nargin < 3)
@@ -67,7 +67,7 @@ switch computeMethod
 		
 		% Call the actual method to compute the settings.
 		[cacheData.settings, cacheData.primaries, cacheData.predictedSpds] = ...
-			OLSpdToSettings(cacheData.cal, cacheData.targetSpds, cacheData.lambda, verbose);
+			OLSpdToSettings(cacheData.cal, cacheData.targetSpds, 'lambda', cacheData.lambda, 'verbose', verbose);
 
 	otherwise
 		error('OLCache:compute:Compute method not implemented.');
