@@ -11,7 +11,11 @@ function open(obj)
 % property is applied to the device.  By default, this value is set to its
 % max of 255.
 
-% Don't try to re-open a connection.
-if ~obj.IsOpen
-	OneLightEngine(OneLightFunctions.Open.UInt32, obj.DeviceID);
+% Don't try to re-open a connection, and simulate if simulating.
+if (~obj.Simulate)
+    if ~obj.IsOpen
+        OneLightEngine(OneLightFunctions.Open.UInt32, obj.DeviceID);
+    end
+else
+    obj.SimFig = figure; clf;
 end

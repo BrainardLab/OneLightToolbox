@@ -25,6 +25,7 @@ function keyPress = OLFlickerDemo(varargin)
 %     spectra to display.  Default: 1
 % 'GaussianWindowWidth' (scalar) - The number of cycles to window the set of
 %     spectra in the 'GaussianWindow' stim type.  Default: 30.
+% 'simulate' (logical) - Run in simulation mode? Default: false.
 %
 % Examples:
 % % Don't use the cache.
@@ -37,12 +38,13 @@ function keyPress = OLFlickerDemo(varargin)
 
 % Parse any input parameters.
 p = inputParser;
-p.addParamValue('UseCache', true);
+p.addParamValue('UseCache', false);
 p.addParamValue('Recompute', false);
 p.addParamValue('StimType', 'ShowSpectrum');
 p.addParamValue('GaussianWindowWidth', 30);
 p.addParamValue('Hz', 1);
 p.addParamValue('ProcessOnly', false);
+p.addParamValue('simulate', true);
 p.parse(varargin{:});
 inputParams = p.Results;
 
@@ -73,11 +75,11 @@ calFileName = 'OneLight';
 
 % Create the OneLight object.
 if ~inputParams.ProcessOnly
-	ol = OneLight;
+	ol = OneLight('simulate',inputParams.simulate);
 end
 
 % Load the calibration file.
-oneLightCal = LoadCalFile(calFileName);
+oneLightCal = OLGetCalibrationStructure('CalibrationType','BoxDRandomizedLongCableAStubby1_ND02','CalibrationDate','latest');
 
 % This flags regular computing of the spectra and mirror settings.  By
 % default, it will be the opposite of whether we're using the cache or not.
@@ -263,14 +265,17 @@ frameDurationSecs = 1 / inputParams.Hz / size(settings, 2);
 % Here we specify how many iterations of the entire list of settings we
 % want to go through.  Setting this to Inf has it go until a key is
 % pressed.
-numIterations = Inf;
+numIterations = 2;
+
+% Convert the settings to starts/stops vectors
+[starts,stops] = OLSettingsToStartsStops(oneLightCal,settings);
 
 if ~inputParams.ProcessOnly
 	switch lower(inputParams.StimType)
 		% The drift gabor/sine is interactive.
 		case {'driftgabor', 'driftsine'}
 			while true
-				keyPress = OLFlicker(ol, settings, frameDurationSecs, numIterations);
+				keyPress = OLFlicker(ol, starts, stops, frameDurationSecs, numIterations);
 				
 				switch keyPress
 					% Quit
@@ -285,6 +290,6 @@ if ~inputParams.ProcessOnly
 			
 		otherwise
 			% Do the flicker.
-			keyPress = OLFlicker(ol, settings, frameDurationSecs, numIterations);
+			keyPress = OLFlicker(ol, starts, stops, frameDurationSecs, numIterations);
 	end
 end

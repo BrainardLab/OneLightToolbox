@@ -24,7 +24,7 @@ function OLMakeModulations(configFileName, observerAgeInYears, calType1, calType
 
 %% Housekeeping
 % Validate the number of inputs.
-%error(nargchk(1, 3, nargin));
+%narginchk(1, 3);
 
 % Setup the directories we'll use.  We count on the
 % standard relative directory structure that we always

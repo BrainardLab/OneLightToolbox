@@ -26,7 +26,7 @@ function od = OLInitOmniDriver(calibrationData, verbose)
 % od (OmniDriver) - An initialized OmniDriver object.
 
 % Validate the number of inputs.
-error(nargchk(0, 2, nargin));
+narginchk(0, 2);
 
 if nargin <= 1
 	verbose = false;

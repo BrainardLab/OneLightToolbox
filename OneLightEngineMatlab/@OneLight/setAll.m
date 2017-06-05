@@ -10,9 +10,11 @@ function setAll(obj, allOn)
 % Input:
 % allOn (logical) - True = all on, false = all off.
 
-error(nargchk(2, 2, nargin));
+narginchk(2, 2);
 
 % Validate the input.
 assert(isscalar(allOn), 'OneLight:setAll:InvalidInput', 'Input must be a logical scalar.');
 
-OneLightEngine(OneLightFunctions.SetAll.UInt32, obj.DeviceID, logical(allOn));
+if (~obj.Simulate)
+    OneLightEngine(OneLightFunctions.SetAll.UInt32, obj.DeviceID, logical(allOn));
+end

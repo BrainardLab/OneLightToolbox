@@ -17,7 +17,7 @@ function cacheExists = exist(obj, cacheFileName)
 %     if either condition is not true.
 
 % Validate the number of inputs.
-error(nargchk(2, 2, nargin));
+narginchk(2, 2);
 
 % Force a .mat ending.
 [~, cacheFileName] = fileparts(cacheFileName);

@@ -39,4 +39,14 @@ assert(length(stops) == obj.NumCols, 'OneLight:setMirrors:OutOfBounds', ...
 	'Length of "stops" must be %d', obj.NumCols);
 
 % All starts and stops have to be converted to unsigned 16-bit integers.
-OneLightEngine(OneLightFunctions.SendPattern.UInt32, obj.DeviceID, uint16(starts), uint16(stops));
+if (~obj.Simulate)
+    OneLightEngine(OneLightFunctions.SendPattern.UInt32, obj.DeviceID, uint16(starts), uint16(stops));
+else
+    figure(obj.SimFig); clf;
+    hold on;
+    plot(starts,'k','LineWidth',2);
+    plot(stops,'r','LineWidth',2);
+    drawnow;
+    hold off;
+end
+    

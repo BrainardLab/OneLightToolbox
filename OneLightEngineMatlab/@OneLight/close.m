@@ -10,6 +10,11 @@ function close(obj)
 % briefly.  Don't try connecting until 10 seconds after the device sounds
 % powered up again or the connection will fail.
 
-if obj.IsOpen
-	OneLightEngine(OneLightFunctions.Close.UInt32, obj.DeviceID);
+if (~obj.Simulate)
+    if obj.IsOpen
+        OneLightEngine(OneLightFunctions.Close.UInt32, obj.DeviceID);
+    end
+else
+    close(obj.SimFig);
+    obj.IsOpen = false;
 end

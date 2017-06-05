@@ -8,6 +8,8 @@ function shutdown(obj)
 % Shuts down the device.  Should be called prior to physically turning it
 % off.
 
-if obj.IsOpen
-	OneLightEngine(OneLightFunctions.Shutdown.UInt32, obj.DeviceID);
+if (~obj.Simulate)
+    if obj.IsOpen
+        OneLightEngine(OneLightFunctions.Shutdown.UInt32, obj.DeviceID);
+    end
 end
