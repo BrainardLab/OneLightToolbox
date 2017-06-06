@@ -42,9 +42,9 @@ p.addParameter('stimType', 'ShowSpectrum', @issstr);
 p.addParameter('recompute', false, @islogical);
 p.addParameter('gaussianWindowWidth', 30, @isscalar);
 p.addParameter('hz', 1, @isscalar);
-p.addParameter('processOnly', false, @islogical);;
+p.addParameter('processOnly', false, @islogical);
 p.addParameter('simulate', true, @islogical);
-p.addParameter('nIterations',Inf, @isscalar);
+p.addParameter('nIterations', Inf, @isscalar);
 p.parse(varargin{:});
 params = p.Results;
 
@@ -79,8 +79,8 @@ if ~params.processOnly
 end
 
 %% Load the calibration file.  Need to point at a current calibration.
-whichCal = 'BoxDRandomizedLongCableAStubby1_ND02';
-oneLightCal = OLGetCalibrationStructure('CalibrationType',whichCal,'CalibrationDate','latest');
+whichCalType = 'BoxDRandomizedLongCableAStubby1_ND02';
+oneLightCal = OLGetCalibrationStructure('CalibrationType',whichCalType,'CalibrationDate','latest');
 
 % This flags regular computing of the spectra and mirror settings.  By
 % default, it will be the opposite of whether we're using the cache or not.

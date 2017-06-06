@@ -54,7 +54,7 @@ spectroRadiometerOBJ = [];
 
 try
     % Ask which type of calibration we're doing.
-    selectedCalType = OLGetCalibrationEnumerationType;
+    selectedCalType = OLGetEnumeratedCalibrationType;
     
     if strfind(selectedCalType.char, 'BoxA')
         whichBox = 'BoxA';

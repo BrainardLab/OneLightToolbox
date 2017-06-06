@@ -1,10 +1,12 @@
-function selectedCalType = OLGetCalibrationEnumerationType;
-% selectedCalType = OLGetCalibrationEnumerationType
+function selectedCalType = OLGetEnumeratedCalibrationType
+% selectedCalType = OLGetEnumeratedCalibrationType
 %
-% This function prompts for the enumeration type to be used.
+% This function prompts the user for the enumerated calibration type to be used.
 %
 % Output:
 %   selectedCalType - calibration type selected from enumeration.
+%
+% See also: OLCalibrationTypes, OLGetAvailableCalibrationTypes, OLGetCalibrationStructure.
 %
 % 1/21/14       ms      Made as a function.
 

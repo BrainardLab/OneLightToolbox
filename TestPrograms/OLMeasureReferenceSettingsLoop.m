@@ -10,7 +10,7 @@
 waitTimeBetweenMeasurements = 60;
 
 % Set a few parameters once, then re-use them in each iteration.
-selectedCalType = OLGetCalibrationEnumerationType;
+selectedCalType = OLGetEnumeratedCalibrationType;
 bulbNumber = GetWithDefault('Enter bulb number',1);
 emailRecipient = GetWithDefault('Enter email address for done notification', 'mspits@sas.upenn.edu');
 meterType = GetWithDefault('Enter PR-6XX radiometer type','PR-670');
