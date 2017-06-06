@@ -1,4 +1,4 @@
-function keyPress = OLFlickerDemo(varargin)
+function OLFlickerDemo(varargin)
 % OLFlickerDemo - Demonstrates how to flicker with the OneLight.
 %
 % Examples:
@@ -108,6 +108,11 @@ if params.useCache
 			fprintf('- Cache file does not exist, will be computed and saved.\n');
 		end
 		doCompute = true;
+        
+        % Initalize the cacheData to be computed with the calibration
+        % structure.
+        clear cacheData;
+        cacheData.cal = oneLightCal;
 	end
 end
 
@@ -136,14 +141,13 @@ if doCompute
 			targetSpds = zeros(oneLightCal.describe.S(3), numSpectra);
 			for i = 1:numSpectra
 				fprintf('- Computing spectra %d of %d...', i, numSpectra);
-				
 				center = gaussCenters(i);
 				targetSpds(:,i) = normpdf(oneLightCal.computed.pr650Wls, center, bandwidth)';
 				
 				% Find the scale factor that leads to the maximum relative targetSpd that is within
 				% the OneLight's gamut.
 				[~, scaleFactors(i), ~] = OLFindMaxSpectrum(oneLightCal, targetSpds(:,i), params.lambda, false);
-				
+
 				fprintf('Done\n');
 			end
 			
@@ -154,23 +158,10 @@ if doCompute
 			% Convert the spectra into gamma corrected mirror settings.  We use the
 			% static OLCache method "compute" so that we guarantee we calculate the
 			% cache in the same way that an OLCache object's load method does.
-			fprintf('- Calculating mirror settings...');
-			
-			% We refer to the compute method by its enumeration.  This lets us have
-			% a standard way of referencing a compute method through the
-			% OneLightToolbox.
-			computeMethod = OLComputeMethods.Standard;
-            
-            % Compute the cache data.
+			fprintf('- Calculating primaries, settigns, starts/stops ...');
             [cacheData.settings, cacheData.primaries, cacheData.predictedSpds] = ...
                 OLSpdToSettings(oneLightCal, targetSpds, 'lambda', params.lambda);
-            [cacheData.starts,cacheData.stops] = OLSettingsToStartsStops(oneLightCal,cacheData.settings);
-
-            % Compute the cache data.
-            [cacheData.settings, cacheData.primaries, cacheData.predictedSpds] = ...
-                OLSpdToSettings(oneLightCal, targetSpds, 'lambda', params.lambda);
-            [cacheData.starts,cacheData.stops] = OLSettingsToStartsStops(oneLightCal,cacheData.settings);
-            
+            [cacheData.starts,cacheData.stops] = OLSettingsToStartsStops(oneLightCal,cacheData.settings)
 			fprintf('Done\n');
 			
 		case {'driftgabor', 'driftsine'}
@@ -200,14 +191,9 @@ if doCompute
 			
 			% Find the scale factor to maximize the spectra.
 			scaleFactors = zeros(1, numSteps);
-			lambda = 0.1;
 			for i = 1:numSteps
-				fprintf('- Computing spectra %d of %d...', i, numSteps);
-				
-				% Find the scale factor that leads to the maximum relative targetSpd that is within
-				% the OneLight's gamut.
+				fprintf('- Computing scale factors %d of %d...', i, numSteps);
 				[~, scaleFactors(i), ~] = OLFindMaxSpectrum(oneLightCal, targetSpds(:,i), lambda, false);
-				
 				fprintf('Done\n');
 			end
 			
@@ -218,14 +204,10 @@ if doCompute
 			% Convert the spectra into gamma corrected mirror settings.  We use the
 			% static OLCache method "compute" so that we guarantee we calculate the
 			% cache in the same way that an OLCache object's load method does.
-			fprintf('- Calculating mirror settings...');
-			
-			% We refer to the compute method by its enumeration.  This lets us have
-			% a standard way of referencing a compute method through the
-			% OneLightToolbox.
-			computeMethod = OLComputeMethods.Standard;
-			
-			cacheData = OLCache.compute(computeMethod, oneLightCal, targetSpds, lambda, false);
+			fprintf('- Calculating primaries, settigns, starts/stops ...');
+            [cacheData.settings, cacheData.primaries, cacheData.predictedSpds] = ...
+                OLSpdToSettings(oneLightCal, targetSpds, 'lambda', params.lambda);
+            [cacheData.starts,cacheData.stops] = OLSettingsToStartsStops(oneLightCal,cacheData.settings)
 			fprintf('Done\n');
 	end
 end
@@ -241,7 +223,7 @@ end
 % recomputed.
 if params.useCache && doCompute
 	fprintf('- Saving cache file: %s\n', cacheFile);
-	cache.save(cacheFile, cacheData, true);
+	cache.save(cacheFile, cacheData);
 end
 
 % Pull out the settings to use below.
@@ -297,5 +279,8 @@ if ~params.processOnly
 		otherwise
 			% Do the flicker.
 			keyPress = OLFlicker(ol, cacheData.starts, cacheData.stops, frameDurationSecs, params.nIterations);
-	end
+    end
+    
+    % Close the one light
+    ol.close;
 end

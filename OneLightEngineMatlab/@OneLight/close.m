@@ -16,5 +16,4 @@ if (~obj.Simulate)
     end
 else
     close(obj.SimFig);
-    obj.IsOpen = false;
 end
