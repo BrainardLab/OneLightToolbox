@@ -34,8 +34,8 @@ function [settings, primaries, predictedSpds] = OLSpdToSettings(oneLightCal, tar
 
 %% Parse the input
 p = inputParser;
-p.addOptional('verbose', false, @islogical);
-p.addOptional('lambda', 0.1, @isscalar);
+p.addParameter('verbose', false, @islogical);
+p.addParameter('lambda', 0.1, @isscalar);
 p.parse(varargin{:});
 params = p.Results;
 

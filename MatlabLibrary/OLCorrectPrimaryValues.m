@@ -14,7 +14,7 @@ function [correctedPrimaryValues, primariesCorrectedAll, deltaPrimariesCorrected
 
 % Parse the input
 p = inputParser;
-p.addOptional('takeTemperatureMeasurements', false, @islogical);
+p.addParameter('takeTemperatureMeasurements', false, @islogical);
 p.parse(varargin{:});
 takeTemperatureMeasurements = p.Results.takeTemperatureMeasurements;
 

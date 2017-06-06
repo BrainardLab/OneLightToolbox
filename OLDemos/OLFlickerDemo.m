@@ -1,8 +1,10 @@
 function keyPress = OLFlickerDemo(varargin)
 % OLFlickerDemo - Demonstrates how to flicker with the OneLight.
 %
-% Syntax:
-% OLFlickerDemo
+% Examples:
+%   OLFlickerDemo
+%   OLFlickerDemo('simulate',true);
+%   OLFlickerDemo('useCache',false);
 %
 % Description:
 % Demo that shows how to open the OneLight, use the cache, and flicker the
@@ -12,80 +14,79 @@ function keyPress = OLFlickerDemo(varargin)
 % settings are in sync with the calibration file.  If the cache file
 % doesn't exist, it will be created.
 %
-% Input (key, value):
-% 'StimType' (string) - Takes any of the following values: 'ShowSpectrum', 
-%     'BinaryFlicker', 'GaussianWindow', 'DriftGabor', 'DriftSine'.
-% 'UseCache' (logical) - Toggles the use of the spectra cache.  Default: true
-% 'Recompute' (logical) - Let's you force a recomputation of the spectra
-%     and rewrite the cache file.  Only useful if using the cache.
-%     Default: false
-% 'ProcessOnly' (logical) - If true, then the program doesn't communicate
-%     with the OneLight engine.  Default: false
+% Optional key/value pairs:
+% 'useCache' (logical) - Toggles the use of the spectra cache.  Default: true
+% 'stimType' (string) - Takes any of the following values: 'ShowSpectrum', 
+%                       'BinaryFlicker', 'GaussianWindow', 'DriftGabor', 'DriftSine'.
+% 'recompute' (logical) - Let's you force a recomputation of the spectra
+%                         and rewrite the cache file.  Only useful if using the cache.
+%                         Default: false
+% 'processOnly' (logical) - If true, then the program doesn't communicate
+%                           with the OneLight engine.  Default: false
 % 'Hz' (scalar) - The rate at which the program cycles through the set of
-%     spectra to display.  Default: 1
+%                 spectra to display.  Default: 1
 % 'GaussianWindowWidth' (scalar) - The number of cycles to window the set of
-%     spectra in the 'GaussianWindow' stim type.  Default: 30.
+%                                  spectra in the 'GaussianWindow' stim type.
+%                                  Default: 30.
 % 'simulate' (logical) - Run in simulation mode? Default: false.
-%
-% Examples:
-% % Don't use the cache.
-% OLFlickerDemo('UseCache', false);
-% 
-% % Force a recompute of the spectra.
-% OLFlickerDemo('Recompute', true);
+% 'nIterations' (scalar) - Number of interations of modulation to show.
+%                          Inf means keep going until key press.
+%                          Default: Inf
 
-% NOTE FROM DHB: I don't understand the GuassianWindow stimulus.
+% 6/5/17  dhb  Add simulation mode with mb.
 
-% Parse any input parameters.
+%% Parse input parameters.
 p = inputParser;
-p.addParamValue('UseCache', false);
-p.addParamValue('Recompute', false);
-p.addParamValue('StimType', 'ShowSpectrum');
-p.addParamValue('GaussianWindowWidth', 30);
-p.addParamValue('Hz', 1);
-p.addParamValue('ProcessOnly', false);
-p.addParamValue('simulate', true);
+p.addParameter('useCache', false, @islogical);
+p.addParameter('stimType', 'ShowSpectrum', @issstr);
+p.addParameter('recompute', false, @islogical);
+p.addParameter('gaussianWindowWidth', 30, @isscalar);
+p.addParameter('hz', 1, @isscalar);
+p.addParameter('processOnly', false, @islogical);;
+p.addParameter('simulate', true, @islogical);
+p.addParameter('nIterations',Inf, @isscalar);
 p.parse(varargin{:});
-inputParams = p.Results;
+params = p.Results;
 
-% Select the cache file pased on the stim type.
-switch lower(inputParams.StimType)
+%% Select the cache file pased on the stim type.
+%
+% These are precomputed and are part of the demo.
+switch lower(params.stimType)
 	case 'showspectrum'
 		cacheFile = 'ShowSpectrum';
-		
 	case 'binaryflicker'
-		cacheFile = 'BinaryFlicker';
-		
+		cacheFile = 'BinaryFlicker';	
 	case 'gaussianwindow'
-		cacheFile = 'GaussianWindow';
-		
+		cacheFile = 'GaussianWindow';	
 	case 'driftgabor'
-		cacheFile = 'DriftGabor';
-		
+		cacheFile = 'DriftGabor';	
 	case 'driftsine'
-		cacheFile = 'DriftSine';
-		
+		cacheFile = 'DriftSine';	
 	otherwise
-		error('OLFlickerDemo:Invalid stim type "%s".', inputParams.StimType);
+		error('OLFlickerDemo:Invalid stim type "%s".', params.stimType);
 end
 
-% Setup some program variables.
+%% Setup some program variables.
 cacheDir = fullfile(fileparts(which('OLFlickerDemo')), 'cache');
 calFileName = 'OneLight';
 
-% Create the OneLight object.
-if ~inputParams.ProcessOnly
-	ol = OneLight('simulate',inputParams.simulate);
+%% Create the OneLight object.
+%
+% Simulate if desired, and don't do it at all if this is running in process
+% only mode.
+if ~params.processOnly
+	ol = OneLight('simulate',params.simulate);
 end
 
-% Load the calibration file.
-oneLightCal = OLGetCalibrationStructure('CalibrationType','BoxDRandomizedLongCableAStubby1_ND02','CalibrationDate','latest');
+%% Load the calibration file.  Need to point at a current calibration.
+whichCal = 'BoxDRandomizedLongCableAStubby1_ND02';
+oneLightCal = OLGetCalibrationStructure('CalibrationType',whichCal,'CalibrationDate','latest');
 
 % This flags regular computing of the spectra and mirror settings.  By
 % default, it will be the opposite of whether we're using the cache or not.
-doCompute = ~inputParams.UseCache;
+doCompute = ~params.useCache;
 
-if inputParams.UseCache
+if params.useCache
 	% Create a cache object.  This object encapsulates the cache folder and
 	% the actions we can take on the cache files.  We pass it the
 	% calibration data so it can validate the cache files we want to load.
@@ -96,12 +97,12 @@ if inputParams.UseCache
 	
 	% Load the cache file if it exists and we're not forcing a recompute of
 	% the target spectra.
-	if cacheFileExists && ~inputParams.Recompute
+	if cacheFileExists && ~params.recompute
 		% Load the cache file.  This function will check to make sure the
 		% cache file is in sync with the calibration data we loaded above.
 		cacheData = cache.load(cacheFile);
 	else
-		if inputParams.Recompute
+		if params.recompute
 			fprintf('- Manual recompute toggled.\n');
 		else
 			fprintf('- Cache file does not exist, will be computed and saved.\n');
@@ -113,9 +114,9 @@ end
 
 if doCompute
 	% Specify the spectra depending on our stim type.
-	switch lower(inputParams.StimType)
+	switch lower(params.stimType)
 		case {'binaryflicker', 'gaussianwindow', 'showspectrum'}
-			switch lower(inputParams.StimType)
+			switch lower(params.stimType)
 				case 'binaryflicker'
 					gaussCenters = [400, 700];
                     bandwidth = 30;
@@ -166,7 +167,7 @@ if doCompute
 			
 		case {'driftgabor', 'driftsine'}
 			% Create the gaussian window.
-			switch lower(inputParams.StimType)
+			switch lower(params.stimType)
 				case 'driftgabor'
 					sig = round(oneLightCal.describe.S(3) * 0.15);
 					gaussWindow = CustomGauss([1 oneLightCal.describe.S(3)], sig, sig, 0, 0, 1, [0 0])';
@@ -224,7 +225,7 @@ end
 % We want to save the spectra and mirror settings data if we're using the
 % cache to make sure we update the cache file in case anything was
 % recomputed.
-if inputParams.UseCache && doCompute
+if params.useCache && doCompute
 	fprintf('- Saving cache file: %s\n', cacheFile);
 	cache.save(cacheFile, cacheData, true);
 end
@@ -233,15 +234,15 @@ end
 settings = cacheData.settings;
 
 % Perform any post cache load operations.
-switch lower(inputParams.StimType)
+switch lower(params.stimType)
 	% For the GaussianWindow stim type, we'll multiply the calculated mirror
 	% settings by a Gaussian who's width is an integer multiple of the width of
 	% a single cycle of mirror settings.  Note that this isn't they way you'd
 	% want to do it if you wanted to make sure everything was calibrated.
 	case 'gaussianwindow'
-		if ~inputParams.ProcessOnly
-			GaussianWindowWidth = abs(ceil(inputParams.GaussianWindowWidth));
-			settings = repmat(settings, 1, GaussianWindowWidth);
+		if ~params.processOnly
+			gaussianWindowWidth = abs(ceil(params.gaussianWindowWidth));
+			settings = repmat(settings, 1, gaussianWindowWidth);
 			
 			% Create the Gabor.
 			windowSize = size(settings, 2);
@@ -253,29 +254,24 @@ switch lower(inputParams.StimType)
 			
 			% Change the frequency to compensate for the fact we multiplied the
 			% number of mirror settings.
-			inputParams.Hz = inputParams.Hz / GaussianWindowWidth;
+			params.hz = params.hz / gaussianWindowWidth;
 		end
 end
 
 % We will base the duration of each frame, i.e. length of time showing a
 % particular set of mirrors, on the frequency, such that we will go through
-% all the settings at the specified Hz value.
-frameDurationSecs = 1 / inputParams.Hz / size(settings, 2);
-
-% Here we specify how many iterations of the entire list of settings we
-% want to go through.  Setting this to Inf has it go until a key is
-% pressed.
-numIterations = 2;
+% all the settings at the specified hz value.
+frameDurationSecs = 1 / params.hz / size(settings, 2);
 
 % Convert the settings to starts/stops vectors
 [starts,stops] = OLSettingsToStartsStops(oneLightCal,settings);
 
-if ~inputParams.ProcessOnly
-	switch lower(inputParams.StimType)
+if ~params.processOnly
+	switch lower(params.stimType)
 		% The drift gabor/sine is interactive.
 		case {'driftgabor', 'driftsine'}
 			while true
-				keyPress = OLFlicker(ol, starts, stops, frameDurationSecs, numIterations);
+				keyPress = OLFlicker(ol, starts, stops, frameDurationSecs, params.nIterations);
 				
 				switch keyPress
 					% Quit
@@ -290,6 +286,6 @@ if ~inputParams.ProcessOnly
 			
 		otherwise
 			% Do the flicker.
-			keyPress = OLFlicker(ol, starts, stops, frameDurationSecs, numIterations);
+			keyPress = OLFlicker(ol, starts, stops, frameDurationSecs, params.nIterations);
 	end
 end

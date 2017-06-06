@@ -54,9 +54,9 @@ function effectivePrimary = OLSpdToPrimary(oneLightCal, targetSpd, varargin)
 
 %% Parse the input
 p = inputParser;
-p.addOptional('verbose', false, @islogical);
-p.addOptional('lambda', 0.1, @isscalar);
-p.addOptional('differentialMode', false, @islogical);
+p.addParameter('verbose', false, @islogical);
+p.addParameter('lambda', 0.1, @isscalar);
+p.addParameter('differentialMode', false, @islogical);
 p.parse(varargin{:});
 params = p.Results;
 

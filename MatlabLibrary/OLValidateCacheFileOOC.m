@@ -61,22 +61,22 @@ function [results, validationDir, validationPath, openSpectroRadiometerOBJ] = OL
 
 % Parse the input
 p = inputParser;
-p.addOptional('ReferenceMode', true, @islogical);
-p.addOptional('FullOnMeas', true, @islogical);
-p.addOptional('HalfOnMeas', false, @islogical);
-p.addOptional('DarkMeas', false, @islogical);
-p.addOptional('CalStateMeas', false, @islogical);
-p.addOptional('SkipBackground', false, @islogical);
-p.addOptional('ReducedPowerLevels', true, @islogical);
-p.addOptional('NoAdjustment', false, @islogical);
-p.addOptional('OBSERVER_AGE', 32, @isscalar);
-p.addOptional('selectedCalType', [], @isstr);
-p.addOptional('CALCULATE_SPLATTER', true, @islogical);
-p.addOptional('powerLevels', 32, @isnumeric);
-p.addOptional('postreceptoralCombinations', [], @isnumeric);
-p.addOptional('outDir', [], @isstr);
-p.addOptional('pr670sensitivityMode', 'STANDARD', @isstr);
-p.addOptional('takeTemperatureMeasurements', false, @islogical);
+p.addParameter('ReferenceMode', true, @islogical);
+p.addParameter('FullOnMeas', true, @islogical);
+p.addParameter('HalfOnMeas', false, @islogical);
+p.addParameter('DarkMeas', false, @islogical);
+p.addParameter('CalStateMeas', false, @islogical);
+p.addParameter('SkipBackground', false, @islogical);
+p.addParameter('ReducedPowerLevels', true, @islogical);
+p.addParameter('NoAdjustment', false, @islogical);
+p.addParameter('OBSERVER_AGE', 32, @isscalar);
+p.addParameter('selectedCalType', [], @isstr);
+p.addParameter('CALCULATE_SPLATTER', true, @islogical);
+p.addParameter('powerLevels', 32, @isnumeric);
+p.addParameter('postreceptoralCombinations', [], @isnumeric);
+p.addParameter('outDir', [], @isstr);
+p.addParameter('pr670sensitivityMode', 'STANDARD', @isstr);
+p.addParameter('takeTemperatureMeasurements', false, @islogical);
 
 p.parse(varargin{:});
 describe = p.Results;

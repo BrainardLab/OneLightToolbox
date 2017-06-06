@@ -53,7 +53,7 @@ function [starts,stops] = OLSettingsToStartsStops(cal, settings, varargin)
 
 %% Parse the input
 p = inputParser;
-p.addOptional('verbose', false, @islogical);
+p.addParameter('verbose', false, @islogical);
 p.parse(varargin{:});
 params = p.Results;
 

@@ -75,11 +75,12 @@ classdef OneLight < hgsetget
 			% deviceID (scalar) - Integer device ID number in the range of
 			%   [0,n-1] where n is the number of attached OneLight devices.
 			%   Defaults to 0.
+            % simulate (logical) - Run in simulation mode.  Default false.
             
             % Parse key/value pairs
             p = inputParser;
-            p.addOptional('deviceID', 0, @isscalar);
-            p.addOptional('simulate', false, @islogical);
+            p.addParameter('deviceID', 0, @isscalar);
+            p.addParameter('simulate', false, @islogical);
             p.parse(varargin{:});
             params = p.Results;
 			
@@ -110,7 +111,7 @@ classdef OneLight < hgsetget
 			
 			% Make sure the deviceID is in range.
 			assert(params.deviceID >= 0 && params.deviceID < numDevices, 'OneLight:DeviceID', ...
-				'The specified device ID %d is out of range', deviceID);
+				'The specified device ID %d is out of range', params.deviceID);
 			
 			obj.DeviceID = params.deviceID;
 			

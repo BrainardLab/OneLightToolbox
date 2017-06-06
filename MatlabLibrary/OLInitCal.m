@@ -74,10 +74,10 @@ function cal = OLInitCal(calFileName, varargin)
 
     % Create a parser for any optional arguments.
     parser = inputParser;
-    parser.addOptional('FactorsMethod', 2, @isnumeric);
-    parser.addOptional('UseAverageGamma',[],@(x)isnumeric(x) || islogical(x));
-    parser.addOptional('GammaFitType',[],@(x) ischar(x) || isnumeric(x));
-    parser.addOptional('CorrectLinearDrift',[],@(x)isnumeric(x) || islogical(x));
+    parser.addParameter('FactorsMethod', 2, @isnumeric);
+    parser.addParameter('UseAverageGamma',[],@(x)isnumeric(x) || islogical(x));
+    parser.addParameter('GammaFitType',[],@(x) ischar(x) || isnumeric(x));
+    parser.addParameter('CorrectLinearDrift',[],@(x)isnumeric(x) || islogical(x));
 
     % Execute the parser and store the results in the calibration structure
     % under the 'computed' field.
