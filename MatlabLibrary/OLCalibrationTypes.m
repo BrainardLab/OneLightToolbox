@@ -43,6 +43,9 @@ classdef OLCalibrationTypes
     end
     
     enumeration
+        % Demo cal file.  We always have this so that demos can run.
+        OLDemoCal('OlDemoCal');
+        
         % Classic eye pieces (pupil/psychophysics)
         BoxBRandomizedLongCableBEyePiece2_ND00('OLBoxBRandomizedLongCableBEyePiece2_ND00');
         BoxBRandomizedLongCableBEyePiece1_ND02('OLBoxBRandomizedLongCableBEyePiece1_ND02');

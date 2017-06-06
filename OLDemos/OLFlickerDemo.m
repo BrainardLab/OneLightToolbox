@@ -81,7 +81,7 @@ if ~params.processOnly
 end
 
 %% Load the calibration file.  Need to point at a current calibration.
-whichCalType = 'BoxDRandomizedLongCableAStubby1_ND02';
+whichCalType = 'OLDemoCal';
 oneLightCal = OLGetCalibrationStructure('CalibrationType',whichCalType,'CalibrationDate','latest');
 
 %% Compute spectra if necessary or requested
