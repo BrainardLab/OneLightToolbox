@@ -1,9 +1,42 @@
 classdef OLCache
 	% OLCache - Class to abstract the cache system for OneLight spectra.
+    %
+    % The idea here is to precompute calibration dependent quantities in
+    % advance of when we need them, because some of the computations can be
+    % quite time consuming.  At the same time, there is a danger in
+    % pre-computing and caching, because when you recalibrate the computed
+    % quantities are stale.  So, this object stores the calibration data at
+    % the time of precomputation and then checks to make sure the data
+    % aren't stale.  When the data are stale, it triggers a recomputation
+    % and stores updated quantities.
+    %
+    % The object is set up to be somewhat general and extensible in terms
+    % of what can be computed.  The compute function takes a computeMethod
+    % argument which then determines what it does and what is stored.  The
+    % computeMethods are set up to match things we commonly want to do.
+    %
+    % Cache files also keep a history of all cached versions, allowing one
+    % to go back and look at older versions if desired.
+    %
+    % The available compute methods are enumerated in routine
+    % OLComptueMethods.  That simply lets us use symbolic names to refer to
+    % the available compute methods.  So, when you want to introduce a new
+    % computation to the cache system, you need to add a new compute method
+    % to OLComputeMethods.
+    %
+    % See also: OlComputeMethods.
 	%
 	% OLCache methods:
-	% OLCache - Constructor.
-	% compute - Function that computes the cache data.
+	%   OLCache - Constructor.
+	%   compute - Function that computes the cache data.  The cache data is
+	%             simply a structure with fields that depend on the compute
+	%             method.
+    %   save - Save the cache data to the cache file.
+    %   load - Load the cache data from the cache file. This includes a
+    %          check for staleness.
+    %   exist - Check of cache file exists.
+    %   list - List cache files in a directory.
+    %   find - Find what versions of things are in a cache file.
 	
 	properties (SetAccess = protected)
 		CacheDirectory;

@@ -1,5 +1,5 @@
 function cacheExists = exist(obj, cacheFileName)
-% exist - Checks if a cache file and data exist.
+% exist - Checks if a cache file and ist data exist.
 %
 % Syntax:
 % cacheFileExists = obj.exist(cacheFileName)

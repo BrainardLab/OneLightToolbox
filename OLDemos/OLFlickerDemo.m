@@ -23,7 +23,7 @@ function keyPress = OLFlickerDemo(varargin)
 %                         Default: false
 % 'processOnly' (logical) - If true, then the program doesn't communicate
 %                           with the OneLight engine.  Default: false
-% 'Hz' (scalar) - The rate at which the program cycles through the set of
+% 'hz' (scalar) - The rate at which the program cycles through the set of
 %                 spectra to display.  Default: 1
 % 'GaussianWindowWidth' (scalar) - The number of cycles to window the set of
 %                                  spectra in the 'GaussianWindow' stim type.
@@ -32,12 +32,13 @@ function keyPress = OLFlickerDemo(varargin)
 % 'nIterations' (scalar) - Number of interations of modulation to show.
 %                          Inf means keep going until key press.
 %                          Default: Inf
+% 'lambda' (scalar) - Smoothing parameter for OLSpdToPrimary.  Default 0.1.
 
 % 6/5/17  dhb  Add simulation mode with mb.
 
 %% Parse input parameters.
 p = inputParser;
-p.addParameter('useCache', false, @islogical);
+p.addParameter('useCache', true, @islogical);
 p.addParameter('stimType', 'ShowSpectrum', @issstr);
 p.addParameter('recompute', false, @islogical);
 p.addParameter('gaussianWindowWidth', 30, @isscalar);
@@ -45,6 +46,7 @@ p.addParameter('hz', 1, @isscalar);
 p.addParameter('processOnly', false, @islogical);
 p.addParameter('simulate', true, @islogical);
 p.addParameter('nIterations', Inf, @isscalar);
+p.addParameter('lambda', 0.1, @isscalar);
 p.parse(varargin{:});
 params = p.Results;
 
@@ -82,10 +84,8 @@ end
 whichCalType = 'BoxDRandomizedLongCableAStubby1_ND02';
 oneLightCal = OLGetCalibrationStructure('CalibrationType',whichCalType,'CalibrationDate','latest');
 
-% This flags regular computing of the spectra and mirror settings.  By
-% default, it will be the opposite of whether we're using the cache or not.
+%% Compute spectra if necessary or requested
 doCompute = ~params.useCache;
-
 if params.useCache
 	% Create a cache object.  This object encapsulates the cache folder and
 	% the actions we can take on the cache files.  We pass it the
@@ -107,11 +107,14 @@ if params.useCache
 		else
 			fprintf('- Cache file does not exist, will be computed and saved.\n');
 		end
-		
 		doCompute = true;
 	end
 end
 
+%% Compute modulations if necessary
+%
+% We do this either because we need to recompute a stale cache file, or
+% because we decided not to use cache files.
 if doCompute
 	% Specify the spectra depending on our stim type.
 	switch lower(params.stimType)
@@ -120,21 +123,17 @@ if doCompute
 				case 'binaryflicker'
 					gaussCenters = [400, 700];
                     bandwidth = 30;
-
 				case 'gaussianwindow'
 					gaussCenters = [480, 650];
                     bandwidth = 30;
-
 				case 'showspectrum'
 					gaussCenters = 400:2:700;
                     bandwidth = 10;
-
 			end
 			
 			numSpectra = length(gaussCenters);
 			scaleFactors = zeros(1, numSpectra);
 			targetSpds = zeros(oneLightCal.describe.S(3), numSpectra);
-			lambda = 0.1;
 			for i = 1:numSpectra
 				fprintf('- Computing spectra %d of %d...', i, numSpectra);
 				
@@ -143,7 +142,7 @@ if doCompute
 				
 				% Find the scale factor that leads to the maximum relative targetSpd that is within
 				% the OneLight's gamut.
-				[~, scaleFactors(i), ~] = OLFindMaxSpectrum(oneLightCal, targetSpds(:,i), lambda, false);
+				[~, scaleFactors(i), ~] = OLFindMaxSpectrum(oneLightCal, targetSpds(:,i), params.lambda, false);
 				
 				fprintf('Done\n');
 			end
@@ -161,8 +160,17 @@ if doCompute
 			% a standard way of referencing a compute method through the
 			% OneLightToolbox.
 			computeMethod = OLComputeMethods.Standard;
-			
-			cacheData = OLCache.compute(computeMethod, oneLightCal, targetSpds, lambda, false);
+            
+            % Compute the cache data.
+            [cacheData.settings, cacheData.primaries, cacheData.predictedSpds] = ...
+                OLSpdToSettings(oneLightCal, targetSpds, 'lambda', params.lambda);
+            [cacheData.starts,cacheData.stops] = OLSettingsToStartsStops(oneLightCal,cacheData.settings);
+
+            % Compute the cache data.
+            [cacheData.settings, cacheData.primaries, cacheData.predictedSpds] = ...
+                OLSpdToSettings(oneLightCal, targetSpds, 'lambda', params.lambda);
+            [cacheData.starts,cacheData.stops] = OLSettingsToStartsStops(oneLightCal,cacheData.settings);
+            
 			fprintf('Done\n');
 			
 		case {'driftgabor', 'driftsine'}
@@ -222,6 +230,12 @@ if doCompute
 	end
 end
 
+%% Save cacheData to cache file if necessary
+%
+% By the time we get here, the structure cacheData has the primaries,
+% settings and starts/stops for each modulation, computed with respect to
+% the current calibration time.
+%
 % We want to save the spectra and mirror settings data if we're using the
 % cache to make sure we update the cache file in case anything was
 % recomputed.
@@ -263,22 +277,18 @@ end
 % all the settings at the specified hz value.
 frameDurationSecs = 1 / params.hz / size(settings, 2);
 
-% Convert the settings to starts/stops vectors
-[starts,stops] = OLSettingsToStartsStops(oneLightCal,settings);
-
+%% Actually talk to the OneLight (or its simulated version)
 if ~params.processOnly
 	switch lower(params.stimType)
 		% The drift gabor/sine is interactive.
 		case {'driftgabor', 'driftsine'}
 			while true
-				keyPress = OLFlicker(ol, starts, stops, frameDurationSecs, params.nIterations);
-				
+				keyPress = OLFlicker(ol, cacheData.starts, cacheData.stops, frameDurationSecs, params.nIterations);
 				switch keyPress
 					% Quit
 					case 'q'
-						break;
-						
-						% Reverse the direction.
+						break;		
+					% Reverse the direction.
 					otherwise
 						settings = fliplr(settings);
 				end
@@ -286,6 +296,6 @@ if ~params.processOnly
 			
 		otherwise
 			% Do the flicker.
-			keyPress = OLFlicker(ol, starts, stops, frameDurationSecs, params.nIterations);
+			keyPress = OLFlicker(ol, cacheData.starts, cacheData.stops, frameDurationSecs, params.nIterations);
 	end
 end
