@@ -36,46 +36,50 @@ try
 	ol.OutputPatternBuffer = 0;
 
 	% Send over the first settings.
+    numSettings = size(starts, 1);
+    if (size(stops,1) ~= numSettings)
+        error('starts and stops matrices must have same number of rows');e
+    end
 	ol.setMirrors(starts(1,:), stops(1,:));
 	
 	% Counters to keep track of which of the settings to display and which
 	% iteration we're on.
 	iterationCount = 0;
-	setCount = 0;
+	setCount = numSettings;
 	
-	numSettings = size(starts, 1);
-    if (size(stops,1) ~= numSettings)
-        error('starts and stops matrices must have same number of rows');e
-    end
+ 
 	
 	t = zeros(1, 10000);
 	i = 1;
 	
-	% This is the time of the settings change.  It gets updated everytime
-	% we apply new mirror settings.
-	mileStone = mglGetSecs + frameDurationSecs;
-	
+	% Loop and flicker
+    %
+    % Start by initializing when we change the spectrum and then drop into 
+    % the loop.
+	theTimeToUpdateSpectrum = mglGetSecs + frameDurationSecs;
 	while iterationCount < numIterations
-		if mglGetSecs >= mileStone;
+        
+        % Is it time to update spectrum yet?  If so, do it.  If not, carry
+        % on.
+		if mglGetSecs >= theTimeToUpdateSpectrum;
 			t(i) = mglGetSecs;
 			i = i + 1;
-			
-			% Update the time of our next switch.
-			mileStone = mileStone + frameDurationSecs;
 
 			% Update our settings counter.
-			setCount = mod(setCount + 1, numSettings);
+			setCount = 1 + mod(setCount, numSettings);
+                 			
+			% Send over the new settings.
+			ol.setMirrors(starts(setCount,:), stops(setCount,:));
 			
 			% If we've reached the end of the settings list, iterate the
 			% counter that keeps track of how many times we've gone through
 			% the list.
-			if setCount == 0
+			if setCount == numSettings
 				iterationCount = iterationCount + 1;
-                setCount = 1;
-			end
-			
-			% Send over the new settings.
-			ol.setMirrors(starts(setCount,:), stops(setCount,:));
+            end
+            
+            % Update the time of our next switch.
+			theTimeToUpdateSpectrum = theTimeToUpdateSpectrum + frameDurationSecs;
 		end
 		
 		% If we're using keyboard mode, check for a keypress.

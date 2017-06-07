@@ -124,6 +124,11 @@ if doCompute
 	% Specify the spectra depending on our stim type.
 	switch lower(params.stimType)
 		case {'binaryflicker', 'gaussianwindow', 'showspectrum'}
+            % Each of these options shows a Gaussian function of wavelength
+            % in each frame.  The vector gaussCenters provides the center
+            % wavelengths of the Gaussians, and the bandwidth specifies the
+            % standard deviation (in nm).  The options differ only in terms
+            % of these details.
 			switch lower(params.stimType)
 				case 'binaryflicker'
 					gaussCenters = [400, 700];
@@ -134,8 +139,14 @@ if doCompute
 				case 'showspectrum'
 					gaussCenters = 400:2:700;
                     bandwidth = 10;
-			end
+            end
 			
+            % Determine number of spectra and generate the Gaussians.
+            % 
+            % We need to scale them all by a common factor so that they are
+            % in gamut.  So we find the max scale factor for each that will
+            % be in gamut and then apply the minimum of these to all of hte
+            % spds.
 			numSpectra = length(gaussCenters);
 			scaleFactors = zeros(1, numSpectra);
 			targetSpds = zeros(oneLightCal.describe.S(3), numSpectra);
@@ -150,8 +161,6 @@ if doCompute
 
 				fprintf('Done\n');
 			end
-			
-			% Find the smallest scale factor to apply to all the targetSPDs.
 			minScaleFactor = min(scaleFactors);
 			targetSpds = targetSpds * minScaleFactor;
 			
@@ -161,7 +170,7 @@ if doCompute
 			fprintf('- Calculating primaries, settigns, starts/stops ...');
             [cacheData.settings, cacheData.primaries, cacheData.predictedSpds] = ...
                 OLSpdToSettings(oneLightCal, targetSpds, 'lambda', params.lambda);
-            [cacheData.starts,cacheData.stops] = OLSettingsToStartsStops(oneLightCal,cacheData.settings)
+            [cacheData.starts,cacheData.stops] = OLSettingsToStartsStops(oneLightCal,cacheData.settings);
 			fprintf('Done\n');
 			
 		case {'driftgabor', 'driftsine'}

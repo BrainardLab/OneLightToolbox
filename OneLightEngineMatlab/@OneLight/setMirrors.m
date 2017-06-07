@@ -44,8 +44,7 @@ if (~obj.Simulate)
 else
     figure(obj.SimFig); clf;
     hold on;
-    plot(starts,'k','LineWidth',2);
-    plot(stops,'r','LineWidth',2);
+    plot(stops-starts,'ko','MarkerSize',2);
     drawnow;
     hold off;
 end
