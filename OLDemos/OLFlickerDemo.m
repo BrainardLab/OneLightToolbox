@@ -39,7 +39,7 @@ function OLFlickerDemo(varargin)
 %% Parse input parameters.
 p = inputParser;
 p.addParameter('useCache', true, @islogical);
-p.addParameter('stimType', 'ShowSpectrum', @issstr);
+p.addParameter('stimType', 'ShowSpectrum', @isstr);
 p.addParameter('recompute', false, @islogical);
 p.addParameter('gaussianWindowWidth', 30, @isscalar);
 p.addParameter('hz', 1, @isscalar);
@@ -244,8 +244,9 @@ switch lower(params.stimType)
 			windowSize = size(settings, 2);
 			sig = round(windowSize * 0.15);
 			gaborWindow = CustomGauss([1 windowSize], sig, sig, 0, 0, 1, [0 0]);
-			gaborWindow = repmat(gaborWindow, ol.NumCols, 1);
-			
+			gaborWindow = repmat(gaborWindow, size(settings,1), 1);
+			%gaborWindow = repmat(gaborWindow, ol.NumCols, 1);
+            
 			settings = settings .* gaborWindow;
 			
 			% Change the frequency to compensate for the fact we multiplied the
