@@ -17,8 +17,8 @@ function keyPress = OLFlicker(ol, starts, stops, frameDurationSecs, numIteration
 %     settings.  Passing Inf causes the function to loop forever.
 %
 % Output:
-% keyPress (char|empty) - If in continuous mode, the key the user pressed
-%     to end the script.  In regular mode, this will always be empty.
+% keyPress (char|empty) - If numIterations is Inf, the key the user pressed
+%     to end the script is returned.  Otherwise, this is returend as empty.
 
 try
 	% Suppress keypresses going to the Matlab window.
@@ -47,11 +47,6 @@ try
 	iterationCount = 0;
 	setCount = numSettings;
 	
- 
-	
-	t = zeros(1, 10000);
-	i = 1;
-	
 	% Loop and flicker
     %
     % Start by initializing when we change the spectrum and then drop into 
@@ -62,9 +57,6 @@ try
         % Is it time to update spectrum yet?  If so, do it.  If not, carry
         % on.
 		if mglGetSecs >= theTimeToUpdateSpectrum;
-			t(i) = mglGetSecs;
-			i = i + 1;
-
 			% Update our settings counter.
 			setCount = 1 + mod(setCount, numSettings);
                  			
@@ -95,10 +87,7 @@ try
 	end
 	
 	% Turn the mirrors off.
-	ol.setAll(false);
-	
-	%plot(diff(t(1:(i-1))));
-	
+	ol.setAll(false);	
 	ListenChar(0);
 catch e
 	ListenChar(0);
