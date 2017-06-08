@@ -202,7 +202,7 @@ if doCompute
 			scaleFactors = zeros(1, numSteps);
 			for i = 1:numSteps
 				fprintf('- Computing scale factors %d of %d...', i, numSteps);
-				[~, scaleFactors(i), ~] = OLFindMaxSpectrum(oneLightCal, targetSpds(:,i), lambda, false);
+				[~, scaleFactors(i), ~] = OLFindMaxSpectrum(oneLightCal, targetSpds(:,i), params.lambda, false);
 				fprintf('Done\n');
 			end
 			
