@@ -7,30 +7,20 @@ classdef OLCache
     % pre-computing and caching, because when you recalibrate the computed
     % quantities are stale.  So, this object stores the calibration data at
     % the time of precomputation and then checks to make sure the data
-    % aren't stale.  When the data are stale, it triggers a recomputation
-    % and stores updated quantities.
-    %
-    % The object is set up to be somewhat general and extensible in terms
-    % of what can be computed.  The compute function takes a computeMethod
-    % argument which then determines what it does and what is stored.  The
-    % computeMethods are set up to match things we commonly want to do.
+    % aren't stale
     %
     % Cache files also keep a history of all cached versions, allowing one
-    % to go back and look at older versions if desired.
+    % to go back and look at older versions if desired.  Finally, they can
+    % maintain separate precomputed quantities for different calibration
+    % types, so that you can have one cache file that will work generally
+    % across calibration types.
     %
-    % The available compute methods are enumerated in routine
-    % OLComptueMethods.  That simply lets us use symbolic names to refer to
-    % the available compute methods.  So, when you want to introduce a new
-    % computation to the cache system, you need to add a new compute method
-    % to OLComputeMethods.
-    %
-    % See also: OlComputeMethods.
+    % When you interact with a cache file, you basically either save or
+    % load a struct.  What's in the struct is up to the caller, but it is
+    % generally something that depends on a OneLight calibration file.
 	%
 	% OLCache methods:
 	%   OLCache - Constructor.
-	%   compute - Function that computes the cache data.  The cache data is
-	%             simply a structure with fields that depend on the compute
-	%             method.
     %   save - Save the cache data to the cache file.
     %   load - Load the cache data from the cache file. This includes a
     %          check for staleness.
@@ -83,21 +73,18 @@ classdef OLCache
 			
 			% Store the calibration data.
 			obj.CalibrationData = calibrationData;
-		end
+        end
 		
-		cacheList = list(obj)
+        % These methods are declared here but implemented in their own
+        % files.
 		[cacheData, wasRecomputed] = load(obj, cacheFileName, doRecompute)
 		save(obj, cacheFileName, cacheData, force)
+        cacheList = list(obj)
 		cacheFileExists = exist(obj, cacheFileName)
-	end
-	
-	properties (Constant = true)
-		ComputeMethods = struct('Standard', 'standard');
-	end
+    end
 	
 	% Static methods
 	methods (Static = true)
-		cacheData = compute(computeMethod, varargin)
 		[cacheData, validationData] = find(cacheFileName, calibrationType, cacheDate);
 	end
 end
