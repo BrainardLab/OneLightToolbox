@@ -86,7 +86,26 @@ if params.useCache
     % calibration data so it can validate the cache files we want to load.
     cache = OLCache(cacheDir, oneLightCal);
     
-    % Look to see if the cache file exists.
+    % For fun, let's list the potentially available cache files.  
+    % All this method really does is return a directory listing of the
+    % .mat files in the cache directory.  So it's a bit lame.
+    % 
+    % You could call exist on these to see if they were cache files for the
+    % current calibration.  You'd want to strip off the .mat from the
+    % filename first.
+    possibleCacheFiles = cache.list;
+    if (~isempty(possibleCacheFiles))
+        fprintf('Found possible cache files:\n');
+        for i = 1:length(possibleCacheFiles)
+            fprintf('\t%s\n',possibleCacheFiles(i).name);
+        end
+    else
+        fprintf('No cache files for OLFlickerDemo yet exist');
+    end
+         
+    % Look to see if the cache file exists we want exists for the current calibration.
+    % This method is bit more sophisticated, as it actually checks the
+    % contents of the file, if it exists.
     cacheFileExists = cache.exist(cacheFile);
     
     % Load the cache file if it exists and we're not forcing a recompute of
@@ -94,7 +113,16 @@ if params.useCache
     if cacheFileExists && ~params.recompute
         % Load the cache file.  This function will check to make sure the
         % cache file is in sync with the calibration data we loaded above.
-        cacheData = cache.load(cacheFile);
+        % If it returns isStale is true, then we need to recompute.
+        fprintf(' - Loading cache file %s\n',cacheFile);
+        [cacheData,isStale] = cache.load(cacheFile);
+        if (isStale)
+            fprintf(' - Cached data is stale, will recompute\n');
+            doCompute = true;
+        else
+            fprintf(' - Loaded valid cache data\n');
+        end
+        
     else
         if params.recompute
             fprintf('- Manual recompute toggled.\n');
@@ -115,6 +143,9 @@ end
 % We do this either because we need to recompute a stale cache file, or
 % because we decided not to use cache files.
 if doCompute
+    % Say what we're up to
+    fprintf('Computing data to cache\n');
+    
     % Specify the spectra depending on our stim type.
     switch lower(params.stimType)
         case {'binaryflicker', 'showspectrum'}
