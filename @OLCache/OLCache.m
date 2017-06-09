@@ -18,6 +18,19 @@ classdef OLCache
     % When you interact with a cache file, you basically either save or
     % load a struct.  What's in the struct is up to the caller, but it is
     % generally something that depends on a OneLight calibration file.
+    %
+    % The OLCache object knows about a directory and a calibration type.
+    % The same object may be used to load and save different cache files in
+    % that directory for that calibration type.  Thus if you have a series
+    % of computed data types, they may all be saved and loaded using the
+    % same object, since the save/load methods take an explicit filename.
+    % 
+    % The list method will give a list of cache files in the object's
+    % directory, although that method simply returns all of the .mat files
+    % and doesn't currently check to see whether they are actually
+    % well-structured cache files.  The list command method may be combined
+    % with the exist method, however, to check whether each file is a cache
+    % for the current calibration type.
 	%
 	% OLCache methods:
 	%   OLCache - Constructor.
@@ -27,7 +40,10 @@ classdef OLCache
     %   exist - Check of cache file exists.
     %   list - List cache files in a directory.
     %   find - Find what versions of things are in a cache file.
-	
+    	
+    % 06/09/17  dhb, mab  Commenting.  Recently we also blottoed the
+    %                     compute method
+    
 	properties (SetAccess = protected)
 		CacheDirectory;
 		CalibrationData;

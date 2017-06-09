@@ -11,6 +11,6 @@ function cacheList = list(obj)
 % Output:
 % cacheList (Mx1 struct) - Array of structs describing all cache files.
 %     The results look the same as the output of the Matlab command "dir".
-%     If not cache files exist, then the result is empty.
+%     If no cache files exist, then the result is empty.
 
 cacheList = dir(fullfile(obj.CacheDirectory, '*.mat'));
