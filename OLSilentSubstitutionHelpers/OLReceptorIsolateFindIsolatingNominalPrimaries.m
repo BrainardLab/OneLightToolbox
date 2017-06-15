@@ -1,5 +1,10 @@
-function [cacheData, olCache, params, contrastVector] = OLReceptorIsolateFindIsolatingPrimarySettings(params, forceRecompute)
-% OLReceptorIsolateFindIsolatingPrimaries - Computes primaries for receptor-isolating modulations.
+function [cacheData, olCache, params] = OLReceptorIsolateFindIsolatingNominalPrimaries(params, forceRecompute)
+% OLReceptorIsolateFindIsolatingNominalPrimaries - Computes primaries for receptor-isolating modulations.
+%
+% Description:
+%   Use the calibration file and observer age to find the nominal primaries
+%   that will produce various receptor isolating modulations.  The params
+%   structure contains all of the important information.
 %
 % Syntax:
 % OLReceptorIsolateFindIsolatingPrimaries(params, forceRecompute)
@@ -14,8 +19,6 @@ function [cacheData, olCache, params, contrastVector] = OLReceptorIsolateFindIso
 % cacheData (struct)
 % olCache (class)
 % params (struct)
-% contrastVector (vector) - contains the contrasts of the modulation for
-%       the reference observer specified in the params.
 %
 % See also:
 %   OLReceptorIsolateSaveCache, OLReceptorIsolatePrepareConfig
@@ -26,14 +29,10 @@ function [cacheData, olCache, params, contrastVector] = OLReceptorIsolateFindIso
 % Setup the directories we'll use.  We count on the
 % standard relative directory structure that we always
 % use in our (BrainardLab) experiments.
-baseDir = fileparts(fileparts(which('OLReceptorIsolateFindIsolatingPrimarySettings')));
-configDir = fullfile(baseDir, 'config', 'stimuli');
-cacheDir = fullfile(getpref('OneLight', 'cachePath'), 'stimuli');
-
+cacheDir = fullfile(getpref(params.experiment, 'ModulationNominalPrimaries'));
 if ~isdir(cacheDir)
     mkdir(cacheDir);
 end
-
 
 %% Parse some of the parameter fields
 photoreceptorClasses = allwords(params.photoreceptorClasses, ',');
@@ -65,17 +64,19 @@ if cacheExists && ~forceRecompute
     fprintf('- Loading cache file: %s.\n', cacheFileName);
     
     % Load the cache data.
-    [cacheData, wasRecomputed] = olCache.load(cacheFileName);
+    [cacheData, isStale] = olCache.load(cacheFileName);
     
     % If the data was recomputed, save it.  It would
     % have been recomputed if olCache detected that it was
     % stale.  The most likely cause for this is that the
     % current calibration is more recent than the one that
     % was stored when the cache was last computed.
-    if wasRecomputed
-        olCache.save(cacheFileName, cacheData);
-    else
+    if (~isStale)
         fprintf('- Cache file up to date.\n');
+        return;
+    else
+        fprintf('- Cache file was stale, setting forceRecompute flag\n');
+        forceRecompute = true;
     end
 else
     % Check if we want to recompute
@@ -551,9 +552,7 @@ else
         cacheData.computeMethod = char(OLComputeMethods.ReceptorIsolate);
         
     end
-    
-    contrastVector = cacheData.data(params.OBSERVER_AGE).describe.contrast;
-    
+        
     % Calculate the spaltter
     [calID calIDTitle] = OLGetCalID(cal);
     
