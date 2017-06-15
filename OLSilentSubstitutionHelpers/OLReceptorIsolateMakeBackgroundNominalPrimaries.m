@@ -26,10 +26,7 @@ function [cacheData, olCache, params] = OLReceptorIsolateMakeBackgroundNominalPr
 % Setup the directories we'll use.  We count on the
 % standard relative directory structure that we always
 % use in our (BrainardLab) experiments.
-baseDir = fileparts(fileparts(which('OLReceptorIsolateFindIsolatingPrimarySettings')));
-configDir = fullfile(baseDir, 'config', 'stimuli');
-cacheDir = fullfile(getpref('OneLight', 'cachePath'), 'stimuli');
-
+cacheDir = fullfile(getpref(params.experiment, 'ModulationNominalPrimariesDir'));
 if ~isdir(cacheDir)
     mkdir(cacheDir);
 end

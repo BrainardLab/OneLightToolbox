@@ -30,8 +30,8 @@ function OLMakeModulations(configFileName, observerAgeInYears, calType1, calType
 % standard relative directory structure that we always
 % use in our (BrainardLab) experiments.
 baseDir = getpref('OneLight', 'OLFlickerSensitivityBaseDir');
-configDir = fullfile(baseDir, 'config', 'modulations');
-cacheDir = fullfile(getpref('OneLight', 'cachePath'), 'stimuli');
+%cacheDir = fullfile(getpref('OneLight', 'cachePath'), 'stimuli');
+cacheDir = fullfile(getpref(params.experiment, 'ModulationNominalPrimariesDir'));
 modulationDir = fullfile(getpref('OneLight', 'modulationPath'));
 
 [~, fileNameSave] = fileparts(configFileName);
