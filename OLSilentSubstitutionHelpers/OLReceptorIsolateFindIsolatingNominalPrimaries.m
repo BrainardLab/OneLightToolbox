@@ -29,7 +29,7 @@ function [cacheData, olCache, params] = OLReceptorIsolateFindIsolatingNominalPri
 % Setup the directories we'll use.  We count on the
 % standard relative directory structure that we always
 % use in our (BrainardLab) experiments.
-cacheDir = fullfile(getpref(params.experiment, 'ModulationNominalPrimaries'));
+cacheDir = fullfile(getpref(params.experiment, 'ModulationNominalPrimariesDir'));
 if ~isdir(cacheDir)
     mkdir(cacheDir);
 end
@@ -546,10 +546,6 @@ else
         
         cacheData.data(observerAgeInYears).ambientSpd = ambientSpd;
         cacheData.data(observerAgeInYears).operatingPoint = operatingPoint;
-        
-        % Include the compute method
-        cacheData.data(observerAgeInYears).computeMethod = OLComputeMethods.ReceptorIsolate;
-        cacheData.computeMethod = char(OLComputeMethods.ReceptorIsolate);
         
     end
         
