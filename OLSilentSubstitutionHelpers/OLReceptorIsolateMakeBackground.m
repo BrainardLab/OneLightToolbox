@@ -2,7 +2,7 @@ function [cacheData, olCache, params] = OLReceptorIsolateMakeBackground(params, 
 % OLReceptorIsolateMakeBackground - Computes the receptor-isolating settings.
 %
 % Syntax:
-% OLReceptorIsolateFindIsolatingPrimarySettings(params, forceRecompute)
+% OLReceptorIsolateFindIsolatingPrimaries(params, forceRecompute)
 %
 % Input:
 % params (struct) - Parameters struct as returned by OLReceptorIsolatePrepareConfig.

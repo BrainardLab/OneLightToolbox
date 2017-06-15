@@ -1,8 +1,8 @@
 function [cacheData, olCache, params, contrastVector] = OLReceptorIsolateFindIsolatingPrimarySettings(params, forceRecompute)
-% OLReceptorIsolateFindIsolatingPrimarySettings - Computes the receptor-isolating settings.
+% OLReceptorIsolateFindIsolatingPrimaries - Computes primaries for receptor-isolating modulations.
 %
 % Syntax:
-% OLReceptorIsolateFindIsolatingPrimarySettings(params, forceRecompute)
+% OLReceptorIsolateFindIsolatingPrimaries(params, forceRecompute)
 %
 % Input:
 % params (struct) - Parameters struct as returned by OLReceptorIsolatePrepareConfig.
