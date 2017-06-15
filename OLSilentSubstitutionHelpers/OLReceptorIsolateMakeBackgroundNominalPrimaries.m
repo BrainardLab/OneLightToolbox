@@ -1,5 +1,5 @@
-function [cacheData, olCache, params] = OLReceptorIsolateMakeBackground(params, forceRecompute)
-% OLReceptorIsolateMakeBackground - Computes the receptor-isolating settings.
+function [cacheData, olCache, params] = OLReceptorIsolateMakeBackgroundNominalPrimaries(params, forceRecompute)
+% OLReceptorIsolateMakeBackgroundNominalPrimaries - Computes the receptor-isolating settings.
 %
 % Syntax:
 % OLReceptorIsolateFindIsolatingPrimaries(params, forceRecompute)
