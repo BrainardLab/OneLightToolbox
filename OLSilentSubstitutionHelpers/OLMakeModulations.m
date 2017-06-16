@@ -1,4 +1,4 @@
-function OLMakeModulations(configFileName, observerAgeInYears, calType1, calType0, fileSuffix)
+function OLMakeModulations(configFileName, observerAgeInYears, calType, fileSuffix, params)
 % OLMakeModulations - Creates the cache data for a given config file.
 %
 % Syntax:
@@ -29,10 +29,10 @@ function OLMakeModulations(configFileName, observerAgeInYears, calType1, calType
 % Setup the directories we'll use.  We count on the
 % standard relative directory structure that we always
 % use in our (BrainardLab) experiments.
-baseDir = getpref('OneLight', 'OLFlickerSensitivityBaseDir');
-%cacheDir = fullfile(getpref('OneLight', 'cachePath'), 'stimuli');
-cacheDir = fullfile(getpref(params.experiment, 'ModulationNominalPrimariesDir'));
-modulationDir = fullfile(getpref('OneLight', 'modulationPath'));
+
+cacheDir = fullfile(getpref(params.experiment, 'ModulationCorrectedPrimariesDir'));
+modulationDir = fullfile(getpref(params.experiment, 'ModulationStartsStopsDir'));
+configDir =  fullfile(getpref(params.experiment, 'ModulationConfigFilesDir'));
 
 [~, fileNameSave] = fileparts(configFileName);
 fileNameSave = [fileNameSave '.mat'];
@@ -54,15 +54,12 @@ params.cacheDir = cacheDir;
 params.modulationDir = modulationDir;
 
 % Load the calibration file.
-    params.calibrationType0 = calType0;
-     params.calibrationType1 = calType1;
-cType0 = OLCalibrationTypes.(params.calibrationType0);
-cType1 = OLCalibrationTypes.(params.calibrationType1);
-params.oneLightCal = LoadCalFile(cType0.CalFileName, [], getpref('OneLight', 'OneLightCalData'));
-params.oneLightCal1 = LoadCalFile(cType1.CalFileName, [], getpref('OneLight', 'OneLightCalData'));
+params.calibrationType = calType;
+cType = OLCalibrationTypes.(params.calibrationType);
+params.oneLightCal = LoadCalFile(cType.CalFileName, [], getpref('OneLight', 'OneLightCalData'));
 
 % Setup the cache.
-params.olCache = OLCache(params.cacheDir, params.oneLightCal1);
+params.olCache = OLCache(params.cacheDir, params.oneLightCal);
 
 file_names = allwords(params.directionCacheFile,',');
 for i = 1:length(file_names)
