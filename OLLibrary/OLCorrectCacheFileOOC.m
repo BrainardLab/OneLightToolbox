@@ -84,6 +84,7 @@ p.addParameter('takeTemperatureMeasurements', false, @islogical);
 p.addParameter('powerLevels', [0 1.0000], @isnumeric);
 p.addParameter('useAverageGamma', false, @islogical);
 p.addParameter('zeroPrimariesAwayFromPeak', false, @islogical);
+p.addParameter('simulate', false, @islogical);
 
 p.parse(varargin{:});
 correctDescribe = p.Results;
@@ -158,7 +159,7 @@ end
 %% Open up the OneLight
 %
 % And let user get the radiometer set up if desired.
-ol = OneLight;
+ol = OneLight(params.simulate);
 if ~correctDescribe.NoAdjustment
     ol.setAll(true);
     pauseDuration = 0;
