@@ -1,5 +1,5 @@
 function OLReceptorIsolateSaveCache(cacheData, olCache, params)
-% OLReceptorIsolateSaveCache - Saves cache as produced by OLReceptorIsolateMakeModulationNominalPrimaries
+% OLReceptorIsolateSaveCache - Saves cache as produced by OLReceptorIsolate routines
 %
 % Syntax:
 % OLReceptorIsolateSaveCache(cacheData, olCache, params)
