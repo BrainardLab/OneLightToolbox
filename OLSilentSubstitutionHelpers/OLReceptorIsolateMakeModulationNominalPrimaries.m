@@ -1,5 +1,5 @@
-function [cacheData, olCache, params] = OLReceptorIsolateFindIsolatingNominalPrimaries(params, forceRecompute)
-% OLReceptorIsolateFindIsolatingNominalPrimaries - Computes primaries for receptor-isolating modulations.
+function [cacheData, olCache, params] = OLReceptorIsolateMakeModulationNominalPrimaries(params, forceRecompute)
+% OLReceptorIsolateMakeModulationNominalPrimaries - Computes primaries for receptor-isolating modulations.
 %
 % Description:
 %   Use the calibration file and observer age to find the nominal primaries
@@ -22,9 +22,10 @@ function [cacheData, olCache, params] = OLReceptorIsolateFindIsolatingNominalPri
 %
 % See also:
 %   OLReceptorIsolateSaveCache, OLReceptorIsolatePrepareConfig
-%
+
 % 4/19/13   dhb, ms     Update for new convention for desired contrasts in routine ReceptorIsolate.
 % 2/25/14   ms          Modularized.
+% 6/15/17   dhb et al.  Handle isStale return from updated cache code.
 
 % Setup the directories we'll use.  We count on the
 % standard relative directory structure that we always

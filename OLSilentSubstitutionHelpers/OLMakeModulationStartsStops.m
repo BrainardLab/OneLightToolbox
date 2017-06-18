@@ -1,30 +1,27 @@
-function OLMakeModulations(configFileName, observerAgeInYears, calType1, calType0, fileSuffix)
-% OLMakeModulations - Creates the cache data for a given config file.
+function OLMakeModulationStartsStops(configFileName, observerAgeInYears, calType1, calType0, fileSuffix)
+% OLMakeModulationStartsStops - Creates the starts/stops cache data for a given config file.
 %
 % Syntax:
-% OLMakeModulations(configFileName)
-% OLMakeModulations(configFileName, forceRecompute)
+%   OLMakeModulationStartsStops(configFileName, observerAgeInYears, calType1, calType0, fileSuffix)
 %
 % Description:
+%   Converts primary settings for modulations into starts/stops arrays and
+%   stores them in a cache file.  Included in this is filling in the
+%   intermediate contrasts, as the input primaries are generally for the
+%   maximum modulation.
 %
+%   NEED BETTER DESCRIPTION.  WHY ARE THERE TWO CAL TYPES, FOR EXAMPLE?
 %
 % Input:
 % configFileName (string) - The name of the config file, e.g.
 %     flickerconfig.cfg.  Only the simple name of the config file needs to
 %     be specified.  The path to the config directory will be inferred.
-% forceRecompute (logical) - If true, forces a recompute of the data found
-%     in the config file.  Only do this if the target spectra were changed.
-%     Default: false
-%
-% Use:
-%
-% OLMakeModulations('OLFlickerSensitivity-Background-OLEyeTrackerLongCableEyePiece1.cfg')
-%
+
 % 4/19/13   dhb, ms     Update for new convention for desired contrasts in routine ReceptorIsolate.
+% 06/17/18  dhb         Change name, update header comment some but not completely.
 
 %% Housekeeping
-% Validate the number of inputs.
-%narginchk(1, 3);
+% Might want to validate the number of inputs.
 
 % Setup the directories we'll use.  We count on the
 % standard relative directory structure that we always
@@ -42,7 +39,7 @@ fileNameSave = [fileNameSave '.mat'];
 configFileName = fullfile(configDir, configFileName);
 
 % Make sure the config file exists.
-assert(logical(exist(configFileName, 'file')), 'OLMakeModulations:InvalidCacheFile', ...
+assert(logical(exist(configFileName, 'file')), 'OLMakeModulationStartsStops:InvalidCacheFile', ...
     'Could not find config file: %s', configFileName);
 
 % Read the config file and convert it to a struct.
