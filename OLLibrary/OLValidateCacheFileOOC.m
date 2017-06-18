@@ -269,14 +269,8 @@ olCache = OLCache(cacheDir, cal);
 % Load the calibration data.  We do it through the cache object so that we
 % make sure that the cache is current against the latest calibration data.
 [~, simpleCacheFileName] = fileparts(cacheFileName);
-[cacheData, wasRecomputed] = olCache.load(simpleCacheFileName);
-
-% If we recomputed the cache data, save it.  We'll load the cache data
-% after we save it because cache data is uniquely time stamped upon save.
-if wasRecomputed
-    olCache.save(simpleCacheFileName, cacheData);
-    cacheData = olCache.load(simpleCacheFileName);
-end
+[cacheData, isStale] = olCache.load(simpleCacheFileName);
+assert(~isStale,'Cache file is stale, aborting.');
 
 % Connect to the OceanOptics spectrometer.
 if (cal.describe.useOmni)

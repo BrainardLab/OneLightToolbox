@@ -172,39 +172,40 @@ else
         
         switch params.backgroundType
             case 'BackgroundHalfOn'
-                bgCacheData = olCache.load(['Cache-BackgroundHalfOn.mat']);
+                [bgCacheData,isStale] = olCache.load(['Cache-BackgroundHalfOn.mat']);
                 backgroundPrimary = bgCacheData.data(observerAgeInYears).backgroundPrimary;
             case 'BackgroundEES'
-                bgCacheData = olCache.load(['Cache-BackgroundEES.mat']);
+                [bgCacheData,isStale] = olCache.load(['Cache-BackgroundEES.mat']);
                 backgroundPrimary = bgCacheData.data(observerAgeInYears).backgroundPrimary;
             case 'BackgroundOptim'
-                bgCacheData = olCache.load(['Cache-BackgroundOptim.mat']);
+                [bgCacheData,isStale] = olCache.load(['Cache-BackgroundOptim.mat']);
                 backgroundPrimary = bgCacheData.data(observerAgeInYears).backgroundPrimary;
             case 'BackgroundMaxLMS'
-                bgCacheData = olCache.load(['Cache-BackgroundMaxLMS.mat']);
+                [bgCacheData,isStale] = olCache.load(['Cache-BackgroundMaxLMS.mat']);
                 backgroundPrimary = bgCacheData.data(observerAgeInYears).backgroundPrimary;
             case 'BackgroundOptimMel'
-                bgCacheData = olCache.load(['Cache-BackgroundOptimMel.mat']);
+                [bgCacheData,isStale] = olCache.load(['Cache-BackgroundOptimMel.mat']);
                 backgroundPrimary = bgCacheData.data(observerAgeInYears).backgroundPrimary;
             case 'BackgroundMaxMel'
-                bgCacheData = olCache.load(['Cache-BackgroundMaxMel.mat']);
+                [bgCacheData,isStale] = olCache.load(['Cache-BackgroundMaxMel.mat']);
                 backgroundPrimary = bgCacheData.data(observerAgeInYears).backgroundPrimary;
             case 'BackgroundMaxMelRodControl'
-                bgCacheData = olCache.load(['Cache-BackgroundMaxMelRodControl.mat']);
+                [bgCacheData,isStale] = olCache.load(['Cache-BackgroundMaxMelRodControl.mat']);
                 backgroundPrimary = bgCacheData.data(observerAgeInYears).backgroundPrimary;
             case 'BackgroundMaxRod'
-                bgCacheData = olCache.load(['Cache-BackgroundMaxRod.mat']);
+                [bgCacheData,isStale] = olCache.load(['Cache-BackgroundMaxRod.mat']);
                 backgroundPrimary = bgCacheData.data(observerAgeInYears).backgroundPrimary;
             case 'BackgroundMaxMelRodSilent'
-                bgCacheData = olCache.load(['Cache-BackgroundMaxMelRodSilent.mat']);
+                [bgCacheData,isStale] = olCache.load(['Cache-BackgroundMaxMelRodSilent.mat']);
                 backgroundPrimary = bgCacheData.data(observerAgeInYears).backgroundPrimary;
             case 'MaxMelHigh'
-                bgCacheData = olCache.load(['Cache-MelanopsinDirectedMaxMel.mat']);
+                [bgCacheData,isStale] = olCache.load(['Cache-MelanopsinDirectedMaxMel.mat']);
                 backgroundPrimary = bgCacheData.data(32).backgroundPrimary+bgCacheData.data(32).differencePrimary;
             case 'MaxMelLow'
-                bgCacheData = olCache.load(['Cache-MelanopsinDirectedMaxMel.mat']);
+                [bgCacheData,isStale] = olCache.load(['Cache-MelanopsinDirectedMaxMel.mat']);
                 backgroundPrimary = bgCacheData.data(32).backgroundPrimary-bgCacheData.data(32).differencePrimary;
         end
+        assert(~isStale,'Cache file is stale, aborting.');
         
         % If no initial primary guess exists, we use the background for it.
         % This accounts for the possibility of matching the primaries between

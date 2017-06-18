@@ -68,10 +68,12 @@ end
 for i = 1:length(params.cacheFileName)
     % Load the cache data.
     if ~exist('fileSuffix', 'var') || isempty(fileSuffix)
-        cacheData{i} = params.olCache.load(params.cacheFileName{i});
+        [cacheData{i},isStale] = params.olCache.load(params.cacheFileName{i});
     else
-        cacheData{i} = params.olCache.load([params.cacheFileName{i} fileSuffix]);
+        [cacheData{i},isStale] = params.olCache.load([params.cacheFileName{i} fileSuffix]);
     end
+    assert(~isStale,'Cache file is stale, aborting.');
+    
     % Store the internal date of the cache data we're using.  The cache
     % data date is a unique timestamp identifying a specific set of cache
     % data. We want to save that to associate data sets to specific

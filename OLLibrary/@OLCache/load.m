@@ -2,7 +2,7 @@ function [cacheData, isStale] = load(obj, cacheFileName)
 % load - Loads cacheData structure from a cache file.
 %
 % Syntax:
-% [cacheData, wasRecomputed] = obj.load(cacheFileName)
+% [cacheData, isStale] = obj.load(cacheFileName)
 %
 % Description:
 % Loads a cache file from the cache folder stored in the OLCache object.

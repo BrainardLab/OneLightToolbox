@@ -85,13 +85,7 @@ olCache = OLCache(cacheDir,cal);
 %
 % We do it through the cache object so that we make sure that the cache is
 % current against the latest calibration data.
-[cacheData, wasRecomputed] = olCache.load(cacheFileName);
-
-% If we recomputed the cache data, save it.  We'll load the cache data
-% after we save it because cache data is uniquely time stamped upon save.
-if wasRecomputed
-    olCache.save(simpleCacheFileName, cacheData);
-    cacheData = olCache.load(simpleCacheFileName);
-end
+[cacheData, isStale] = olCache.load(cacheFileName);
+assert(~isStale,'Cache file is stale, aborting.');
 
 end
