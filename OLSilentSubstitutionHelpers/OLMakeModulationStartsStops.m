@@ -54,8 +54,8 @@ params.cacheDir = cacheDir;
 params.modulationDir = modulationDir;
 
 % Load the calibration file.
-    params.calibrationType0 = calType0;
-     params.calibrationType1 = calType1;
+params.calibrationType0 = calType0;
+params.calibrationType1 = calType1;
 cType0 = OLCalibrationTypes.(params.calibrationType0);
 cType1 = OLCalibrationTypes.(params.calibrationType1);
 params.oneLightCal = LoadCalFile(cType0.CalFileName, [], getpref('OneLight', 'OneLightCalData'));
