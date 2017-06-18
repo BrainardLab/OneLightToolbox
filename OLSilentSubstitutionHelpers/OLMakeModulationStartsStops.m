@@ -1,8 +1,8 @@
-function OLMakeModulationStartsStops(configFileName, observerAgeInYears, calType1, calType0, fileSuffix)
+function OLMakeModulationStartsStops(configFileName, observerAgeInYears, calType, fileSuffix, params)
 % OLMakeModulationStartsStops - Creates the starts/stops cache data for a given config file.
 %
 % Syntax:
-%   OLMakeModulationStartsStops(configFileName, observerAgeInYears, calType1, calType0, fileSuffix)
+% OLMakeModulationStartsStops(configFileName, observerAgeInYears, calType, fileSuffix, params)
 %
 % Description:
 %   Converts primary settings for modulations into starts/stops arrays and
@@ -10,7 +10,7 @@ function OLMakeModulationStartsStops(configFileName, observerAgeInYears, calType
 %   intermediate contrasts, as the input primaries are generally for the
 %   maximum modulation.
 %
-%   NEED BETTER DESCRIPTION.  WHY ARE THERE TWO CAL TYPES, FOR EXAMPLE?
+%   NEED BETTER DESCRIPTION, WITH ALL INPUTS DESCRIBED.
 %
 % Input:
 % configFileName (string) - The name of the config file, e.g.
@@ -18,18 +18,18 @@ function OLMakeModulationStartsStops(configFileName, observerAgeInYears, calType
 %     be specified.  The path to the config directory will be inferred.
 
 % 4/19/13   dhb, ms     Update for new convention for desired contrasts in routine ReceptorIsolate.
-% 06/17/18  dhb         Change name, update header comment some but not completely.
+% 6/17/18   dhb         Merge with mab version and expand comments.
 
-%% Housekeeping
-% Might want to validate the number of inputs.
+% Should figure out and validate args here.
+%narginchk(1, 3);
 
 % Setup the directories we'll use.  We count on the
 % standard relative directory structure that we always
 % use in our (BrainardLab) experiments.
-baseDir = getpref('OneLight', 'OLFlickerSensitivityBaseDir');
-%cacheDir = fullfile(getpref('OneLight', 'cachePath'), 'stimuli');
-cacheDir = fullfile(getpref(params.experiment, 'ModulationNominalPrimariesDir'));
-modulationDir = fullfile(getpref('OneLight', 'modulationPath'));
+
+cacheDir = fullfile(getpref(params.experiment, 'ModulationCorrectedPrimariesDir'));
+modulationDir = fullfile(getpref(params.experiment, 'ModulationStartsStopsDir'));
+configDir =  fullfile(getpref(params.experiment, 'ModulationConfigFilesDir'));
 
 [~, fileNameSave] = fileparts(configFileName);
 fileNameSave = [fileNameSave '.mat'];
@@ -39,7 +39,7 @@ fileNameSave = [fileNameSave '.mat'];
 configFileName = fullfile(configDir, configFileName);
 
 % Make sure the config file exists.
-assert(logical(exist(configFileName, 'file')), 'OLMakeModulationStartsStops:InvalidCacheFile', ...
+assert(logical(exist(configFileName, 'file')), 'OLMakeModulations:InvalidCacheFile', ...
     'Could not find config file: %s', configFileName);
 
 % Read the config file and convert it to a struct.
@@ -51,15 +51,12 @@ params.cacheDir = cacheDir;
 params.modulationDir = modulationDir;
 
 % Load the calibration file.
-params.calibrationType0 = calType0;
-params.calibrationType1 = calType1;
-cType0 = OLCalibrationTypes.(params.calibrationType0);
-cType1 = OLCalibrationTypes.(params.calibrationType1);
-params.oneLightCal = LoadCalFile(cType0.CalFileName, [], getpref('OneLight', 'OneLightCalData'));
-params.oneLightCal1 = LoadCalFile(cType1.CalFileName, [], getpref('OneLight', 'OneLightCalData'));
+params.calibrationType = calType;
+cType = OLCalibrationTypes.(params.calibrationType);
+params.oneLightCal = LoadCalFile(cType.CalFileName, [], getpref('OneLight', 'OneLightCalData'));
 
 % Setup the cache.
-params.olCache = OLCache(params.cacheDir, params.oneLightCal1);
+params.olCache = OLCache(params.cacheDir, params.oneLightCal);
 
 file_names = allwords(params.directionCacheFile,',');
 for i = 1:length(file_names)
