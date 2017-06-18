@@ -1,4 +1,10 @@
 function [x contrast] = OLFindSilencingPhotoreceptors(backgroundSpd, modulationSpd, observerAgeInYears, fractionBleachedLMS, fieldSizeDegrees, pupilDiameterMm)
+% OLFindSilencingPhotoreceptors - WHAT DO I DO?
+%
+% Description:
+%   THIS ROUTINE NEEDS HEADER COMMENTS SO BAD IT HURTS
+
+% 6/17/18  dhb  Added plea for header comments.
 
 S = [380 2 201];
 options = optimoptions('fmincon', 'Display', 'off', 'Algorithm','sqp', 'MaxFunEvals', 100000, 'TolFun', 1e-10, 'TolCon', 1e-10, 'TolX', 1e-10);

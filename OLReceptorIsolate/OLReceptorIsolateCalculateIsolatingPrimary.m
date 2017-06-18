@@ -1,4 +1,13 @@
-function [modulationPrimary, modulationSpd, backgroundReceptors, fractionBleached] = OLReceptorIsolateCalculateIsolatingPrimary(S, T_receptors, cal, cacheFileName, B_primary, backgroundPrimary, ambientSpd, photoreceptorClasses, params, observerAgeInYears, pupilDiameterMm, initialPrimary,whichPrimariesToPin,whichReceptorsToIsolate, whichReceptorsToIgnore,whichReceptorsToMinimize, desiredContrasts)
+function [modulationPrimary, modulationSpd, backgroundReceptors, fractionBleached] = ...
+    OLReceptorIsolateCalculateIsolatingPrimary(S, T_receptors, cal, cacheFileName, B_primary, backgroundPrimary, ambientSpd, photoreceptorClasses, params, ...
+    observerAgeInYears, pupilDiameterMm, initialPrimary,whichPrimariesToPin,whichReceptorsToIsolate, whichReceptorsToIgnore,whichReceptorsToMinimize, desiredContrasts)
+% OLReceptorIsolateCalculateIsolatingPrimary - Calulate primary to have desired contrasts
+%
+% Description:
+%    THIS ROUTINE NEEDS CAREFUL COMMENTING.  WHAT ARE ITS INPUTS?  WHAT ARE
+%    ITS OUTPUTS?  WHAT, EXACTLY, DOES IT DO?
+
+% 6/17/18  dhb  Added plea for header comments.
 
 % Calculate the receptor activations to the background
 backgroundReceptors = T_receptors*(B_primary*backgroundPrimary + ambientSpd);

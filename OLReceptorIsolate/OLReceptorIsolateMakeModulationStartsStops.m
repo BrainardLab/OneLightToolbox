@@ -1,8 +1,8 @@
-function OLMakeModulationStartsStops(configFileName, observerAgeInYears, calType, fileSuffix, params)
-% OLMakeModulationStartsStops - Creates the starts/stops cache data for a given config file.
+function OLReceptorIsolateMakeModulationStartsStops(configFileName, observerAgeInYears, calType, fileSuffix, params)
+% OLReceptorIsolateMakeModulationStartsStops - Creates the starts/stops cache data for a given config file.
 %
 % Syntax:
-% OLMakeModulationStartsStops(configFileName, observerAgeInYears, calType, fileSuffix, params)
+% OLReceptorIsolateMakeModulationStartsStops(configFileName, observerAgeInYears, calType, fileSuffix, params)
 %
 % Description:
 %   Converts primary settings for modulations into starts/stops arrays and
