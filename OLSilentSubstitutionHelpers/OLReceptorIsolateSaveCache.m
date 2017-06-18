@@ -1,16 +1,16 @@
 function OLReceptorIsolateSaveCache(cacheData, olCache, params)
-% OLReceptorIsolateSaveCache - Saves cache as produced by OLReceptorIsolateFindIsolatingPrimarySettings
+% OLReceptorIsolateSaveCache - Saves cache as produced by OLReceptorIsolateMakeModulationNominalPrimaries
 %
 % Syntax:
 % OLReceptorIsolateSaveCache(cacheData, olCache, params)
 %
 % Input:
-% cacheData (struct) - Cache struct as produced by OLReceptorIsolateFindIsolatingPrimarySettings
+% cacheData (struct) - Cache struct as produced by OLReceptorIsolateMakeModulationNominalPrimaries
 % olCache (class) - Cache class
 % params (struct) - Params struct as produced by OLReceptorIsolatePrepareConfig
 %
 % See also:
-%   OLReceptorIsolateFindIsolatingPrimarySettings, OLReceptorIsolatePrepareConfig
+%   OLReceptorIsolateMakeModulationNominalPrimaries, OLReceptorIsolatePrepareConfig
 %
 % 4/19/13   dhb, ms     Update for new convention for desired contrasts in routine ReceptorIsolate.
 % 2/25/14   ms          Modularized.
