@@ -251,7 +251,7 @@ if ~exist(validationDir)
 end
 
 % Copy the cache file
-copyfile(cacheFileNameFull, fullfile(describe.outDir, [cacheFileName '.mat']));
+%copyfile(cacheFileNameFull, fullfile(describe.outDir, [cacheFileName '.mat']));
 
 %% Determine which meters to measure with
 % It is probably a safe assumption that we will not validate a cache file
@@ -361,8 +361,8 @@ try
     
     % Loop over the stimuli in the cache file and take a measurement with
     % both the PR-650 and the OmniDriver.
-    switch cacheData.computeMethod
-        case 'ReceptorIsolate'
+%     switch cacheData.computeMethod
+%         case 'ReceptorIsolate'
             % Set up the power levels to use.
             if describe.ReducedPowerLevels
                 % Only take three measurements
@@ -432,40 +432,40 @@ try
                 results.modulationBGMeas = results.modulationAllMeas(theBGIndex);
             end
             
-        case 'Standard'
-            % For each spectrum we'll measure a range of fractional power levels
-            % defined by the vector below.
-            results.powerLevels = [0.5 1];
-            numPowerLevels = length(results.powerLevels);
-            
-            % If the cacheData has a field called 'whichSettingIndexToValidate',
-            % iterate only over these
-            if isfield(cacheData, 'whichSettingIndexToValidate');
-                iter = cacheData.whichSettingIndexToValidate;
-            else
-                iter = 1:size(cacheData.targetSpds, 2);
-            end
-            for i = iter
-                for j = 1:numPowerLevels
-                    fprintf('- Measuring spectrum %d, Power level %g...', i, results.powerLevels(j));
-                    
-                    % Refactor the cache data spectrum primaries to the power level.
-                    primaries = cacheData.primaries(:,i) * results.powerLevels(j);
-                    
-                    % Convert the primaries to mirror settings.
-                    settings = OLPrimaryToSettings(cal, primaries);
-                    
-                    % Compute the start/stop mirrors.
-                    [starts,stops] = OLSettingsToStartsStops(cal,settings);
-                    results.meas(j, i) = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
-                    
-                    if (takeTemperatureMeasurements)
-                        [status, results.temperature.meas(j, i, :)] = theLJdev.measure();
-                    end 
-                    fprintf('Done\n');
-                end
-            end
-    end
+%         case 'Standard'
+%             % For each spectrum we'll measure a range of fractional power levels
+%             % defined by the vector below.
+%             results.powerLevels = [0.5 1];
+%             numPowerLevels = length(results.powerLevels);
+%             
+%             % If the cacheData has a field called 'whichSettingIndexToValidate',
+%             % iterate only over these
+%             if isfield(cacheData, 'whichSettingIndexToValidate');
+%                 iter = cacheData.whichSettingIndexToValidate;
+%             else
+%                 iter = 1:size(cacheData.targetSpds, 2);
+%             end
+%             for i = iter
+%                 for j = 1:numPowerLevels
+%                     fprintf('- Measuring spectrum %d, Power level %g...', i, results.powerLevels(j));
+%                     
+%                     % Refactor the cache data spectrum primaries to the power level.
+%                     primaries = cacheData.primaries(:,i) * results.powerLevels(j);
+%                     
+%                     % Convert the primaries to mirror settings.
+%                     settings = OLPrimaryToSettings(cal, primaries);
+%                     
+%                     % Compute the start/stop mirrors.
+%                     [starts,stops] = OLSettingsToStartsStops(cal,settings);
+%                     results.meas(j, i) = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
+%                     
+%                     if (takeTemperatureMeasurements)
+%                         [status, results.temperature.meas(j, i, :)] = theLJdev.measure();
+%                     end 
+%                     fprintf('Done\n');
+%                 end
+%             end
+%     end
     stopMeas = GetSecs;
     
     % Turn the OneLight mirrors off.
