@@ -27,9 +27,12 @@ function OLReceptorIsolateMakeModulationStartsStops(configFileName, observerAgeI
 % standard relative directory structure that we always
 % use in our (BrainardLab) experiments.
 
-cacheDir = fullfile(getpref(params.experiment, 'ModulationCorrectedPrimariesDir'));
-modulationDir = fullfile(getpref(params.experiment, 'ModulationStartsStopsDir'));
-configDir =  fullfile(getpref(params.experiment, 'ModulationConfigFilesDir'));
+%Corrected Primaries
+cacheDir = fullfile(getpref(params.theApproach, 'DataPath'), 'Experiments', params.theApproach, params.experiment, 'DirectionCorrectedPrimaries');
+%Output for starts/stops
+modulationDir = fullfile(getpref(params.theApproach, 'DataPath'), 'Experiments', params.theApproach, params.experiment, 'ModulationsStartsStops');
+%Modulation configuration files
+configDir =  fullfile(getpref(params.theApproach, 'ModulationConfigPath'));
 
 [~, fileNameSave] = fileparts(configFileName);
 fileNameSave = [fileNameSave '.mat'];
