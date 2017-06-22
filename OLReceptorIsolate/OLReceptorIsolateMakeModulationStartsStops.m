@@ -1,4 +1,4 @@
-function OLReceptorIsolateMakeModulationStartsStops(configFileName, observerAgeInYears, calType, fileSuffix, params)
+function OLReceptorIsolateMakeModulationStartsStops(configFileName, observerAgeInYears, calType, fileSuffix, params, observerID)
 % OLReceptorIsolateMakeModulationStartsStops - Creates the starts/stops cache data for a given config file.
 %
 % Syntax:
@@ -28,9 +28,12 @@ function OLReceptorIsolateMakeModulationStartsStops(configFileName, observerAgeI
 % use in our (BrainardLab) experiments.
 
 %Corrected Primaries
-cacheDir = fullfile(getpref(params.theApproach, 'DataPath'), 'Experiments', params.theApproach, params.experiment, 'DirectionCorrectedPrimaries');
+cacheDir = fullfile(getpref(params.theApproach, 'DataPath'),'Experiments',params.theApproach, params.experiment, 'DirectionCorrectedPrimaries', observerID);
 %Output for starts/stops
-modulationDir = fullfile(getpref(params.theApproach, 'DataPath'), 'Experiments', params.theApproach, params.experiment, 'ModulationsStartsStops');
+modulationDir = fullfile(getpref(params.theApproach, 'DataPath'), 'Experiments', params.theApproach, params.experiment, 'ModulationsStartsStops', observerID);
+if(~exist(modulationDir))
+    mkdir(modulationDir)
+end
 %Modulation configuration files
 configDir =  fullfile(getpref(params.theApproach, 'ModulationConfigPath'));
 

@@ -30,7 +30,7 @@ function [cacheData, olCache, params] = OLReceptorIsolateMakeDirectionNominalPri
 % Setup the directories we'll use.  We count on the
 % standard relative directory structure that we always
 % use in our (BrainardLab) experiments.
-cacheDir = fullfile(getpref(params.theApproach, 'MaterialsPath'),'Experiments',params.theApproach,'DirectionNominalPrimaries');
+cacheDir = fullfile(getpref(params.theApproach, 'MaterialsPath'), params.theApproach,'Experiments',params.experiment,'DirectionNominalPrimaries');
 if ~isdir(cacheDir)
     mkdir(cacheDir);
 end
