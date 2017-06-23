@@ -1,8 +1,8 @@
-function OLReceptorIsolateMakeModulationStartsStops(configFileName, fileSuffix, TopLevelParams)
+function OLReceptorIsolateMakeModulationStartsStops(configName, fileSuffix, TopLevelParams)
 % OLReceptorIsolateMakeModulationStartsStops - Creates the starts/stops cache data for a given config file.
 %
 % Syntax:
-% OLReceptorIsolateMakeModulationStartsStops(configFileName, observerAgeInYears, calType, fileSuffix, params)
+% OLReceptorIsolateMakeModulationStartsStops(configName, observerAgeInYears, calType, fileSuffix, params)
 %
 % Description:
 %   Converts primary settings for modulations into starts/stops arrays and
@@ -13,12 +13,12 @@ function OLReceptorIsolateMakeModulationStartsStops(configFileName, fileSuffix, 
 %   NEED BETTER DESCRIPTION, WITH ALL INPUTS DESCRIBED.
 %
 % Input:
-% configFileName (string) - The name of the config file, e.g.
-%     flickerconfig.cfg.  Only the simple name of the config file needs to
-%     be specified.  The path to the config directory will be inferred.
+% configName (string) - The name of config for retrieving the appropriate modulation params
+
 
 % 4/19/13   dhb, ms     Update for new convention for desired contrasts in routine ReceptorIsolate.
 % 6/17/18   dhb         Merge with mab version and expand comments.
+% 6/23/17   npc         No more config files, get modulation properties from @ModulatioParams class
 
 % Should figure out and validate args here.
 %narginchk(1, 3);
@@ -28,37 +28,34 @@ function OLReceptorIsolateMakeModulationStartsStops(configFileName, fileSuffix, 
 % use in our (BrainardLab) experiments.
 
 %Corrected Primaries
-cacheDir = fullfile(getpref(TopLevelParams.theApproach, 'DataPath'),'Experiments',TopLevelParams.theApproach, TopLevelParams.experiment, 'DirectionCorrectedPrimaries', TopLevelParams.observerID);
+cacheDir = fullfile(getpref(TopLevelParams.approach, 'DataPath'),'Experiments',TopLevelParams.approach, TopLevelParams.experiment, 'DirectionCorrectedPrimaries', TopLevelParams.observerID);
 %Output for starts/stops
-modulationDir = fullfile(getpref(TopLevelParams.theApproach, 'DataPath'), 'Experiments', TopLevelParams.theApproach, TopLevelParams.experiment, 'ModulationsStartsStops', TopLevelParams.observerID);
+modulationDir = fullfile(getpref(TopLevelParams.approach, 'DataPath'), 'Experiments', TopLevelParams.approach, TopLevelParams.experiment, 'ModulationsStartsStops', TopLevelParams.observerID);
 if(~exist(modulationDir))
     mkdir(modulationDir)
 end
-%Modulation configuration files
-configDir =  fullfile(getpref(TopLevelParams.theApproach, 'ModulationConfigPath'));
+%Modulation params
+p = ModulationParams(...
+    'modulationName', configName ...
+    );
+params = structFromClass(p)
 
-[~, fileNameSave] = fileparts(configFileName);
-fileNameSave = [fileNameSave '.mat'];
+% Altenate usage. Define a new modulation with customized params
+% p = ModulationParams(...
+%     'modulationName', 'something new', ...
+%     'direction', 'sdfsd', ...
+%     'directionCacheFile', 'sdfs.mat', ...
+%     'coneNoiseFrequency', 10 ...
+%     );
+% params = structFromClass(p)
 
-% Make sure the config file is a fully qualified name including the parent
-% path.
-configFileName = fullfile(configDir, configFileName);
 
-% Make sure the config file exists.
-assert(logical(exist(configFileName, 'file')), 'OLMakeModulations:InvalidCacheFile', ...
-    'Could not find config file: %s', configFileName);
-
-% Read the config file and convert it to a struct.
-cfgFile = ConfigFile(configFileName);
-
-% Convert all the ConfigFile parameters into simple struct values.
-params = convertToStruct(cfgFile);
 params.cacheDir = cacheDir;
 params.modulationDir = modulationDir;
 
 % Load the calibration file.
 cType = OLCalibrationTypes.(TopLevelParams.calibrationType);
-params.oneLightCal = LoadCalFile(cType.CalFileName, [], fullfile(getpref(TopLevelParams.theApproach, 'MaterialsPath'), 'Experiments',TopLevelParams.theApproach,'OneLightCalData'));
+params.oneLightCal = LoadCalFile(cType.CalFileName, [], fullfile(getpref(TopLevelParams.approach, 'MaterialsPath'), 'Experiments',TopLevelParams.approach,'OneLightCalData'));
 
 % Setup the cache.
 params.olCache = OLCache(params.cacheDir, params.oneLightCal);
@@ -92,6 +89,9 @@ params.cacheData = cacheData;
 %% Store out the primaries from the cacheData into a cell.  The length of
 % cacheData corresponds to the number of different stimuli that are being
 % shown
+
+[~, fileNameSave] = fileparts(configName);
+fileNameSave = [fileNameSave '.mat'];
 fprintf(['\n* Running precalculations for ' fileNameSave '\n']);
 
 % Get the background
