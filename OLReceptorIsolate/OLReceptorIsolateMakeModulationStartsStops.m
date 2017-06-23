@@ -18,40 +18,27 @@ function OLReceptorIsolateMakeModulationStartsStops(configName, fileSuffix, TopL
 
 % 4/19/13   dhb, ms     Update for new convention for desired contrasts in routine ReceptorIsolate.
 % 6/17/18   dhb         Merge with mab version and expand comments.
-% 6/23/17   npc         No more config files, get modulation properties from @ModulatioParams class
+% 6/23/17   npc         No more config files, get modulation properties from ModulationParamsDictionary
 
 % Should figure out and validate args here.
 %narginchk(1, 3);
+
+% Get params from modulation params dictionary
+d = ModulationParamsDictionary();
+params = d(configName);
 
 % Setup the directories we'll use.  We count on the
 % standard relative directory structure that we always
 % use in our (BrainardLab) experiments.
 
 %Corrected Primaries
-cacheDir = fullfile(getpref(TopLevelParams.approach, 'DataPath'),'Experiments',TopLevelParams.approach, TopLevelParams.experiment, 'DirectionCorrectedPrimaries', TopLevelParams.observerID);
+params.cacheDir = fullfile(getpref(TopLevelParams.approach, 'DataPath'),'Experiments',TopLevelParams.approach, TopLevelParams.experiment, 'DirectionCorrectedPrimaries', TopLevelParams.observerID);
 %Output for starts/stops
-modulationDir = fullfile(getpref(TopLevelParams.approach, 'DataPath'), 'Experiments', TopLevelParams.approach, TopLevelParams.experiment, 'ModulationsStartsStops', TopLevelParams.observerID);
-if(~exist(modulationDir))
-    mkdir(modulationDir)
+params.modulationDir = fullfile(getpref(TopLevelParams.approach, 'DataPath'), 'Experiments', TopLevelParams.approach, TopLevelParams.experiment, 'ModulationsStartsStops', TopLevelParams.observerID);
+
+if(~exist(params.modulationDir))
+    mkdir(params.modulationDir)
 end
-%Modulation params
-p = ModulationParams(...
-    'modulationName', configName ...
-    );
-params = structFromClass(p)
-
-% Altenate usage. Define a new modulation with customized params
-% p = ModulationParams(...
-%     'modulationName', 'something new', ...
-%     'direction', 'sdfsd', ...
-%     'directionCacheFile', 'sdfs.mat', ...
-%     'coneNoiseFrequency', 10 ...
-%     );
-% params = structFromClass(p)
-
-
-params.cacheDir = cacheDir;
-params.modulationDir = modulationDir;
 
 % Load the calibration file.
 cType = OLCalibrationTypes.(TopLevelParams.calibrationType);
@@ -201,6 +188,7 @@ modulationObj.waveform = waveform;
 modulationObj.params = params;
 
 fprintf(['* Saving full pre-calculated settings to ' fileNameSave '\n']);
-save(fullfile(modulationDir, fileNameSave), 'modulationObj', '-v7.3');
+save(fullfile(params.modulationDir, fileNameSave), 'modulationObj', '-v7.3');
 fprintf('  - Done.\n');
-params = [];
+end
+
