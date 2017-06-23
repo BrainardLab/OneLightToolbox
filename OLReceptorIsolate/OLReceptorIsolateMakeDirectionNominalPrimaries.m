@@ -30,7 +30,7 @@ function [cacheData, olCache, params] = OLReceptorIsolateMakeDirectionNominalPri
 % Setup the directories we'll use.  We count on the
 % standard relative directory structure that we always
 % use in our (BrainardLab) experiments.
-cacheDir = fullfile(getpref(params.theApproach, 'MaterialsPath'), params.theApproach,'Experiments',params.experiment,'DirectionNominalPrimaries');
+cacheDir = fullfile(getpref(params.theApproach, 'MaterialsPath'), 'Experiments',params.theApproach,'DirectionNominalPrimaries');
 if ~isdir(cacheDir)
     mkdir(cacheDir);
 end
@@ -39,7 +39,7 @@ end
 photoreceptorClasses = allwords(params.photoreceptorClasses, ',');
 
 %% Load the calibration file.
-cal = LoadCalFile(OLCalibrationTypes.(params.calibrationType).CalFileName, [], getpref('OneLight', 'OneLightCalData'));
+cal = LoadCalFile(OLCalibrationTypes.(params.calibrationType).CalFileName, [], fullfile(getpref(params.theApproach, 'MaterialsPath'), 'Experiments',params.theApproach,'OneLightCalData'));
 assert(~isempty(cal), 'OLFlickerComputeModulationSpectra:NoCalFile', 'Could not load calibration file: %s', ...
     OLCalibrationTypes.(params.calibrationType).CalFileName);
 calID = OLGetCalID(cal);
@@ -172,37 +172,37 @@ else
         
         switch params.backgroundType
             case 'BackgroundHalfOn'
-                [bgCacheData,isStale] = olCache.load(['Cache-BackgroundHalfOn.mat']);
+                [bgCacheData,isStale] = olCache.load(['Direction_BackgroundHalfOn.mat']);
                 backgroundPrimary = bgCacheData.data(observerAgeInYears).backgroundPrimary;
             case 'BackgroundEES'
-                [bgCacheData,isStale] = olCache.load(['Cache-BackgroundEES.mat']);
+                [bgCacheData,isStale] = olCache.load(['Direction_BackgroundEES.mat']);
                 backgroundPrimary = bgCacheData.data(observerAgeInYears).backgroundPrimary;
             case 'BackgroundOptim'
-                [bgCacheData,isStale] = olCache.load(['Cache-BackgroundOptim.mat']);
+                [bgCacheData,isStale] = olCache.load(['Direction_BackgroundOptim.mat']);
                 backgroundPrimary = bgCacheData.data(observerAgeInYears).backgroundPrimary;
             case 'BackgroundMaxLMS'
-                [bgCacheData,isStale] = olCache.load(['Cache-BackgroundMaxLMS.mat']);
+                [bgCacheData,isStale] = olCache.load(['Direction_BackgroundMaxLMS.mat']);
                 backgroundPrimary = bgCacheData.data(observerAgeInYears).backgroundPrimary;
             case 'BackgroundOptimMel'
-                [bgCacheData,isStale] = olCache.load(['Cache-BackgroundOptimMel.mat']);
+                [bgCacheData,isStale] = olCache.load(['Direction_BackgroundOptimMel.mat']);
                 backgroundPrimary = bgCacheData.data(observerAgeInYears).backgroundPrimary;
             case 'BackgroundMaxMel'
-                [bgCacheData,isStale] = olCache.load(['Cache-BackgroundMaxMel.mat']);
+                [bgCacheData,isStale] = olCache.load(['Direction_BackgroundMaxMel.mat']);
                 backgroundPrimary = bgCacheData.data(observerAgeInYears).backgroundPrimary;
             case 'BackgroundMaxMelRodControl'
-                [bgCacheData,isStale] = olCache.load(['Cache-BackgroundMaxMelRodControl.mat']);
+                [bgCacheData,isStale] = olCache.load(['Direction_BackgroundMaxMelRodControl.mat']);
                 backgroundPrimary = bgCacheData.data(observerAgeInYears).backgroundPrimary;
             case 'BackgroundMaxRod'
-                [bgCacheData,isStale] = olCache.load(['Cache-BackgroundMaxRod.mat']);
+                [bgCacheData,isStale] = olCache.load(['Direction_BackgroundMaxRod.mat']);
                 backgroundPrimary = bgCacheData.data(observerAgeInYears).backgroundPrimary;
             case 'BackgroundMaxMelRodSilent'
-                [bgCacheData,isStale] = olCache.load(['Cache-BackgroundMaxMelRodSilent.mat']);
+                [bgCacheData,isStale] = olCache.load(['Direction_BackgroundMaxMelRodSilent.mat']);
                 backgroundPrimary = bgCacheData.data(observerAgeInYears).backgroundPrimary;
             case 'MaxMelHigh'
-                [bgCacheData,isStale] = olCache.load(['Cache-MelanopsinDirectedMaxMel.mat']);
+                [bgCacheData,isStale] = olCache.load(['Direction_MelanopsinDirectedMaxMel.mat']);
                 backgroundPrimary = bgCacheData.data(32).backgroundPrimary+bgCacheData.data(32).differencePrimary;
             case 'MaxMelLow'
-                [bgCacheData,isStale] = olCache.load(['Cache-MelanopsinDirectedMaxMel.mat']);
+                [bgCacheData,isStale] = olCache.load(['Direction_MelanopsinDirectedMaxMel.mat']);
                 backgroundPrimary = bgCacheData.data(32).backgroundPrimary-bgCacheData.data(32).differencePrimary;
         end
         assert(~isStale,'Cache file is stale, aborting.');

@@ -1,4 +1,4 @@
-function OLReceptorIsolateMakeModulationStartsStops(configFileName, observerAgeInYears, calType, fileSuffix, params, observerID)
+function OLReceptorIsolateMakeModulationStartsStops(configFileName, fileSuffix, TopLevelParams)
 % OLReceptorIsolateMakeModulationStartsStops - Creates the starts/stops cache data for a given config file.
 %
 % Syntax:
@@ -28,14 +28,14 @@ function OLReceptorIsolateMakeModulationStartsStops(configFileName, observerAgeI
 % use in our (BrainardLab) experiments.
 
 %Corrected Primaries
-cacheDir = fullfile(getpref(params.theApproach, 'DataPath'),'Experiments',params.theApproach, params.experiment, 'DirectionCorrectedPrimaries', observerID);
+cacheDir = fullfile(getpref(TopLevelParams.theApproach, 'DataPath'),'Experiments',TopLevelParams.theApproach, TopLevelParams.experiment, 'DirectionCorrectedPrimaries', TopLevelParams.observerID);
 %Output for starts/stops
-modulationDir = fullfile(getpref(params.theApproach, 'DataPath'), 'Experiments', params.theApproach, params.experiment, 'ModulationsStartsStops', observerID);
+modulationDir = fullfile(getpref(TopLevelParams.theApproach, 'DataPath'), 'Experiments', TopLevelParams.theApproach, TopLevelParams.experiment, 'ModulationsStartsStops', TopLevelParams.observerID);
 if(~exist(modulationDir))
     mkdir(modulationDir)
 end
 %Modulation configuration files
-configDir =  fullfile(getpref(params.theApproach, 'ModulationConfigPath'));
+configDir =  fullfile(getpref(TopLevelParams.theApproach, 'ModulationConfigPath'));
 
 [~, fileNameSave] = fileparts(configFileName);
 fileNameSave = [fileNameSave '.mat'];
@@ -57,9 +57,8 @@ params.cacheDir = cacheDir;
 params.modulationDir = modulationDir;
 
 % Load the calibration file.
-params.calibrationType = calType;
-cType = OLCalibrationTypes.(params.calibrationType);
-params.oneLightCal = LoadCalFile(cType.CalFileName, [], getpref('OneLight', 'OneLightCalData'));
+cType = OLCalibrationTypes.(TopLevelParams.calibrationType);
+params.oneLightCal = LoadCalFile(cType.CalFileName, [], fullfile(getpref(TopLevelParams.theApproach, 'MaterialsPath'), 'Experiments',TopLevelParams.theApproach,'OneLightCalData'));
 
 % Setup the cache.
 params.olCache = OLCache(params.cacheDir, params.oneLightCal);
@@ -87,7 +86,7 @@ for i = 1:length(params.cacheFileName)
     params.cacheDate{i} = cacheData{i}.date;
 end
 
-cacheData = cacheData{end}.data(observerAgeInYears);
+cacheData = cacheData{end}.data(TopLevelParams.observerAgeInYrs);
 params.cacheData = cacheData;
 
 %% Store out the primaries from the cacheData into a cell.  The length of
@@ -122,13 +121,13 @@ else
     end
 end
 % Save to specific file
-params.observerAgeInYears = observerAgeInYears;
+
 if ~exist('fileSuffix', 'var') || isempty(fileSuffix)
     [~, fileName, fileSuffix] = fileparts(fileNameSave);
 else
     [~, fileName] = fileparts(fileNameSave);
 end
-fileNameSave = [fileName '-' num2str(params.observerAgeInYears) fileSuffix];
+fileNameSave = [fileName '-' num2str(TopLevelParams.observerAgeInYrs) fileSuffix];
 
 % Set up a few flags here
 [~, describe.modulationName] = fileparts(fileNameSave);

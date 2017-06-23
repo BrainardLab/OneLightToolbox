@@ -1,4 +1,4 @@
-function [olCache, cacheData,cal, cacheDir, cacheFileName] = OLGetModulationCacheData(cacheFileNameFullPath, describe)
+function [olCache, cacheData,cal, cacheDir, cacheFileName] = OLGetModulationCacheData(cacheFileNameFullPath, params)
 %%OLGetModulationCacheData  Open a modulation cache file and get the data for a particular calibration.
 %    [olCache, cacheData,cal,cacheDir,cacheFileName] = OLGetModulationCacheData(cacheFileNameFullPath, describe);
 %
@@ -49,8 +49,8 @@ while true
     % calibration file.
     %
     % It might be clever to check that the passed type is valid.
-    if (isfield(describe, 'selectedCalType')) && any(strcmp(foundCalTypes, describe.selectedCalType))
-        selectedCalType = describe.selectedCalType;
+    if (isfield(params, 'calibrationType')) && any(strcmp(foundCalTypes, params.calibrationType))
+        selectedCalType = params.calibrationType;
         break;
     end
     
@@ -76,7 +76,7 @@ while true
 end
 
 %% Load the calibration file associated with this calibration type.
-cal = LoadCalFile(OLCalibrationTypes.(selectedCalType).CalFileName, [], getpref('OneLight', 'OneLightCalData'));
+cal = LoadCalFile(OLCalibrationTypes.(selectedCalType).CalFileName, [], fullfile(getpref(params.theApproach, 'MaterialsPath'), 'Experiments',params.theApproach,'OneLightCalData'));
 
 %% Setup the OLCache object.
 olCache = OLCache(cacheDir,cal);
