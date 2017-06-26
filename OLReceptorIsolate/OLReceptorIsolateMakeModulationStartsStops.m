@@ -42,7 +42,7 @@ end
 
 % Load the calibration file.
 cType = OLCalibrationTypes.(TopLevelParams.calibrationType);
-params.oneLightCal = LoadCalFile(cType.CalFileName, [], fullfile(getpref(TopLevelParams.approach, 'MaterialsPath'), 'Experiments',TopLevelParams.approach,'OneLightCalData'));
+params.oneLightCal = LoadCalFile(cType.CalFileName, [], fullfile(getpref(TopLevelParams.approach, 'MaterialsPath'), 'Experiments',TopLevelParams.theApproach,'OneLightCalData'));
 
 % Setup the cache.
 params.olCache = OLCache(params.cacheDir, params.oneLightCal);
