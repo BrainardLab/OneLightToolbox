@@ -30,7 +30,7 @@ function [cacheData, olCache, params] = OLReceptorIsolateMakeDirectionNominalPri
 % Setup the directories we'll use.  We count on the
 % standard relative directory structure that we always
 % use in our (BrainardLab) experiments.
-cacheDir = fullfile(getpref(params.theApproach, 'MaterialsPath'), 'Experiments',params.theApproach,'DirectionNominalPrimaries');
+cacheDir = fullfile(getpref(params.approach, 'MaterialsPath'), 'Experiments',params.approach,'DirectionNominalPrimaries');
 if ~isdir(cacheDir)
     mkdir(cacheDir);
 end
@@ -39,7 +39,7 @@ end
 photoreceptorClasses = allwords(params.photoreceptorClasses, ',');
 
 %% Load the calibration file.
-cal = LoadCalFile(OLCalibrationTypes.(params.calibrationType).CalFileName, [], fullfile(getpref(params.theApproach, 'MaterialsPath'), 'Experiments',params.theApproach,'OneLightCalData'));
+cal = LoadCalFile(OLCalibrationTypes.(params.calibrationType).CalFileName, [], fullfile(getpref(params.approach, 'MaterialsPath'), 'Experiments',params.approach,'OneLightCalData'));
 assert(~isempty(cal), 'OLFlickerComputeModulationSpectra:NoCalFile', 'Could not load calibration file: %s', ...
     OLCalibrationTypes.(params.calibrationType).CalFileName);
 calID = OLGetCalID(cal);
