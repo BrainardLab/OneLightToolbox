@@ -34,6 +34,7 @@ function d = DirectionNominalParamsDictionary()
     %% LMSdirected
     directionName = 'LMSDirected';
     params = defaultParams();
+    params.primaryHeadRoom = 0.01;
     params.modulationContrast = {[4/6 4/6 4/6]};
     params.whichReceptorsToIsolate = {[1 2 3]};
     params.whichReceptorsToIgnore = {[]};
