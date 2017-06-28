@@ -15,7 +15,6 @@ function d = ModulationParamsDictionary()
     % Direction identifiers
     params.direction = 'LMSDirectedSuperMaxLMS';                        % Modulation direction
     params.directionCacheFile = 'Direction_LMSDirectedSuperMaxLMS.mat'; % Cache file to be used
-    ValidateDictionaryEntry(params, 'ModulationDictionary');
     d = paramsValidateAndAppendToDictionary(d, modulationName, params);
         
     
@@ -36,7 +35,7 @@ function d = ModulationParamsDictionary()
     params.directionCacheFile = 'Direction_LightFluxMaxPulse.mat';  % Cache file to be used
     d = paramsValidateAndAppendToDictionary(d, modulationName, params);
     
-    fprintf('all done'\n');
+    fprintf('all done\n');
     pause
 end
 
