@@ -1,39 +1,45 @@
-%DirectionNominalParamsDictionary
+%BackgroundNominalParamsDictionary
 %
 % Description:
-%   Generate dictionary with params for the examined modulation directions
+%   Generate dictionary with params for backgrounds
 
-% 6/22/17  npc  Wrote it.
+% 6/28/17  dhb  Created from direction version.
 % 6/28/18  dhb  backgroundType -> backgroundName. Use names of routine that creates backgrounds.
 %          dhb  Add name field.
-%          dhb  Explicitly set contrasts in each case, rather than rely on defaults.
 
-function d = DirectionNominalParamsDictionary()
+function d = BackgroundNominalParamsDictionary()
     % Initialize dictionary
     d = containers.Map();
     
-    %% MelanopsinDirectedSuperMaxMel
+    %% BackgroundMaxMel to maximize melanopsin contrast
+    %
+    % Note modulation contrast is typically 2/3 for 400% contrast or 66.66%
+    % sinusoidal contrast
     params = defaultParams();
-    params.name = 'MelanopsinDirectedSuperMaxMel';
+    params.name = 'MelanopsinDirected';
     params.primaryHeadRoom = 0.01;
-    params.whichReceptorsToIsolate = [4];
-    params.whichReceptorsToIgnore = [];
-    params.whichReceptorsToMinimize = [];
-    params.backgroundName = 'BackgroundMaxMel';
-    params.cacheFile = ['Direction_' params.name '.mat'];
+    params.modulationContrast = [4/6];
+    params.whichReceptorsToIsolate = {[4]};
+    params.whichReceptorsToIgnore = {[]};
+    params.whichReceptorsToMinimize = {[]};
+    params.directionsYoked = [0];
+    params.directionsYokedAbs = [0];
+    params.cacheFile = ['Background_' params.name  '.mat'];
     d = paramsValidateAndAppendToDictionary(d, params.name, params);
     
-    %% LMSdirectedSuperMaxMex
+    %% BackgroundMaxLMS
     params = defaultParams();
-    params.name = 'LMSDirectedSuperMaxLMS';
+    params.name = 'LMSDirected';
     params.primaryHeadRoom = 0.01;
-    params.backgroundName = 'LMSDirected';
-    params.modulationContrast = [4/6 4/6 4/6];
-    params.whichReceptorsToIsolate = [1 2 3];
-    params.whichReceptorsToIgnore = [];
-    params.whichReceptorsToMinimize = [];
-    params.cacheFile = ['Direction_' params.name '.mat'];
+    params.modulationContrast = {[4/6 4/6 4/6]};
+    params.whichReceptorsToIsolate = {[1 2 3]};
+    params.whichReceptorsToIgnore = {[]};
+    params.whichReceptorsToMinimize = {[]};
+    params.directionsYoked = [1];
+    params.directionsYokedAbs = [0];
+    params.cacheFile = ['Background_' params.name  '.mat'];
     d = paramsValidateAndAppendToDictionary(d, params.name, params);
+   
 end
 
 function d = paramsValidateAndAppendToDictionary(d, directionName, params)
@@ -65,7 +71,6 @@ function d = paramsValidateAndAppendToDictionary(d, directionName, params)
     assert((isfield(params, 'directionsYoked')            && isnumeric(params.directionsYoked)),        sprintf('params.directionsYoked does not exist or it does not contain a numeric value.'));
     assert((isfield(params, 'directionsYokedAbs')         && isnumeric(params.directionsYokedAbs)),     sprintf('params.directionsYokedAbs does not exist or it does not contain a numeric value.'));
     assert((isfield(params, 'receptorIsolateMode')        && ischar(params.receptorIsolateMode)),       sprintf('params.receptorIsolateMode does not exist or it does not contain a string value.'));
-    assert((isfield(params, 'backgroundType')             && ischar(params.backgroundType)),            sprintf('params.backgroundType does not exist or it does not contain a string value.'));
     assert((isfield(params, 'cacheFile')                  && ischar(params.cacheFile)),                 sprintf('params.cacheFile does not exist or it does not contain a string value.'));
     
     % All validations OK. Add entry to the dictionary.
@@ -75,9 +80,9 @@ end
 function params = defaultParams()
     params = struct();
     params.name = '';
-    params.type = 'pulse';
+    params.type = 'optimized';
     params.pegBackground = false;           % not sure about default value of this param - Nicolas
-    params.primaryHeadRoom = 0.005;         % original value
+    params.primaryHeadRoom = 0.005;
     params.modulationDirection = '';
     params.modulationContrast = [4/6];
     params.whichReceptorsToIsolate = {[4]};
@@ -86,7 +91,6 @@ function params = defaultParams()
     params.directionsYoked = [0];
     params.directionsYokedAbs = [0];
     params.receptorIsolateMode = 'Standard';
-    params.backgroundType = '';
     params.cacheFile = '';
 end
 
