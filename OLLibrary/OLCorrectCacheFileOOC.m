@@ -85,7 +85,7 @@ p.addParameter('powerLevels', [0 1.0000], @isnumeric);
 p.addParameter('useAverageGamma', false, @islogical);
 p.addParameter('zeroPrimariesAwayFromPeak', false, @islogical);
 p.addParameter('simulate', false, @islogical);
-p.addParameter('theApproach', [], @isstr);
+p.addParameter('approach', [], @isstr);
 
 p.parse(varargin{:});
 correctDescribe = p.Results;
