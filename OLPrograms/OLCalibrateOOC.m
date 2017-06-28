@@ -450,7 +450,7 @@ try
     % commented out this initial save so that we don't get the
     % annoying double saves in the calibration files.
     if (cal.describe.extraSave)
-        SaveCalFile(cal, selectedCalType.CalFileName, getpref('OneLight', 'OneLightCalData'));
+        SaveCalFile(cal, selectedCalType.CalFileName, getpref('OneLightToolbox', 'OneLightCalData'));
     end
     
     % Run the calibration file through the initialization process.  This
@@ -466,7 +466,7 @@ try
         end
         
         % Save out the calibration
-        SaveCalFile(cal, selectedCalType.CalFileName, getpref('OneLight', 'OneLightCalData'));
+        SaveCalFile(cal, selectedCalType.CalFileName, getpref('OneLightToolbox', 'OneLightCalData'));
     end
     
     % Notify user we are done

@@ -15,7 +15,7 @@ function cal = OLGetCalibrationStructure(varargin)
 % the level of indirection allows for some flexibility.
 %
 % By default, this function looks for calibration files in the directory
-% specified by getpref('OneLight','OneLightCalData').  You can override
+% specified by getpref('OneLightToolbox', 'OneLightCalData').  You can override
 % this by passing a CalibrationFolder key/value pair.
 %
 % With no arguments, this function prompts user to specify an available
@@ -42,7 +42,7 @@ function cal = OLGetCalibrationStructure(varargin)
 %                                          Default is the empty string,
 %                                          which causes the routine to look
 %                                          in the result of
-%                                          getpref('OneLight','OneLightCalData').
+%                                          getpref('OneLightToolbox', 'OneLightCalData').
 %
 % See also: OLCalibrationTypes.
 
@@ -62,7 +62,7 @@ params = p.Results;
 
 %% Set the folder in which the calibration files live.
 if (isempty(params.CalibrationFolder))
-    calFolder = getpref('OneLight', 'OneLightCalData');
+    calFolder = getpref('OneLightToolbox', 'OneLightCalData');
 else
     calFolder = params.CalibrationFolder;
 end
@@ -123,7 +123,7 @@ end
 calIndex = 0;
 if ischar(cal)
     % Get all the calibration data.
-    [~, cals] = LoadCalFile(cal, [], getpref('OneLight', 'OneLightCalData'));
+    [~, cals] = LoadCalFile(cal, [], getpref('OneLightToolbox', 'OneLightCalData'));
     
     % Have the user select a calibration if there is more than 1 and we
     % didn't pass which one we wanted.

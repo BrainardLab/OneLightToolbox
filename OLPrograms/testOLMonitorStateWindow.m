@@ -33,7 +33,7 @@ end
 monitoredStateData = OLMonitorStateWindow(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
 
 % Save the monitored state data (optional)
-outDir = fullfile(getpref('OneLight', 'OneLightCalData'), 'MonitoredStateData', char(cal.describe.calType), strrep(strrep(cal.describe.date, ' ', '_'), ':', '_'), datestr(now, 'mmddyy'));
+outDir = fullfile(getpref('OneLightToolbox', 'OneLightCalData'), 'MonitoredStateData', char(cal.describe.calType), strrep(strrep(cal.describe.date, ' ', '_'), ':', '_'), datestr(now, 'mmddyy'));
 if ~exist(outDir)
     mkdir(outDir);
 end

@@ -5,5 +5,10 @@
 
 % 6/27/17  dhb    Wrote it.
 
+%% Clear prefs
+if (ispref('OneLightToolbox'))
+    rmpref('OneLightToolbox');
+end
+
 %% Calibration file
-setpref('OneLight','OneLightCalData',fullfile(tbLocateToolbox('OneLightToolbox'),'OLDemoCal'));
+setpref('OneLightToolbox','OneLightCalData',fullfile(tbLocateToolbox('OneLightToolbox'),'OLDemoCal'));

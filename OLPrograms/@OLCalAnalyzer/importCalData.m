@@ -26,7 +26,7 @@ function importCalData(obj, cal)
     end
 
     % Find the directory we store our calibration files.
-    calFolderInfo = what(getpref('OneLight', 'OneLightCalData'));
+    calFolderInfo = what(getpref('OneLightToolbox', 'OneLightCalData'));
     calFolder = calFolderInfo.path;
 
     %% Title and plot folder stuff

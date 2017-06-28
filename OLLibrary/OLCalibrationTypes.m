@@ -22,7 +22,7 @@ classdef OLCalibrationTypes
     % Typically, we read the calibration files using
     %   OLGetCalibrationStructure.
     % This function, by default, respects the preference
-    % getpref('OneLight','OneLightCalData') to decide where to look for
+    % getpref('OneLightToolbox', 'OneLightCalData') to decide where to look for
     % calibration files.
     %
     % Calling

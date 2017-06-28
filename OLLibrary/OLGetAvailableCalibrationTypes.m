@@ -10,7 +10,7 @@ function availableCalTypes = OLGetAvailableCalibrationTypes(varargin)
 %                                          Default is the empty string,
 %                                          which causes the routine to look
 %                                          in the result of
-%                                          getpref('OneLight','OneLightCalData'). 
+%                                          getpref('OneLightToolbox', 'OneLightCalData'). 
 %
 % See also OLCalibrationTypes, OLGetCalibrationStructure.
 
@@ -24,7 +24,7 @@ params = p.Results;
 
 %% Set the folder in which the calibration files live.
 if (isempty(params.CalibrationFolder))
-    calFolder = getpref('OneLight', 'OneLightCalData');
+    calFolder = getpref('OneLightToolbox', 'OneLightCalData');
 else
     calFolder = params.CalibrationFolder;
 end

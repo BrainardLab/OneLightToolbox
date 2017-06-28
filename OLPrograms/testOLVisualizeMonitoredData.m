@@ -19,7 +19,7 @@ function dataFile = selectMonitoredStateDatafile(cal)
     d = strrep(cal.describe.date(1:11), ' ', '-');
     cal.describe.date(1:11) = d;
     cal.describe.date(12) = '_';
-    outDir = fullfile(getpref('OneLight', 'OneLightCalData'), 'MonitoredStateData', char(cal.describe.calType), strrep(cal.describe.date, ':', '_'));
+    outDir = fullfile(getpref('OneLightToolbox', 'OneLightCalData'), 'MonitoredStateData', char(cal.describe.calType), strrep(cal.describe.date, ':', '_'));
     outDir = uigetdir(outDir);
     dataFile = fullfile(outDir, 'MonitoredStateData');
 end
