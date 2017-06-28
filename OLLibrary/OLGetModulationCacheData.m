@@ -76,7 +76,7 @@ while true
 end
 
 %% Load the calibration file associated with this calibration type.
-cal = LoadCalFile(OLCalibrationTypes.(selectedCalType).CalFileName, [], fullfile(getpref(params.theApproach, 'MaterialsPath'), 'Experiments',params.theApproach,'OneLightCalData'));
+cal = LoadCalFile(OLCalibrationTypes.(selectedCalType).CalFileName, [], fullfile(getpref(params.approach, 'MaterialsPath'), 'Experiments',params.approach,'OneLightCalData'));
 
 %% Setup the OLCache object.
 olCache = OLCache(cacheDir,cal);

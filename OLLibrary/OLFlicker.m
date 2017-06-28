@@ -2,35 +2,45 @@ function keyPress = OLFlicker(ol, starts, stops, frameDurationSecs, numIteration
 % OLFlicker - Flickers the OneLight.
 %
 % Syntax:
-% keyPress = OLFlicker(ol, settings, frameDurationSecs, numIterations)
+%   keyPress = OLFlicker(ol, settings, frameDurationSecs, numIterations)
 %
 % Description:
-% Flickers the OneLight using the passed settings matrix until a key is
-% pressed or the number of iterations is reached.
+%   Flickers the OneLight using the passed settings matrix until the number
+%   of iterations is reached.  If numIterations is Inf, flickers until a
+%   keypress.
 %
 % Input:
-% ol (OneLight) - The OneLight object.
-% settings (1024xN) - The normalized [0,1] mirror settings to loop through.
-% frameDurationSecs (scalar) - The duration to hold each setting until the
-%     next one is loaded.
-% numIterations (scalar) - The number of iterations to loop through the
-%     settings.  Passing Inf causes the function to loop forever.
+%   ol -                         The OneLight object.
+%   starts (1024xN)-             The starts matrix
+%   stops  (1024xN)-             The stops matrix.
+%   frameDurationSecs (scalar) - The duration to hold each setting until the
+%                                next one is loaded.
+%   numIterations (scalar) -     The number of iterations to loop through the
+%                                set of starts/stops.
+%                                Passing Inf causes the function to loop forever.
+%
 %
 % Output:
-% keyPress (char|empty) - If numIterations is Inf, the key the user pressed
-%     to end the script is returned.  Otherwise, this is returend as empty.
+%   keyPress (char|empty) -      If numIterations is Inf, the key the user pressed
+%                                to end the script is returned.  Otherwise, this
+%                                is returend as empty.
 
-try
-	% Suppress keypresses going to the Matlab window.
-	ListenChar(2);
-	
-	% Flush our keyboard queue.
-	mglGetKeyEvent;
-	keyPress = [];
-	
+% 6/28/17  dhb  Don't do any key related stuff unless keyboard is being checked.
+
+% Checking keyboard?
+checkKB = isinf(numIterations);
+
+try	
 	% Flag whether we're checking the keyboard during the flicker loop.
-	checkKB = isinf(numIterations);
-	
+    if (checkKB)
+        % Suppress keypresses going to the Matlab window.
+        ListenChar(2);
+
+        % Flush our keyboard queue.
+        mglGetKeyEvent;
+        keyPress = [];
+    end
+
 	% Make sure our input and output pattern buffers are setup right.
 	ol.InputPatternBuffer = 0;
 	ol.OutputPatternBuffer = 0;
@@ -87,9 +97,13 @@ try
 	end
 	
 	% Turn the mirrors off.
-	ol.setAll(false);	
-	ListenChar(0);
+    ol.setAll(false);
+    if checkKB
+        ListenChar(0);
+    end
 catch e
-	ListenChar(0);
+    if checkKB
+        ListenChar(0);
+    end
 	rethrow(e);
 end

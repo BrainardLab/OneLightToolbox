@@ -223,7 +223,7 @@ while true
 end
 
 % Load the calibration file associated with this calibration type.
-cal = LoadCalFile(OLCalibrationTypes.(selectedCalType).CalFileName, [], fullfile(getpref(describe.theApproach, 'MaterialsPath'), 'Experiments',describe.theApproach,'OneLightCalData'));
+cal = LoadCalFile(OLCalibrationTypes.(selectedCalType).CalFileName, [], fullfile(getpref(describe.approach, 'MaterialsPath'), 'Experiments',describe.approach,'OneLightCalData'));
 
 % Force useAverageGamma?
 cal.describe.useAverageGamma = 1;
