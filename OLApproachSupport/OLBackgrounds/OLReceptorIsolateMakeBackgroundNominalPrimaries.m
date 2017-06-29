@@ -106,7 +106,8 @@ switch params.type
         backgroundPrimary = 0.5*ones(size(B_primary,2),1);
         
         %% Construct the receptor matrix
-        fractionBleached = zeros(length(params.photoreceptorClasses));
+        lambdaMaxShift = zeros(1, length(photoreceptorClasses));
+        fractionBleached = zeros(1,length(photoreceptorClasses));
         T_receptors = GetHumanPhotoreceptorSS(S, photoreceptorClasses, params.fieldSizeDegrees, observerAgeInYears, params.pupilDiameterMm, lambdaMaxShift, fractionBleached);
            
         %% Isolate the receptors by calling the wrapper

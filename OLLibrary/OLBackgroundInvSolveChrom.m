@@ -14,7 +14,7 @@ function backgroundPrimary = OLBackgroundInvSolveChrom(cal, desiredChromaticity)
 %   backgroundPrimary     Primary settings for the obtained background.
 
 % 5/22/15   ms      Wrote it.
-% 6/29/17   dhb     Clean up and name more clearly.
+% 6/29/17   dhb     Clean up.
 
 %% Set up some parameters
 S = cal.describe.S;
