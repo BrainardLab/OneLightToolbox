@@ -1,4 +1,4 @@
-function [cacheData, olCache] = OLReceptorIsolateMakeBackgroundNominalPrimaries(approach,params, forceRecompute)
+function [cacheData, olCache] = OLReceptorIsolateMakeBackgroundNominalPrimaries(approach,params,forceRecompute)
 % OLReceptorIsolateMakeBackgroundNominalPrimaries - Finds backgrounds according to background parameters.
 %
 % Syntax:
@@ -10,7 +10,7 @@ function [cacheData, olCache] = OLReceptorIsolateMakeBackgroundNominalPrimaries(
 %   backgroundParams (struct)  Parameters struct for backgrounds.  See
 %                              BackgroundNominalParamsDictionary.
 %
-%   forceRecompute (logical)   If true, forces a recompute of the data found in the config file. 
+%   forceRecompute (logical)   If true, forces a recompute of the data found in the config file.
 %                              Default: false
 % Output:
 %   cacheData (struct)         Cache data structure.  Contains background
@@ -57,9 +57,15 @@ switch params.type
                 backgroundPrimary = InvSolveChrom(cal, [1/3 1/3]);
             otherwise
                 error('Unknown named background passed');
-        end  
+        end
         
-    case 'optimized'  
+    case 'lightfluxchrom'
+        % Background at specified chromaticity that allows a large light
+        % flux pulse modulation.
+        maxBackgroundPrimary = OLBackgroundInvSolveChrom(cal, params.lightFluxDesiredXY);
+        backgroundPrimary = maxBackgroundPrimary/params.lightFluxDownFactor;
+        
+    case 'optimized'
         % These backgrounds get optimized according to the parameters in
         % the structure.  Backgrounds are optimized with respect to a 32
         % year old observer, and no correction for photopigment bleaching
@@ -74,9 +80,9 @@ switch params.type
         B_primary = cal.computed.pr650M;
         
         %% Set up parameters for the optimization
-        whichPrimariesToPin = [];      
-        whichReceptorsToIgnore = params.whichReceptorsToIgnore;    
-        whichReceptorsToIsolate = params.whichReceptorsToIsolate;   
+        whichPrimariesToPin = [];
+        whichReceptorsToIgnore = params.whichReceptorsToIgnore;
+        whichReceptorsToIsolate = params.whichReceptorsToIsolate;
         whichReceptorsToMinimize = params.whichReceptorsToMinimize;
         
         % Peg desired contrasts
@@ -109,7 +115,7 @@ switch params.type
         lambdaMaxShift = zeros(1, length(photoreceptorClasses));
         fractionBleached = zeros(1,length(photoreceptorClasses));
         T_receptors = GetHumanPhotoreceptorSS(S, photoreceptorClasses, params.fieldSizeDegrees, observerAgeInYears, params.pupilDiameterMm, lambdaMaxShift, fractionBleached);
-           
+        
         %% Isolate the receptors by calling the wrapper
         initialPrimary = backgroundPrimary;
         optimizedBackgroundPrimaries = ReceptorIsolateOptimBackgroundMulti(T_receptors, whichReceptorsToIsolate, ...
