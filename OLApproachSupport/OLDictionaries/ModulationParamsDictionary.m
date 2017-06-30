@@ -35,8 +35,6 @@ function d = ModulationParamsDictionary()
     params.directionCacheFile = 'Direction_LightFluxMaxPulse.mat';  % Cache file to be used
     d = paramsValidateAndAppendToDictionary(d, modulationName, params);
     
-    fprintf('all done\n');
-    pause
 end
 
 function d = paramsValidateAndAppendToDictionary(d, modulationName, params)

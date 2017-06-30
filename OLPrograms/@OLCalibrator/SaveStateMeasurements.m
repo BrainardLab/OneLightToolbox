@@ -1,4 +1,6 @@
-% SaveStateMeasurements(cal0, calMeasOnly)
+function SaveStateMeasurements(cal, calMeasOnly, protocolParams)
+
+% SaveStateMeasurements(cal, calMeasOnly, protocolParams)
 %
 % Takes state measurements for a OneLight calibration from a stand-alone
 % measurement, and saves the state measurements in a 'lite' cal file, which
@@ -6,9 +8,7 @@
 %
 % 9/9/16   ms     Wrote it
 
-function SaveStateMeasurements(cal0, calMeasOnly)
-
-outDir = fullfile(getpref('OneLightToolbox', 'OneLightCalData'), 'StateMeasurements', char(cal0.describe.calType), strrep(strrep(cal0.describe.date, ' ', '_'), ':', '_'), datestr(now, 'mmddyy'));
+outDir = fullfile(getpref(protocolParams.approach,'DataPath'), 'Experiments', protocolParams.approach, protocolParams.protocol ,'DirectionValidationFiles', protocolParams.observerID, protocolParams.todayDate,protocolParams.sessionName, [strrep(strrep(cal.describe.date, ' ', '_'), ':', '_') datestr(now, 'mmddyy')]);
 if ~exist(outDir)
    mkdir(outDir); 
 end

@@ -48,10 +48,11 @@ try
 	% Send over the first settings.
     numSettings = size(starts, 1);
     if (size(stops,1) ~= numSettings)
-        error('starts and stops matrices must have same number of rows');e
+       error('starts and stops matrices must have same number of rows');
     end
+
 	ol.setMirrors(starts(1,:), stops(1,:));
-	
+
 	% Counters to keep track of which of the settings to display and which
 	% iteration we're on.
 	iterationCount = 0;

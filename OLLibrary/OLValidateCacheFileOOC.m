@@ -1,4 +1,4 @@
-function [results, validationDir, validationPath, openSpectroRadiometerOBJ] = OLValidateCacheFileOOC(cacheFileName, emailRecipient, ...
+function [results, validationDir, validationPath, openSpectroRadiometerOBJ] = OLValidateCacheFileOOC(protocolParams, cacheFileName, emailRecipient, ...
     meterType, spectroRadiometerOBJ, spectroRadiometerOBJWillShutdownAfterMeasurement, varargin)
 % results = OLValidateCacheFileOOC(cacheFileName, emailRecipient, ...
 % meterType, spectroRadiometerOBJ, spectroRadiometerOBJWillShutdownAfterMeasurement, varargin)
@@ -77,7 +77,6 @@ p.addParameter('postreceptoralCombinations', [], @isnumeric);
 p.addParameter('outDir', [], @isstr);
 p.addParameter('pr670sensitivityMode', 'STANDARD', @isstr);
 p.addParameter('takeTemperatureMeasurements', false, @islogical);
-p.addParameter('theApproach', [], @isstr);
 
 p.parse(varargin{:});
 describe = p.Results;
@@ -223,7 +222,7 @@ while true
 end
 
 % Load the calibration file associated with this calibration type.
-cal = LoadCalFile(OLCalibrationTypes.(selectedCalType).CalFileName, [], fullfile(getpref(describe.approach, 'MaterialsPath'), 'Experiments',describe.approach,'OneLightCalData'));
+cal = LoadCalFile(OLCalibrationTypes.(selectedCalType).CalFileName, [], fullfile(getpref(protocolParams.approach, 'MaterialsPath'), 'Experiments',protocolParams.approach,'OneLightCalData'));
 
 % Force useAverageGamma?
 cal.describe.useAverageGamma = 1;
@@ -354,7 +353,7 @@ try
     if describe.CalStateMeas
         fprintf('- State measurements \n');
         [~, calStateMeas] = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, 'standAlone',true);
-        OLCalibrator.SaveStateMeasurements(cal, calStateMeas);
+        OLCalibrator.SaveStateMeasurements(cal, calStateMeas, protocolParams);
     else
         calStateMeas = [];
     end

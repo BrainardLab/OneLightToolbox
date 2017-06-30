@@ -32,9 +32,9 @@ params = d(configName);
 % use in our (BrainardLab) experiments.
 
 %Corrected Primaries
-params.cacheDir = fullfile(getpref(TopLevelParams.approach, 'DataPath'),'Experiments',TopLevelParams.approach, TopLevelParams.experiment, 'DirectionCorrectedPrimaries', TopLevelParams.observerID, TopLevelParams.todayDate, TopLevelParams.sessionName);
+params.cacheDir = fullfile(getpref(TopLevelParams.approach, 'DataPath'),'Experiments',TopLevelParams.approach, TopLevelParams.protocol, 'DirectionCorrectedPrimaries', TopLevelParams.observerID, TopLevelParams.todayDate, TopLevelParams.sessionName);
 %Output for starts/stops
-params.modulationDir = fullfile(getpref(TopLevelParams.approach, 'DataPath'), 'Experiments', TopLevelParams.approach, TopLevelParams.experiment, 'ModulationsStartsStops', TopLevelParams.observerID, TopLevelParams.todayDate, TopLevelParams.sessionName);
+params.modulationDir = fullfile(getpref(TopLevelParams.approach, 'DataPath'), 'Experiments', TopLevelParams.approach, TopLevelParams.protocol, 'ModulationsStartsStops', TopLevelParams.observerID, TopLevelParams.todayDate, TopLevelParams.sessionName);
 
 if(~exist(params.modulationDir))
     mkdir(params.modulationDir)
