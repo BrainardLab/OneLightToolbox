@@ -9,34 +9,61 @@
 %          dhb  Explicitly set contrasts in each case, rather than rely on defaults.
 %          dhb  Bring in params.photoreceptorClasses.  These go with directions/backgrounds.
 %          dhb  Bring in params.useAmbient.  This goes with directions/backgrounds.
+% 7/5/17   dhb  Bringing up to speed.
 
 function d = DirectionNominalParamsDictionary()
     % Initialize dictionary
     d = containers.Map();
     
-    %% MelanopsinDirectedSuperMaxMel
+    %% MaxMel_275_80_667
+    %
+    % Direction for maximum contrast melanopsin pulse 
+    %   Field size: 27.5 deg
+    %   Pupil diameter: 8 mm
+    %   Modulation contrast: 66.7%
+    % 
+    % Modulation contrast is used to generate, but the result is a 400%
+    % contrast step up relative to the background.
+    % 
+    baseName = 'MaxMel';
     params = defaultParams();
-    params.name = 'MelanopsinDirectedSuperMaxMel';
     params.primaryHeadRoom = 0.01;
+    params.baseModulationContrast = 4/6;
     params.photoreceptorClasses = 'LConeTabulatedAbsorbance,MConeTabulatedAbsorbance,SConeTabulatedAbsorbance,Melanopsin';
+    params.modulationContrast = [params.baseModulationContrast];
     params.whichReceptorsToIsolate = [4];
     params.whichReceptorsToIgnore = [];
     params.whichReceptorsToMinimize = [];
-    params.backgroundName = 'BackgroundMaxMel';
+    params.backgroundType = 'optimized';
+    params.backgroundName = OLMakeApproachBackgroundName('MelanopsinDirected',params);
+    params.name = OLMakeApproachDirectionName(baseName,params);
     params.cacheFile = ['Direction_' params.name '.mat'];
     d = paramsValidateAndAppendToDictionary(d, params.name, params);
     
-    %% LMSdirectedSuperMaxMex
+    %% MaxLMS_275_80_667
+    %
+    % Direction for maximum contrast LMS pulse 
+    %   Field size: 27.5 deg
+    %   Pupil diameter: 8 mm
+    %   Modulation contrast: 66.7%
+    % 
+    % Modulation contrast is used to generate, but the result is a 400%
+    % contrast step up relative to the background.
+    % 
+    baseName = 'MaxLMS';
     params = defaultParams();
-    params.name = 'LMSDirectedSuperMaxLMS';
     params.primaryHeadRoom = 0.01;
+    params.baseModulationContrast = 4/6;
     params.photoreceptorClasses = 'LConeTabulatedAbsorbance,MConeTabulatedAbsorbance,SConeTabulatedAbsorbance,Melanopsin';
-    params.backgroundName = 'LMSDirected';
-    params.modulationContrast = [4/6 4/6 4/6];
+    params.modulationContrast = [params.baseModulationContrast params.baseModulationContrast params.baseModulationContrast];
     params.whichReceptorsToIsolate = [1 2 3];
     params.whichReceptorsToIgnore = [];
     params.whichReceptorsToMinimize = [];
+    params.backgroundType = 'optimized';
+    params.backgroundName = OLMakeApproachBackgroundName('LMSDirected',params);
+    params.name = OLMakeApproachDirectionName(baseName,params);
     params.cacheFile = ['Direction_' params.name '.mat'];
+
     d = paramsValidateAndAppendToDictionary(d, params.name, params);
 end
 
@@ -59,10 +86,11 @@ function d = paramsValidateAndAppendToDictionary(d, directionName, params)
     % Test that all expected params exist and that they have the expected type
     assert((isfield(params, 'name')                       && ischar(params.name)),                      sprintf('params.name does not exist or it does not contain a string value.'));
     assert((isfield(params, 'type')                       && ischar(params.type)),                      sprintf('params.type does not exist or it does not contain a string value.'));
+    assert((isfield(params, 'baseModulationContrast')     && isnumeric(params.baseModulationContrast)), sprintf('params.baseModulationContrast does not exist or it does not contain a numeric value.'));
     assert((isfield(params, 'primaryHeadRoom')            && isnumeric(params.primaryHeadRoom)),        sprintf('params.primaryHeadRoom does not exist or it does not contain a numeric value.'));
-    assert((isfield(params, 'pegBackground')              && islogical(params.pegBackground)),          sprintf('params.pegBackground does not exist or it does not contain a boolean value.'));
-    assert((isfield(params, 'photoreceptorClasses')       && ischar(params.photoreceptorClasses)),   sprintf('params.photoreceptorClasses does not exist or it does not contain a string value.'));
-    assert((isfield(params, 'modulationDirection')        && ischar(params.modulationDirection)),       sprintf('params.modulationDirection does not exist or it does not contain a string value.'));
+    assert((isfield(params, 'photoreceptorClasses')       && ischar(params.photoreceptorClasses)),      sprintf('params.photoreceptorClasses does not exist or it does not contain a string value.'));
+    assert((isfield(params, 'fieldSizeDegrees')           && isscalar(params.fieldSizeDegrees)),        sprintf('params.ieldSizeDegrees does not exist or it does not contain a number.'));
+    assert((isfield(params, 'pupilDiameterMm')            && isscalar(params.pupilDiameterMm)),         sprintf('params.pupilDiameterMm does not exist or it does not contain a number.'));    assert((isfield(params, 'modulationDirection')        && ischar(params.modulationDirection)),       sprintf('params.modulationDirection does not exist or it does not contain a string value.'));
     assert((isfield(params, 'modulationContrast')         && (isnumeric(params.modulationContrast) || iscell(params.whichReceptorsToIsolate))),         sprintf('params.modulationContrast does not exist or it does not contain a numeric value.'));
     assert((isfield(params, 'whichReceptorsToIsolate')    && (isnumeric(params.whichReceptorsToIsolate) || iscell(params.whichReceptorsToIsolate))),    sprintf('params.whichReceptorsToIsolate does not exist or it does not contain a numeric value.'));
     assert((isfield(params, 'whichReceptorsToIgnore')     && (isnumeric(params.whichReceptorsToIgnore) || iscell(params.whichReceptorsToIgnore))),      sprintf('params.whichReceptorsToIgnore does not exist or it does not contain a numeric value.'));
@@ -71,7 +99,8 @@ function d = paramsValidateAndAppendToDictionary(d, directionName, params)
     assert((isfield(params, 'directionsYokedAbs')         && isnumeric(params.directionsYokedAbs)),     sprintf('params.directionsYokedAbs does not exist or it does not contain a numeric value.'));
     assert((isfield(params, 'receptorIsolateMode')        && ischar(params.receptorIsolateMode)),       sprintf('params.receptorIsolateMode does not exist or it does not contain a string value.'));
     assert((isfield(params, 'useAmbient')                 && islogical(params.useAmbient)),             sprintf('params.useAmbient does not exist or it does not contain a logical value.'));
-    assert((isfield(params, 'backgroundName')             && ischar(params.backgroundType)),            sprintf('params.backgroundType does not exist or it does not contain a string value.'));
+    assert((isfield(params, 'backgroundType')             && ischar(params.backgroundType)),            sprintf('params.backgroundType does not exist or it does not contain a string value.'));
+    assert((isfield(params, 'backgroundName')             && ischar(params.backgroundName)),            sprintf('params.backgroundName does not exist or it does not contain a string value.'));
     assert((isfield(params, 'cacheFile')                  && ischar(params.cacheFile)),                 sprintf('params.cacheFile does not exist or it does not contain a string value.'));
     
     % All validations OK. Add entry to the dictionary.
@@ -82,9 +111,11 @@ function params = defaultParams()
     params = struct();
     params.name = '';
     params.type = 'pulse';
-    params.pegBackground = false;           % not sure about default value of this param - Nicolas
-    params.primaryHeadRoom = 0.005;         % original value
+    params.baseModulationContrast = 4/6;
+    params.primaryHeadRoom = 0.005;   
     params.photoreceptorClasses = 'LConeTabulatedAbsorbance,MConeTabulatedAbsorbance,SConeTabulatedAbsorbance,Melanopsin';
+    params.fieldSizeDegrees = 27.5;
+	params.pupilDiameterMm = 8.0; 
     params.modulationDirection = '';
     params.modulationContrast = [4/6];
     params.whichReceptorsToIsolate = {[4]};
@@ -94,6 +125,7 @@ function params = defaultParams()
     params.directionsYokedAbs = [0];
     params.receptorIsolateMode = 'Standard';
     params.useAmbient = true; 
+    params.backgroundType = 'optimized';
     params.backgroundName = '';
     params.cacheFile = '';
 end

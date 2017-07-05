@@ -1,13 +1,30 @@
-function [cacheData, olCache] = OLReceptorIsolateMakeBackgroundNominalPrimaries(approach,params,forceRecompute)
+function [cacheData, olCache, wasRecomputed] = OLReceptorIsolateMakeBackgroundNominalPrimaries(approach,params,forceRecompute)
 % OLReceptorIsolateMakeBackgroundNominalPrimaries - Finds backgrounds according to background parameters.
 %
-% Syntax:
-%   OLReceptorIsolateMakeBackgroundNominalPrimaries(params, forceRecompute)
+% Usage:
+%     [cacheData, olCache, wasRecomputed] = OLReceptorIsolateMakeBackgroundNominalPrimaries(approach,params,forceRecompute)
+%
+% Description:
+%   Use calibration file information to make backgrounds with specified
+%   properties.  Background properties are defined in the
+%   BackgroundNominalPrimaries dictionary and passed as a parameter struct.
+%
+%   This checks the cache file, and if things have already been computed
+%   for the current calibration, it just returns what is there.  Cache
+%   files are stored in the BackgroundNominalPrimaries directory, specified
+%   by the preferences for the current approach.
+%
+%   The parameters for the directions we know about are stored in the
+%   background dictionary, so that each direction's parameters are
+%   associated with a background name.
+%
+%   The background is just computed for the nominal (32 yo) observer age,
+%   because we don't need perfection for this, just something about right.
 %
 % Input:
 %   approach (string)          Name of whatever approach is invoking this.
 %
-%   backgroundParams (struct)  Parameters struct for backgrounds.  See
+%   params (struct)  Parameters struct for backgrounds.  See
 %                              BackgroundNominalParamsDictionary.
 %
 %   forceRecompute (logical)   If true, forces a recompute of the data found in the config file.
@@ -17,10 +34,14 @@ function [cacheData, olCache] = OLReceptorIsolateMakeBackgroundNominalPrimaries(
 %                              primaries and cal structure.
 %
 %   olCache (class)            Cache object for storing this.
+%
+%   wasRecomptued (boolean)    Was the cacheData recomputed?
+%
+% Optional key/value pairs
+%   None.
 
-% 4/19/13   dhb, ms     Update for new convention for desired contrasts in routine ReceptorIsolate.
-% 2/25/14   ms          Modularized.
-% 6/29/17   dhb         Cleaning up.
+% 06/29/17   dhb         Cleaning up.
+% 07/05/17   dhb         Better comments.
 
 %% Setup the directories we'll use. Backgrounds go in their special place under the materials path approach directory.
 cacheDir = fullfile(getpref(approach, 'MaterialsPath'), 'Experiments',approach,'BackgroundNominalPrimaries');
@@ -28,22 +49,33 @@ if ~isdir(cacheDir)
     mkdir(cacheDir);
 end
 
-%% Load the calibration file.
+%% Load the calibration file
 cal = LoadCalFile(OLCalibrationTypes.(params.calibrationType).CalFileName, [], fullfile(getpref(approach, 'MaterialsPath'), 'Experiments',approach,'OneLightCalData'));
 assert(~isempty(cal), 'OLFlickerComputeModulationSpectra:NoCalFile', 'Could not load calibration file: %s', ...
     OLCalibrationTypes.(params.calibrationType).CalFileName);
-calID = OLGetCalID(cal);
 
 %% Pull out S
 S = cal.describe.S;
 
-%% Create the cache object.
+%% Create the cache object and filename
 olCache = OLCache(cacheDir, cal);
-
-%% Create the cache file name.
 [~, cacheFileName] = fileparts(params.cacheFile);
 
 %% Need to check here whether we can just use the current cached data and do so if possible.
+%
+% If we don't need to recompute, we just return, cacheData in hand.  Otherwise we
+% compute.
+if (~forceRecompute)
+    if (olCache.exist(cacheFileName))
+        [cacheData,isStale] = olCache.load(cacheFileName);
+        if (~isStale)
+            wasRecomputed = false;
+            return;
+        else
+            clear cacheData;
+        end
+    end
+end
 
 %% OK, need to recompute
 switch params.type
@@ -92,17 +124,15 @@ switch params.type
             desiredContrasts = [];
         end
         
-        % Assign an empty 'ambientSpd' variable so that the ReceptorIsolate
-        % code still works. As of Sep 2013 (i.e. SSMRI), we include the ambient measurements
-        % in the optimization. This is defined in a flag in the stimulus .cfg
-        % files.
+        % Assign a zero 'ambientSpd' variable if we're not using the 
+        % measured ambient.
         if params.useAmbient
             ambientSpd = cal.computed.pr650MeanDark;
         else
             ambientSpd = zeros(size(B_primary,1),1);
         end
         
-        % We get backgrounds for on nominal observer age, and hope for the
+        % We get backgrounds for a nominal observer age, and hope for the
         % best for other observer ages.
         observerAgeInYears = 32;
         
@@ -137,5 +167,8 @@ for observerAgeInYears = 20:60
     cacheData.data(observerAgeInYears).backgroundPrimary = backgroundPrimary;
 end
 cacheData.cal = cal;
+
+% Note that we recomputed the cache data.
+wasRecomputed = true;
 
 end

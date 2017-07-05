@@ -1,10 +1,14 @@
-function [cacheData, olCache, params] = OLReceptorIsolateMakeDirectionNominalPrimaries(params, forceRecompute)
-% OLReceptorIsolateMakeDirectionNominalPrimaries - Computes primaries for receptor-isolating modulations.
+function [cacheData, olCache, wasRecomputed] = OLReceptorIsolateMakeDirectionNominalPrimaries(approach,params,forceRecompute)
+% OLReceptorIsolateMakeDirectionNominalPrimaries - Computes nominal primaries for receptor-isolating directions.
+%
+% Usage:
+%   [cacheData, olCache, wasRecomputed] = OLReceptorIsolateMakeDirectionNominalPrimaries(approach,params,forceRecompute)
 %
 % Description:
 %   Use the calibration file and observer age to find the nominal primaries
 %   that will produce various receptor isolating modulations.  The params
-%   structure contains all of the important information.
+%   structure contains all of the important information, and is defined in
+%   the DirectionNominalPrimaries dictionary.
 %
 %   This checks the cache file, and if things have already been computed
 %   for the current calibration, it just returns what is there.  Cache
@@ -15,106 +19,96 @@ function [cacheData, olCache, params] = OLReceptorIsolateMakeDirectionNominalPri
 %   direction dictionary, so that each direction's parameters are
 %   associated with a direction name.
 %
-% Syntax:
-%   OLReceptorIsolateFindIsolatingPrimaries(params, forceRecompute)
-%
 % Input:
-%   params (struct) -          Parameters struct.  The parameters are
-%                              stored and described in the Direction dictionary.
-%   forceRecompute (logical) - If true, forces a recompute of the data found
-%                              in the config file.  Only do this if the target spectra were changed.
-%                              Default: false
+%   approach (string)          Name of whatever approach is invoking this.
 %
+%   params (struct)  Parameters struct for backgrounds.  See
+%                              BackgroundNominalParamsDictionary.
+%
+%   forceRecompute (logical)   If true, forces a recompute of the data found in the config file.
+%                              Default: false
 % Output:
-%   cacheData (struct)
-%   olCache (class)
-%   params (struct)
+%   cacheData (struct)         Cache data structure.  Contains background
+%                              primaries and cal structure.
+%
+%   olCache (class)            Cache object for storing this.
+%
+%   wasRecomptued (boolean)    Was the cacheData recomputed?
 %
 % Optional key/value pairs
 %   None.
 
-% 4/19/13   dhb, ms     Update for new convention for desired contrasts in routine ReceptorIsolate.
-% 2/25/14   ms          Modularized.
-% 6/15/17   dhb et al.  Handle isStale return from updated cache code.
+% 04/19/13   dhb, ms     Update for new convention for desired contrasts in routine ReceptorIsolate.
+% 02/25/14   ms          Modularized.
+% 06/15/17   dhb et al.  Handle isStale return from updated cache code.
 
-% Setup the directories we'll use.  We count on the
-% standard relative directory structure that we always
-% use in our (BrainardLab) experiments.
+%% Setup the directories we'll use. Directionss go in their special place under the materials path approach directory.
 cacheDir = fullfile(getpref(params.approach, 'MaterialsPath'), 'Experiments',params.approach,'DirectionNominalPrimaries');
 if ~isdir(cacheDir)
     mkdir(cacheDir);
 end
 
-%% Parse some of the parameter fields
-photoreceptorClasses = allwords(params.photoreceptorClasses, ',');
+% Background cache files, which we use here, have their own happy home.
+backgroundCacheDir = fullfile(getpref(approach, 'MaterialsPath'), 'Experiments',approach,'BackgroundNominalPrimaries');
 
-%% Load the calibration file.
-cal = LoadCalFile(OLCalibrationTypes.(params.calibrationType).CalFileName, [], fullfile(getpref(params.approach, 'MaterialsPath'), 'Experiments',params.approach,'OneLightCalData'));
+%% Load the calibration file
+cal = LoadCalFile(OLCalibrationTypes.(params.calibrationType).CalFileName, [], fullfile(getpref(approach, 'MaterialsPath'), 'Experiments',approach,'OneLightCalData'));
 assert(~isempty(cal), 'OLFlickerComputeModulationSpectra:NoCalFile', 'Could not load calibration file: %s', ...
     OLCalibrationTypes.(params.calibrationType).CalFileName);
-calID = OLGetCalID(cal);
 
 %% Pull out S
 S = cal.describe.S;
 
+%% Create the cache object and filename
+olCache = OLCache(cacheDir, cal);
+[~, cacheFileName] = fileparts(params.cacheFile);
+
+%% Create the background cache object
+backgroundOlCache = OLCache(backgroundCacheDir, cal);
+
+%% Need to check here whether we can just use the current cached data and do so if possible.
+%
+% If we don't need to recompute, we just return, cacheData in hand.  Otherwise we
+% compute.
+if (~forceRecompute)
+    if (olCache.exist(cacheFileName))
+        [cacheData,isStale] = olCache.load(cacheFileName);
+        if (~isStale)
+            wasRecomputed = false;
+            return;
+        else
+            clear cacheData;
+        end
+    end
+end
+
+%% OK, need to compute.
+switch params.type
+    case 'pulse'
+    case 'lightflux'
+        
+        % If the modulation we want is an isochromatic one, we simply scale
+        % the background Spectrum. Otherwise, we call ReceptorIsolate. Due
+        % to the ambient, we play a little game of adding a little bit to
+        % scale the background just right.
+        if strfind(cacheFileName, 'LightFlux')
+            modulationPrimary = backgroundPrimary+backgroundPrimary*max(desiredContrasts);
+        end
+    otherwise
+        error('Unknown direction type specified');
+end
+
 %% Pupil diameter in mm.
 pupilDiameterMm = params.pupilDiameterMm;
 
-%% Create the cache object.
-olCache = OLCache(cacheDir, cal);
-
-% Create the cache file name.
-[~, cacheFileName] = fileparts(params.cacheFile);
-
-% Look to see if the cache data already exists.
-cacheExists = olCache.exist(cacheFileName);
-
-% If the cache already exists, we will assume that we're going to use the
-% what's in it, if it isn't stale, unless the caller passed forcedRecompute
-% as true.
-if cacheExists && ~forceRecompute
-    fprintf('- Loading cache file: %s.\n', cacheFileName);
-    
-    % Load the cache data.
-    [cacheData, isStale] = olCache.load(cacheFileName);
-    
-    % Handle a stale cache by setting flag for recompute.
-    if (~isStale)
-        fprintf('- Cache file up to date.\n');
-        return;
-    else
-        fprintf('- Cache file was stale, setting forceRecompute flag\n');
-        forceRecompute = true;
-    end
-end
-
-% If we didn't return in the block above, we need to recompute.
-if forceRecompute
-    fprintf('- Force recompute flagged.\n');
-else
-    fprintf('- Creating new cache file.\n');
-end
-
-% We want to create a directory structure if the params.CALCULATE_SPLATTER flag is on, to save the output there
-if params.CALCULATE_SPLATTER
-    if ~exist(fullfile(cacheDir, cacheFileName))
-        mkdir(fullfile(cacheDir, cacheFileName));
-    end
-    if ~exist(fullfile(cacheDir, cacheFileName, char(cal.describe.calType)))
-        mkdir(fullfile(cacheDir, cacheFileName, char(cal.describe.calType)));
-    end
-    
-    docDir = fullfile(cacheDir, cacheFileName, char(cal.describe.calType), strrep(strrep(cal.describe.date, ' ', '_'), ':', '_'));
-    if ~exist(docDir)
-        mkdir(docDir);
-    end
-end
+%% Parse some of the parameter fields
+photoreceptorClasses = allwords(params.photoreceptorClasses, ',');
 
 %% Set up what will be common to all observer ages
-%% Pull out the 'M' matrix
+% Pull out the 'M' matrix
 B_primary = cal.computed.pr650M;
 
-%% Set up some parameters for the optimization
+% Set up some parameters for the optimization
 whichPrimariesToPin = [];       % Primaries we want to pin
 whichReceptorsToIgnore = params.whichReceptorsToIgnore;    % Receptors to ignore
 whichReceptorsToIsolate = params.whichReceptorsToIsolate;    % Receptors to stimulate
@@ -127,30 +121,19 @@ else
     desiredContrasts = [];
 end
 
-% Assign an empty 'ambientSpd' variable so that the ReceptorIsolate
-% code still works. As of Sep 2013 (i.e. SSMRI), we include the ambient measurements
-% in the optimization. This is defined in a flag in the stimulus .cfg
-% files.
+% Assign a zero 'ambientSpd' variable if we're not using the
+% measured ambient.
 if params.useAmbient
     ambientSpd = cal.computed.pr650MeanDark;
 else
     ambientSpd = zeros(size(B_primary,1),1);
 end
 
-% If the 'ReceptorIsolate' mode does not exist, just use the standard one.
-% We will later make a call to the ReceptorIsolateWrapper function.
-if ~isfield(params, 'receptorIsolateMode')
-    receptorIsolateMode = 'Standard';
-else
-    receptorIsolateMode = params.receptorIsolateMode;
-end
-
-
-fprintf('\n> Generating stimuli which isolate receptor classes');
+fprintf('\nGenerating stimuli which isolate receptor classes:');
 for i = 1:length(whichReceptorsToIsolate)
     fprintf('\n  - %s', photoreceptorClasses{whichReceptorsToIsolate(i)});
 end
-fprintf('\n> Generating stimuli which ignore receptor classes');
+fprintf('\nGenerating stimuli which ignore receptor classes:');
 if ~(length(whichReceptorsToIgnore) == 0)
     for i = 1:length(whichReceptorsToIgnore)
         fprintf('\n  - %s', photoreceptorClasses{whichReceptorsToIgnore(i)});
@@ -159,77 +142,21 @@ else
     fprintf('\n  - None');
 end
 
-if isfield(params, 'checkKlein') && params.checkKlein;
-    fprintf('\nKlein check flagged\n')
-    kleinLabel  = {'KleinX' , 'KleinY' , 'KleinZ'};
-end
-fprintf('\n');
-
-for observerAgeInYears = [20:60];
-    % Set the operating point for the background to half-on. The
-    % corresponding field in the cache configs was added in July 2014, so
-    % to ensure backwards compatibility, we make sure that the code doesn't
-    % break here.
-    if ~isfield(params, 'bgOperatingPoint')
-        operatingPoint = 0.5;
-        backgroundPrimary = operatingPoint*ones(size(B_primary,2),1);
-    else
-        operatingPoint = params.bgOperatingPoint;
-        backgroundPrimary = operatingPoint*ones(size(B_primary,2),1);
-    end
+% Make direction for each observer age
+for observerAgeInYears = 20:60
     
-    switch params.backgroundType
-        case 'BackgroundHalfOn'
-            [bgCacheData,isStale] = olCache.load(['Direction_BackgroundHalfOn.mat']);
-            backgroundPrimary = bgCacheData.data(observerAgeInYears).backgroundPrimary;
-        case 'BackgroundEES'
-            [bgCacheData,isStale] = olCache.load(['Direction_BackgroundEES.mat']);
-            backgroundPrimary = bgCacheData.data(observerAgeInYears).backgroundPrimary;
-        case 'BackgroundOptim'
-            [bgCacheData,isStale] = olCache.load(['Direction_BackgroundOptim.mat']);
-            backgroundPrimary = bgCacheData.data(observerAgeInYears).backgroundPrimary;
-        case 'BackgroundMaxLMS'
-            [bgCacheData,isStale] = olCache.load(['Direction_BackgroundMaxLMS.mat']);
-            backgroundPrimary = bgCacheData.data(observerAgeInYears).backgroundPrimary;
-        case 'BackgroundOptimMel'
-            [bgCacheData,isStale] = olCache.load(['Direction_BackgroundOptimMel.mat']);
-            backgroundPrimary = bgCacheData.data(observerAgeInYears).backgroundPrimary;
-        case 'BackgroundMaxMel'
-            [bgCacheData,isStale] = olCache.load(['Direction_BackgroundMaxMel.mat']);
-            backgroundPrimary = bgCacheData.data(observerAgeInYears).backgroundPrimary;
-        case 'BackgroundMaxMelRodControl'
-            [bgCacheData,isStale] = olCache.load(['Direction_BackgroundMaxMelRodControl.mat']);
-            backgroundPrimary = bgCacheData.data(observerAgeInYears).backgroundPrimary;
-        case 'BackgroundMaxRod'
-            [bgCacheData,isStale] = olCache.load(['Direction_BackgroundMaxRod.mat']);
-            backgroundPrimary = bgCacheData.data(observerAgeInYears).backgroundPrimary;
-        case 'BackgroundMaxMelRodSilent'
-            [bgCacheData,isStale] = olCache.load(['Direction_BackgroundMaxMelRodSilent.mat']);
-            backgroundPrimary = bgCacheData.data(observerAgeInYears).backgroundPrimary;
-        case 'MaxMelHigh'
-            [bgCacheData,isStale] = olCache.load(['Direction_MelanopsinDirectedMaxMel.mat']);
-            backgroundPrimary = bgCacheData.data(32).backgroundPrimary+bgCacheData.data(32).differencePrimary;
-        case 'MaxMelLow'
-            [bgCacheData,isStale] = olCache.load(['Direction_MelanopsinDirectedMaxMel.mat']);
-            backgroundPrimary = bgCacheData.data(32).backgroundPrimary-bgCacheData.data(32).differencePrimary;
-    end
-    assert(~isStale,'Cache file is stale, aborting.');
+    % Get the background from its cache file
+    backgroundCacheFile = ['Background_' params.backgroundName '.mat'];
+    [backgroundCacheData,isStale] = backgroundOlCache.load([backgroundCacheFile]);
+    assert(~isStale,'Background cache file is stale, aborting.');
+    backgroundPrimary = backgroundCacheData.backgroundPrimary;
+    backgroundSpd = OLPrimaryToSpd(cal, backgroundPrimary);
     
-    % If no initial primary guess exists, we use the background for it.
-    % This accounts for the possibility of matching the primaries between
-    % different modulations while not touching the background. If it is not
-    % defined, we use the background as the initial guess.
-    if ~exist('initialPrimary', 'var')
-        initialPrimary = backgroundPrimary;
-    end
-    
-    
-    % Do the optimization of the background. We basically create a
-    % modulation, and use that as the background moving forward.
-    if isfield(params, 'background')
+    % Get self screening parameters if doing so
+    if (params.doSelfScreening)
+        
         %% Background spd.  Make sure is within primaries.
         % Need to make sure we start optimization at background.
-        backgroundSpd = OLPrimaryToSpd(cal, backgroundPrimary);
         radianceWattsPerM2Sr = backgroundSpd;
         radianceWattsPerM2Sr(radianceWattsPerM2Sr < 0) = 0;
         radianceWattsPerCm2Sr = (10.^-4)*radianceWattsPerM2Sr;
@@ -311,189 +238,22 @@ for observerAgeInYears = [20:60];
             end
         end
         
-        % If the cache file name contains 'ScreeningUncorrected', assume no
-        % bleaching
-        if strfind(cacheFileName, 'ScreeningUncorrected')
-            fractionBleached(:) = 0;
-        end
+    else
+        fractionBleached = zeros(1,length(photoreceptorClasses));
         
-        % Construct the receptor matrix
-        T_receptors = GetHumanPhotoreceptorSS(S, photoreceptorClasses, params.fieldSizeDegrees, observerAgeInYears, pupilDiameterMm, [], fractionBleached);
-        
-        % Calculate the receptor activations to the background
-        backgroundReceptors = T_receptors*(B_primary*backgroundPrimary + ambientSpd);
-        
-        % If the config contains a field called Klein check, get the Klein
-        % XYZ also
-        if isfield(params, 'checkKlein') && params.checkKlein;
-            T_klein = GetKleinK10AColorimeterXYZ(S);
-            T_receptors = [T_receptors ; T_klein];
-            photoreceptorClasses = [photoreceptorClasses kleinLabel];
-        end
-        
-        % If the modulation we want is an isochromatic one, we simply scale
-        % the background Spectrum. Otherwise, we call ReceptorIsolate. Due
-        % to the ambient, we play a little game of adding a little bit to
-        % scale the background just right.
-        if strfind(cacheFileName, 'LightFlux')
-            modulationPrimary = backgroundPrimary+backgroundPrimary*max(desiredContrasts);
-        else
-            %% Isolate the receptors by calling the wrapper
-            modulationPrimary = ReceptorIsolate(T_receptors,...
-                params.background.whichReceptorsToIsolate, params.background.whichReceptorsToIgnore, params.whichReceptorsToMinimize, ...
-                B_primary, backgroundPrimary, initialPrimary, whichPrimariesToPin,...
-                params.primaryHeadRoom, params.maxPowerDiff, params.background.modulationContrast, ambientSpd);
-        end
-        modulationSpd = B_primary*modulationPrimary + ambientSpd;
-        modulationReceptors = T_receptors*modulationSpd;
-        
-        %% Look at both negative and positive swing
-        differencePrimary = modulationPrimary - backgroundPrimary;
-        modulationPrimarySignedPositive = backgroundPrimary+differencePrimary;
-        modulationPrimarySignedNegative = backgroundPrimary-differencePrimary;
-        
-        %% Compute and report constrasts
-        differenceSpdSignedPositive = B_primary*(modulationPrimarySignedPositive-backgroundPrimary);
-        differenceReceptors = T_receptors*differenceSpdSignedPositive;
-        isolateContrastsSignedPositive = differenceReceptors ./ backgroundReceptors;
-        
-        differenceSpdSignedNegative = B_primary*(modulationPrimarySignedNegative-backgroundPrimary);
-        differenceReceptors = T_receptors*differenceSpdSignedNegative;
-        isolateContrastsSignedNegative = differenceReceptors ./ backgroundReceptors;
-        
-        fprintf('\n> Observer age: %g\n',observerAgeInYears);
-        for j = 1:size(T_receptors,1)
-            fprintf('  - %s: contrast = \t%f / %f\n',photoreceptorClasses{j},isolateContrastsSignedPositive(j),isolateContrastsSignedNegative(j));
-        end
-        
-        %% Make the modulation primaries, which isolate the photopigments, the new background. That way, we can have, e.g. a mel-high background.
-        % If we use a positive or negative background (i.e. mel-high or
-        % mel-low) depends on the number in
-        % params.background.whichPoleToUse (can be +1 = positive or -1
-        % = negative).
-        backgroundPrimary = backgroundPrimary + params.background.whichPoleToUse*differencePrimary;
-        
-    end
-    
-    %% Background spd.  Make sure is within primaries.
-    % Need to make sure we start optimization at background.
-    backgroundSpd = OLPrimaryToSpd(cal, backgroundPrimary);
-    radianceWattsPerM2Sr = backgroundSpd;
-    radianceWattsPerM2Sr(radianceWattsPerM2Sr < 0) = 0;
-    radianceWattsPerCm2Sr = (10.^-4)*radianceWattsPerM2Sr;
-    radianceQuantaPerCm2SrSec = EnergyToQuanta(S,radianceWattsPerCm2Sr);
-    
-    %% Get the fraction bleached for each cone type. See
-    % OLGetBGConeIsomerizations for reference.
-    
-    %% Load CIE functions.
-    load T_xyz1931
-    T_xyz = SplineCmf(S_xyz1931,683*T_xyz1931,S);
-    photopicLuminanceCdM2 = T_xyz(2,:)*radianceWattsPerM2Sr;
-    chromaticityXY = T_xyz(1:2,:)*radianceWattsPerM2Sr/sum(T_xyz*radianceWattsPerM2Sr);
-    
-    %% Adjust background luminance by scaling.  Handles small shifts from
-    % original calibration, just by scaling.  This is close enough for purposes
-    % of computing fraction of pigment bleached.
-    desiredPhotopicLuminanceCdM2 = photopicLuminanceCdM2; % here we set it to original one
-    scaleFactor = desiredPhotopicLuminanceCdM2/photopicLuminanceCdM2;
-    radianceWattsPerM2Sr = scaleFactor*radianceWattsPerM2Sr;
-    radianceWattsPerCm2Sr = scaleFactor*radianceWattsPerCm2Sr;
-    radianceQuantaPerCm2SrSec = scaleFactor*radianceQuantaPerCm2SrSec;
-    photopicLuminanceCdM2 = scaleFactor*photopicLuminanceCdM2;
-    
-    %% Get cone spectral sensitivities to use to compute isomerization rates
-    lambdaMaxShift = zeros(1, length(photoreceptorClasses));
-    [T_cones, T_quantalIsom]  = GetHumanPhotoreceptorSS(S, {'LCone' 'MCone' 'SCone'}, params.fieldSizeDegrees, observerAgeInYears, pupilDiameterMm, [], []);
-    [T_conesHemo, T_quantalIsomHemo]  = GetHumanPhotoreceptorSS(S, {'LConeTabulatedAbsorbancePenumbral' 'MConeTabulatedAbsorbancePenumbral' 'SConeTabulatedAbsorbancePenumbral'}, params.fieldSizeDegrees, observerAgeInYears, pupilDiameterMm, [], []);
-    
-    %% Compute irradiance, trolands, etc.
-    pupilAreaMm2 = pi*((pupilDiameterMm/2)^2);
-    eyeLengthMm = 17;
-    degPerMm = RetinalMMToDegrees(1,eyeLengthMm);
-    irradianceWattsPerUm2 = RadianceToRetIrradiance(radianceWattsPerM2Sr,S,pupilAreaMm2,eyeLengthMm);
-    irradianceScotTrolands = RetIrradianceToTrolands(irradianceWattsPerUm2, S, 'Scotopic', [], num2str(eyeLengthMm));
-    irradiancePhotTrolands = RetIrradianceToTrolands(irradianceWattsPerUm2, S, 'Photopic', [], num2str(eyeLengthMm));
-    irradianceQuantaPerUm2Sec = EnergyToQuanta(S,irradianceWattsPerUm2);
-    irradianceWattsPerCm2 = (10.^8)*irradianceWattsPerUm2;
-    irradianceQuantaPerCm2Sec = (10.^8)*irradianceQuantaPerUm2Sec;
-    irradianceQuantaPerDeg2Sec = (degPerMm^2)*(10.^-2)*irradianceQuantaPerCm2Sec;
-    
-    %% This is just to get cone inner segment diameter
-    photoreceptors = DefaultPhotoreceptors('CIE10Deg');
-    photoreceptors = FillInPhotoreceptors(photoreceptors);
-    
-    %% Get isomerizations
-    theLMSIsomerizations = PhotonAbsorptionRate(irradianceQuantaPerUm2Sec,S, ...
-        T_quantalIsom,S,photoreceptors.ISdiameter.value);
-    theLMSIsomerizationsHemo = PhotonAbsorptionRate(irradianceQuantaPerUm2Sec,S, ...
-        T_quantalIsomHemo,S,photoreceptors.ISdiameter.value);
-    
-    %% Get fraction bleached
-    fractionBleachedFromTrolands = ComputePhotopigmentBleaching(irradiancePhotTrolands,'cones','trolands','Boynton');
-    fractionBleachedFromIsom = zeros(3,1);
-    fractionBleachedFromIsomHemo = zeros(3,1);
-    for i = 1:3
-        fractionBleachedFromIsom(i) = ComputePhotopigmentBleaching(theLMSIsomerizations(i),'cones','isomerizations','Boynton');
-        fractionBleachedFromIsomHemo(i) = ComputePhotopigmentBleaching(theLMSIsomerizationsHemo(i),'cones','isomerizations','Boynton');
-    end
-    
-    
-    % We can now assign the fraction bleached for each photoreceptor
-    % class.
-    for p = 1:length(photoreceptorClasses)
-        switch photoreceptorClasses{p}
-            case 'LCone'
-                fractionBleached(p) = fractionBleachedFromIsom(1);
-            case 'MCone'
-                fractionBleached(p) = fractionBleachedFromIsom(2);
-            case 'SCone'
-                fractionBleached(p) = fractionBleachedFromIsom(3);
-            case 'LConeHemo'
-                fractionBleached(p) = fractionBleachedFromIsomHemo(1);
-            case 'MConeHemo'
-                fractionBleached(p) = fractionBleachedFromIsomHemo(2);
-            case 'SConeHemo'
-                fractionBleached(p) = fractionBleachedFromIsomHemo(3);
-            otherwise
-                fractionBleached(p) = 0;
-        end
-    end
-    
-    % If the cache file name contains 'ScreeningUncorrected', assume no
-    % bleaching
-    if strfind(cacheFileName, 'ScreeningUncorrected')
-        fractionBleached(:) = 0;
     end
     
     % Construct the receptor matrix
-    T_receptors = GetHumanPhotoreceptorSS(S, photoreceptorClasses, params.fieldSizeDegrees, observerAgeInYears, pupilDiameterMm, zeros(1, length(photoreceptorClasses)), fractionBleached);
+    T_receptors = GetHumanPhotoreceptorSS(S, photoreceptorClasses, params.fieldSizeDegrees, observerAgeInYears, pupilDiameterMm, [], fractionBleached);
     
     % Calculate the receptor activations to the background
     backgroundReceptors = T_receptors*(B_primary*backgroundPrimary + ambientSpd);
-    
-    % If the config contains a field called Klein check, get the Klein
-    % XYZ also
-    if isfield(params, 'checkKlein') && params.checkKlein;
-        T_klein = GetKleinK10AColorimeterXYZ(S);
-        T_receptors = [T_receptors ; T_klein];
-        photoreceptorClasses = [photoreceptorClasses kleinLabel];
-    end
-    
-    % If the modulation we want is an isochromatic one, we simply scale
-    % the background Spectrum. Otherwise, we call ReceptorIsolate. Due
-    % to the ambient, we play a little game of adding a little bit to
-    % scale the background just right.
-    if strfind(cacheFileName, 'LightFlux')
-        modulationPrimary = backgroundPrimary+backgroundPrimary*max(desiredContrasts);
-    else
-        %% Isolate the receptors by calling the wrapper
-        modulationPrimary = ReceptorIsolate(T_receptors, whichReceptorsToIsolate, ...
-            whichReceptorsToIgnore,whichReceptorsToMinimize,B_primary,backgroundPrimary,...
-            initialPrimary,whichPrimariesToPin,params.primaryHeadRoom,params.maxPowerDiff,...
-            desiredContrasts,ambientSpd);
-        
-    end
+
+    %% Isolate the receptors by calling the wrapper
+    modulationPrimary = ReceptorIsolate(T_receptors,...
+        params.background.whichReceptorsToIsolate, params.background.whichReceptorsToIgnore, params.whichReceptorsToMinimize, ...
+        B_primary, backgroundPrimary, initialPrimary, whichPrimariesToPin,...
+        params.primaryHeadRoom, params.maxPowerDiff, params.background.modulationContrast, ambientSpd);
     modulationSpd = B_primary*modulationPrimary + ambientSpd;
     modulationReceptors = T_receptors*modulationSpd;
     
@@ -501,10 +261,6 @@ for observerAgeInYears = [20:60];
     differencePrimary = modulationPrimary - backgroundPrimary;
     modulationPrimarySignedPositive = backgroundPrimary+differencePrimary;
     modulationPrimarySignedNegative = backgroundPrimary-differencePrimary;
-    
-    if any(modulationPrimarySignedNegative > 1) | any(modulationPrimarySignedNegative < 0)  | any(modulationPrimarySignedPositive > 1)  | any(modulationPrimarySignedPositive < 0)
-        error('Out of bounds.')
-    end
     
     %% Compute and report constrasts
     differenceSpdSignedPositive = B_primary*(modulationPrimarySignedPositive-backgroundPrimary);
@@ -515,166 +271,202 @@ for observerAgeInYears = [20:60];
     differenceReceptors = T_receptors*differenceSpdSignedNegative;
     isolateContrastsSignedNegative = differenceReceptors ./ backgroundReceptors;
     
-    % Print out contrasts
-    ComputeAndReportContrastsFromSpds(sprintf('\n> Observer age: %g',observerAgeInYears),photoreceptorClasses,T_receptors,backgroundSpd,modulationSpd,[],[]);
-    
-    % Print ouf luminance info.
-    GetLuminanceAndTrolandsFromSpd(S, radianceWattsPerM2Sr, pupilDiameterMm, true);
-    
-    % Assign all the cache fields
-    
-    %% Save out important information
-    cacheData.data(observerAgeInYears).describe.params = params;                     % Parameters
-    cacheData.data(observerAgeInYears).describe.B_primary = B_primary;
-    cacheData.data(observerAgeInYears).describe.photoreceptors = photoreceptorClasses;     % Photoreceptors
-    cacheData.data(observerAgeInYears).describe.fractionBleached = fractionBleached;
-    cacheData.data(observerAgeInYears).describe.S = S;     % Photoreceptors
-    cacheData.data(observerAgeInYears).describe.T_receptors = T_receptors;
-    cacheData.data(observerAgeInYears).describe.S_receptors = S;
-    cacheData.data(observerAgeInYears).describe.params.maxPowerDiff = params.maxPowerDiff;
-    cacheData.data(observerAgeInYears).describe.params.primaryHeadRoom = params.primaryHeadRoom;
-    cacheData.data(observerAgeInYears).describe.contrast = isolateContrastsSignedPositive;
-    cacheData.data(observerAgeInYears).describe.contrastSignedPositive = isolateContrastsSignedPositive;
-    cacheData.data(observerAgeInYears).describe.contrastSignedNegative = isolateContrastsSignedNegative;
-    cacheData.data(observerAgeInYears).describe.bgOperatingPoint = operatingPoint;
-    cacheData.cal = cal;
-    
-    %% Stick in there the stuff we've calculated
-    % Background
-    cacheData.data(observerAgeInYears).backgroundPrimary = backgroundPrimary;
-    cacheData.data(observerAgeInYears).backgroundSpd = backgroundSpd;
-    
-    % Modulation (unsigned)
-    cacheData.data(observerAgeInYears).differencePrimary = differencePrimary;
-    cacheData.data(observerAgeInYears).differenceSpd = B_primary*differencePrimary;
-    
-    % Modulation (signed)
-    cacheData.data(observerAgeInYears).modulationPrimarySignedPositive = modulationPrimarySignedPositive;
-    cacheData.data(observerAgeInYears).modulationPrimarySignedNegative = modulationPrimarySignedNegative;
-    cacheData.data(observerAgeInYears).modulationSpdSignedPositive = (B_primary*modulationPrimarySignedPositive) + ambientSpd;
-    cacheData.data(observerAgeInYears).modulationSpdSignedNegative = (B_primary*modulationPrimarySignedNegative) + ambientSpd;
-    
-    cacheData.data(observerAgeInYears).ambientSpd = ambientSpd;
-    cacheData.data(observerAgeInYears).operatingPoint = operatingPoint;
-    
-end
-
-% Calculate the spaltter
-[calID calIDTitle] = OLGetCalID(cal);
-
-if params.CALCULATE_SPLATTER
-    fprintf('> Requested to calculate splatter as per params.CALCULATE_SPLATTER flag...\n');
-    
-    % Pull out the data for the reference observer
-    data = cacheData.data(params.OBSERVER_AGE);
-    
-    %% Make plot of spectra and save as csv
-    theSpectraFig = figure;
-    subplot(1, 4, 1);
-    plot(SToWls(S), data.backgroundSpd);
-    xlim([380 780]);
-    xlabel('Wavelength [nm]'); ylabel('Power'); title('Background'); pbaspect([1 1 1]);
-    
-    subplot(1, 4, 2);
-    plot(SToWls(S), data.modulationSpdSignedPositive); hold on;
-    plot(SToWls(S), data.backgroundSpd, '--k');
-    xlim([380 780]);
-    xlabel('Wavelength [nm]'); ylabel('Power'); title('+ve modulation'); pbaspect([1 1 1]);
-    
-    subplot(1, 4, 3);
-    plot(SToWls(S), data.modulationSpdSignedNegative); hold on;
-    plot(SToWls(S), data.backgroundSpd, '--k');
-    xlim([380 780]);
-    xlabel('Wavelength [nm]'); ylabel('Power'); title('-ve modulation'); pbaspect([1 1 1]);
-    
-    subplot(1, 4, 4);
-    plot(SToWls(S), data.modulationSpdSignedPositive-data.backgroundSpd, '-r'); hold on;
-    plot(SToWls(S), data.modulationSpdSignedNegative-data.backgroundSpd, '-b'); hold on;
-    xlim([380 780]);
-    xlabel('Wavelength [nm]'); ylabel('Power'); title('Difference spectra'); pbaspect([1 1 1]);
-    
-    % Save plots
-    suptitle(sprintf('%s\n%s', calIDTitle, cacheFileName));
-    set(theSpectraFig, 'PaperPosition', [0 0 20 10]);
-    set(theSpectraFig, 'PaperSize', [20 10]);
-    
-    currDir = pwd;
-    
-    cd(docDir);
-    saveas(theSpectraFig, ['Spectra_' calID], 'pdf');
-    cd(currDir)
-    
-    % Save as CSV
-    csvwrite(fullfile(docDir, ['Spectra_' calID '.csv']), [SToWls(S) data.backgroundSpd data.modulationSpdSignedPositive data.modulationSpdSignedNegative]);
-    
-    % Only do the splatter calcs if the Klein is not involved
-    if ~(isfield(params, 'checkKlein') && params.checkKlein);
-        theCanonicalPhotoreceptors = {'LCone', 'MCone', 'SCone', 'Melanopsin', 'Rods'};
-        %% Plot both the positive and the negative lobes.
-        
-        %% Positive modulation
-        for k = 1:length(theCanonicalPhotoreceptors)
-            targetContrasts{k} = data.describe.contrastSignedPositive(k);
-        end
-        backgroundSpd = data.backgroundSpd;
-        modulationSpd = data.modulationSpdSignedPositive;
-        fileNameSuffix = '_positive';
-        titleSuffix = 'Positive';
-        
-        % Calculate the splatter
-        lambdaMaxRange = [];
-        ageRange = [];
-        [contrastMap, nominalLambdaMax, ageRange, lambdaMaxShiftRange] = CalculateSplatter(S, backgroundSpd, modulationSpd, theCanonicalPhotoreceptors, data.describe.params.fieldSizeDegrees, [], pupilDiameterMm, [], cacheData.data(params.OBSERVER_AGE).describe.fractionBleached);
-        
-        % Plot the splatter
-        SAVEPLOTS = 0;
-        theFig = PlotSplatter(figure, contrastMap, theCanonicalPhotoreceptors, nominalLambdaMax, params.OBSERVER_AGE, ageRange, lambdaMaxShiftRange, targetContrasts, [], 1, 2, SAVEPLOTS, titleSuffix, [], 32);
-        % Save out the splatter
-        SaveSplatter(docDir, [fileNameSuffix '_' calID], contrastMap, theCanonicalPhotoreceptors, nominalLambdaMax, params.OBSERVER_AGE, ageRange, lambdaMaxShiftRange, targetContrasts);
-        SaveSplatterConfidenceBounds(docDir, [fileNameSuffix '_95CI_' calID], contrastMap, theCanonicalPhotoreceptors, nominalLambdaMax, ageRange, lambdaMaxShiftRange, targetContrasts, 0.9545);
-        SaveSplatterConfidenceBounds(docDir, [fileNameSuffix '_99CI_' calID], contrastMap, theCanonicalPhotoreceptors, nominalLambdaMax, ageRange, lambdaMaxShiftRange, targetContrasts, 0.9973);
-        
-        
-        %% Negative modulation
-        for k = 1:length(theCanonicalPhotoreceptors)
-            targetContrasts{k} = data.describe.contrastSignedNegative(k);
-        end
-        backgroundSpd = data.backgroundSpd;
-        modulationSpd = data.modulationSpdSignedNegative;
-        fileNameSuffix = '_negative';
-        titleSuffix = 'Negative';
-        
-        % Calculate the splatter
-        lambdaMaxRange = [];
-        ageRange = [];
-        [contrastMap, nominalLambdaMax, ageRange, lambdaMaxShiftRange] = CalculateSplatter(S, backgroundSpd, modulationSpd, theCanonicalPhotoreceptors, data.describe.params.fieldSizeDegrees, ageRange, pupilDiameterMm, [], cacheData.data(params.OBSERVER_AGE).describe.fractionBleached);
-        
-        % Plot the splatter
-        theFig = PlotSplatter(theFig, contrastMap, theCanonicalPhotoreceptors, nominalLambdaMax, params.OBSERVER_AGE, ageRange, lambdaMaxShiftRange, targetContrasts, [], 2, 2, SAVEPLOTS, titleSuffix, [], 32);
-        
-        % Add a suplabel
-        figure(theFig);
-        suplabel(sprintf('%s/%s', calIDTitle, cacheFileName));
-        
-        %% Save plots
-        set(theFig, 'Color', [1 1 1]);
-        set(theFig, 'InvertHardCopy', 'off');
-        set(theFig, 'PaperPosition', [0 0 20 12]); %Position plot at left hand corner with width 15 and height 6.
-        set(theFig, 'PaperSize', [20 12]); %Set the paper to have width 15 and height 6.
-        currDir = pwd;
-        cd(docDir);
-        saveas(theFig, ['Splatter_' calID], 'pdf');
-        cd(currDir);
-        
-        fprintf('  - Contrast plot saved to %s.\n', fullfile(docDir, ['Splatter_' calID]));
-        
-        % Save out the splatter
-        SaveSplatter(docDir, [fileNameSuffix '_' calID], contrastMap, theCanonicalPhotoreceptors, nominalLambdaMax, params.OBSERVER_AGE, ageRange, lambdaMaxShiftRange, targetContrasts);
-        SaveSplatterConfidenceBounds(docDir, [fileNameSuffix '_95CI_' calID], contrastMap, theCanonicalPhotoreceptors, nominalLambdaMax, ageRange, lambdaMaxShiftRange, targetContrasts, 0.9545);
-        SaveSplatterConfidenceBounds(docDir, [fileNameSuffix '_99CI_' calID], contrastMap, theCanonicalPhotoreceptors, nominalLambdaMax, ageRange, lambdaMaxShiftRange, targetContrasts, 0.9973);
-        
+    fprintf('\n> Observer age: %g\n',observerAgeInYears);
+    for j = 1:size(T_receptors,1)
+        fprintf('  - %s: contrast = \t%f / %f\n',photoreceptorClasses{j},isolateContrastsSignedPositive(j),isolateContrastsSignedNegative(j));
     end
+    
+    %% Make the modulation primaries, which isolate the photopigments, the new background. That way, we can have, e.g. a mel-high background.
+    % If we use a positive or negative background (i.e. mel-high or
+    % mel-low) depends on the number in
+    % params.background.whichPoleToUse (can be +1 = positive or -1
+    % = negative).
+    backgroundPrimary = backgroundPrimary + params.background.whichPoleToUse*differencePrimary;
+    
 end
+
+% %% Background spd.  Make sure is within primaries.
+% % Need to make sure we start optimization at background.
+% backgroundSpd = OLPrimaryToSpd(cal, backgroundPrimary);
+% radianceWattsPerM2Sr = backgroundSpd;
+% radianceWattsPerM2Sr(radianceWattsPerM2Sr < 0) = 0;
+% radianceWattsPerCm2Sr = (10.^-4)*radianceWattsPerM2Sr;
+% radianceQuantaPerCm2SrSec = EnergyToQuanta(S,radianceWattsPerCm2Sr);
+% 
+% %% Get the fraction bleached for each cone type. See
+% % OLGetBGConeIsomerizations for reference.
+% 
+% %% Load CIE functions.
+% load T_xyz1931
+% T_xyz = SplineCmf(S_xyz1931,683*T_xyz1931,S);
+% photopicLuminanceCdM2 = T_xyz(2,:)*radianceWattsPerM2Sr;
+% chromaticityXY = T_xyz(1:2,:)*radianceWattsPerM2Sr/sum(T_xyz*radianceWattsPerM2Sr);
+% 
+% %% Adjust background luminance by scaling.  Handles small shifts from
+% % original calibration, just by scaling.  This is close enough for purposes
+% % of computing fraction of pigment bleached.
+% desiredPhotopicLuminanceCdM2 = photopicLuminanceCdM2; % here we set it to original one
+% scaleFactor = desiredPhotopicLuminanceCdM2/photopicLuminanceCdM2;
+% radianceWattsPerM2Sr = scaleFactor*radianceWattsPerM2Sr;
+% radianceWattsPerCm2Sr = scaleFactor*radianceWattsPerCm2Sr;
+% radianceQuantaPerCm2SrSec = scaleFactor*radianceQuantaPerCm2SrSec;
+% photopicLuminanceCdM2 = scaleFactor*photopicLuminanceCdM2;
+% 
+% %% Get cone spectral sensitivities to use to compute isomerization rates
+% lambdaMaxShift = zeros(1, length(photoreceptorClasses));
+% [T_cones, T_quantalIsom]  = GetHumanPhotoreceptorSS(S, {'LCone' 'MCone' 'SCone'}, params.fieldSizeDegrees, observerAgeInYears, pupilDiameterMm, [], []);
+% [T_conesHemo, T_quantalIsomHemo]  = GetHumanPhotoreceptorSS(S, {'LConeTabulatedAbsorbancePenumbral' 'MConeTabulatedAbsorbancePenumbral' 'SConeTabulatedAbsorbancePenumbral'}, params.fieldSizeDegrees, observerAgeInYears, pupilDiameterMm, [], []);
+% 
+% %% Compute irradiance, trolands, etc.
+% pupilAreaMm2 = pi*((pupilDiameterMm/2)^2);
+% eyeLengthMm = 17;
+% degPerMm = RetinalMMToDegrees(1,eyeLengthMm);
+% irradianceWattsPerUm2 = RadianceToRetIrradiance(radianceWattsPerM2Sr,S,pupilAreaMm2,eyeLengthMm);
+% irradianceScotTrolands = RetIrradianceToTrolands(irradianceWattsPerUm2, S, 'Scotopic', [], num2str(eyeLengthMm));
+% irradiancePhotTrolands = RetIrradianceToTrolands(irradianceWattsPerUm2, S, 'Photopic', [], num2str(eyeLengthMm));
+% irradianceQuantaPerUm2Sec = EnergyToQuanta(S,irradianceWattsPerUm2);
+% irradianceWattsPerCm2 = (10.^8)*irradianceWattsPerUm2;
+% irradianceQuantaPerCm2Sec = (10.^8)*irradianceQuantaPerUm2Sec;
+% irradianceQuantaPerDeg2Sec = (degPerMm^2)*(10.^-2)*irradianceQuantaPerCm2Sec;
+% 
+% %% This is just to get cone inner segment diameter
+% photoreceptors = DefaultPhotoreceptors('CIE10Deg');
+% photoreceptors = FillInPhotoreceptors(photoreceptors);
+% 
+% %% Get isomerizations
+% theLMSIsomerizations = PhotonAbsorptionRate(irradianceQuantaPerUm2Sec,S, ...
+%     T_quantalIsom,S,photoreceptors.ISdiameter.value);
+% theLMSIsomerizationsHemo = PhotonAbsorptionRate(irradianceQuantaPerUm2Sec,S, ...
+%     T_quantalIsomHemo,S,photoreceptors.ISdiameter.value);
+% 
+% %% Get fraction bleached
+% fractionBleachedFromTrolands = ComputePhotopigmentBleaching(irradiancePhotTrolands,'cones','trolands','Boynton');
+% fractionBleachedFromIsom = zeros(3,1);
+% fractionBleachedFromIsomHemo = zeros(3,1);
+% for i = 1:3
+%     fractionBleachedFromIsom(i) = ComputePhotopigmentBleaching(theLMSIsomerizations(i),'cones','isomerizations','Boynton');
+%     fractionBleachedFromIsomHemo(i) = ComputePhotopigmentBleaching(theLMSIsomerizationsHemo(i),'cones','isomerizations','Boynton');
+% end
+% 
+% 
+% % We can now assign the fraction bleached for each photoreceptor
+% % class.
+% for p = 1:length(photoreceptorClasses)
+%     switch photoreceptorClasses{p}
+%         case 'LCone'
+%             fractionBleached(p) = fractionBleachedFromIsom(1);
+%         case 'MCone'
+%             fractionBleached(p) = fractionBleachedFromIsom(2);
+%         case 'SCone'
+%             fractionBleached(p) = fractionBleachedFromIsom(3);
+%         case 'LConeHemo'
+%             fractionBleached(p) = fractionBleachedFromIsomHemo(1);
+%         case 'MConeHemo'
+%             fractionBleached(p) = fractionBleachedFromIsomHemo(2);
+%         case 'SConeHemo'
+%             fractionBleached(p) = fractionBleachedFromIsomHemo(3);
+%         otherwise
+%             fractionBleached(p) = 0;
+%     end
+% end
+% 
+% % If the cache file name contains 'ScreeningUncorrected', assume no
+% % bleaching
+% if strfind(cacheFileName, 'ScreeningUncorrected')
+%     fractionBleached(:) = 0;
+% end
+% 
+% % Construct the receptor matrix
+% T_receptors = GetHumanPhotoreceptorSS(S, photoreceptorClasses, params.fieldSizeDegrees, observerAgeInYears, pupilDiameterMm, zeros(1, length(photoreceptorClasses)), fractionBleached);
+% 
+% % Calculate the receptor activations to the background
+% backgroundReceptors = T_receptors*(B_primary*backgroundPrimary + ambientSpd);
+% 
+% % If the config contains a field called Klein check, get the Klein
+% % XYZ also
+% if isfield(params, 'checkKlein') && params.checkKlein;
+%     T_klein = GetKleinK10AColorimeterXYZ(S);
+%     T_receptors = [T_receptors ; T_klein];
+%     photoreceptorClasses = [photoreceptorClasses kleinLabel];
+% end
+% 
+% % If the modulation we want is an isochromatic one, we simply scale
+% % the background Spectrum. Otherwise, we call ReceptorIsolate. Due
+% % to the ambient, we play a little game of adding a little bit to
+% % scale the background just right.
+% if strfind(cacheFileName, 'LightFlux')
+%     modulationPrimary = backgroundPrimary+backgroundPrimary*max(desiredContrasts);
+% else
+%     %% Isolate the receptors by calling the wrapper
+%     modulationPrimary = ReceptorIsolate(T_receptors, whichReceptorsToIsolate, ...
+%         whichReceptorsToIgnore,whichReceptorsToMinimize,B_primary,backgroundPrimary,...
+%         initialPrimary,whichPrimariesToPin,params.primaryHeadRoom,params.maxPowerDiff,...
+%         desiredContrasts,ambientSpd);
+%     
+% end
+% modulationSpd = B_primary*modulationPrimary + ambientSpd;
+% modulationReceptors = T_receptors*modulationSpd;
+
+%% Look at both negative and positive swing
+differencePrimary = modulationPrimary - backgroundPrimary;
+modulationPrimarySignedPositive = backgroundPrimary+differencePrimary;
+modulationPrimarySignedNegative = backgroundPrimary-differencePrimary;
+
+if any(modulationPrimarySignedNegative > 1) | any(modulationPrimarySignedNegative < 0)  | any(modulationPrimarySignedPositive > 1)  | any(modulationPrimarySignedPositive < 0)
+    error('Out of bounds.')
+end
+
+%% Compute and report constrasts
+differenceSpdSignedPositive = B_primary*(modulationPrimarySignedPositive-backgroundPrimary);
+differenceReceptors = T_receptors*differenceSpdSignedPositive;
+isolateContrastsSignedPositive = differenceReceptors ./ backgroundReceptors;
+
+differenceSpdSignedNegative = B_primary*(modulationPrimarySignedNegative-backgroundPrimary);
+differenceReceptors = T_receptors*differenceSpdSignedNegative;
+isolateContrastsSignedNegative = differenceReceptors ./ backgroundReceptors;
+
+% Print out contrasts
+ComputeAndReportContrastsFromSpds(sprintf('\n> Observer age: %g',observerAgeInYears),photoreceptorClasses,T_receptors,backgroundSpd,modulationSpd,[],[]);
+
+% Print ouf luminance info.
+GetLuminanceAndTrolandsFromSpd(S, radianceWattsPerM2Sr, pupilDiameterMm, true);
+
+% Assign all the cache fields
+
+%% Save out important information
+cacheData.data(observerAgeInYears).describe.params = params;                     % Parameters
+cacheData.data(observerAgeInYears).describe.B_primary = B_primary;
+cacheData.data(observerAgeInYears).describe.photoreceptors = photoreceptorClasses;     % Photoreceptors
+cacheData.data(observerAgeInYears).describe.fractionBleached = fractionBleached;
+cacheData.data(observerAgeInYears).describe.S = S;     % Photoreceptors
+cacheData.data(observerAgeInYears).describe.T_receptors = T_receptors;
+cacheData.data(observerAgeInYears).describe.S_receptors = S;
+cacheData.data(observerAgeInYears).describe.params.maxPowerDiff = params.maxPowerDiff;
+cacheData.data(observerAgeInYears).describe.params.primaryHeadRoom = params.primaryHeadRoom;
+cacheData.data(observerAgeInYears).describe.contrast = isolateContrastsSignedPositive;
+cacheData.data(observerAgeInYears).describe.contrastSignedPositive = isolateContrastsSignedPositive;
+cacheData.data(observerAgeInYears).describe.contrastSignedNegative = isolateContrastsSignedNegative;
+cacheData.data(observerAgeInYears).describe.bgOperatingPoint = operatingPoint;
+cacheData.cal = cal;
+
+%% Stick in there the stuff we've calculated
+% Background
+cacheData.data(observerAgeInYears).backgroundPrimary = backgroundPrimary;
+cacheData.data(observerAgeInYears).backgroundSpd = backgroundSpd;
+
+% Modulation (unsigned)
+cacheData.data(observerAgeInYears).differencePrimary = differencePrimary;
+cacheData.data(observerAgeInYears).differenceSpd = B_primary*differencePrimary;
+
+% Modulation (signed)
+cacheData.data(observerAgeInYears).modulationPrimarySignedPositive = modulationPrimarySignedPositive;
+cacheData.data(observerAgeInYears).modulationPrimarySignedNegative = modulationPrimarySignedNegative;
+cacheData.data(observerAgeInYears).modulationSpdSignedPositive = (B_primary*modulationPrimarySignedPositive) + ambientSpd;
+cacheData.data(observerAgeInYears).modulationSpdSignedNegative = (B_primary*modulationPrimarySignedNegative) + ambientSpd;
+
+cacheData.data(observerAgeInYears).ambientSpd = ambientSpd;
+cacheData.data(observerAgeInYears).operatingPoint = operatingPoint;
+
 end
 
 function contrast = ComputeContrastIso(T_receptors, B_primary, backgroundPrimary, ambientSpd, desiredContrast, c)

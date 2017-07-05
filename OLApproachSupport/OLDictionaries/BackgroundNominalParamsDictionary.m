@@ -23,17 +23,17 @@ function d = BackgroundNominalParamsDictionary()
     % 
     % Note modulation contrast is typically 2/3 for 400% pulse contrast <=> 66.66% sinusoidal contrast
     baseName = 'MelanopsinDirected';
-    modulationContrast = 4/6;
+    params.baseModulationContrast = 4/6;
     params = defaultParams();
     params.primaryHeadRoom = 0.01;
     params.photoreceptorClasses = 'LConeTabulatedAbsorbance,MConeTabulatedAbsorbance,SConeTabulatedAbsorbance,Melanopsin';
-    params.modulationContrast = [modulationContrast];
+    params.modulationContrast = [params.baseModulationContrast];
     params.whichReceptorsToIsolate = {[4]};
     params.whichReceptorsToIgnore = {[]};
     params.whichReceptorsToMinimize = {[]};
     params.directionsYoked = [0];
     params.directionsYokedAbs = [0];
-    params.name = sprintf('%s_%d_%d_%d',baseName,round(10*params.fieldSizeDegrees),round(10*params.pupilDiameterMm),round(1000*modulationContrast));
+    params.name = OLMakeApproachBackgroundName(baseName,params);
     params.cacheFile = ['Background_' params.name  '.mat'];
     d = paramsValidateAndAppendToDictionary(d, params.name, params);
     
@@ -47,15 +47,16 @@ function d = BackgroundNominalParamsDictionary()
     % Note modulation contrast is typically 2/3 for 400% pulse contrast <=> 66.66% sinusoidal contrast
     baseName = 'LMSDirected';
     params = defaultParams();
+    params.baseModulationContrast = 4/6;
     params.primaryHeadRoom = 0.01;
     params.photoreceptorClasses = 'LConeTabulatedAbsorbance,MConeTabulatedAbsorbance,SConeTabulatedAbsorbance,Melanopsin';
-    params.modulationContrast = {[modulationContrast modulationContrast modulationContrast]};
+    params.modulationContrast = {[params.baseModulationContrast params.baseModulationContrast params.baseModulationContrast]};
     params.whichReceptorsToIsolate = {[1 2 3]};
     params.whichReceptorsToIgnore = {[]};
     params.whichReceptorsToMinimize = {[]};
     params.directionsYoked = [1];
     params.directionsYokedAbs = [0];
-    params.name = sprintf('%s_%d_%d_%d',baseName,round(10*params.fieldSizeDegrees),round(10*params.pupilDiameterMm),round(1000*modulationContrast));
+    params.name = OLMakeApproachBackgroundName(baseName,params);
     params.cacheFile = ['Background_' params.name  '.mat'];
     d = paramsValidateAndAppendToDictionary(d, params.name, params);
     
@@ -69,7 +70,7 @@ function d = BackgroundNominalParamsDictionary()
     params.type = 'lightfluxchrom';
     params.lightFluxDesiredXY = [0.54,0.38];
     params.lightFluxDownFactor = 5;
-    params.name = sprintf('%s_%d_%d_%d',baseName,round(1000*params.lightFluxDesiredXY(1)),round(1000*params.lightFluxDesiredXY(2)),round(10*params.lightFluxDownFactor)); 
+    params.name = OLMakeApproachBackgroundName(baseName,params); 
     params.cacheFile = ['Background_' params.name  '.mat'];
     d = paramsValidateAndAppendToDictionary(d, params.name, params);
 end
@@ -93,6 +94,7 @@ function d = paramsValidateAndAppendToDictionary(d, directionName, params)
     % Test that all expected params exist and that they have the expected type
     assert((isfield(params, 'name')                       && ischar(params.name)),                      sprintf('params.name does not exist or it does not contain a string value.'));
     assert((isfield(params, 'type')                       && ischar(params.type)),                      sprintf('params.type does not exist or it does not contain a string value.'));
+    assert((isfield(params, 'baseModulationContrast')     && isnumeric(params.baseModulationContrast)), sprintf('params.baseModulationContrast does not exist or it does not contain a numeric value.'));
     assert((isfield(params, 'primaryHeadRoom')            && isnumeric(params.primaryHeadRoom)),        sprintf('params.primaryHeadRoom does not exist or it does not contain a numeric value.'));
     assert((isfield(params, 'pegBackground')              && islogical(params.pegBackground)),          sprintf('params.pegBackground does not exist or it does not contain a boolean value.'));
     assert((isfield(params, 'photoreceptorClasses')       && ischar(params.photoreceptorClasses)),      sprintf('params.photoreceptorClasses does not exist or it does not contain a string value.'));
@@ -120,6 +122,7 @@ function params = defaultParams()
     params.name = '';
     params.type = 'optimized';
     params.pegBackground = false;           % not sure about default value of this param - Nicolas
+    params.baseModulationContrast = 4/6;
     params.primaryHeadRoom = 0.005;
     params.photoreceptorClasses = 'LConeTabulatedAbsorbance,MConeTabulatedAbsorbance,SConeTabulatedAbsorbance,Melanopsin';
     params.fieldSizeDegrees = 27.5;
