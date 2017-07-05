@@ -1,4 +1,4 @@
-function [cacheData, olCache, wasRecomputed] = OLReceptorIsolateMakeDirectionNominalPrimaries(approach,params,forceRecompute)
+function [cacheData, directionOlCache, wasRecomputed] = OLReceptorIsolateMakeDirectionNominalPrimaries(approach,params,forceRecompute)
 % OLReceptorIsolateMakeDirectionNominalPrimaries - Computes nominal primaries for receptor-isolating directions.
 %
 % Usage:
@@ -42,7 +42,7 @@ function [cacheData, olCache, wasRecomputed] = OLReceptorIsolateMakeDirectionNom
 % 02/25/14   ms          Modularized.
 % 06/15/17   dhb et al.  Handle isStale return from updated cache code.
 
-%% Setup the directories we'll use. Directionss go in their special place under the materials path approach directory.
+%% Setup the directories we'll use. Directions go in their special place under the materials path approach directory.
 cacheDir = fullfile(getpref(params.approach, 'MaterialsPath'), 'Experiments',params.approach,'DirectionNominalPrimaries');
 if ~isdir(cacheDir)
     mkdir(cacheDir);
@@ -59,9 +59,9 @@ assert(~isempty(cal), 'OLFlickerComputeModulationSpectra:NoCalFile', 'Could not 
 %% Pull out S
 S = cal.describe.S;
 
-%% Create the cache object and filename
-olCache = OLCache(cacheDir, cal);
-[~, cacheFileName] = fileparts(params.cacheFile);
+%% Create the direction cache object and filename
+directionOlCache = OLCache(cacheDir, cal);
+[~, directionCacheFileName] = fileparts(params.cacheFile);
 
 %% Create the background cache object
 backgroundOlCache = OLCache(backgroundCacheDir, cal);
@@ -71,8 +71,8 @@ backgroundOlCache = OLCache(backgroundCacheDir, cal);
 % If we don't need to recompute, we just return, cacheData in hand.  Otherwise we
 % compute.
 if (~forceRecompute)
-    if (olCache.exist(cacheFileName))
-        [cacheData,isStale] = olCache.load(cacheFileName);
+    if (directionOlCache.exist(directionCacheFileName))
+        [cacheData,isStale] = directionOlCache.load(directionCacheFileName);
         if (~isStale)
             wasRecomputed = false;
             return;
@@ -82,7 +82,10 @@ if (~forceRecompute)
     end
 end
 
-%% OK, need to compute.
+%% OK, if we're here we need to compute.
+%
+% NEED TO FIGURE OUT WHERE TO HANDLE DIFFERENT TYPES OF DIRECTIONAL
+% MODULATIONS.  IT LOOKS LIKE PULSE AND MODULATION ARE PROBABLY THE SAME.
 switch params.type
     case 'modulation'
     case 'pulse'
@@ -93,7 +96,7 @@ switch params.type
         % the background Spectrum. Otherwise, we call ReceptorIsolate. Due
         % to the ambient, we play a little game of adding a little bit to
         % scale the background just right.
-        if strfind(cacheFileName, 'LightFlux')
+        if strfind(directionCacheFileName, 'LightFlux')
             modulationPrimary = backgroundPrimary+backgroundPrimary*max(desiredContrasts);
         end
     otherwise
@@ -177,7 +180,9 @@ for observerAgeInYears = 20:60
         % Calculate the receptor coordinates of the background
         backgroundReceptors = T_receptors*backgroundSpd;
         
-        % Isolate the receptors by calling the wrapper
+        % Isolate the receptors by calling the wrapper.  Start search at
+        % background.
+        initialPrimary = backgroundPrimary;
         modulationPrimary = ReceptorIsolate(T_receptors,...
             params.background.whichReceptorsToIsolate, params.background.whichReceptorsToIgnore, params.whichReceptorsToMinimize, ...
             B_primary, backgroundPrimary, initialPrimary, whichPrimariesToPin,...
@@ -210,6 +215,8 @@ for observerAgeInYears = 20:60
     end
     
     %% Get fraction bleached for background we're actually using
+    %
+    % This may have been adjusted above.
     if (params.doSelfScreening)
         fractionBleached = OLEstimateConePhotopigmentFractionBleached(S,backgroundSpd,pupilDiameterMm,params.fieldSizeDegrees,photoreceptorClasses);
     else
@@ -223,6 +230,12 @@ for observerAgeInYears = 20:60
     backgroundReceptors = T_receptors*backgroundSpd;
     
     %% Isolate the receptors by calling the wrapper
+    %
+    % I DON'T UNDERSTAND WHY THIS IS HAPPENING AGAIN.  MAYBE THIS IS THE
+    % MAIN CODE AND THE PART THAT IS IN THE CONDITIONAL ABOVE WAS NEVER IN
+    % FACT CALLED. IN THE ORIGINAL CODE IT WAS CONDITIONAL ON: isfield(params, 'background')
+    %
+    % AND THIS SEEMS LIKE IT CAN'T WORK IF WE'VE ADJUSTED THE PRIMARIES.
     modulationPrimary = ReceptorIsolate(T_receptors, whichReceptorsToIsolate, ...
         whichReceptorsToIgnore,whichReceptorsToMinimize,B_primary,backgroundPrimary,...
         initialPrimary,whichPrimariesToPin,params.primaryHeadRoom,params.maxPowerDiff,...
@@ -236,6 +249,9 @@ for observerAgeInYears = 20:60
     modulationPrimarySignedNegative = backgroundPrimary-differencePrimary;
     
     %% Isn't this check going to fail for a pulse?
+    %
+    % THIS SURE SEEMS LIKE IT WOULD FAIL IF WE FIRST CHOSE THE BACKGROUND
+    % TO BE THE LOWER END OF THE PULSE.
     if any(modulationPrimarySignedNegative > 1) | any(modulationPrimarySignedNegative < 0)  | any(modulationPrimarySignedPositive > 1)  | any(modulationPrimarySignedPositive < 0)
         error('Out of bounds.')
     end
@@ -249,20 +265,15 @@ for observerAgeInYears = 20:60
     differenceReceptors = T_receptors*differenceSpdSignedNegative;
     isolateContrastsSignedNegative = differenceReceptors ./ backgroundReceptors;
     
-    %% Why not just use this to do the above?
+    %% WHY NOT JUST USE THIS ROUTINE TO DO THE ABOVE?
     % Print out contrasts. This routine is in the Silent Substitution Toolbox.
     ComputeAndReportContrastsFromSpds(sprintf('\n> Observer age: %g',observerAgeInYears),photoreceptorClasses,T_receptors,backgroundSpd,modulationSpd,[],[]);
     
-    %% Might want to save the values returned by this, and get photopic
-    % trolands too.
+    %% MIGHT WANT TO SAVE THE VALUES HERE AND PHOTOPIC LUMINANCE TOO.
     % Print ouf luminance info.  This routine is also in the Silent Substitution Toolbox
     GetLuminanceAndTrolandsFromSpd(S, radianceWattsPerM2Sr, pupilDiameterMm, true);
     
-    % Assign all the cache fields
-    
-    %% Save out important information
-    %
-    %
+    %% Assign all the cache fields
     cacheData.data(observerAgeInYears).describe.params = params;                     
     cacheData.data(observerAgeInYears).describe.B_primary = B_primary;
     cacheData.data(observerAgeInYears).describe.ambientSpd = ambientSpd;
