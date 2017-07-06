@@ -159,83 +159,23 @@ for observerAgeInYears = 20:60
     backgroundPrimary = backgroundCacheData.backgroundPrimary;
     backgroundSpd = OLPrimaryToSpd(cal, backgroundPrimary);
     
-    % If we are doing a pulse, then we need to adjust the background so
-    % that it is at the low end of the direction modulation, so that we can
-    % then pulse upwards around it.  We do that here.
-    if (strcmp(params.type,'pulse'))
-        % Note what we are doing
-        fprintf('  - Adjusting background to allow positive pulse\n');
-        
-        % Get self screening parameters if doing so
-        if (params.doSelfScreening)
-            fractionBleached = OLEstimateConePhotopigmentFractionBleached(S,backgroundSpd,pupilDiameterMm,params.fieldSizeDegrees,photoreceptorClasses);
-        else
-            fractionBleached = zeros(1,length(photoreceptorClasses));
-        end
-        
-        % Construct the receptor matrix based on the bleaching fraction to
-        % this background.
-        T_receptors = GetHumanPhotoreceptorSS(S, photoreceptorClasses, params.fieldSizeDegrees, observerAgeInYears, pupilDiameterMm, [], fractionBleached);
-        
-        % Calculate the receptor coordinates of the background
-        backgroundReceptors = T_receptors*backgroundSpd;
-        
-        % Isolate the receptors by calling the wrapper.  Start search at
-        % background.
-        initialPrimary = backgroundPrimary;
-        modulationPrimary = ReceptorIsolate(T_receptors,...
-            params.background.whichReceptorsToIsolate, params.background.whichReceptorsToIgnore, params.whichReceptorsToMinimize, ...
-            B_primary, backgroundPrimary, initialPrimary, whichPrimariesToPin,...
-            params.primaryHeadRoom, params.maxPowerDiff, params.background.modulationContrast, ambientSpd);
-        modulationSpd = OLPrimaryToSpd(cal, modulationPrimary);
-        modulationReceptors = T_receptors*modulationSpd;
-        
-        % Look at both negative and positive swing
-        differencePrimary = modulationPrimary - backgroundPrimary;
-        modulationPrimarySignedPositive = backgroundPrimary+differencePrimary;
-        modulationPrimarySignedNegative = backgroundPrimary-differencePrimary;
-        
-        % Compute and report constrasts
-        differenceSpdSignedPositive = B_primary*(modulationPrimarySignedPositive-backgroundPrimary);
-        differenceReceptors = T_receptors*differenceSpdSignedPositive;
-        isolateContrastsSignedPositive = differenceReceptors ./ backgroundReceptors;
-        
-        differenceSpdSignedNegative = B_primary*(modulationPrimarySignedNegative-backgroundPrimary);
-        differenceReceptors = T_receptors*differenceSpdSignedNegative;
-        isolateContrastsSignedNegative = differenceReceptors ./ backgroundReceptors;
-        
-        for j = 1:size(T_receptors,1)
-            fprintf('  - %s: contrast around original background = \t%f / %f\n',photoreceptorClasses{j},isolateContrastsSignedPositive(j),isolateContrastsSignedNegative(j));
-        end
-        
-        % Make the new background, which we take as the negative swing to
-        % allow a positive pulse.
-        backgroundPrimary = backgroundPrimary + params.background.whichPoleToUse*differencePrimary;
-        backgroundSpd = OLPrimaryToSpd(cal, backgroundPrimary);
-    end
-    
-    %% Get fraction bleached for background we're actually using
-    %
-    % This may have been adjusted above.
+    % Get fraction bleached for background we're actually using
     if (params.doSelfScreening)
         fractionBleached = OLEstimateConePhotopigmentFractionBleached(S,backgroundSpd,pupilDiameterMm,params.fieldSizeDegrees,photoreceptorClasses);
     else
         fractionBleached = zeros(1,length(photoreceptorClasses));
     end
     
-    %% Construct the receptor matrix based on the bleaching fraction to this background.
-    T_receptors = GetHumanPhotoreceptorSS(S, photoreceptorClasses, params.fieldSizeDegrees, observerAgeInYears, pupilDiameterMm, [], fractionBleached);
+    % Get lambda max shift.  Currently not passed but could be.
+    lambdaMaxShift = [];
     
-    %% Calculate the receptor coordinates of the background
+    % Construct the receptor matrix based on the bleaching fraction to this background.
+    T_receptors = GetHumanPhotoreceptorSS(S,photoreceptorClasses,params.fieldSizeDegrees,observerAgeInYears,pupilDiameterMm,lambdaMaxShift,fractionBleached);
+    
+    % Calculate the receptor coordinates of the background
     backgroundReceptors = T_receptors*backgroundSpd;
     
-    %% Isolate the receptors by calling the wrapper
-    %
-    % I DON'T UNDERSTAND WHY THIS IS HAPPENING AGAIN.  MAYBE THIS IS THE
-    % MAIN CODE AND THE PART THAT IS IN THE CONDITIONAL ABOVE WAS NEVER IN
-    % FACT CALLED. IN THE ORIGINAL CODE IT WAS CONDITIONAL ON: isfield(params, 'background')
-    %
-    % AND THIS SEEMS LIKE IT CAN'T WORK IF WE'VE ADJUSTED THE PRIMARIES.
+    % Isolate the receptors by calling the ReceptorIsolate
     modulationPrimary = ReceptorIsolate(T_receptors, whichReceptorsToIsolate, ...
         whichReceptorsToIgnore,whichReceptorsToMinimize,B_primary,backgroundPrimary,...
         initialPrimary,whichPrimariesToPin,params.primaryHeadRoom,params.maxPowerDiff,...
@@ -243,29 +183,23 @@ for observerAgeInYears = 20:60
     modulationSpd = OLPrimaryToSpd(cal, modulationPrimary);
     modulationReceptors = T_receptors*modulationSpd;
     
-    %% Look at both negative and positive swing
+    % Look at both negative and positive swing and double check that we're within gamut
     differencePrimary = modulationPrimary - backgroundPrimary;
     modulationPrimarySignedPositive = backgroundPrimary+differencePrimary;
     modulationPrimarySignedNegative = backgroundPrimary-differencePrimary;
-    
-    %% Isn't this check going to fail for a pulse?
-    %
-    % THIS SURE SEEMS LIKE IT WOULD FAIL IF WE FIRST CHOSE THE BACKGROUND
-    % TO BE THE LOWER END OF THE PULSE.
     if any(modulationPrimarySignedNegative > 1) | any(modulationPrimarySignedNegative < 0)  | any(modulationPrimarySignedPositive > 1)  | any(modulationPrimarySignedPositive < 0)
         error('Out of bounds.')
     end
     
     %% Compute and report constrasts
-    differenceSpdSignedPositive = B_primary*(modulationPrimarySignedPositive-backgroundPrimary);
-    differenceReceptors = T_receptors*differenceSpdSignedPositive;
-    isolateContrastsSignedPositive = differenceReceptors ./ backgroundReceptors;
+    differenceSpdSignedPositive = B_primary*differencePrimary;
+    differenceReceptorsPositive = T_receptors*differenceSpdSignedPositive;
+    isolateContrastsSignedPositive = differenceReceptorsPositive ./ backgroundReceptors;
     
-    differenceSpdSignedNegative = B_primary*(modulationPrimarySignedNegative-backgroundPrimary);
-    differenceReceptors = T_receptors*differenceSpdSignedNegative;
-    isolateContrastsSignedNegative = differenceReceptors ./ backgroundReceptors;
+    differenceSpdSignedNegative = B_primary*(-differencePrimary);
+    differenceReceptorsNegative = T_receptors*differenceSpdSignedNegative;
+    isolateContrastsSignedNegative = differenceReceptorsNegative ./ backgroundReceptors;
     
-    %% WHY NOT JUST USE THIS ROUTINE TO DO THE ABOVE?
     % Print out contrasts. This routine is in the Silent Substitution Toolbox.
     ComputeAndReportContrastsFromSpds(sprintf('\n> Observer age: %g',observerAgeInYears),photoreceptorClasses,T_receptors,backgroundSpd,modulationSpd,[],[]);
     
