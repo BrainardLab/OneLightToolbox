@@ -60,6 +60,54 @@ function d = BackgroundNominalParamsDictionary()
     params.cacheFile = ['Background_' params.name  '.mat'];
     d = paramsValidateAndAppendToDictionary(d, params.name, params);
     
+     %% MelanopsinDirected_275_60_667
+    %
+    % Background to allow maximum melanopsin pulse contrast
+    %   Field size: 27.5 deg
+    %   Pupil diameter: 6 mm
+    %   Modulation contrast: 66.7%
+    % 
+    % Note modulation contrast is typically 2/3 for 400% pulse contrast <=> 66.66% sinusoidal contrast
+    baseName = 'MelanopsinDirected';
+    params.baseModulationContrast = 4/6;
+    params = defaultParams();
+    params.primaryHeadRoom = 0.01;
+    params.pupilDiameterMm = 6;
+    params.photoreceptorClasses = 'LConeTabulatedAbsorbance,MConeTabulatedAbsorbance,SConeTabulatedAbsorbance,Melanopsin';
+    params.modulationContrast = [params.baseModulationContrast];
+    params.whichReceptorsToIsolate = {[4]};
+    params.whichReceptorsToIgnore = {[]};
+    params.whichReceptorsToMinimize = {[]};
+    params.directionsYoked = [0];
+    params.directionsYokedAbs = [0];
+    params.name = OLMakeApproachBackgroundName(baseName,params);
+    params.cacheFile = ['Background_' params.name  '.mat'];
+    d = paramsValidateAndAppendToDictionary(d, params.name, params);
+    
+    %% LMSDirected_LMS_275_60_667
+    % 
+    % Background to allow maximum LMS pulse contrast
+    %   Field size: 27.5 deg
+    %   Pupil diameter: 6 mm
+    %   Modulation contrast: 66.7%
+    % 
+    % Note modulation contrast is typically 2/3 for 400% pulse contrast <=> 66.66% sinusoidal contrast
+    baseName = 'LMSDirected';
+    params = defaultParams();
+    params.baseModulationContrast = 4/6;
+    params.primaryHeadRoom = 0.01;
+    params.pupilDiameterMm = 6;
+    params.photoreceptorClasses = 'LConeTabulatedAbsorbance,MConeTabulatedAbsorbance,SConeTabulatedAbsorbance,Melanopsin';
+    params.modulationContrast = {[params.baseModulationContrast params.baseModulationContrast params.baseModulationContrast]};
+    params.whichReceptorsToIsolate = {[1 2 3]};
+    params.whichReceptorsToIgnore = {[]};
+    params.whichReceptorsToMinimize = {[]};
+    params.directionsYoked = [1];
+    params.directionsYokedAbs = [0];
+    params.name = OLMakeApproachBackgroundName(baseName,params);
+    params.cacheFile = ['Background_' params.name  '.mat'];
+    d = paramsValidateAndAppendToDictionary(d, params.name, params);
+    
     %% LightFlux_54_38_5.0
     %
     % Background at xy = [0.54,0.38] that allows light flux pulses to increase a factor of 5
@@ -124,7 +172,7 @@ function params = defaultParams()
     params.backgroundType = 'optimized';
     params.pegBackground = false;           
     params.baseModulationContrast = 4/6;
-    params.primaryHeadRoom = 0.005;
+    params.primaryHeadRoom = 0.01;
     params.photoreceptorClasses = 'LConeTabulatedAbsorbance,MConeTabulatedAbsorbance,SConeTabulatedAbsorbance,Melanopsin';
     params.fieldSizeDegrees = 27.5;
 	params.pupilDiameterMm = 8.0; 
