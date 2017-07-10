@@ -1,5 +1,5 @@
 function effectivePrimary = OLSpdToPrimary(oneLightCal, targetSpd, varargin)
-% OLSpdToPrimary - Converts a spectrum into normalized primary OneLight mirror settings.
+% OLSpdToPrimary - Converts a spectrum into normalized primary OneLight mirror values.
 %
 % Examples:
 % effectivePrimary = OLSpdToPrimary(oneLightCal, targetSpd)
@@ -9,7 +9,7 @@ function effectivePrimary = OLSpdToPrimary(oneLightCal, targetSpd, varargin)
 % Description:
 % Convert a spectral power distribution to the linear 0-1 fraction of light
 % that we need from each column of mirrors.  No gamma correction is applied
-% to the primary settings.
+% to the primary values.
 %
 % This routine also allows for a 'differentialMode' which is false unless
 % the 'differentialMode' key value pair is passed.
@@ -89,7 +89,7 @@ DEBUG = 0;
 if (DEBUG)
     pinvEffectivePrimary = pinv(oneLightCal.computed.pr650M) * (targetSpd - darkSpd);
     if params.verbose
-        fprintf('Pinv settings: min = %g, max = %g\n', min(pinvEffectivePrimary(:)), max(pinvEffectivePrimary(:)));
+        fprintf('Pinv values: min = %g, max = %g\n', min(pinvEffectivePrimary(:)), max(pinvEffectivePrimary(:)));
     end
 end
 
@@ -101,7 +101,7 @@ C1 = oneLightCal.computed.pr650M;
 d1 = targetSpd - darkSpd;
 
 % The second constraint computes the difference between between neighboring
-% settings values and tries to make this small.  How much this is weighted 
+% values and tries to make this small.  How much this is weighted 
 % depends on the value of params.lambda.  The bigger params.lambda, the
 % more this constraint kicks in.
 nPrimaries = size(oneLightCal.computed.pr650M,2);
