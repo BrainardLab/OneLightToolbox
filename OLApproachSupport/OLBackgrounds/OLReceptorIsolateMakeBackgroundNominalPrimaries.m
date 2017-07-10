@@ -18,13 +18,13 @@ function [cacheData, olCache, wasRecomputed] = OLReceptorIsolateMakeBackgroundNo
 %   background dictionary, so that each direction's parameters are
 %   associated with a background name.
 %
-%   The background is just computed for the nominal (32 yo) observer age,
+%   The background is just computed for a nominal (params.backgroundObserverAge) observer age,
 %   because we don't need perfection for this, just something about right.
 %
 % Input:
 %   approach (string)          Name of whatever approach is invoking this.
 %
-%   params (struct)  Parameters struct for backgrounds.  See
+%   params (struct)            Parameters struct for backgrounds.  See
 %                              BackgroundNominalParamsDictionary.
 %
 %   forceRecompute (logical)   If true, forces a recompute of the data found in the config file.
@@ -78,7 +78,7 @@ if (~forceRecompute)
 end
 
 %% OK, need to recompute
-switch params.type
+switch params.backgroundType
     case 'named'
         % These are cases where we just do something very specific with the
         % name.
@@ -99,10 +99,11 @@ switch params.type
         
     case 'optimized'
         % These backgrounds get optimized according to the parameters in
-        % the structure.  Backgrounds are optimized with respect to a 32
-        % year old observer, and no correction for photopigment bleaching
-        % is applied.  We are just trying to get pretty good backgrounds,
-        % so we don't need to fuss with small effects.
+        % the structure.  Backgrounds are optimized with respect to a
+        % params.backgroundObserverAge year old observer, and no correction
+        % for photopigment bleaching is applied.  We are just trying to get
+        % pretty good backgrounds, so we don't need to fuss with small
+        % effects.
         
         %% Parse some of the parameter fields
         photoreceptorClasses = allwords(params.photoreceptorClasses, ',');
@@ -132,9 +133,9 @@ switch params.type
             ambientSpd = zeros(size(B_primary,1),1);
         end
         
-        % We get backgrounds for a nominal observer age, and hope for the
+        % We get backgrounds for the nominal observer age, and hope for the
         % best for other observer ages.
-        observerAgeInYears = 32;
+        observerAgeInYears = params.backgroundObserverAge;
         
         %% Initial background
         %

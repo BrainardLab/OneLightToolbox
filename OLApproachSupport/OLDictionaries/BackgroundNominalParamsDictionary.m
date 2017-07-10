@@ -67,7 +67,7 @@ function d = BackgroundNominalParamsDictionary()
     baseName = 'LightFlux';
     params = defaultParams();
     params.name = 'LightFluxChrom_540_380_50';
-    params.type = 'lightfluxchrom';
+    params.backgroundType = 'lightfluxchrom';
     params.lightFluxDesiredXY = [0.54,0.38];
     params.lightFluxDownFactor = 5;
     params.name = OLMakeApproachBackgroundName(baseName,params); 
@@ -93,13 +93,14 @@ function d = paramsValidateAndAppendToDictionary(d, directionName, params)
         
     % Test that all expected params exist and that they have the expected type
     assert((isfield(params, 'name')                       && ischar(params.name)),                      sprintf('params.name does not exist or it does not contain a string value.'));
-    assert((isfield(params, 'type')                       && ischar(params.type)),                      sprintf('params.type does not exist or it does not contain a string value.'));
+    assert((isfield(params, 'backgroundType')             && ischar(params.backgroundType)),            sprintf('params.backgroundType does not exist or it does not contain a string value.'));
     assert((isfield(params, 'baseModulationContrast')     && isnumeric(params.baseModulationContrast)), sprintf('params.baseModulationContrast does not exist or it does not contain a numeric value.'));
     assert((isfield(params, 'primaryHeadRoom')            && isnumeric(params.primaryHeadRoom)),        sprintf('params.primaryHeadRoom does not exist or it does not contain a numeric value.'));
     assert((isfield(params, 'pegBackground')              && islogical(params.pegBackground)),          sprintf('params.pegBackground does not exist or it does not contain a boolean value.'));
     assert((isfield(params, 'photoreceptorClasses')       && ischar(params.photoreceptorClasses)),      sprintf('params.photoreceptorClasses does not exist or it does not contain a string value.'));
     assert((isfield(params, 'fieldSizeDegrees')           && isscalar(params.fieldSizeDegrees)),        sprintf('params.ieldSizeDegrees does not exist or it does not contain a number.'));
     assert((isfield(params, 'pupilDiameterMm')            && isscalar(params.pupilDiameterMm)),         sprintf('params.pupilDiameterMm does not exist or it does not contain a number.'));
+    assert((isfield(params, 'backgroundObserverAge')      && isscalar(params.pupilDiameterMm)),         sprintf('params.backgroundObserverAge does not exist or it does not contain a number.'));
     assert((isfield(params, 'maxPowerDiff')               && isscalar(params.maxPowerDiff)),            sprintf('params.maxPowerDiff does not exist or it does not contain a number.'));
     assert((isfield(params, 'modulationDirection')        && ischar(params.modulationDirection)),       sprintf('params.modulationDirection does not exist or it does not contain a string value.'));
     assert((isfield(params, 'modulationContrast')         && (isnumeric(params.modulationContrast) || iscell(params.whichReceptorsToIsolate))),         sprintf('params.modulationContrast does not exist or it does not contain a numeric value.'));
@@ -120,13 +121,14 @@ end
 function params = defaultParams()
     params = struct();
     params.name = '';
-    params.type = 'optimized';
-    params.pegBackground = false;           % not sure about default value of this param - Nicolas
+    params.backgroundType = 'optimized';
+    params.pegBackground = false;           
     params.baseModulationContrast = 4/6;
     params.primaryHeadRoom = 0.005;
     params.photoreceptorClasses = 'LConeTabulatedAbsorbance,MConeTabulatedAbsorbance,SConeTabulatedAbsorbance,Melanopsin';
     params.fieldSizeDegrees = 27.5;
 	params.pupilDiameterMm = 8.0; 
+    params.backgroundObserverAge = 32;
     params.maxPowerDiff = 0.1;
     params.modulationDirection = '';
     params.modulationContrast = [4/6];

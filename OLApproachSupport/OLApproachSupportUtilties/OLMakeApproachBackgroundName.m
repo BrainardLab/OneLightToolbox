@@ -21,7 +21,7 @@ function name = OLMakeApproachBackgroundName(baseName,params)
 
 
 %% Make the name, according to the type of thing we're naming
-switch (params.type)
+switch (params.backgroundType)
     case 'optimized'
         name = sprintf('%s_%d_%d_%d',baseName,round(10*params.fieldSizeDegrees),round(10*params.pupilDiameterMm),round(1000*params.baseModulationContrast));
     case 'lightfluxchrom'

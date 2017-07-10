@@ -90,7 +90,10 @@ function d = paramsValidateAndAppendToDictionary(d, directionName, params)
     assert((isfield(params, 'primaryHeadRoom')            && isnumeric(params.primaryHeadRoom)),        sprintf('params.primaryHeadRoom does not exist or it does not contain a numeric value.'));
     assert((isfield(params, 'photoreceptorClasses')       && ischar(params.photoreceptorClasses)),      sprintf('params.photoreceptorClasses does not exist or it does not contain a string value.'));
     assert((isfield(params, 'fieldSizeDegrees')           && isscalar(params.fieldSizeDegrees)),        sprintf('params.ieldSizeDegrees does not exist or it does not contain a number.'));
-    assert((isfield(params, 'pupilDiameterMm')            && isscalar(params.pupilDiameterMm)),         sprintf('params.pupilDiameterMm does not exist or it does not contain a number.'));    assert((isfield(params, 'modulationDirection')        && ischar(params.modulationDirection)),       sprintf('params.modulationDirection does not exist or it does not contain a string value.'));
+    assert((isfield(params, 'pupilDiameterMm')            && isscalar(params.pupilDiameterMm)),         sprintf('params.pupilDiameterMm does not exist or it does not contain a number.'));
+    assert((isfield(params, 'maxPowerDiff')               && isscalar(params.maxPowerDiff)),            sprintf('params.maxPowerDiff does not exist or it does not contain a number.'));
+    assert((isfield(params, 'modulationDirection')        && ischar(params.modulationDirection)),       sprintf('params.modulationDirection does not exist or it does not contain a string value.'));
+    assert((isfield(params, 'modulationDirection')        && ischar(params.modulationDirection)),       sprintf('params.modulationDirection does not exist or it does not contain a string value.'));
     assert((isfield(params, 'modulationContrast')         && (isnumeric(params.modulationContrast) || iscell(params.whichReceptorsToIsolate))),         sprintf('params.modulationContrast does not exist or it does not contain a numeric value.'));
     assert((isfield(params, 'whichReceptorsToIsolate')    && (isnumeric(params.whichReceptorsToIsolate) || iscell(params.whichReceptorsToIsolate))),    sprintf('params.whichReceptorsToIsolate does not exist or it does not contain a numeric value.'));
     assert((isfield(params, 'whichReceptorsToIgnore')     && (isnumeric(params.whichReceptorsToIgnore) || iscell(params.whichReceptorsToIgnore))),      sprintf('params.whichReceptorsToIgnore does not exist or it does not contain a numeric value.'));
@@ -102,6 +105,7 @@ function d = paramsValidateAndAppendToDictionary(d, directionName, params)
     assert((isfield(params, 'doSelfScreening')            && islogical(params.doSelfScreening)),        sprintf('params.doSelfScreening does not exist or it does not contain a logical value.'));
     assert((isfield(params, 'backgroundType')             && ischar(params.backgroundType)),            sprintf('params.backgroundType does not exist or it does not contain a string value.'));
     assert((isfield(params, 'backgroundName')             && ischar(params.backgroundName)),            sprintf('params.backgroundName does not exist or it does not contain a string value.'));
+    assert((isfield(params, 'backgroundObserverAge')       && isscalar(params.backgroundObserverAge)),   sprintf('params.backgroundObserverAge does not exist or it does not contain a number.'));
     assert((isfield(params, 'cacheFile')                  && ischar(params.cacheFile)),                 sprintf('params.cacheFile does not exist or it does not contain a string value.'));
     
     % All validations OK. Add entry to the dictionary.
@@ -117,6 +121,7 @@ function params = defaultParams()
     params.photoreceptorClasses = 'LConeTabulatedAbsorbance,MConeTabulatedAbsorbance,SConeTabulatedAbsorbance,Melanopsin';
     params.fieldSizeDegrees = 27.5;
 	params.pupilDiameterMm = 8.0; 
+    params.maxPowerDiff = 0.1;
     params.modulationDirection = '';
     params.modulationContrast = [4/6];
     params.whichReceptorsToIsolate = {[4]};
@@ -129,6 +134,7 @@ function params = defaultParams()
     params.doSelfScreening = true;
     params.backgroundType = 'optimized';
     params.backgroundName = '';
+    params.backgroundObserverAge = 32;
     params.cacheFile = '';
 end
 

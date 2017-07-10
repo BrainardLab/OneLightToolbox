@@ -1,8 +1,8 @@
-function fractionBleached = OLEstimateConePhotopigmentFractionBleached(S,theSpd,pupilDiameterMm,fieldSizeDegrees,photoreceptorClasses)
+function fractionBleached = OLEstimateConePhotopigmentFractionBleached(S,theSpd,pupilDiameterMm,fieldSizeDegrees,observerAgeInYears,photoreceptorClasses)
 % OLEstimateConePhotopigmentFractionBleached  Estimate cone photopigment fraction bleached
 %
 % Usage:
-%     fractionBleached = OLEstimateConePhotopigmentFractionBleached(S,spd,pupilDiameterMm,fieldSizeDegrees,photoreceptorClasses)
+%     fractionBleached = OLEstimateConePhotopigmentFractionBleached(S,spd,pupilDiameterMm,fieldSizeDegrees,observerAgeInYears,photoreceptorClasses)
 %
 % Description:
 %     Compute isomerization rates of cones to a passed spectral radiance
@@ -26,6 +26,8 @@ function fractionBleached = OLEstimateConePhotopigmentFractionBleached(S,theSpd,
 %                                retinal irradiance.  Eye length is assumed to be 17 mm.
 %
 %     fieldSizeDegrees           Field size in degrees for cone spectral sensitivity computations.
+%
+%     observerAgeInYears         Observer age in years for cone spectral sensitivity computations.
 %
 %     photoreceptorClasses       Cell array of strings describing photoreceptor classes of interest.
 %                                Options are 'LCone', 'MCone', 'SCone','LConeHemo', 'MConeHemo', 'SConeHemo.
@@ -52,8 +54,8 @@ photopicLuminanceCdM2 = T_xyz(2,:)*radianceWattsPerM2Sr;
 chromaticityXY = T_xyz(1:2,:)*radianceWattsPerM2Sr/sum(T_xyz*radianceWattsPerM2Sr);
 
 %% Get cone spectral sensitivities to use to compute isomerization rates
-[T_cones, T_quantalIsom]  = GetHumanPhotoreceptorSS(S, {'LCone' 'MCone' 'SCone'}, params.fieldSizeDegrees, observerAgeInYears, pupilDiameterMm, [], []);
-[T_conesHemo, T_quantalIsomHemo]  = GetHumanPhotoreceptorSS(S, {'LConeHemo' 'MConeHemo' 'SConeHemo'}, fieldSizeDegrees, observerAgeInYears, pupilDiameterMm, [], []);
+[T_cones, T_quantalIsom] = GetHumanPhotoreceptorSS(S, {'LCone' 'MCone' 'SCone'}, fieldSizeDegrees, observerAgeInYears, pupilDiameterMm, [], []);
+%[T_conesHemo, T_quantalIsomHemo]  = GetHumanPhotoreceptorSS(S, {'LConeHemo' 'MConeHemo' 'SConeHemo'}, fieldSizeDegrees, observerAgeInYears, pupilDiameterMm, [], []);
 
 %% Compute irradiance, trolands, etc.
 pupilAreaMm2 = pi*((pupilDiameterMm/2)^2);
@@ -75,15 +77,15 @@ ISDiameter = photoreceptors.ISdiameter.value;
 %% Get isomerizations
 theLMSIsomerizations = PhotonAbsorptionRate(irradianceQuantaPerUm2Sec,S, ...
     T_quantalIsom,S,ISDiameter);
-theLMSIsomerizationsHemo = PhotonAbsorptionRate(irradianceQuantaPerUm2Sec,S, ...
-    T_quantalIsomHemo,S,ISDiameter);
+% theLMSIsomerizationsHemo = PhotonAbsorptionRate(irradianceQuantaPerUm2Sec,S, ...
+%     T_quantalIsomHemo,S,ISDiameter);
 
 %% Get fraction bleached
 fractionBleachedFromIsom = zeros(3,1);
 fractionBleachedFromIsomHemo = zeros(3,1);
 for i = 1:3
     fractionBleachedFromIsom(i) = ComputePhotopigmentBleaching(theLMSIsomerizations(i),'cones','isomerizations','Boynton');
-    fractionBleachedFromIsomHemo(i) = ComputePhotopigmentBleaching(theLMSIsomerizationsHemo(i),'cones','isomerizations','Boynton');
+%    fractionBleachedFromIsomHemo(i) = ComputePhotopigmentBleaching(theLMSIsomerizationsHemo(i),'cones','isomerizations','Boynton');
 end
 
 % We can now assign the fraction bleached for each photoreceptor

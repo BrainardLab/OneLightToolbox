@@ -87,8 +87,7 @@ end
 % NEED TO FIGURE OUT WHERE TO HANDLE DIFFERENT TYPES OF DIRECTIONAL
 % MODULATIONS.  IT LOOKS LIKE PULSE AND MODULATION ARE PROBABLY THE SAME.
 switch params.type
-    case 'modulation'
-    case 'pulse'
+    case {'modulation', 'pulse'}
         
     case 'lightflux'
         
@@ -156,12 +155,12 @@ for observerAgeInYears = 20:60
     backgroundCacheFile = ['Background_' params.backgroundName '.mat'];
     [backgroundCacheData,isStale] = backgroundOlCache.load([backgroundCacheFile]);
     assert(~isStale,'Background cache file is stale, aborting.');
-    backgroundPrimary = backgroundCacheData.backgroundPrimary;
+    backgroundPrimary = backgroundCacheData.data(params.backgroundObserverAge).backgroundPrimary;
     backgroundSpd = OLPrimaryToSpd(cal, backgroundPrimary);
     
     % Get fraction bleached for background we're actually using
     if (params.doSelfScreening)
-        fractionBleached = OLEstimateConePhotopigmentFractionBleached(S,backgroundSpd,pupilDiameterMm,params.fieldSizeDegrees,photoreceptorClasses);
+        fractionBleached = OLEstimateConePhotopigmentFractionBleached(S,backgroundSpd,pupilDiameterMm,params.fieldSizeDegrees,observerAgeInYears,photoreceptorClasses);
     else
         fractionBleached = zeros(1,length(photoreceptorClasses));
     end
@@ -176,6 +175,7 @@ for observerAgeInYears = 20:60
     backgroundReceptors = T_receptors*backgroundSpd;
     
     % Isolate the receptors by calling the ReceptorIsolate
+    initialPrimary = backgroundPrimary;
     modulationPrimary = ReceptorIsolate(T_receptors, whichReceptorsToIsolate, ...
         whichReceptorsToIgnore,whichReceptorsToMinimize,B_primary,backgroundPrimary,...
         initialPrimary,whichPrimariesToPin,params.primaryHeadRoom,params.maxPowerDiff,...
@@ -205,7 +205,7 @@ for observerAgeInYears = 20:60
     
     %% MIGHT WANT TO SAVE THE VALUES HERE AND PHOTOPIC LUMINANCE TOO.
     % Print ouf luminance info.  This routine is also in the Silent Substitution Toolbox
-    GetLuminanceAndTrolandsFromSpd(S, radianceWattsPerM2Sr, pupilDiameterMm, true);
+    GetLuminanceAndTrolandsFromSpd(S, backgroundSpd, pupilDiameterMm, true);
     
     %% Assign all the cache fields
     cacheData.data(observerAgeInYears).describe.params = params;                     
@@ -243,6 +243,7 @@ end
 
 %% Tuck in the calibration structure
 cacheData.cal = cal;
+wasRecomputed = true;
 
 
 end
