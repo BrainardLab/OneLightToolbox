@@ -11,8 +11,8 @@ function keyPress = OLFlicker(ol, starts, stops, frameDurationSecs, numIteration
 %
 % Input:
 %   ol -                         The OneLight object.
-%   starts (1024xN)-             The starts matrix
-%   stops  (1024xN)-             The stops matrix.
+%   starts (nSpectra x nCols) -  The starts matrix, with nCols being the number of columns on the OneLight;
+%   stops (nSpectra x nCols) -   The stops matrix.
 %   frameDurationSecs (scalar) - The duration to hold each setting until the
 %                                next one is loaded.
 %   numIterations (scalar) -     The number of iterations to loop through the

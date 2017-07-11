@@ -159,7 +159,7 @@ function d = paramsValidateAndAppendToDictionary(d, directionName, params)
     assert((isfield(params, 'doSelfScreening')            && islogical(params.doSelfScreening)),        sprintf('params.doSelfScreening does not exist or it does not contain a logical value.'));
     assert((isfield(params, 'backgroundType')             && ischar(params.backgroundType)),            sprintf('params.backgroundType does not exist or it does not contain a string value.'));
     assert((isfield(params, 'backgroundName')             && ischar(params.backgroundName)),            sprintf('params.backgroundName does not exist or it does not contain a string value.'));
-    assert((isfield(params, 'backgroundObserverAge')       && isscalar(params.backgroundObserverAge)),   sprintf('params.backgroundObserverAge does not exist or it does not contain a number.'));
+    assert((isfield(params, 'backgroundObserverAge')      && isscalar(params.backgroundObserverAge)),   sprintf('params.backgroundObserverAge does not exist or it does not contain a number.'));
     assert((isfield(params, 'cacheFile')                  && ischar(params.cacheFile)),                 sprintf('params.cacheFile does not exist or it does not contain a string value.'));
     
     % All validations OK. Add entry to the dictionary.

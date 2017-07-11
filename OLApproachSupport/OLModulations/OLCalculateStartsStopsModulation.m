@@ -52,11 +52,11 @@ switch waveform.modulationMode
         % Convert the unique primaries to starts and stops
         settingsBuffer = OLPrimaryToSettings(cal, uniqPrimariesBuffer);
         for si = 1:size(settingsBuffer, 2)
-            [startsBuffer(:, si), stopsBuffer(:, si)] = OLSettingsToStartsStops(cal, settingsBuffer(:, si));
+            [startsBuffer(si,:), stopsBuffer(si,:)] = OLSettingsToStartsStops(cal, settingsBuffer(:, si));
         end
         waveform.settings = settingsBuffer(:, IC);
-        waveform.starts = startsBuffer(:, IC);
-        waveform.stops = stopsBuffer(:, IC);
+        waveform.starts = startsBuffer(IC,:);
+        waveform.stops = stopsBuffer(IC,:);
         waveform.spd = (cal.computed.pr650M * waveform.primaries + repmat(cal.computed.pr650MeanDark, 1, size(waveform.primaries, 2)));
     otherwise
         if waveform.window.cosineWindowIn
@@ -104,11 +104,11 @@ switch waveform.modulationMode
         % Convert the unique primaries to starts and stops
         settingsBuffer = OLPrimaryToSettings(cal, uniqPrimariesBuffer);
         for si = 1:size(settingsBuffer, 2)
-            [startsBuffer(:, si), stopsBuffer(:, si)] = OLSettingsToStartsStops(cal, settingsBuffer(:, si));
+            [startsBuffer(si,:), stopsBuffer(si,:)] = OLSettingsToStartsStops(cal, settingsBuffer(:, si));
         end
         waveform.settings = settingsBuffer(:, IC);
-        waveform.starts = startsBuffer(:, IC);
-        waveform.stops = stopsBuffer(:, IC);
+        waveform.starts = startsBuffer(IC,:);
+        waveform.stops = stopsBuffer(IC,:);
         waveform.spd = (cal.computed.pr650M * waveform.primaries + repmat(cal.computed.pr650MeanDark, 1, size(waveform.primaries, 2)));
 end
 [waveform.background.starts, waveform.background.stops] = OLSettingsToStartsStops(cal, OLPrimaryToSettings(cal, backgroundPrimary));
