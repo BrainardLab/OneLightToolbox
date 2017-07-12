@@ -114,7 +114,7 @@ for d = 1:length(theDirections)
     %zparams = cacheData.data(zparams.observerAgeInYrs).describe.zparams;
     protocolParams.modulationDirection = theDirections{d};
     protocolParams.cacheFile = ['Direction_' protocolParams.modulationDirection '_' protocolParams.observerID '_' protocolParams.todayDate '.mat'];
-    OLReceptorIsolateSaveCache(cacheData, olCache, protocolParams);
+    olCache.save(protocolParams.cacheFile, cacheData);
     fprintf('done!\n');
 end
 
