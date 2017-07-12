@@ -1,44 +1,50 @@
 function [cacheData, olCache, wasRecomputed] = OLReceptorIsolateMakeBackgroundNominalPrimaries(approach,params,forceRecompute)
-% OLReceptorIsolateMakeBackgroundNominalPrimaries - Finds backgrounds according to background parameters.
+% OLReceptorIsolateMakeBackgroundNominalPrimaries  Finds backgrounds according to background parameters.
 %
 % Usage:
 %     [cacheData, olCache, wasRecomputed] = OLReceptorIsolateMakeBackgroundNominalPrimaries(approach,params,forceRecompute)
 %
 % Description:
-%   Use calibration file information to make backgrounds with specified
-%   properties.  Background properties are defined in the
-%   BackgroundNominalPrimaries dictionary and passed as a parameter struct.
+%     Use calibration file information to make backgrounds with specified
+%     properties.  Background properties are defined in the
+%     BackgroundNominalPrimaries dictionary and passed as a parameter struct,
+%     except for a few that are specifically named and that are calibration independent.
 %
-%   This checks the cache file, and if things have already been computed
-%   for the current calibration, it just returns what is there.  Cache
-%   files are stored in the BackgroundNominalPrimaries directory, specified
-%   by the preferences for the current approach.
+%     This checks the cache file, and if things have already been computed
+%     for the current calibration, it just returns what is there.  Cache
+%     files are stored in the BackgroundNominalPrimaries directory, specified
+%     by the preferences for the current approach.
 %
-%   The parameters for the directions we know about are stored in the
-%   background dictionary, so that each direction's parameters are
-%   associated with a background name.
+%     The parameters for the directions we know about are stored in the
+%     background dictionary, so that each direction's parameters are
+%     associated with a background name.
 %
-%   The background is just computed for a nominal (params.backgroundObserverAge) observer age,
-%   because we don't need perfection for this, just something about right.
+%     The background is just computed for a nominal (params.backgroundObserverAge) observer age,
+%     because we don't need perfection for this, just something about right.
+%
+%     This routine knows about different types of backgrounds:
+%       named - a specific named background
+%       lightfluxchrom - background of a specified chromaticity, scaled to allow a light flux modulation.
+%       optimized - a background optimized for some modulation.
 %
 % Input:
-%   approach (string)          Name of whatever approach is invoking this.
+%     approach (string)          Name of whatever approach is invoking this.
 %
-%   params (struct)            Parameters struct for backgrounds.  See
-%                              BackgroundNominalParamsDictionary.
+%     params (struct)            Parameters struct for backgrounds.  See
+%                                BackgroundNominalParamsDictionary.
 %
-%   forceRecompute (logical)   If true, forces a recompute of the data found in the config file.
-%                              Default: false
+%     forceRecompute (logical)   If true, forces a recompute of the data found in the config file.
+%                                Default: false
 % Output:
-%   cacheData (struct)         Cache data structure.  Contains background
-%                              primaries and cal structure.
+%     cacheData (struct)         Cache data structure.  Contains background
+%                                primaries and cal structure.
 %
-%   olCache (class)            Cache object for storing this.
+%     olCache (class)            Cache object for storing this.
 %
-%   wasRecomptued (boolean)    Was the cacheData recomputed?
+%     wasRecomptued (boolean)    Was the cacheData recomputed?
 %
 % Optional key/value pairs
-%   None.
+%     None.
 
 % 06/29/17   dhb         Cleaning up.
 % 07/05/17   dhb         Better comments.
@@ -125,7 +131,7 @@ switch params.backgroundType
             desiredContrasts = [];
         end
         
-        % Assign a zero 'ambientSpd' variable if we're not using the 
+        % Assign a zero 'ambientSpd' variable if we're not using the
         % measured ambient.
         if params.useAmbient
             ambientSpd = cal.computed.pr650MeanDark;
@@ -155,21 +161,26 @@ switch params.backgroundType
             desiredContrasts,ambientSpd,params.directionsYoked,params.directionsYokedAbs,params.pegBackground);
         
         %% Pull out what we want
-        backgroundPrimary = optimizedBackgroundPrimaries{1};
+        backgroundPrimary = optimizedBackgroundPrimaries{1};   
         
     otherwise
         error('Unknown type for background passed');
 end
 
-%% Fill in the cache data for return
-%
-% Fill in for all observer ages based on the nominal calculation.
-for observerAgeInYears = 20:60
-    cacheData.data(observerAgeInYears).backgroundPrimary = backgroundPrimary;
-end
+ %% Fill in the cache data for return
+ %
+ %
+ % Fill in for all observer ages based on the nominal calculation.
+ for observerAgeInYears = 20:60
+     % Key parameters
+     cacheData.data(observerAgeInYears).describe.params = params;
+     
+     % The background
+     cacheData.data(observerAgeInYears).backgroundPrimary = backgroundPrimary;
+ end
+ 
+% Calibration file, and note that we recomputed the cache data.
 cacheData.cal = cal;
-
-% Note that we recomputed the cache data.
 wasRecomputed = true;
 
 end

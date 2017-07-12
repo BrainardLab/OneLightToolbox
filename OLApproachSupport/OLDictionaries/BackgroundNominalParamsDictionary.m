@@ -10,6 +10,10 @@
 %          dhb  Bring in params.useAmbient.  This goes with directions/backgrounds.
 % 6/29/18  dhb  More extended names to reflect key parameters, so that protocols can check
 
+% NEED TO ADD THESE as type 'named'
+%          'BackgroundHalfOn' - Primaries set to 0.5;
+%          'BackgroundEES' - Background metameric to an equal energy spectrum, scaled in middle of gamut.
+
 function d = BackgroundNominalParamsDictionary()
     % Initialize dictionary
     d = containers.Map();
