@@ -195,10 +195,12 @@ for observerAgeInYears = 20:60
     differenceSpdSignedPositive = B_primary*differencePrimary;
     differenceReceptorsPositive = T_receptors*differenceSpdSignedPositive;
     isolateContrastsSignedPositive = differenceReceptorsPositive ./ backgroundReceptors;
+    modulationSpdSignedPositive = backgroundSpd+differenceSpdSignedPositive;
     
     differenceSpdSignedNegative = B_primary*(-differencePrimary);
     differenceReceptorsNegative = T_receptors*differenceSpdSignedNegative;
     isolateContrastsSignedNegative = differenceReceptorsNegative ./ backgroundReceptors;
+    modulationSpdSignedNegative = backgroundSpd+differenceSpdSignedNegative;
     
     % Print out contrasts. This routine is in the Silent Substitution Toolbox.
     ComputeAndReportContrastsFromSpds(sprintf('\n> Observer age: %g',observerAgeInYears),photoreceptorClasses,T_receptors,backgroundSpd,modulationSpd,[],[]);
@@ -206,6 +208,16 @@ for observerAgeInYears = 20:60
     %% MIGHT WANT TO SAVE THE VALUES HERE AND PHOTOPIC LUMINANCE TOO.
     % Print ouf luminance info.  This routine is also in the Silent Substitution Toolbox
     GetLuminanceAndTrolandsFromSpd(S, backgroundSpd, pupilDiameterMm, true);
+    
+    % If it is a pulse rather than a modulation, we replace the background with the low end, and the difference
+    % with the swing between low and high.
+    if (strcmp(params.type,'pulse'))
+        backgroundPrimary = modulationPrimarySignedNegative;
+        backgroundSpd = modulationSpdSignedNegative;
+        differencePrimary = modulationPrimarySignedPositive-modulationPrimarySignedNegative;
+        modulationPrimarySignedNegative = [];
+        modulationSpdSignedNegative = [];
+    end
     
     %% Assign all the cache fields
     cacheData.data(observerAgeInYears).describe.params = params;                     
@@ -235,8 +247,8 @@ for observerAgeInYears = 20:60
     % Modulation (signed)
     cacheData.data(observerAgeInYears).modulationPrimarySignedPositive = modulationPrimarySignedPositive;
     cacheData.data(observerAgeInYears).modulationPrimarySignedNegative = modulationPrimarySignedNegative;
-    cacheData.data(observerAgeInYears).modulationSpdSignedPositive = (B_primary*modulationPrimarySignedPositive) + ambientSpd;
-    cacheData.data(observerAgeInYears).modulationSpdSignedNegative = (B_primary*modulationPrimarySignedNegative) + ambientSpd;
+    cacheData.data(observerAgeInYears).modulationSpdSignedPositive = modulationSpdSignedPositive;
+    cacheData.data(observerAgeInYears).modulationSpdSignedNegative = modulationSpdSignedNegative;
     
     
 end

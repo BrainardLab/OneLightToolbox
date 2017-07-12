@@ -79,7 +79,7 @@ function d = DirectionNominalParamsDictionary()
     % 
     baseName = 'MaxMel';
     params = defaultParams();
-    params.primaryHeadRoom = 0.01;
+    params.primaryHeadRoom = 0.005;
     params.baseModulationContrast = 4/6;
     params.pupilDiameterMm = 6.0;
     params.photoreceptorClasses = 'LConeTabulatedAbsorbance,MConeTabulatedAbsorbance,SConeTabulatedAbsorbance,Melanopsin';
@@ -105,7 +105,7 @@ function d = DirectionNominalParamsDictionary()
     % 
     baseName = 'MaxLMS';
     params = defaultParams();
-    params.primaryHeadRoom = 0.01;
+    params.primaryHeadRoom = 0.005;
     params.baseModulationContrast = 4/6;
     params.pupilDiameterMm = 6.0;
     params.photoreceptorClasses = 'LConeTabulatedAbsorbance,MConeTabulatedAbsorbance,SConeTabulatedAbsorbance,Melanopsin';
