@@ -87,7 +87,11 @@ if (~forceRecompute)
         %  and make sure this isn't triggered in some nuisance manner.
         %
         %  There is a similar block of code in OLReceptorIsolateMakeDirectionNominalPrimaries
-        %  and the same check should go there.  
+        %  and the same check should go there. 
+        %   
+        % This whole block of code might usefully become a function, say OLCheckNeedToRecomputeCache,
+        % which could live in the utilities subdir of OLApproachSupport.  Then it could be called
+        % here and from the direction version mentioned just above.
         if (~isStale)
             wasRecomputed = false;
             return;
@@ -191,7 +195,7 @@ end
  end
  
 % Calibration file, and note that we recomputed the cache data.
-cacheData.describe.params = params;
+cacheData.params = params;
 cacheData.cal = cal;
 wasRecomputed = true;
 

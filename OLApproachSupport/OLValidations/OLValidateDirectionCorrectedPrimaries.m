@@ -1,5 +1,5 @@
-function protocolParams = ValidateDirectionCorrectedPrimaries(protocolParams,PrePost)
-% ValidateCorrectedPrimaries - Measure and check the corrected primaries
+function protocolParams = OLValidateDirectionCorrectedPrimaries(protocolParams,PrePost)
+%OLValidateCorrectedPrimaries  Measure and check the corrected primaries
 %
 % Description:
 %     This script uses the radiometer to measure the light coming out of the eyepiece and 

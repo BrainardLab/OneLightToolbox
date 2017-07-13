@@ -1,5 +1,5 @@
-function [protocolParams] = SessionLog(protocolParams,theStep,varargin)
-% SessionLog -- Session Record Keeping
+function [protocolParams] = OLSessionLog(protocolParams,theStep,varargin)
+%OLSessionLog  Session Record Keeping
 %
 %  Description:
 %     This function creates a session specific directory for each subject
@@ -8,12 +8,15 @@ function [protocolParams] = SessionLog(protocolParams,theStep,varargin)
 %     function will output a text file documenting general information
 %     about the session **more info to be added here once specifics have
 %     been decided on**
-%  Output:
+%
+% Input
+%
+% Output:
 %     status - general output to be decided later.
 %     params - updated param struct with session info.
 
-%  06/23/17 mab,jar created file and green text.
-%  06/26/17 mab,jar added switch
+% 06/23/17 mab,jar created file and green text.
+% 06/26/17 mab,jar added switch
 
 
 % set up vars

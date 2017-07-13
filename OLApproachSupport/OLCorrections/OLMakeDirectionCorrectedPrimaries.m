@@ -1,6 +1,5 @@
-function protocolParams = MakeDirectionCorrectedPrimaries(protocolParams)
-
-% MakeDirectionCorrectedPrimaries - Make the corrected primaries from the nominal primaries
+function protocolParams = OLMakeDirectionCorrectedPrimaries(protocolParams)
+%OLMakeDirectionCorrectedPrimaries - Make the corrected primaries from the nominal primaries
 %
 % Description:
 %    The nominal primaries do not exactly have the desired properties,

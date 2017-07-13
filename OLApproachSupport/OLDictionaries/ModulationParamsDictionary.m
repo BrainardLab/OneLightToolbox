@@ -13,7 +13,6 @@ d = containers.Map();
 modulationName = 'Modulation-PulseMaxLMS_3s_MaxContrast3sSegment';
 params = defaultParams('basic');
 params.direction = 'Direction_MaxLMS_275_80_667';
-params.directionCacheFile = 'Direction_MaxLMS_275_80_667.mat';
 d = paramsValidateAndAppendToDictionary(d, modulationName, params);
 
 
@@ -21,7 +20,6 @@ d = paramsValidateAndAppendToDictionary(d, modulationName, params);
 modulationName = 'Modulation-PulseMaxMel_3s_MaxContrast3sSegment';
 params = defaultParams('basic');
 params.direction = 'Direction_MaxMel_275_80_667';
-params.directionCacheFile = 'Direction_MaxMel_275_80_667.mat';
 d = paramsValidateAndAppendToDictionary(d, modulationName, params);
 
 

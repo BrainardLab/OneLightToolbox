@@ -1,4 +1,14 @@
 function waveform = OLCalculateStartsStopsModulation(waveform, cal, backgroundPrimary, diffPrimaryPos, diffPrimaryNeg)
+%OLCalculateStartsStopsModulation  Calculate various modulations given background and pos/neg primary differences.
+%
+% Usage:
+%     waveform = OLCalculateStartsStopsModulation(waveform, cal, backgroundPrimary, diffPrimaryPos, diffPrimaryNeg)
+%
+% Description:
+%     DESPARATELY SEEKING HEADER COMMENTS.
+%
+%     We think that if diffPrimayNeg is empty, only the positive arm is used (for a pulse).
+
 %% Pull out what we want
 dbstop if error
 
