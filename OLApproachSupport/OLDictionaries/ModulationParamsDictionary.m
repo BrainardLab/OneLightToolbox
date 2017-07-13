@@ -11,8 +11,7 @@ d = containers.Map();
 
 %% Modulation-MaxMelPulsePsychophysics-PulseMaxLMS_3s_MaxContrast3sSegment
 modulationName = 'Modulation-PulseMaxLMS_3s_MaxContrast3sSegment';
-params.type = 'basic';
-params = defaultParams(params.type);
+params = defaultParams('basic');
 params.direction = 'Direction_MaxLMS_275_80_667';
 params.directionCacheFile = 'Direction_MaxLMS_275_80_667.mat';
 d = paramsValidateAndAppendToDictionary(d, modulationName, params);
@@ -20,8 +19,7 @@ d = paramsValidateAndAppendToDictionary(d, modulationName, params);
 
 %% Modulation-MaxMelPulsePsychophysics-PulseMaxMel_3s_MaxContrast3sSegment
 modulationName = 'Modulation-PulseMaxMel_3s_MaxContrast3sSegment';
-params.type = 'basic';
-params = defaultParams(params.type);
+params = defaultParams('basic');
 params.direction = 'Direction_MaxMel_275_80_667';
 params.directionCacheFile = 'Direction_MaxMel_275_80_667.mat';
 d = paramsValidateAndAppendToDictionary(d, modulationName, params);
@@ -40,10 +38,10 @@ end
 function d = paramsValidateAndAppendToDictionary(d, modulationName, params)
 
 % Test that there are no extra params
-if (~all(ismember(fieldnames(params),fieldnames(defaultParams()))))
+if (~all(ismember(fieldnames(params),fieldnames(defaultParams(params.type)))))
     fprintf(2,'\nParams struct contain extra params\n');
     fNames = fieldnames(params);
-    idx = ismember(fieldnames(params),fieldnames(defaultParams()));
+    idx = ismember(fieldnames(params),fieldnames(defaultParams(params.type)));
     idx = find(idx == 0);
     for k = 1:numel(idx)
         fprintf(2,'- ''%s'' \n', fNames{idx(k)});
@@ -94,8 +92,6 @@ params = struct();
 switch (type)
     case 'basic'
         params.type = type;
-        
-        % Timing information
         params.trialDuration = 3;                   % Number of seconds to show each trial
         params.timeStep = 1/64;                     % Number ms of each sample time
         params.cosineWindowIn = true;               % If true, have a cosine fade-in

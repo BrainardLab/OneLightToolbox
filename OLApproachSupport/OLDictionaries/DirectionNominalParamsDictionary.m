@@ -25,8 +25,7 @@ d = containers.Map();
 % Modulation contrast is used to generate, but the result is a 400%
 % contrast step up relative to the background.
 baseName = 'MaxMel';
-params.type = 'pulse';
-params = defaultParams(params.type);
+params = defaultParams('pulse');
 params.primaryHeadRoom = 0.01;
 params.baseModulationContrast = 4/6;
 params.pupilDiameterMm = 8.0;
@@ -51,8 +50,7 @@ d = paramsValidateAndAppendToDictionary(d, params.name, params);
 % Modulation contrast is used to generate, but the result is a 400%
 % contrast step up relative to the background.
 baseName = 'MaxLMS';
-params.type = 'pulse';
-params = defaultParams(params.type);
+params = defaultParams('pulse');
 params.primaryHeadRoom = 0.01;
 params.baseModulationContrast = 4/6;
 params.pupilDiameterMm = 8.0;
@@ -77,8 +75,7 @@ d = paramsValidateAndAppendToDictionary(d, params.name, params);
 % Modulation contrast is used to generate, but the result is a 400%
 % contrast step up relative to the background.
 baseName = 'MaxMel';
-type = 'pulse';
-params = defaultParams(type);
+params = defaultParams('pulse');
 params.primaryHeadRoom = 0.005;
 params.baseModulationContrast = 4/6;
 params.pupilDiameterMm = 6.0;
@@ -103,8 +100,7 @@ d = paramsValidateAndAppendToDictionary(d, params.name, params);
 % Modulation contrast is used to generate, but the result is a 400%
 % contrast step up relative to the background.
 baseName = 'MaxLMS';
-type = 'pulse';
-params = defaultParams(type);
+params = defaultParams('pulse');
 params.primaryHeadRoom = 0.005;
 params.baseModulationContrast = 4/6;
 params.pupilDiameterMm = 6.0;
@@ -122,14 +118,15 @@ d = paramsValidateAndAppendToDictionary(d, params.name, params);
 end
 
 function d = paramsValidateAndAppendToDictionary(d, directionName, params)
+
 % Update modulationDirection
 params.modulationDirection = directionName;
 
 % Test that there are no extra params
-if (~all(ismember(fieldnames(params),fieldnames(defaultParams()))))
+if (~all(ismember(fieldnames(params),fieldnames(defaultParams(params.type)))))
     fprintf(2,'\nParams struct contain extra params\n');
     fNames = fieldnames(params);
-    idx = ismember(fieldnames(params),fieldnames(defaultParams()));
+    idx = ismember(fieldnames(params),fieldnames(defaultParams(params.type)));
     idx = find(idx == 0);
     for k = 1:numel(idx)
         fprintf(2,'- ''%s'' \n', fNames{idx(k)});
@@ -172,9 +169,10 @@ d(directionName) = params;
 end
 
 function params = defaultParams(type)
+
+params = struct();
 switch (type)
     case 'pulse'
-        params = struct();
         params.type = type;
         params.name = '';
         params.baseModulationContrast = 4/6;

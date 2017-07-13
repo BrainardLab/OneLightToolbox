@@ -74,6 +74,20 @@ olCache = OLCache(cacheDir, cal);
 if (~forceRecompute)
     if (olCache.exist(cacheFileName))
         [cacheData,isStale] = olCache.load(cacheFileName);
+        
+        % NCP: Right here need to compare cacheData.describe.params with the
+        % currently passed parameters.  If any fields differ, then a recompute 
+        % should be forced.
+        %
+        %  It's possible that some parameters beyond what was returned by the dictionary
+        %  were added to params, such as the output file path.  This might lead to
+        %  false alarms.  You can look.
+        %
+        %  I'd add a printout on recomputing (controlled by a verbose key/value pair)
+        %  and make sure this isn't triggered in some nuisance manner.
+        %
+        %  There is a similar block of code in OLReceptorIsolateMakeDirectionNominalPrimaries
+        %  and the same check should go there.  
         if (~isStale)
             wasRecomputed = false;
             return;
@@ -171,15 +185,13 @@ end
  %
  %
  % Fill in for all observer ages based on the nominal calculation.
- for observerAgeInYears = 20:60
-     % Key parameters
-     cacheData.data(observerAgeInYears).describe.params = params;
-     
+ for observerAgeInYears = 20:60     
      % The background
      cacheData.data(observerAgeInYears).backgroundPrimary = backgroundPrimary;
  end
  
 % Calibration file, and note that we recomputed the cache data.
+cacheData.describe.params = params;
 cacheData.cal = cal;
 wasRecomputed = true;
 
