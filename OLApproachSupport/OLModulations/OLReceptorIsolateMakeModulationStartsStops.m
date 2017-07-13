@@ -16,13 +16,13 @@ function OLReceptorIsolateMakeModulationStartsStops(configName, fileSuffix, prot
 %
 % Input:
 %     configName (string)       The name of config for retrieving the appropriate modulation params
-%     fileSuffix (string)       WHAT IS THIS?
+%     fileSuffix (string)       NOT SURE WE NEED THIS.  COULD CONSTRUCT HERE FROM PROTOCOL PREFS.
 %     protocolParams (struct)   Provides some needed information.  Relevant fields are:
-%                                 Give the relevant fields here.
+%                                 GIVE THE RELEVANT FIELDS HERE.
 %
 % Output:
-%     Creates file with starts/stops needed to produce the desired modulation inside.  The
-%     file ends up under the directory specified by getpref(theApproach,'ModulationConfigPath');
+%     Creates file with starts/stops needed to produce the desired modulation inside.
+%     NEED TO SAY WHERE THESE GO.
 %
 % Optional key/value pairs
 %     'verbose' (boolean)    Print out diagnostic information?
@@ -33,7 +33,7 @@ function OLReceptorIsolateMakeModulationStartsStops(configName, fileSuffix, prot
 % 6/17/18   dhb         Merge with mab version and expand comments.
 % 6/23/17   npc         No more config files, get modulation properties from ModulationParamsDictionary
 
-% Parse input to get key/value pairs
+%% Parse input to get key/value pairs
 p = inputParser;
 p.addRequired(configName,@isstring);
 p.addRequired(fileSuffix,@istring);
@@ -41,28 +41,30 @@ p.addRequired(protocolParams,@isstruct);
 p.addParameter('verbose',true,@isstring);
 p.parse(configName, fileSuffix, protocolParams, varargin{:});
 
-% Get params from modulation params dictionary
+%% Get params from modulation params dictionary
 d = ModulationParamsDictionary();
 params = d(configName);
 
-% Setup the directories we'll use.  We count on the
-% standard relative directory structure that we always
-% use in our (BrainardLab) experiments.
-
+%% Setup the directories we'll use.
+% We count on the standard relative directory structure that we always use
+% in our (Aguirre/Brainard Lab) experiments.
+%
 % Corrected Primaries
+
+% NOT CLEAR WHY WE ARE SETTING FIELDS OF PARAMS IN THIS ROUTINE, AS PARAMS IS NOT RETURNED FROM THIS ROUTINE.
 params.cacheDir = fullfile(getpref(protocolParams.approach, 'DataPath'),'Experiments',protocolParams.approach, protocolParams.protocol, 'DirectionCorrectedPrimaries', protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
 
 % Output for starts/stops
 params.modulationDir = fullfile(getpref(protocolParams.approach, 'DataPath'), 'Experiments', protocolParams.approach, protocolParams.protocol, 'ModulationsStartsStops', protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
-
-if(~exist(params.modulationDir))
+if(~exist(params.modulationDir,'dir'))
     mkdir(params.modulationDir)
 end
 
-% Load the calibration file.
+%% Load the calibration file.
 cType = OLCalibrationTypes.(protocolParams.calibrationType);
 params.oneLightCal = LoadCalFile(cType.CalFileName, [], fullfile(getpref(protocolParams.approach, 'MaterialsPath'), 'Experiments',protocolParams.approach,'OneLightCalData'));
 
+%% THIS IS NOT CLEAR.  I THINK THIS IS LOADING IN THE CORRECTED PRIMARIES
 % Setup the cache.
 params.olCache = OLCache(params.cacheDir, params.oneLightCal);
 
@@ -88,7 +90,6 @@ for i = 1:length(params.cacheFileName)
     % versions of the cache file.
     params.cacheDate{i} = cacheData{i}.date;
 end
-
 cacheData = cacheData{end}.data(protocolParams.observerAgeInYrs);
 params.cacheData = cacheData;
 
@@ -206,8 +207,8 @@ modulationObj.describe = describe;
 modulationObj.waveform = waveform;
 modulationObj.params = params;
 
-fprintf(['* Saving full pre-calculated settings to ' fileNameSave '\n']);
+if (p.Params.verbose); fprintf(['* Saving full pre-calculated settings to ' fileNameSave '\n']); end;
 save(fullfile(params.modulationDir, fileNameSave), 'modulationObj', '-v7.3');
-fprintf('  - Done.\n');
+if (p.Params.verbose); fprintf('  - Done.\n'); end;
 end
 

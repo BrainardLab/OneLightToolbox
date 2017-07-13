@@ -16,8 +16,6 @@ function protocolParams = MakeModulationStartsStops(protocolParams)
 
 % 6/18/17  dhb  Added descriptive comment.
 
-% LMS; Melanopsin; Light Flux
-tic;
 % Update session log file
 protocolParams = Psychophysics.SessionLog(protocolParams,mfilename,'StartEnd','start');
 
@@ -28,4 +26,3 @@ OLReceptorIsolateMakeModulationStartsStops('Modulation-PulseMaxLightFlux_3s_MaxC
 
 % Update session log file
 protocolParams = Psychophysics.SessionLog(protocolParams,mfilename,'StartEnd','end');
-toc;
