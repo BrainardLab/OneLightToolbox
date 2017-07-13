@@ -1,8 +1,8 @@
-function OLReceptorIsolateMakeModulationStartsStops(configName, fileSuffix, protocolParams, varargin)
+function OLReceptorIsolateMakeModulationStartsStops(modulationName, protocolParams, varargin)
 %OLReceptorIsolateMakeModulationStartsStops  Creates the starts/stops cache data for a given config file.
 %
 % Usage:
-%     OLReceptorIsolateMakeModulationStartsStops(configName, fileSuffix, topLevelParams)
+%     OLReceptorIsolateMakeModulationStartsStops(modulationName, fileSuffix, topLevelParams)
 %
 % Description:
 %     Converts primary settings for modulations into starts/stops arrays and
@@ -16,9 +16,8 @@ function OLReceptorIsolateMakeModulationStartsStops(configName, fileSuffix, prot
 %
 % Input:
 %     configName (string)       The name of config for retrieving the appropriate modulation params
-%     fileSuffix (string)       NOT SURE WE NEED THIS.  COULD CONSTRUCT HERE FROM PROTOCOL PREFS.
 %     protocolParams (struct)   Provides some needed information.  Relevant fields are:
-%                                 GIVE THE RELEVANT FIELDS HERE.
+%                                 GIVE OR POINT TO THE RELEVANT FIELDS HERE.
 %
 % Output:
 %     Creates file with starts/stops needed to produce the desired modulation inside.
@@ -35,15 +34,15 @@ function OLReceptorIsolateMakeModulationStartsStops(configName, fileSuffix, prot
 
 %% Parse input to get key/value pairs
 p = inputParser;
-p.addRequired(configName,@isstring);
+p.addRequired(modulationName,@isstring);
 p.addRequired(fileSuffix,@istring);
 p.addRequired(protocolParams,@isstruct);
 p.addParameter('verbose',true,@isstring);
-p.parse(configName, fileSuffix, protocolParams, varargin{:});
+p.parse(modulationName, fileSuffix, protocolParams, varargin{:});
 
 %% Get params from modulation params dictionary
 d = ModulationParamsDictionary();
-params = d(configName);
+modulationParams = d(modulationName);
 
 %% Setup the directories we'll use.
 % We count on the standard relative directory structure that we always use
@@ -51,84 +50,74 @@ params = d(configName);
 %
 % Corrected Primaries
 
-% NOT CLEAR WHY WE ARE SETTING FIELDS OF PARAMS IN THIS ROUTINE, AS PARAMS IS NOT RETURNED FROM THIS ROUTINE.
-params.cacheDir = fullfile(getpref(protocolParams.approach, 'DataPath'),'Experiments',protocolParams.approach, protocolParams.protocol, 'DirectionCorrectedPrimaries', protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
+% Get where the corrected direction files live
+directionCacheDir = fullfile(getpref(protocolParams.approach,'DirectionCorrectedPrimariesBasePath'), protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
+if (~exist(directionCacheDir,'dir'))
+    error('Corrected direction primaries directory does not exist');
+end
 
 % Output for starts/stops
-params.modulationDir = fullfile(getpref(protocolParams.approach, 'DataPath'), 'Experiments', protocolParams.approach, protocolParams.protocol, 'ModulationsStartsStops', protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
-if(~exist(params.modulationDir,'dir'))
-    mkdir(params.modulationDir)
+modulationParams.modulationDir = fullfile(getpref(protocolParams.approach, 'ModulationStartsStopsBasePath'),protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
+if(~exist(modulationParams.modulationDir,'dir'))
+    mkdir(modulationParams.modulationDir)
 end
 
 %% Load the calibration file.
 cType = OLCalibrationTypes.(protocolParams.calibrationType);
-params.oneLightCal = LoadCalFile(cType.CalFileName, [], fullfile(getpref(protocolParams.approach, 'MaterialsPath'), 'Experiments',protocolParams.approach,'OneLightCalData'));
+modulationParams.oneLightCal = LoadCalFile(cType.CalFileName, [], fullfile(getpref(protocolParams.approach, 'MaterialsPath'), 'Experiments',protocolParams.approach,'OneLightCalData'));
 
-%% THIS IS NOT CLEAR.  I THINK THIS IS LOADING IN THE CORRECTED PRIMARIES
+%% Get the corrected direction primaries
+%
 % Setup the cache.
-params.olCache = OLCache(params.cacheDir, params.oneLightCal);
-
-file_names = allwords(params.directionCacheFile,',');
+directionOLCache = OLCache(directionCacheDir, modulationParams.oneLightCal);
+file_names = allwords(modulationParams.directionCacheFile,',');
 for i = 1:length(file_names)
     % Create the cache file name.
-    [~, params.cacheFileName{i}] = fileparts(file_names{i});
+    [~, modulationParams.cacheFileName{i}] = fileparts(file_names{i});
 end
 
-%% Iterate over the cache files to be loaded in.
-for i = 1:length(params.cacheFileName)
-    % Load the cache data.
-    if ~exist('fileSuffix', 'var') || isempty(fileSuffix)
-        [cacheData{i},isStale] = params.olCache.load(params.cacheFileName{i});
-    else
-        [cacheData{i},isStale] = params.olCache.load([params.cacheFileName{i} fileSuffix]);
-    end
+%% Iterate over the direction cache files to be loaded in.
+for i = 1:length(modulationParams.cacheFileName)
+    % Load the cached direction data.
+    [cacheData{i},isStale] = directionOLCache.load(modulationParams.cacheFileName{i});
     assert(~isStale,'Cache file is stale, aborting.');
-    
-    % Store the internal date of the cache data we're using.  The cache
-    % data date is a unique timestamp identifying a specific set of cache
-    % data. We want to save that to associate data sets to specific
-    % versions of the cache file.
-    params.cacheDate{i} = cacheData{i}.date;
 end
-cacheData = cacheData{end}.data(protocolParams.observerAgeInYrs);
-params.cacheData = cacheData;
+directionData = cacheData{end}.data(protocolParams.observerAgeInYrs);
+clear cacheData
 
-%% Store out the primaries from the cacheData into a cell.  The length of
-% cacheData corresponds to the number of different stimuli that are being
-% shown
-
-[~, fileNameSave] = fileparts(configName);
+%% Set up output file name
+[~, fileNameSave] = fileparts(modulationName);
 fileNameSave = [fileNameSave '.mat'];
-fprintf(['\n* Running precalculations for ' fileNameSave '\n']);
+if (p.Results.verbose); fprintf(['\n* Running precalculations for ' fileNameSave '\n']); end;
 
 % Get the background
-backgroundPrimary = cacheData.backgroundPrimary;
+backgroundPrimary = directionData.backgroundPrimary;
 
-% Get the modulation primary
+% SOME HORRIBLE STUFF.
 BIPOLAR_CORRECTION = false; % Assume that the correction hasn't been done for both excursions by default
 if strfind(fileNameSave, 'Background') % Background case
     modulationPrimary = backgroundPrimary;
     modulationPrimary(:) = 0;
     diffPrimaryPos = modulationPrimary;
 else
-    if isfield(cacheData, 'correction')
-        if isfield(cacheData.correction, 'modulationPrimaryPositiveCorrectedAll') & isfield(cacheData.correction, 'modulationPrimaryNegativeCorrectedAll')
+    if isfield(directionData, 'correction')
+        if isfield(directionData.correction, 'modulationPrimaryPositiveCorrectedAll') & isfield(directionData.correction, 'modulationPrimaryNegativeCorrectedAll')
             BIPOLAR_CORRECTION = true;
-            modulationPrimary = cacheData.modulationPrimarySignedPositive;
-            diffPrimaryPos = cacheData.modulationPrimarySignedPositive-backgroundPrimary;
-            diffPrimaryNeg = cacheData.modulationPrimarySignedNegative-backgroundPrimary;
+            modulationPrimary = directionData.modulationPrimarySignedPositive;
+            diffPrimaryPos = directionData.modulationPrimarySignedPositive-backgroundPrimary;
+            diffPrimaryNeg = directionData.modulationPrimarySignedNegative-backgroundPrimary;
         else
             BIPOLAR_CORRECTION = false;
-            modulationPrimary = cacheData.modulationPrimarySignedPositive;
+            modulationPrimary = directionData.modulationPrimarySignedPositive;
             diffPrimaryPos = modulationPrimary-backgroundPrimary;
         end
     else
-        modulationPrimary = cacheData.modulationPrimarySignedPositive;
+        modulationPrimary = directionData.modulationPrimarySignedPositive;
         diffPrimaryPos = modulationPrimary-backgroundPrimary;
     end
 end
-% Save to specific file
 
+% Save to specific file
 if ~exist('fileSuffix', 'var') || isempty(fileSuffix)
     [~, fileName, fileSuffix] = fileparts(fileNameSave);
 else
@@ -138,54 +127,54 @@ fileNameSave = [fileName '-' num2str(protocolParams.observerAgeInYrs) fileSuffix
 
 % Set up a few flags here
 [~, describe.modulationName] = fileparts(fileNameSave);
-describe.direction = params.direction;
+describe.direction = modulationParams.direction;
 describe.date = datestr(now);
-describe.cal = params.oneLightCal;
-describe.calID = OLGetCalID(params.oneLightCal);
-describe.cacheDate = params.cacheDate;
-describe.params = params;
+describe.cal = modulationParams.oneLightCal;
+describe.calID = OLGetCalID(modulationParams.oneLightCal);
+describe.cacheDate = modulationParams.cacheDate;
+describe.params = modulationParams;
 describe.theFrequenciesHz = describe.params.carrierFrequency;
 describe.thePhasesDeg = describe.params.carrierPhase;
 describe.theContrastRelMax = describe.params.contrastScalars;
 
-for f = 1:params.nFrequencies
-    for p = 1:params.nPhases
-        for c = 1:params.nContrastScalars
+for f = 1:modulationParams.nFrequencies
+    for p = 1:modulationParams.nPhases
+        for c = 1:modulationParams.nContrastScalars
             % Construct the time vector
-            if strcmp(params.modulationMode, 'AM')
-                waveform.theEnvelopeFrequencyHz = params.modulationFrequencyTrials(1); % Modulation frequency
-                waveform.thePhaseDeg = params.modulationPhase(p);
-                waveform.thePhaseRad = deg2rad(params.modulationPhase(p));
-                waveform.theFrequencyHz = params.carrierFrequency(f);
-            elseif ~isempty(strfind(params.modulationMode, 'pulse'))
-                waveform.phaseRandSec = params.phaseRandSec(p);
-                waveform.stepTimeSec = params.stepTimeSec(f);
-                waveform.preStepTimeSec = params.preStepTimeSec(f);
+            if strcmp(modulationParams.modulationMode, 'AM')
+                waveform.theEnvelopeFrequencyHz = modulationParams.modulationFrequencyTrials(1); % Modulation frequency
+                waveform.thePhaseDeg = modulationParams.modulationPhase(p);
+                waveform.thePhaseRad = deg2rad(modulationParams.modulationPhase(p));
+                waveform.theFrequencyHz = modulationParams.carrierFrequency(f);
+            elseif ~isempty(strfind(modulationParams.modulationMode, 'pulse'))
+                waveform.phaseRandSec = modulationParams.phaseRandSec(p);
+                waveform.stepTimeSec = modulationParams.stepTimeSec(f);
+                waveform.preStepTimeSec = modulationParams.preStepTimeSec(f);
                 waveform.theFrequencyHz = -1;
                 waveform.thePhaseDeg = -1;
             else
-                waveform.thePhaseDeg = params.carrierPhase(p);
-                waveform.thePhaseRad = deg2rad(params.carrierPhase(p));
-                waveform.theFrequencyHz = params.carrierFrequency(f);
+                waveform.thePhaseDeg = modulationParams.carrierPhase(p);
+                waveform.thePhaseRad = deg2rad(modulationParams.carrierPhase(p));
+                waveform.theFrequencyHz = modulationParams.carrierFrequency(f);
             end
             
-            waveform.direction = params.direction;
+            waveform.direction = modulationParams.direction;
             waveform.modulationPrimary = modulationPrimary;
             waveform.backgroundPrimary = backgroundPrimary;
-            waveform.modulationWaveform = params.modulationWaveForm;
-            waveform.modulationMode = params.modulationMode;
+            waveform.modulationWaveform = modulationParams.modulationWaveForm;
+            waveform.modulationMode = modulationParams.modulationMode;
             
-            waveform.theContrastRelMax = params.contrastScalars(c);
-            waveform.duration = params.trialDuration;      % Trial duration
-            waveform.cal = params.oneLightCal;
-            waveform.calID = OLGetCalID(params.oneLightCal);
-            waveform.t = 0:params.timeStep:waveform.duration-params.timeStep;  % Time vector
+            waveform.theContrastRelMax = modulationParams.contrastScalars(c);
+            waveform.duration = modulationParams.trialDuration;      % Trial duration
+            waveform.cal = modulationParams.oneLightCal;
+            waveform.calID = OLGetCalID(modulationParams.oneLightCal);
+            waveform.t = 0:modulationParams.timeStep:waveform.duration-modulationParams.timeStep;  % Time vector
             
-            waveform.window.cosineWindowIn = params.cosineWindowIn;
-            waveform.window.cosineWindowOut = params.cosineWindowOut;
-            waveform.window.cosineWindowDurationSecs = params.cosineWindowDurationSecs;
+            waveform.window.cosineWindowIn = modulationParams.cosineWindowIn;
+            waveform.window.cosineWindowOut = modulationParams.cosineWindowOut;
+            waveform.window.cosineWindowDurationSecs = modulationParams.cosineWindowDurationSecs;
             waveform.window.type = 'cosine';
-            waveform.window.nWindowed = params.cosineWindowDurationSecs/params.timeStep;
+            waveform.window.nWindowed = modulationParams.cosineWindowDurationSecs/modulationParams.timeStep;
             
             fprintf('* Calculating %0.f s of %s, %.2f Hz, %.2f deg, %.1f pct contrast (of max)\n         ', waveform.duration, waveform.direction, waveform.theFrequencyHz, waveform.thePhaseDeg, 100*waveform.theContrastRelMax);
             % Calculate it.
@@ -199,16 +188,18 @@ for f = 1:params.nFrequencies
     end
 end
 
-params = rmfield(params, 'olCache'); % Throw away the olCache field
+modulationParams = rmfield(modulationParams, 'olCache'); % Throw away the olCache field
 
 % Put everything into a modulation
 modulationObj.modulation = modulation;
 modulationObj.describe = describe;
 modulationObj.waveform = waveform;
-modulationObj.params = params;
+modulationObj.params = modulationParams;
+
+%% Save out the modulation
 
 if (p.Params.verbose); fprintf(['* Saving full pre-calculated settings to ' fileNameSave '\n']); end;
-save(fullfile(params.modulationDir, fileNameSave), 'modulationObj', '-v7.3');
+save(fullfile(modulationParams.modulationDir, fileNameSave), 'modulationObj', '-v7.3');
 if (p.Params.verbose); fprintf('  - Done.\n'); end;
 end
 
