@@ -1,27 +1,45 @@
-function OLReceptorIsolateMakeModulationStartsStops(configName, fileSuffix, TopLevelParams)
-% OLReceptorIsolateMakeModulationStartsStops - Creates the starts/stops cache data for a given config file.
+function OLReceptorIsolateMakeModulationStartsStops(configName, fileSuffix, protocolParams, varargin)
+%OLReceptorIsolateMakeModulationStartsStops  Creates the starts/stops cache data for a given config file.
 %
-% Syntax:
-% OLReceptorIsolateMakeModulationStartsStops(configName, observerAgeInYears, calType, fileSuffix, params)
+% Usage:
+%     OLReceptorIsolateMakeModulationStartsStops(configName, fileSuffix, topLevelParams)
 %
 % Description:
-%   Converts primary settings for modulations into starts/stops arrays and
-%   stores them in a cache file.  Included in this is filling in the
-%   intermediate contrasts, as the input primaries are generally for the
-%   maximum modulation.
+%     Converts primary settings for modulations into starts/stops arrays and
+%     stores them in a cache file.  Included in this is filling in the
+%     intermediate contrasts, as the input primaries are generally for the
+%     maximum modulation.
 %
-%   NEED BETTER DESCRIPTION, WITH ALL INPUTS DESCRIBED.
+%     The information in the modulations parameter in the dictionary includes modulation
+%     directions.  These are read from the corrected versions of the primary files, which
+%     are located in directory.
 %
 % Input:
-% configName (string) - The name of config for retrieving the appropriate modulation params
-
+%     configName (string)       The name of config for retrieving the appropriate modulation params
+%     fileSuffix (string)       WHAT IS THIS?
+%     protocolParams (struct)   Provides some needed information.  Relevant fields are:
+%                                 Give the relevant fields here.
+%
+% Output:
+%     Creates file with starts/stops needed to produce the desired modulation inside.  The
+%     file ends up under the directory specified by getpref(theApproach,'ModulationConfigPath');
+%
+% Optional key/value pairs
+%     'verbose' (boolean)    Print out diagnostic information?
+%
+% See also:
 
 % 4/19/13   dhb, ms     Update for new convention for desired contrasts in routine ReceptorIsolate.
 % 6/17/18   dhb         Merge with mab version and expand comments.
 % 6/23/17   npc         No more config files, get modulation properties from ModulationParamsDictionary
 
-% Should figure out and validate args here.
-%narginchk(1, 3);
+% Parse input to get key/value pairs
+p = inputParser;
+p.addRequired(configName,@isstring);
+p.addRequired(fileSuffix,@istring);
+p.addRequired(protocolParams,@isstruct);
+p.addParameter('verbose',true,@isstring);
+p.parse(configName, fileSuffix, protocolParams, varargin{:});
 
 % Get params from modulation params dictionary
 d = ModulationParamsDictionary();
@@ -31,18 +49,19 @@ params = d(configName);
 % standard relative directory structure that we always
 % use in our (BrainardLab) experiments.
 
-%Corrected Primaries
-params.cacheDir = fullfile(getpref(TopLevelParams.approach, 'DataPath'),'Experiments',TopLevelParams.approach, TopLevelParams.protocol, 'DirectionCorrectedPrimaries', TopLevelParams.observerID, TopLevelParams.todayDate, TopLevelParams.sessionName);
-%Output for starts/stops
-params.modulationDir = fullfile(getpref(TopLevelParams.approach, 'DataPath'), 'Experiments', TopLevelParams.approach, TopLevelParams.protocol, 'ModulationsStartsStops', TopLevelParams.observerID, TopLevelParams.todayDate, TopLevelParams.sessionName);
+% Corrected Primaries
+params.cacheDir = fullfile(getpref(protocolParams.approach, 'DataPath'),'Experiments',protocolParams.approach, protocolParams.protocol, 'DirectionCorrectedPrimaries', protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
+
+% Output for starts/stops
+params.modulationDir = fullfile(getpref(protocolParams.approach, 'DataPath'), 'Experiments', protocolParams.approach, protocolParams.protocol, 'ModulationsStartsStops', protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
 
 if(~exist(params.modulationDir))
     mkdir(params.modulationDir)
 end
 
 % Load the calibration file.
-cType = OLCalibrationTypes.(TopLevelParams.calibrationType);
-params.oneLightCal = LoadCalFile(cType.CalFileName, [], fullfile(getpref(TopLevelParams.approach, 'MaterialsPath'), 'Experiments',TopLevelParams.approach,'OneLightCalData'));
+cType = OLCalibrationTypes.(protocolParams.calibrationType);
+params.oneLightCal = LoadCalFile(cType.CalFileName, [], fullfile(getpref(protocolParams.approach, 'MaterialsPath'), 'Experiments',protocolParams.approach,'OneLightCalData'));
 
 % Setup the cache.
 params.olCache = OLCache(params.cacheDir, params.oneLightCal);
@@ -70,7 +89,7 @@ for i = 1:length(params.cacheFileName)
     params.cacheDate{i} = cacheData{i}.date;
 end
 
-cacheData = cacheData{end}.data(TopLevelParams.observerAgeInYrs);
+cacheData = cacheData{end}.data(protocolParams.observerAgeInYrs);
 params.cacheData = cacheData;
 
 %% Store out the primaries from the cacheData into a cell.  The length of
@@ -114,7 +133,7 @@ if ~exist('fileSuffix', 'var') || isempty(fileSuffix)
 else
     [~, fileName] = fileparts(fileNameSave);
 end
-fileNameSave = [fileName '-' num2str(TopLevelParams.observerAgeInYrs) fileSuffix];
+fileNameSave = [fileName '-' num2str(protocolParams.observerAgeInYrs) fileSuffix];
 
 % Set up a few flags here
 [~, describe.modulationName] = fileparts(fileNameSave);
