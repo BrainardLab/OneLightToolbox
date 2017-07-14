@@ -29,10 +29,10 @@ function protocolParams = OLMakeDirectionCorrectedPrimaries(protocolParams)
 tic;
 
 %% Update Session Log File
-protocolParams = SessionLog(protocolParams,mfilename,'StartEnd','start');
+protocolParams = OLSessionLog(protocolParams,mfilename,'StartEnd','start');
 
-theDirections = {'MelanopsinDirectedSuperMaxMel' 'LMSDirectedSuperMaxLMS' 'LightFluxMaxPulse' };
-theDirectionsCorrect = [true true true]; 
+theDirections = {'MaxMel' 'MaxLMS' 'LightFluxMaxPulse' };
+theDirectionsCorrect = [true true false]; 
 spectroRadiometerOBJ=[];
 % CorrectedPrimariesDir is MELA_materials.../DirectionNominalPrimaries
 NominalPrimariesDir =  fullfile(getpref(protocolParams.approach, 'MaterialsPath'), 'Experiments',protocolParams.approach,'DirectionNominalPrimaries');
@@ -43,7 +43,17 @@ if(~exist(CorrectedPrimariesDir))
     mkdir(CorrectedPrimariesDir)
 end
 
+fprintf(2, '\n * * * * NEED TO FIGURE HOW TO GET THE CONTRAST HERE * * * * \n');
+pp.modulationContrast = 4/6
+fprintf(2,'Hit enter to continue\n');
+pause
+
 for d = 1:length(theDirections)
+    
+    if (~theDirectionsCorrect(d))
+         fprintf(' * Skipping direction:\t<strong>%s</strong>\n', theDirections{d});
+        continue;
+    end
     % Print out some information
     fprintf(' * Direction:\t<strong>%s</strong>\n', theDirections{d});
     fprintf(' * Observer:\t<strong>%s</strong>\n', protocolParams.observerID);
@@ -51,10 +61,10 @@ for d = 1:length(theDirections)
     
     % Correct the cache
     fprintf(' * Starting spectrum-seeking loop...\n');
-
+    
     % THIS IS OUR ATTEMPT TO DO IT THE OLD WAY WITH THE NEW CODE.
     [cacheData, olCache, spectroRadiometerOBJ, cal] = OLCorrectCacheFileOOC(...
-        fullfile(NominalPrimariesDir, ['Direction_' theDirections{d} '.mat']), ...
+        sprintf('%s.mat', fullfile(NominalPrimariesDir, sprintf('Direction_%s_%d_%d_%d',theDirections{d},round(10*protocolParams.fieldSizeDegrees),round(10*protocolParams.pupilDiameterMm),round(1000*pp.modulationContrast)))), ...
         'jryan@mail.med.upenn.edu', ...
         'PR-670', spectroRadiometerOBJ, protocolParams.spectroRadiometerOBJWillShutdownAfterMeasurement, ...
         'FullOnMeas', false, ...
@@ -122,5 +132,5 @@ if (~isempty(spectroRadiometerOBJ))
     spectroRadiometerOBJ = [];
 end
 
-protocolParams = SessionLog(protocolParams,mfilename,'StartEnd','end');
+protocolParams = OLSessionLog(protocolParams,mfilename,'StartEnd','end');
 toc;

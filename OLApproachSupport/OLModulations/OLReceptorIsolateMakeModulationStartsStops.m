@@ -32,11 +32,13 @@ function OLReceptorIsolateMakeModulationStartsStops(modulationName, protocolPara
 % 6/17/18   dhb         Merge with mab version and expand comments.
 % 6/23/17   npc         No more config files, get modulation properties from ModulationParamsDictionary
 
+protocolParams
+
 %% Parse input to get key/value pairs
 p = inputParser;
-p.addRequired(modulationName,@isstring);
-p.addRequired(protocolParams,@isstruct);
-p.addParameter('verbose',true,@isstring);
+p.addRequired('modulationName',@isstr);
+p.addRequired('protocolParams',@isstruct);
+p.addParameter('verbose',true,@islogical);
 p.parse(modulationName, protocolParams, varargin{:});
 
 %% Get params from modulation params dictionary
@@ -49,6 +51,7 @@ modulationParams = d(modulationName);
 %
 % Get where the corrected direction files live.  This had better exist.
 directionCacheDir = fullfile(getpref(protocolParams.approach,'DirectionCorrectedPrimariesBasePath'), protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
+directionCacheDir
 if (~exist(directionCacheDir,'dir'))
     error('Corrected direction primaries directory does not exist');
 end

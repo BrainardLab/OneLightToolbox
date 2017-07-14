@@ -28,7 +28,7 @@ p = p.Results;
 
 %% Swtich
 switch theStep
-    case 'SessionInit'
+    case 'OLSessionInit'
         
         %% Check for prior sessions
         sessionDir = fullfile(getpref(protocolParams.approach,'SessionRecordsBasePath'),protocolParams.observerID,protocolParams.todayDate);
@@ -66,7 +66,8 @@ switch theStep
         fprintf(fileID,'Session Start Time: %s.\n',datestr(now,'HH:MM:SS'));
         fclose(fileID);
         
-    case 'MakeDirectionCorrectedPrimaries'
+    case 'OLMakeDirectionCorrectedPrimaries'
+        protocolParams
         fileID = fopen(protocolParams.fullFileName,'a');
         switch p.StartEnd
             case 'start'
@@ -75,7 +76,7 @@ switch theStep
                 fprintf(fileID,'%s Finished @ %s.\n',theStep,datestr(now,'HH:MM:SS'));
         end
         fclose(fileID);
-    case 'MakeModulationStartsStops'
+    case 'OLMakeModulationStartsStops'
         fileID = fopen(protocolParams.fullFileName,'a');
         switch p.StartEnd
             case 'start'
@@ -84,7 +85,7 @@ switch theStep
                 fprintf(fileID,'%s Finished @ %s.\n',theStep,datestr(now,'HH:MM:SS'));
         end
         fclose(fileID);
-    case 'ValidateDirectionCorrectedPrimaries'
+    case 'OLValidateDirectionCorrectedPrimaries'
         fileID = fopen(protocolParams.fullFileName,'a');
         switch p.StartEnd
             case 'start'

@@ -48,7 +48,7 @@ if (~all(ismember(fieldnames(params),fieldnames(defaultParams(params.type)))))
 end
 
 % Test that all expected params exist and that they have the expected type
-switch (type)
+switch (params.type)
     case 'basic'
         assert((isfield(params, 'type')                     && ischar(params.type)),                        sprintf('params.type does not exist or it does not contain a string value.'));
         assert((isfield(params, 'trialDuration')            && isnumeric(params.trialDuration)),            sprintf('params.trialDuration does not exist or it does not contain a numeric value.'));

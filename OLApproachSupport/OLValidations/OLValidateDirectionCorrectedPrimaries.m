@@ -10,7 +10,7 @@ function protocolParams = OLValidateDirectionCorrectedPrimaries(protocolParams,P
 % 6/18/17  dhb  Added header comment.
 
 % Update session log file
-protocolParams = Psychophysics.SessionLog(protocolParams,mfilename,'StartEnd','start','PrePost',PrePost);
+protocolParams = OLSessionLog(protocolParams,mfilename,'StartEnd','start','PrePost',PrePost);
 
 % Assign the default choice index the first time we run this script. We
 % clear this after the pre-experimental validation.
@@ -83,7 +83,7 @@ end
 fprintf('\n************************************************');
 fprintf('\n*** <strong>Validation all complete</strong> ***');
 fprintf('\n************************************************\n');
-protocolParams = Psychophysics.SessionLog(protocolParams,mfilename,'StartEnd','end','PrePost',PrePost);
+protocolParams = OLSessionLog(protocolParams,mfilename,'StartEnd','end','PrePost',PrePost);
 toc;
 
 % Clear the choiceIndex. Note that this is only relevant for the

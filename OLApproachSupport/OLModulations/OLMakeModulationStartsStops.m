@@ -35,17 +35,17 @@ function OLMakeModulationStartsStops(modulationNames,protocolParams,varargin)
 
 %% Parse input to get key/value pairs
 p = inputParser;
-p.addRequired(modulationNames,@isstring);
-p.addRequired(protocolParams,@isstruct);
-p.addParameter('verbose',true,@isstring);
+p.addRequired('modulationNames',@iscell);
+p.addRequired('protocolParams',@isstruct);
+p.addParameter('verbose',true,@isstr);
 p.parse(modulationNames,protocolParams,varargin{:});
 
 % Update session log file
 OLSessionLog(protocolParams,mfilename,'StartEnd','start');
 
-customSuffix = ['_' protocolParams.observerID '_' protocolParams.todayDate];
+%customSuffix = ['_' protocolParams.observerID '_' protocolParams.todayDate];
 for ii = 1:length(modulationNames)
-    OLReceptorIsolateMakeModulationStartsStops(modulationNames{ii}, customSuffix, protocolParams,'verbose',p.Results.verbose);
+    OLReceptorIsolateMakeModulationStartsStops(modulationNames{ii}, protocolParams,'verbose',p.Results.verbose);
 end
 
 % Update session log file
