@@ -32,8 +32,6 @@ function OLReceptorIsolateMakeModulationStartsStops(modulationName, protocolPara
 % 6/17/18   dhb         Merge with mab version and expand comments.
 % 6/23/17   npc         No more config files, get modulation properties from ModulationParamsDictionary
 
-protocolParams
-
 %% Parse input to get key/value pairs
 p = inputParser;
 p.addRequired('modulationName',@isstr);
@@ -42,7 +40,7 @@ p.addParameter('verbose',true,@islogical);
 p.parse(modulationName, protocolParams, varargin{:});
 
 %% Get params from modulation params dictionary
-d = ModulationParamsDictionary();
+d = ModulationParamsDictionary(protocolParams);
 modulationParams = d(modulationName);
 
 %% Setup the directories we'll use.
@@ -51,7 +49,6 @@ modulationParams = d(modulationName);
 %
 % Get where the corrected direction files live.  This had better exist.
 directionCacheDir = fullfile(getpref(protocolParams.approach,'DirectionCorrectedPrimariesBasePath'), protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
-directionCacheDir
 if (~exist(directionCacheDir,'dir'))
     error('Corrected direction primaries directory does not exist');
 end
@@ -76,19 +73,18 @@ modulationParams.oneLightCal = LoadCalFile(cType.CalFileName, [], fullfile(getpr
 %
 % Setup the cache object for read, and do the read.
 directionOLCache = OLCache(directionCacheDir, modulationParams.oneLightCal);
-directionFilenames = allwords(modulationParams.directionCacheFile,',');
-for i = 1:length(directionFilenames)
-    % Create the cache file name for each direction specified as part of the
-    % modulation.
-    [~, directionCacheFilename] = fileparts(directionFilenames{i});
-    
-    % Load the cached direction data.
-    [cacheData,isStale] = directionOLCache.load(directionCacheFilename);
-    assert(~isStale,'Cache file is stale, aborting.');  
-    directionParams(i) = cacheData.params;
-    directionData(i) = cacheData.data(protocolParams.observerAgeInYrs);
-end
-clear cacheData
+%directionFilenames{1} = modulationParams.directionCacheFile;
+% for i = 1:length(directionFilenames)
+%     % Create the cache file name for each direction specified as part of the
+%     % modulation.
+%     [~, directionCacheFilename] = fileparts(directionFilenames{i});
+%     
+%     % Load the cached direction data.
+%     [cacheData,isStale] = directionOLCache.load(directionCacheFilename);
+%     assert(~isStale,'Cache file is stale, aborting.');  
+%     directionParams(i) = cacheData.params;
+%     directionData(i) = cacheData.data(protocolParams.observerAgeInYrs);
+% end
 
 % Currently we can only handle one direction, so break at this point if more
 % than one specified in the modulation parameters.  
@@ -96,9 +92,12 @@ clear cacheData
 % Because we currently only handle one direction, map it to a nonconfusing variable
 % name.  If there is someday a reason to allow more than one, this is where the code
 % would start having to deal with it.
-assert(length(directionFilenames) == 1,'Only one modulation direction currently supported');
-directionParams = directionParams(1);
-directionData = directionData(1);
+[cacheData,isStale] = directionOLCache.load(modulationParams.directionCacheFile);
+assert(~isStale,'Cache file is stale, aborting.');  
+directionParams = cacheData.params;
+directionData = cacheData.data(protocolParams.observerAgeInYrs);
+clear cacheData
+
 
 %% Say hello
 if (p.Results.verbose); fprintf('\n* Computing modulation %s\n',modulationName); end;

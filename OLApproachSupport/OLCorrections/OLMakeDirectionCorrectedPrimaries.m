@@ -122,7 +122,8 @@ for d = 1:length(theDirections)
     olCache = OLCache(CorrectedPrimariesDir,cal);
     %zparams = cacheData.data(zparams.observerAgeInYrs).describe.zparams;
     protocolParams.modulationDirection = theDirections{d};
-    protocolParams.cacheFile = ['Direction_' protocolParams.modulationDirection '_' protocolParams.observerID '_' protocolParams.todayDate '.mat'];
+    protocolParams.cacheFile = fullfile(NominalPrimariesDir, sprintf('Direction_%s_%d_%d_%d',theDirections{d},round(10*protocolParams.fieldSizeDegrees),round(10*protocolParams.pupilDiameterMm),round(1000*pp.modulationContrast)));
+    fprintf('Cache saved to %s\n', protocolParams.cacheFile);
     olCache.save(protocolParams.cacheFile, cacheData);
     fprintf('done!\n');
 end
