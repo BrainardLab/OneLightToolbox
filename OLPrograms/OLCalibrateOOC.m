@@ -117,12 +117,8 @@ try
     % time of measurement.
     cal.describe.correctLinearDrift = 1;
     
-    % Specify how often (every how many stimuli) to gauge the system state
-    % In other words when to insert the power fluctuation and the spectral
-    % shift gauge stimuli
-    cal.describe.stateTracking.calibrationStimInterval = 5;
-    cal.describe.stateTracking.calibrationStimIndex = 0;
-    cal.describe.stateTracking.stateMeasurementIndex = 0;
+    % Initialize the stateTracking substruct of cal
+    cal = OLCalibrator.InitStateTracking(cal);
     
     % Non-zero background for gamma and related measurments
     cal.describe.specifiedBackground = false;
@@ -246,11 +242,6 @@ try
     if (cal.describe.specifiedBackground)
         cal.describe.specifiedBackgroundSettings = 0.5*ones(nPrimaries,1);
     end
-    
-    % Define the state tracking stimulus settings
-    cal.describe.stateTracking.stimSettings.powerFluctuationsStim = ones(nPrimaries,1);
-    cal.describe.stateTracking.stimSettings.spectralShiftsStim = zeros(nPrimaries,1);
-    cal.describe.stateTracking.stimSettings.spectralShiftsStim(2:10:end) = 1.0;
     
     % Find and set the optimal integration time.  Subtract off a couple
     % thousand microseconds just to give it a conservative value.

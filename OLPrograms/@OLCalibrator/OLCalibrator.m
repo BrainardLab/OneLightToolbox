@@ -7,6 +7,10 @@
 classdef OLCalibrator
     
     methods (Static = true)    
+        
+        % Method to initialize the stateTracking substruct of cal
+        cal = InitStateTracking(cal0);
+        
         % Method to take state measurements for a OneLight calibration. In stand alone mode,
         % the data are added to a barebones calibration structure.
         [cal, calMeasOnly] = TakeStateMeasurements(cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, standAlone, theLJdev, varargin);
