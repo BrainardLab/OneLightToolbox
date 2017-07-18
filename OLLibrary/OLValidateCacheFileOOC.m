@@ -227,6 +227,9 @@ cal = LoadCalFile(OLCalibrationTypes.(selectedCalType).CalFileName, [], fullfile
 % Force useAverageGamma?
 cal.describe.useAverageGamma = 1;
 
+% Initialize the stateTracking substruct of cal
+cal = OLCalibrator.InitStateTracking(cal);
+    
 % Clean up cal file primaries by zeroing out light we don't think is really there.    
 zeroItWLRangeMinus = 100;
 zeroItWLRangePlus = 100;

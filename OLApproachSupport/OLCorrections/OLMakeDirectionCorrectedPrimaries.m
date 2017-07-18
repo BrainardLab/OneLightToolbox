@@ -31,8 +31,10 @@ tic;
 %% Update Session Log File
 protocolParams = OLSessionLog(protocolParams,mfilename,'StartEnd','start');
 
-theDirections = {'MaxMel' 'MaxLMS' 'LightFluxMaxPulse' };
-theDirectionsCorrect = [true true false]; 
+theDirections = protocolParams.directionNames; % {'MaxMel' 'MaxLMS' 'LightFluxMaxPulse' };
+theDirectionCacheFileNames = OLMakeDirectionCacheFileNames(protocolParams);
+
+theDirectionsCorrect = [true true];
 spectroRadiometerOBJ=[];
 % CorrectedPrimariesDir is MELA_materials.../DirectionNominalPrimaries
 NominalPrimariesDir =  fullfile(getpref(protocolParams.approach, 'MaterialsPath'), 'Experiments',protocolParams.approach,'DirectionNominalPrimaries');
@@ -43,10 +45,7 @@ if(~exist(CorrectedPrimariesDir))
     mkdir(CorrectedPrimariesDir)
 end
 
-fprintf(2, '\n * * * * NEED TO FIGURE HOW TO GET THE CONTRAST HERE * * * * \n');
-pp.modulationContrast = 4/6
-fprintf(2,'Hit enter to continue\n');
-pause
+
 
 for d = 1:length(theDirections)
     
@@ -64,7 +63,7 @@ for d = 1:length(theDirections)
     
     % THIS IS OUR ATTEMPT TO DO IT THE OLD WAY WITH THE NEW CODE.
     [cacheData, olCache, spectroRadiometerOBJ, cal] = OLCorrectCacheFileOOC(...
-        sprintf('%s.mat', fullfile(NominalPrimariesDir, sprintf('Direction_%s_%d_%d_%d',theDirections{d},round(10*protocolParams.fieldSizeDegrees),round(10*protocolParams.pupilDiameterMm),round(1000*pp.modulationContrast)))), ...
+        sprintf('%s.mat', fullfile(NominalPrimariesDir, theDirectionCacheFileNames{d})), ...
         'jryan@mail.med.upenn.edu', ...
         'PR-670', spectroRadiometerOBJ, protocolParams.spectroRadiometerOBJWillShutdownAfterMeasurement, ...
         'FullOnMeas', false, ...
@@ -122,7 +121,7 @@ for d = 1:length(theDirections)
     olCache = OLCache(CorrectedPrimariesDir,cal);
     %zparams = cacheData.data(zparams.observerAgeInYrs).describe.zparams;
     protocolParams.modulationDirection = theDirections{d};
-    protocolParams.cacheFile = fullfile(NominalPrimariesDir, sprintf('Direction_%s_%d_%d_%d',theDirections{d},round(10*protocolParams.fieldSizeDegrees),round(10*protocolParams.pupilDiameterMm),round(1000*pp.modulationContrast)));
+    protocolParams.cacheFile = fullfile(NominalPrimariesDir, theDirectionCacheFileNames{d});
     fprintf('Cache saved to %s\n', protocolParams.cacheFile);
     olCache.save(protocolParams.cacheFile, cacheData);
     fprintf('done!\n');

@@ -12,7 +12,7 @@ d = containers.Map();
 %% Modulation-MaxMelPulsePsychophysics-PulseMaxLMS_3s_MaxContrast3sSegment
 modulationName = 'Modulation-PulseMaxLMS_3s_MaxContrast3sSegment';
 params = defaultParams('basic');
-params.direction = 'Direction_MaxLMS_275_80_667';
+params.direction = 'StartsStops_MaxLMS_275_80_667';
 params.directionCacheFile = fullfile(getpref(protocolParams.approach,'DirectionCorrectedPrimariesBasePath'), protocolParams.observerID,protocolParams.todayDate,protocolParams.sessionName, params.direction);
 d = paramsValidateAndAppendToDictionary(d, modulationName, params);
 
@@ -20,7 +20,7 @@ d = paramsValidateAndAppendToDictionary(d, modulationName, params);
 %% Modulation-MaxMelPulsePsychophysics-PulseMaxMel_3s_MaxContrast3sSegment
 modulationName = 'Modulation-PulseMaxMel_3s_MaxContrast3sSegment';
 params = defaultParams('basic');
-params.direction = 'Direction_MaxMel_275_80_667';
+params.direction = 'StartsStops_MaxMel_275_80_667';
 params.directionCacheFile = fullfile(getpref(protocolParams.approach,'DirectionCorrectedPrimariesBasePath'), protocolParams.observerID,protocolParams.todayDate,protocolParams.sessionName, params.direction);
 d = paramsValidateAndAppendToDictionary(d, modulationName, params);
 
