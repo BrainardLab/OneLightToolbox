@@ -305,6 +305,7 @@ end
 
 %% Tuck in the calibration structure for return
 cacheData.cal = cal;
+cacheData.directionParams = params;
 wasRecomputed = true;
 
 
