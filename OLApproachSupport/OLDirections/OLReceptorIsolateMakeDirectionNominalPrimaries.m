@@ -80,6 +80,11 @@ backgroundOlCache = OLCache(backgroundCacheDir, cal);
 if (~forceRecompute)
     if (directionOlCache.exist(directionCacheFileName))
         [cacheData,isStale] = directionOlCache.load(directionCacheFileName);
+        
+        % Compare cacheData.describe.params against currently passed
+        % parameters to determine if cache is stale.
+        isStale = OLCheckCacheParamsAgainstCurrentParams(cacheData.describe.params, params, 'DirectionNominalPrimaries');
+        
         if (~isStale)
             wasRecomputed = false;
             return;
