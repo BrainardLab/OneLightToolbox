@@ -10,6 +10,8 @@
 %          dhb  Bring in params.photoreceptorClasses.  These go with directions/backgrounds.
 %          dhb  Bring in params.useAmbient.  This goes with directions/backgrounds.
 % 7/5/17   dhb  Bringing up to speed.
+% 7/19/17  npc  Added a type for each background. For now, there is only one type: 'pulse'. 
+%               Defaults and checking are done according to type.
 
 function d = OLDirectionNominalParamsDictionary()
 % Initialize dictionary
@@ -25,7 +27,9 @@ d = containers.Map();
 % Modulation contrast is used to generate, but the result is a 400%
 % contrast step up relative to the background.
 baseName = 'MaxMel';
-params = defaultParams('pulse');
+type = 'pulse';
+
+params = defaultParams(type);
 params.primaryHeadRoom = 0.01;
 params.baseModulationContrast = 4/6;
 params.pupilDiameterMm = 8.0;
@@ -38,7 +42,7 @@ params.backgroundType = 'optimized';
 params.backgroundName = OLMakeApproachBackgroundName('MelanopsinDirected',params);
 params.name = OLMakeApproachDirectionName(baseName,params);
 params.cacheFile = ['Direction_' params.name '.mat'];
-d = paramsValidateAndAppendToDictionary(d, params.name, params);
+d = paramsValidateAndAppendToDictionary(d, params);
 
 %% MaxLMS_275_80_667
 %
@@ -50,7 +54,9 @@ d = paramsValidateAndAppendToDictionary(d, params.name, params);
 % Modulation contrast is used to generate, but the result is a 400%
 % contrast step up relative to the background.
 baseName = 'MaxLMS';
-params = defaultParams('pulse');
+type = 'pulse';
+
+params = defaultParams(type);
 params.primaryHeadRoom = 0.01;
 params.baseModulationContrast = 4/6;
 params.pupilDiameterMm = 8.0;
@@ -63,7 +69,7 @@ params.backgroundType = 'optimized';
 params.backgroundName = OLMakeApproachBackgroundName('LMSDirected',params);
 params.name = OLMakeApproachDirectionName(baseName,params);
 params.cacheFile = ['Direction_' params.name '.mat'];
-d = paramsValidateAndAppendToDictionary(d, params.name, params);
+d = paramsValidateAndAppendToDictionary(d, params);
 
 %% MaxMel_275_60_667
 %
@@ -75,7 +81,9 @@ d = paramsValidateAndAppendToDictionary(d, params.name, params);
 % Modulation contrast is used to generate, but the result is a 400%
 % contrast step up relative to the background.
 baseName = 'MaxMel';
-params = defaultParams('pulse');
+type = 'pulse';
+
+params = defaultParams(type);
 params.primaryHeadRoom = 0.005;
 params.baseModulationContrast = 4/6;
 params.pupilDiameterMm = 6.0;
@@ -88,7 +96,7 @@ params.backgroundType = 'optimized';
 params.backgroundName = OLMakeApproachBackgroundName('MelanopsinDirected',params);
 params.name = OLMakeApproachDirectionName(baseName,params);
 params.cacheFile = ['Direction_' params.name '.mat'];
-d = paramsValidateAndAppendToDictionary(d, params.name, params);
+d = paramsValidateAndAppendToDictionary(d, params);
 
 %% MaxLMS_275_60_667
 %
@@ -100,7 +108,9 @@ d = paramsValidateAndAppendToDictionary(d, params.name, params);
 % Modulation contrast is used to generate, but the result is a 400%
 % contrast step up relative to the background.
 baseName = 'MaxLMS';
-params = defaultParams('pulse');
+type = 'pulse';
+
+params = defaultParams(type);
 params.primaryHeadRoom = 0.005;
 params.baseModulationContrast = 4/6;
 params.pupilDiameterMm = 6.0;
@@ -113,20 +123,23 @@ params.backgroundType = 'optimized';
 params.backgroundName = OLMakeApproachBackgroundName('LMSDirected',params);
 params.name = OLMakeApproachDirectionName(baseName,params);
 params.cacheFile = ['Direction_' params.name '.mat'];
-d = paramsValidateAndAppendToDictionary(d, params.name, params);
+d = paramsValidateAndAppendToDictionary(d, params);
 
 end
 
-function d = paramsValidateAndAppendToDictionary(d, directionName, params)
+function d = paramsValidateAndAppendToDictionary(d, params)
 
 % Update modulationDirection
-params.modulationDirection = directionName;
+params.modulationDirection = params.name;
+
+% Get all the expected field names for this type
+allFieldNames = fieldnames(defaultParams(params.type));
 
 % Test that there are no extra params
-if (~all(ismember(fieldnames(params),fieldnames(defaultParams(params.type)))))
+if (~all(ismember(fieldnames(params),allFieldNames)))
     fprintf(2,'\nParams struct contain extra params\n');
     fNames = fieldnames(params);
-    idx = ismember(fieldnames(params),fieldnames(defaultParams(params.type)));
+    idx = ismember(fieldnames(params),allFieldNames);
     idx = find(idx == 0);
     for k = 1:numel(idx)
         fprintf(2,'- ''%s'' \n', fNames{idx(k)});
@@ -161,20 +174,20 @@ switch (params.type)
         assert((isfield(params, 'backgroundObserverAge')      && isscalar(params.backgroundObserverAge)),   sprintf('params.backgroundObserverAge does not exist or it does not contain a number.'));
         assert((isfield(params, 'cacheFile')                  && ischar(params.cacheFile)),                 sprintf('params.cacheFile does not exist or it does not contain a string value.'));
     otherwise
-        error('Unknown direction type specified');
+        error('Unknown direction type specified: ''%s''.\n', params.type);
 end
 
 % All validations OK. Add entry to the dictionary.
-d(directionName) = params;
+d(params.name) = params;
 end
 
 function params = defaultParams(type)
-
 params = struct();
+params.type = type;
+params.name = '';
+
 switch (type)
     case 'pulse'
-        params.type = type;
-        params.name = '';
         params.baseModulationContrast = 4/6;
         params.primaryHeadRoom = 0.005;
         params.photoreceptorClasses = 'LConeTabulatedAbsorbance,MConeTabulatedAbsorbance,SConeTabulatedAbsorbance,Melanopsin';
@@ -196,7 +209,7 @@ switch (type)
         params.backgroundObserverAge = 32;
         params.cacheFile = '';
     otherwise
-        error('Unknown direction type specified');
+        error('Unknown direction type specified: ''%s''.\n', type);
 end
 
 end
