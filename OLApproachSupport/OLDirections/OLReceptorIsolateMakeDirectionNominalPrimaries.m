@@ -97,8 +97,8 @@ switch params.type
         %% Pupil diameter in mm.
         pupilDiameterMm = params.pupilDiameterMm;
         
-        %% Parse some of the parameter fields
-        photoreceptorClasses = allwords(params.photoreceptorClasses, ',');
+        %% Photoreceptor classes: cell array of strings
+        photoreceptorClasses = params.photoreceptorClasses;
         
         %% Set up what will be common to all observer ages
         % Pull out the 'M' matrix

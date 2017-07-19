@@ -129,8 +129,8 @@ switch params.backgroundType
         % pretty good backgrounds, so we don't need to fuss with small
         % effects.
         
-        %% Parse some of the parameter fields
-        photoreceptorClasses = allwords(params.photoreceptorClasses, ',');
+        %% Photoreceptor classes: cell array of strings
+        photoreceptorClasses = params.photoreceptorClasses;
         
         %% Set up what will be common to all observer ages
         % Pull out the 'M' matrix

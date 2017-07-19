@@ -154,7 +154,7 @@ switch (params.type)
         assert((isfield(params, 'name')                       && ischar(params.name)),                      sprintf('params.name does not exist or it does not contain a string value.'));
         assert((isfield(params, 'baseModulationContrast')     && isnumeric(params.baseModulationContrast)), sprintf('params.baseModulationContrast does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'primaryHeadRoom')            && isnumeric(params.primaryHeadRoom)),        sprintf('params.primaryHeadRoom does not exist or it does not contain a numeric value.'));
-        assert((isfield(params, 'photoreceptorClasses')       && ischar(params.photoreceptorClasses)),      sprintf('params.photoreceptorClasses does not exist or it does not contain a string value.'));
+        assert((isfield(params, 'photoreceptorClasses')       && iscell(params.photoreceptorClasses)),      sprintf('params.photoreceptorClasses does not exist or it does not contain a cell value.'));
         assert((isfield(params, 'fieldSizeDegrees')           && isscalar(params.fieldSizeDegrees)),        sprintf('params.ieldSizeDegrees does not exist or it does not contain a number.'));
         assert((isfield(params, 'pupilDiameterMm')            && isscalar(params.pupilDiameterMm)),         sprintf('params.pupilDiameterMm does not exist or it does not contain a number.'));
         assert((isfield(params, 'maxPowerDiff')               && isscalar(params.maxPowerDiff)),            sprintf('params.maxPowerDiff does not exist or it does not contain a number.'));
@@ -190,7 +190,7 @@ switch (type)
     case 'pulse'
         params.baseModulationContrast = 4/6;
         params.primaryHeadRoom = 0.005;
-        params.photoreceptorClasses = 'LConeTabulatedAbsorbance,MConeTabulatedAbsorbance,SConeTabulatedAbsorbance,Melanopsin';
+        params.photoreceptorClasses = {'LConeTabulatedAbsorbance', 'MConeTabulatedAbsorbance', 'SConeTabulatedAbsorbance', 'Melanopsin'};
         params.fieldSizeDegrees = 27.5;
         params.pupilDiameterMm = 8.0;
         params.maxPowerDiff = 0.1;
