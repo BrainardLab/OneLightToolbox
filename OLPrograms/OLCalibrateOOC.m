@@ -117,9 +117,6 @@ try
     % time of measurement.
     cal.describe.correctLinearDrift = 1;
     
-    % Initialize the stateTracking substruct of cal
-    cal = OLCalibrator.InitStateTracking(cal);
-    
     % Non-zero background for gamma and related measurments
     cal.describe.specifiedBackground = false;
     
@@ -246,6 +243,9 @@ try
     % Find and set the optimal integration time.  Subtract off a couple
     % thousand microseconds just to give it a conservative value.
     ol.setAll(true);
+    
+    % Initialize the stateTracking substruct of cal
+    cal = OLCalibrator.InitStateTracking(cal);
     
     % Ask for a keypress to start the warming up phase.
     % We hope this will will decrease the large initial drift correction
