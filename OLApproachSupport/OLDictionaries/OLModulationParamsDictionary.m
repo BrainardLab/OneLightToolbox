@@ -6,6 +6,7 @@
 % 6/23/17  npc  Wrote it.
 % 7/19/17  npc  Added a type for each modulation. For now, there is only one type: 'basic'. 
 %               Defaults and checking are done according to type.
+%               Isomorphic direction name and cache filename.
 
 function d = OLModulationParamsDictionary(protocolParams)
 % Initialize dictionary
@@ -17,7 +18,7 @@ type = 'basic';
 
 params = defaultParams(type);
 params.direction = 'StartsStops_MaxLMS_275_80_667';
-params.directionCacheFile = fullfile(getpref(protocolParams.approach,'DirectionCorrectedPrimariesBasePath'), protocolParams.observerID,protocolParams.todayDate,protocolParams.sessionName, params.direction);
+params.directionCacheFile = assembleDirectionCacheFileName(protocolParams, params.direction);
 params.name = modulationName;
 d = paramsValidateAndAppendToDictionary(d, params);
 
@@ -28,21 +29,21 @@ type = 'basic';
 
 params = defaultParams(type);
 params.direction = 'StartsStops_MaxMel_275_80_667';
-params.directionCacheFile = fullfile(getpref(protocolParams.approach,'DirectionCorrectedPrimariesBasePath'), protocolParams.observerID,protocolParams.todayDate,protocolParams.sessionName, params.direction);
+params.directionCacheFile = assembleDirectionCacheFileName(protocolParams, params.direction);
 params.name = modulationName;
 d = paramsValidateAndAppendToDictionary(d, params);
 
 
 % %% Modulation-MaxMelPulsePsychophysics-PulseMaxLightFlux_3s_MaxContrast3sSegment
 % modulationName = 'Modulation-PulseMaxLightFlux_3s_MaxContrast3sSegment';
-% params.type = 'basic';
-% params = defaultParams(params.type);
+% type = 'basic';
+% params = defaultParams(type);
 % params.direction = 'LightFluxMaxPulse';
-% params.directionCacheFile = 'Direction_LightFluxMaxPulse.mat';
+% params.directionCacheFile = assembleDirectionCacheFileName(protocolParams, params.direction);
 % d = paramsValidateAndAppendToDictionary(d, params);
 
 end
-
+    
 function d = paramsValidateAndAppendToDictionary(d, params)
 
 % Get all the expected field names for this type
@@ -147,4 +148,8 @@ switch (type)
     otherwise
         error('Unknown modulation starts/stops type: ''%s''.\n', type);
 end
+end
+
+function directionCacheFileName = assembleDirectionCacheFileName(protocolParams, direction)
+    directionCacheFileName = fullfile(getpref(protocolParams.approach,'DirectionCorrectedPrimariesBasePath'), protocolParams.observerID,protocolParams.todayDate,protocolParams.sessionName, direction);
 end
