@@ -13,8 +13,9 @@
 % NEED TO ADD THESE as type 'named'
 %          'BackgroundHalfOn' - Primaries set to 0.5;
 %          'BackgroundEES' - Background metameric to an equal energy spectrum, scaled in middle of gamut.
+%
 % 7/19/17  npc  Added a type for each background. For now, there is only one type: 'basic'. 
-%               Defaults and checking are done according to type.
+%               Defaults and checking are done according to type. params.photoreceptorClasses is now a cell array.
 
 
 function d = OLBackgroundNominalParamsDictionary()
@@ -35,7 +36,7 @@ function d = OLBackgroundNominalParamsDictionary()
     params = defaultParams(type);
     params.baseModulationContrast = 4/6;
     params.primaryHeadRoom = 0.01;
-    params.photoreceptorClasses = 'LConeTabulatedAbsorbance,MConeTabulatedAbsorbance,SConeTabulatedAbsorbance,Melanopsin';
+    params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
     params.modulationContrast = [params.baseModulationContrast];
     params.whichReceptorsToIsolate = {[4]};
     params.whichReceptorsToIgnore = {[]};
@@ -60,7 +61,7 @@ function d = OLBackgroundNominalParamsDictionary()
     params = defaultParams(type);
     params.baseModulationContrast = 4/6;
     params.primaryHeadRoom = 0.005;
-    params.photoreceptorClasses = 'LConeTabulatedAbsorbance,MConeTabulatedAbsorbance,SConeTabulatedAbsorbance,Melanopsin';
+    params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
     params.modulationContrast = {[params.baseModulationContrast params.baseModulationContrast params.baseModulationContrast]};
     params.whichReceptorsToIsolate = {[1 2 3]};
     params.whichReceptorsToIgnore = {[]};
@@ -86,7 +87,7 @@ function d = OLBackgroundNominalParamsDictionary()
     params.baseModulationContrast = 4/6;
     params.primaryHeadRoom = 0.01;
     params.pupilDiameterMm = 6;
-    params.photoreceptorClasses = 'LConeTabulatedAbsorbance,MConeTabulatedAbsorbance,SConeTabulatedAbsorbance,Melanopsin';
+    params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
     params.modulationContrast = [params.baseModulationContrast];
     params.whichReceptorsToIsolate = {[4]};
     params.whichReceptorsToIgnore = {[]};
@@ -112,7 +113,7 @@ function d = OLBackgroundNominalParamsDictionary()
     params.baseModulationContrast = 4/6;
     params.primaryHeadRoom = 0.005;
     params.pupilDiameterMm = 6;
-    params.photoreceptorClasses = 'LConeTabulatedAbsorbance,MConeTabulatedAbsorbance,SConeTabulatedAbsorbance,Melanopsin';
+    params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
     params.modulationContrast = {[params.baseModulationContrast params.baseModulationContrast params.baseModulationContrast]};
     params.whichReceptorsToIsolate = {[1 2 3]};
     params.whichReceptorsToIgnore = {[]};
@@ -167,7 +168,7 @@ switch (type)
         assert((isfield(params, 'baseModulationContrast')     && isnumeric(params.baseModulationContrast)), sprintf('params.baseModulationContrast does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'primaryHeadRoom')            && isnumeric(params.primaryHeadRoom)),        sprintf('params.primaryHeadRoom does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'pegBackground')              && islogical(params.pegBackground)),          sprintf('params.pegBackground does not exist or it does not contain a boolean value.'));
-        assert((isfield(params, 'photoreceptorClasses')       && ischar(params.photoreceptorClasses)),      sprintf('params.photoreceptorClasses does not exist or it does not contain a string value.'));
+        assert((isfield(params, 'photoreceptorClasses')       && iscell(params.photoreceptorClasses)),      sprintf('params.photoreceptorClasses does not exist or it does not contain a cell value.'));
         assert((isfield(params, 'fieldSizeDegrees')           && isscalar(params.fieldSizeDegrees)),        sprintf('params.ieldSizeDegrees does not exist or it does not contain a number.'));
         assert((isfield(params, 'pupilDiameterMm')            && isscalar(params.pupilDiameterMm)),         sprintf('params.pupilDiameterMm does not exist or it does not contain a number.'));
         assert((isfield(params, 'backgroundObserverAge')      && isscalar(params.pupilDiameterMm)),         sprintf('params.backgroundObserverAge does not exist or it does not contain a number.'));
@@ -202,7 +203,7 @@ switch (type)
         params.pegBackground = false;           
         params.baseModulationContrast = 4/6;
         params.primaryHeadRoom = 0.01;
-        params.photoreceptorClasses = 'LConeTabulatedAbsorbance,MConeTabulatedAbsorbance,SConeTabulatedAbsorbance,Melanopsin';
+        params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
         params.fieldSizeDegrees = 27.5;
         params.pupilDiameterMm = 8.0; 
         params.backgroundObserverAge = 32;

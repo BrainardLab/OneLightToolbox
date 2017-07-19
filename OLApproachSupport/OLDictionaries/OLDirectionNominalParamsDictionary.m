@@ -11,7 +11,7 @@
 %          dhb  Bring in params.useAmbient.  This goes with directions/backgrounds.
 % 7/5/17   dhb  Bringing up to speed.
 % 7/19/17  npc  Added a type for each background. For now, there is only one type: 'pulse'. 
-%               Defaults and checking are done according to type.
+%               Defaults and checking are done according to type. params.photoreceptorClasses is now a cell array
 
 function d = OLDirectionNominalParamsDictionary()
 % Initialize dictionary
@@ -33,7 +33,7 @@ params = defaultParams(type);
 params.primaryHeadRoom = 0.01;
 params.baseModulationContrast = 4/6;
 params.pupilDiameterMm = 8.0;
-params.photoreceptorClasses = 'LConeTabulatedAbsorbance,MConeTabulatedAbsorbance,SConeTabulatedAbsorbance,Melanopsin';
+params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
 params.modulationContrast = [params.baseModulationContrast];
 params.whichReceptorsToIsolate = [4];
 params.whichReceptorsToIgnore = [];
@@ -60,7 +60,7 @@ params = defaultParams(type);
 params.primaryHeadRoom = 0.01;
 params.baseModulationContrast = 4/6;
 params.pupilDiameterMm = 8.0;
-params.photoreceptorClasses = 'LConeTabulatedAbsorbance,MConeTabulatedAbsorbance,SConeTabulatedAbsorbance,Melanopsin';
+params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
 params.modulationContrast = [params.baseModulationContrast params.baseModulationContrast params.baseModulationContrast];
 params.whichReceptorsToIsolate = [1 2 3];
 params.whichReceptorsToIgnore = [];
@@ -87,7 +87,7 @@ params = defaultParams(type);
 params.primaryHeadRoom = 0.005;
 params.baseModulationContrast = 4/6;
 params.pupilDiameterMm = 6.0;
-params.photoreceptorClasses = 'LConeTabulatedAbsorbance,MConeTabulatedAbsorbance,SConeTabulatedAbsorbance,Melanopsin';
+params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
 params.modulationContrast = [params.baseModulationContrast];
 params.whichReceptorsToIsolate = [4];
 params.whichReceptorsToIgnore = [];
@@ -114,7 +114,7 @@ params = defaultParams(type);
 params.primaryHeadRoom = 0.005;
 params.baseModulationContrast = 4/6;
 params.pupilDiameterMm = 6.0;
-params.photoreceptorClasses = 'LConeTabulatedAbsorbance,MConeTabulatedAbsorbance,SConeTabulatedAbsorbance,Melanopsin';
+params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
 params.modulationContrast = [params.baseModulationContrast params.baseModulationContrast params.baseModulationContrast];
 params.whichReceptorsToIsolate = [1 2 3];
 params.whichReceptorsToIgnore = [];
