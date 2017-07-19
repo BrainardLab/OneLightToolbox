@@ -1,4 +1,4 @@
-%BackgroundNominalParamsDictionary
+%OLBackgroundNominalParamsDictionary
 %
 % Description:
 %   Generate dictionary with params for backgrounds. 
@@ -14,7 +14,7 @@
 %          'BackgroundHalfOn' - Primaries set to 0.5;
 %          'BackgroundEES' - Background metameric to an equal energy spectrum, scaled in middle of gamut.
 
-function d = BackgroundNominalParamsDictionary()
+function d = OLBackgroundNominalParamsDictionary()
     % Initialize dictionary
     d = containers.Map();
     

@@ -1,4 +1,4 @@
-%DirectionNominalParamsDictionary
+%OLDirectionNominalParamsDictionary
 %
 % Description:
 %   Generate dictionary with params for the examined modulation directions
@@ -11,7 +11,7 @@
 %          dhb  Bring in params.useAmbient.  This goes with directions/backgrounds.
 % 7/5/17   dhb  Bringing up to speed.
 
-function d = DirectionNominalParamsDictionary()
+function d = OLDirectionNominalParamsDictionary()
 % Initialize dictionary
 d = containers.Map();
 

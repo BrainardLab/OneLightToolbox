@@ -21,7 +21,7 @@ function OLMakeBackgroundNominalPrimaries(approachParams)
 % 6/22/17  npc  Dictionarized direction params, cleaned up.
 
     %% Make dictionary with direction-specific params for all directions
-    paramsDictionary = BackgroundNominalParamsDictionary();
+    paramsDictionary = OLBackgroundNominalParamsDictionary();
     
     %% Loop over directions
     for ii = 1:length(approachParams.backgroundNames)
@@ -31,7 +31,7 @@ end
 
 function generateAndSaveBackgroundPrimaries(approachParams, paramsDictionary, backgroundName)
     % Get background primaries
-    backgroundParams = MergeBaseParamsWithParamsFromDictionaryEntry(approachParams, paramsDictionary, backgroundName);
+    backgroundParams = OLMergeBaseParamsWithParamsFromDictionaryEntry(approachParams, paramsDictionary, backgroundName);
     
     % The called routine checks whether the cacheFile exists, and if so and
     % it isnt' stale, just returns the data.

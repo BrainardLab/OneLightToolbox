@@ -27,7 +27,7 @@ function OLMakeDirectionNominalPrimaries(approachParams)
 % 7/05/17  dhb  Big rewrite.
 
     % Make dictionary with direction-specific params for all directions
-    paramsDictionary = DirectionNominalParamsDictionary();
+    paramsDictionary = OLDirectionNominalParamsDictionary();
     
     %% Loop over directions
     for ii = 1:length(approachParams.directionNames)
@@ -37,7 +37,7 @@ end
 
 function generateAndSaveBackgroundPrimaries(approachParams, paramsDictionary, directionName)
     % Get background primaries
-    directionParams = MergeBaseParamsWithParamsFromDictionaryEntry(approachParams, paramsDictionary, directionName);
+    directionParams = OLMergeBaseParamsWithParamsFromDictionaryEntry(approachParams, paramsDictionary, directionName);
     
     % The called routine checks whether the cacheFile exists, and if so and
     % it isnt' stale, just returns the data.

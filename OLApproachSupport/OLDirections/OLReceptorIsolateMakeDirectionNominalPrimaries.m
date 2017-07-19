@@ -9,11 +9,11 @@ function [cacheData, directionOlCache, wasRecomputed] = OLReceptorIsolateMakeDir
 %     primaries that will produce various receptor isolating modulations.
 %     The params
 %     structure contains all of the important information, and is defined in
-%     the DirectionNominalPrimaries dictionary.
+%     the OLDirectionNominalPrimaries dictionary.
 %
 %     This checks the cache file, and if things have already been computed
 %     for the current calibration, it just returns what is there.  Cache
-%     files are stored in the DirectionNominalPrimaries directory, specified
+%     files are stored in the OLDirectionNominalPrimaries directory, specified
 %     by the preferences for the current approach.
 %
 %     The parameters for the directions we know about are stored in the
@@ -29,7 +29,7 @@ function [cacheData, directionOlCache, wasRecomputed] = OLReceptorIsolateMakeDir
 %     approach (string)          Name of whatever approach is invoking this.
 %
 %     params (struct)            Parameters struct for the direction.  See
-%                                DirectionNominalParamsDictionary.
+%                                OLDirectionNominalParamsDictionary.
 %
 %     forceRecompute (logical)   If true, forces a recompute of the data found in the config file.
 %                                Default: false

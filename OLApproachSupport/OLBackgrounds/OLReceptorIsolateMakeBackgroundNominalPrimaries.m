@@ -31,7 +31,7 @@ function [cacheData, olCache, wasRecomputed] = OLReceptorIsolateMakeBackgroundNo
 %     approach (string)          Name of whatever approach is invoking this.
 %
 %     params (struct)            Parameters struct for backgrounds.  See
-%                                BackgroundNominalParamsDictionary.
+%                                OLBackgroundNominalParamsDictionary.
 %
 %     forceRecompute (logical)   If true, forces a recompute of the data found in the config file.
 %                                Default: false

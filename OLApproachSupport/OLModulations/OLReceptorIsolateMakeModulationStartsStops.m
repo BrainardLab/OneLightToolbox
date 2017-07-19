@@ -30,7 +30,7 @@ function OLReceptorIsolateMakeModulationStartsStops(modulationName, protocolPara
 
 % 4/19/13   dhb, ms     Update for new convention for desired contrasts in routine ReceptorIsolate.
 % 6/17/18   dhb         Merge with mab version and expand comments.
-% 6/23/17   npc         No more config files, get modulation properties from ModulationParamsDictionary
+% 6/23/17   npc         No more config files, get modulation properties from OLModulationParamsDictionary
 
 %% Parse input to get key/value pairs
 p = inputParser;
@@ -41,7 +41,7 @@ p.parse(modulationName, protocolParams, varargin{:});
 beVerbose = p.Results.verbose;
 
 %% Get params from modulation params dictionary
-d = ModulationParamsDictionary(protocolParams);
+d = OLModulationParamsDictionary(protocolParams);
 modulationParams = d(modulationName);
 
 %% Setup the directories we'll use.

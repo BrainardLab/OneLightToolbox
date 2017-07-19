@@ -1,4 +1,4 @@
-function dParams = MergeBaseParamsWithParamsFromDictionaryEntry(baseParams, paramsDictionary, dictionaryKey)
+function dParams = OLMergeBaseParamsWithParamsFromDictionaryEntry(baseParams, paramsDictionary, dictionaryKey)
     % Check that requested directionName is valid and print available directions if it is not
     if (~paramsDictionary.isKey(dictionaryKey))
         availableKeys = keys(paramsDictionary);

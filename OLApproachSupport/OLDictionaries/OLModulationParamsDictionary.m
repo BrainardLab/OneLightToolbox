@@ -1,11 +1,11 @@
-%ModulationParamsDictionary
+%OLModulationParamsDictionary
 %
 % Description:
 %   Generate dictionary with modulation params
 %
 % 6/23/17  npc  Wrote it.
 
-function d = ModulationParamsDictionary(protocolParams)
+function d = OLModulationParamsDictionary(protocolParams)
 % Initialize dictionary
 d = containers.Map();
 
