@@ -12,7 +12,8 @@ d = containers.Map();
 %% Modulation-MaxMelPulsePsychophysics-PulseMaxLMS_3s_MaxContrast3sSegment
 modulationName = 'Modulation-PulseMaxLMS_3s_MaxContrast3sSegment';
 params = defaultParams('basic');
-params.direction = 'StartsStops_MaxLMS_275_80_667';
+params.direction = 'Direction_MaxLMS_275_80_667';
+params.startsStopsName = 'StartsStops_MaxLMS_275_80_667';
 params.directionCacheFile = fullfile(getpref(protocolParams.approach,'DirectionCorrectedPrimariesBasePath'), protocolParams.observerID,protocolParams.todayDate,protocolParams.sessionName, params.direction);
 d = paramsValidateAndAppendToDictionary(d, modulationName, params);
 
@@ -20,7 +21,8 @@ d = paramsValidateAndAppendToDictionary(d, modulationName, params);
 %% Modulation-MaxMelPulsePsychophysics-PulseMaxMel_3s_MaxContrast3sSegment
 modulationName = 'Modulation-PulseMaxMel_3s_MaxContrast3sSegment';
 params = defaultParams('basic');
-params.direction = 'StartsStops_MaxMel_275_80_667';
+params.direction = 'Direction_MaxMel_275_80_667';
+params.startsStopsName = 'StartsStops_MaxMel_275_80_667';
 params.directionCacheFile = fullfile(getpref(protocolParams.approach,'DirectionCorrectedPrimariesBasePath'), protocolParams.observerID,protocolParams.todayDate,protocolParams.sessionName, params.direction);
 d = paramsValidateAndAppendToDictionary(d, modulationName, params);
 
@@ -76,6 +78,7 @@ switch (params.type)
         assert((isfield(params, 'coneNoiseFrequency')       && isnumeric(params.coneNoiseFrequency)),       sprintf('params.coneNoiseFrequency does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'direction')                && ischar(params.direction)),                   sprintf('params.direction does not exist or it does not contain a string value.'));
         assert((isfield(params, 'directionCacheFile')       && ischar(params.directionCacheFile)),          sprintf('params.directionCacheFile does not exist or it does not contain a string value.'));
+        assert((isfield(params, 'startsStopsName')          && ischar(params.startsStopsName)),             sprintf('params.startsStopsName does not exist or it does not contain a string value.'));
         assert((isfield(params, 'stimulationMode')          && ischar(params.stimulationMode)),             sprintf('params.stimulationMode does not exist or it does not contain a string value.'));
     otherwise
         error('Unknown modulation starts/stops type');
@@ -127,6 +130,9 @@ switch (type)
         % Direction identifiers
         params.direction = '';                     % Modulation direction
         params.directionCacheFile = '';            % Cache file to be used
+        
+        % Name of modulation output file
+        params.startsStopsName = '';               % Starts Stops filename
         
         % Stimulation mode
         params.stimulationMode = 'maxmel';

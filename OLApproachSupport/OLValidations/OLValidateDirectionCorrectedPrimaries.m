@@ -33,7 +33,7 @@ outDir = fullfile(getpref(protocolParams.approach, 'DataPath'),'Experiments',pro
 if(~exist(outDir))
     mkdir(outDir)
 end
-NMeas = 1;
+NMeas = 5;
 
 % Set up a counter
 c = 1;
