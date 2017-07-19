@@ -184,7 +184,7 @@ modulationData.modulation = modulation;
 modulationData.waveform = waveform;
 
 %% Save out the modulation
-fullOutputFilename = fullfile(modulationParams.modulationDir, modulationParams.direction);
+fullOutputFilename = fullfile(modulationParams.modulationDir, modulationParams.startsStopsName);
 if (beVerbose); fprintf(['* Saving modulation to ' fullOutputFilename '\n']); end;
 save(fullOutputFilename, 'modulationData', '-v7.3');
 if (beVerbose); fprintf('  - Done.\n'); end;

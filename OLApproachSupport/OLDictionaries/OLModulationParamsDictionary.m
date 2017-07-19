@@ -1,59 +1,49 @@
-%OLModulationParamsDictionary
+%ModulationParamsDictionary
 %
 % Description:
 %   Generate dictionary with modulation params
 %
 % 6/23/17  npc  Wrote it.
-% 7/19/17  npc  Added a type for each modulation. For now, there is only one type: 'basic'. 
-%               Defaults and checking are done according to type.
-%               Isomorphic direction name and cache filename.
 
-function d = OLModulationParamsDictionary(protocolParams)
+function d = ModulationParamsDictionary(protocolParams)
 % Initialize dictionary
 d = containers.Map();
 
 %% Modulation-MaxMelPulsePsychophysics-PulseMaxLMS_3s_MaxContrast3sSegment
 modulationName = 'Modulation-PulseMaxLMS_3s_MaxContrast3sSegment';
-type = 'basic';
-
-params = defaultParams(type);
-params.direction = 'StartsStops_MaxLMS_275_80_667';
-params.directionCacheFile = assembleDirectionCacheFileName(protocolParams, params.direction);
-params.name = modulationName;
-d = paramsValidateAndAppendToDictionary(d, params);
+params = defaultParams('basic');
+params.direction = 'Direction_MaxLMS_275_80_667';
+params.startsStopsName = 'StartsStops_MaxLMS_275_80_667';
+params.directionCacheFile = fullfile(getpref(protocolParams.approach,'DirectionCorrectedPrimariesBasePath'), protocolParams.observerID,protocolParams.todayDate,protocolParams.sessionName, params.direction);
+d = paramsValidateAndAppendToDictionary(d, modulationName, params);
 
 
 %% Modulation-MaxMelPulsePsychophysics-PulseMaxMel_3s_MaxContrast3sSegment
 modulationName = 'Modulation-PulseMaxMel_3s_MaxContrast3sSegment';
-type = 'basic';
-
-params = defaultParams(type);
-params.direction = 'StartsStops_MaxMel_275_80_667';
-params.directionCacheFile = assembleDirectionCacheFileName(protocolParams, params.direction);
-params.name = modulationName;
-d = paramsValidateAndAppendToDictionary(d, params);
+params = defaultParams('basic');
+params.direction = 'Direction_MaxMel_275_80_667';
+params.startsStopsName = 'StartsStops_MaxMel_275_80_667';
+params.directionCacheFile = fullfile(getpref(protocolParams.approach,'DirectionCorrectedPrimariesBasePath'), protocolParams.observerID,protocolParams.todayDate,protocolParams.sessionName, params.direction);
+d = paramsValidateAndAppendToDictionary(d, modulationName, params);
 
 
 % %% Modulation-MaxMelPulsePsychophysics-PulseMaxLightFlux_3s_MaxContrast3sSegment
 % modulationName = 'Modulation-PulseMaxLightFlux_3s_MaxContrast3sSegment';
-% type = 'basic';
-% params = defaultParams(type);
+% params.type = 'basic';
+% params = defaultParams(params.type);
 % params.direction = 'LightFluxMaxPulse';
-% params.directionCacheFile = assembleDirectionCacheFileName(protocolParams, params.direction);
-% d = paramsValidateAndAppendToDictionary(d, params);
+% params.directionCacheFile = 'Direction_LightFluxMaxPulse.mat';
+% d = paramsValidateAndAppendToDictionary(d, modulationName, params);
 
 end
-    
-function d = paramsValidateAndAppendToDictionary(d, params)
 
-% Get all the expected field names for this type
-allFieldNames = fieldnames(defaultParams(params.type));
+function d = paramsValidateAndAppendToDictionary(d, modulationName, params)
 
 % Test that there are no extra params
-if (~all(ismember(fieldnames(params),allFieldNames)))
+if (~all(ismember(fieldnames(params),fieldnames(defaultParams(params.type)))))
     fprintf(2,'\nParams struct contain extra params\n');
     fNames = fieldnames(params);
-    idx = ismember(fieldnames(params),allFieldNames);
+    idx = ismember(fieldnames(params),fieldnames(defaultParams(params.type)));
     idx = find(idx == 0);
     for k = 1:numel(idx)
         fprintf(2,'- ''%s'' \n', fNames{idx(k)});
@@ -65,7 +55,6 @@ end
 switch (params.type)
     case 'basic'
         assert((isfield(params, 'type')                     && ischar(params.type)),                        sprintf('params.type does not exist or it does not contain a string value.'));
-        assert((isfield(params, 'name')                     && ischar(params.name)),                        sprintf('params.name does not exist or it does not contain a string value.'));
         assert((isfield(params, 'trialDuration')            && isnumeric(params.trialDuration)),            sprintf('params.trialDuration does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'timeStep')                 && isnumeric(params.timeStep)),                 sprintf('params.timeStep does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'cosineWindowIn')           && islogical(params.cosineWindowIn)),           sprintf('params.cosineWindowIn does not exist or it does not contain a boolean value.'));
@@ -89,24 +78,23 @@ switch (params.type)
         assert((isfield(params, 'coneNoiseFrequency')       && isnumeric(params.coneNoiseFrequency)),       sprintf('params.coneNoiseFrequency does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'direction')                && ischar(params.direction)),                   sprintf('params.direction does not exist or it does not contain a string value.'));
         assert((isfield(params, 'directionCacheFile')       && ischar(params.directionCacheFile)),          sprintf('params.directionCacheFile does not exist or it does not contain a string value.'));
+        assert((isfield(params, 'startsStopsName')          && ischar(params.startsStopsName)),             sprintf('params.startsStopsName does not exist or it does not contain a string value.'));
         assert((isfield(params, 'stimulationMode')          && ischar(params.stimulationMode)),             sprintf('params.stimulationMode does not exist or it does not contain a string value.'));
     otherwise
-        error('Unknown modulation starts/stops type: ''%s''.\n', params.type);
+        error('Unknown modulation starts/stops type');
 end
 
 % All validations OK. Add entry to the dictionary.
-d(params.name) = params;
+d(modulationName) = params;
 end
 
 
 function params = defaultParams(type)
 
 params = struct();
-params.type = type;
-params.name = '';
-
 switch (type)
     case 'basic'
+        params.type = type;
         params.trialDuration = 3;                   % Number of seconds to show each trial
         params.timeStep = 1/64;                     % Number ms of each sample time
         params.cosineWindowIn = true;               % If true, have a cosine fade-in
@@ -143,13 +131,12 @@ switch (type)
         params.direction = '';                     % Modulation direction
         params.directionCacheFile = '';            % Cache file to be used
         
+        % Name of modulation output file
+        params.startsStopsName = '';               % Starts Stops filename
+        
         % Stimulation mode
         params.stimulationMode = 'maxmel';
     otherwise
-        error('Unknown modulation starts/stops type: ''%s''.\n', type);
+        error('Unknown modulation starts/stops type');
 end
-end
-
-function directionCacheFileName = assembleDirectionCacheFileName(protocolParams, direction)
-    directionCacheFileName = fullfile(getpref(protocolParams.approach,'DirectionCorrectedPrimariesBasePath'), protocolParams.observerID,protocolParams.todayDate,protocolParams.sessionName, direction);
 end
