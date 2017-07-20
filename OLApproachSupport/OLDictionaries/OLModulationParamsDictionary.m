@@ -73,9 +73,6 @@ switch (params.type)
         assert((isfield(params, 'maxContrast')              && isnumeric(params.maxContrast)),              sprintf('params.maxContrast does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'coneNoise')                && isnumeric(params.coneNoise)),                sprintf('params.coneNoise does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'coneNoiseFrequency')       && isnumeric(params.coneNoiseFrequency)),       sprintf('params.coneNoiseFrequency does not exist or it does not contain a numeric value.'));
-        assert((isfield(params, 'direction')                && ischar(params.direction)),                   sprintf('params.direction does not exist or it does not contain a string value.'));
-        assert((isfield(params, 'directionCacheFile')       && ischar(params.directionCacheFile)),          sprintf('params.directionCacheFile does not exist or it does not contain a string value.'));
-        assert((isfield(params, 'startsStopsName')          && ischar(params.startsStopsName)),             sprintf('params.startsStopsName does not exist or it does not contain a string value.'));
         assert((isfield(params, 'stimulationMode')          && ischar(params.stimulationMode)),             sprintf('params.stimulationMode does not exist or it does not contain a string value.'));
     otherwise
         error('Unknown modulation starts/stops type');
@@ -126,13 +123,6 @@ switch (type)
         params.coneNoise = 0;                      % Do cone noise?
         params.coneNoiseFrequency = 8;
         
-        % Direction identifiers
-        params.direction = '';                     % Modulation direction
-        params.directionCacheFile = '';            % Cache file to be used
-        
-        % Name of modulation output file
-        params.startsStopsName = '';               % Starts Stops filename
-        
         % Stimulation mode
         params.stimulationMode = 'maxmel';
     otherwise
@@ -140,6 +130,4 @@ switch (type)
 end
 end
 
-function directionCacheFileName = assembleDirectionCacheFileName(protocolParams, direction)
-    directionCacheFileName = fullfile(getpref(protocolParams.approach,'DirectionCorrectedPrimariesBasePath'), protocolParams.observerID,protocolParams.todayDate,protocolParams.sessionName, direction);
-end
+

@@ -38,9 +38,10 @@ function OLMakeModulationStartsStops(modulationNames,directionNames,protocolPara
 %% Parse input to get key/value pairs
 p = inputParser;
 p.addRequired('modulationNames',@iscell);
+p.addRequired('directionNames', @iscell);
 p.addRequired('protocolParams',@isstruct);
 p.addParameter('verbose',true,@isstr);
-p.parse(modulationNames,protocolParams,varargin{:});
+p.parse(modulationNames,directionNames,protocolParams,varargin{:});
 
 % Update session log file
 OLSessionLog(protocolParams,mfilename,'StartEnd','start');

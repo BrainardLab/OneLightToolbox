@@ -1,12 +1,12 @@
-ACCEPT direction names.  Use these to construct both direction file name for read ("Direction_directionName") and
-the name of the output file (modulationName_directionName).  Remove references to directions and startsstopsname from modulations dictionary.
-Update header comments!
+%ACCEPT direction names.  Use these to construct both direction file name for read ("Direction_directionName") and
+%the name of the output file (modulationName_directionName).  Remove references to directions and startsstopsname from modulations dictionary.
+%Update header comments!
 
-function OLReceptorIsolateMakeModulationStartsStops(modulationName, protocolParams, varargin)
+function OLReceptorIsolateMakeModulationStartsStops(modulationName, directionName, protocolParams, varargin)
 %OLReceptorIsolateMakeModulationStartsStops  Creates the starts/stops cache data for a given config file.
 %
 % Usage:
-%     OLReceptorIsolateMakeModulationStartsStops(modulationName, topLevelParams)
+%     OLReceptorIsolateMakeModulationStartsStops(modulationName, directionName, topLevelParams)
 %
 % Description:
 %     Converts primary settings for modulations into starts/stops arrays and
@@ -39,14 +39,16 @@ function OLReceptorIsolateMakeModulationStartsStops(modulationName, protocolPara
 %% Parse input to get key/value pairs
 p = inputParser;
 p.addRequired('modulationName',@isstr);
+p.addRequired('directionName',@isstr);
 p.addRequired('protocolParams',@isstruct);
 p.addParameter('verbose',true,@islogical);
-p.parse(modulationName, protocolParams, varargin{:});
+p.parse(modulationName, directionName, protocolParams, varargin{:});
 beVerbose = p.Results.verbose;
 
 %% Get params from modulation params dictionary
 d = OLModulationParamsDictionary(protocolParams);
 modulationParams = d(modulationName);
+
 
 %% Setup the directories we'll use.
 % We count on the standard relative directory structure that we always use
@@ -98,7 +100,13 @@ directionOLCache = OLCache(directionCacheDir, modulationParams.oneLightCal);
 % name.  If there is someday a reason to allow more than one, this is where the code
 % would start having to deal with it.
 
-[cacheData,isStale] = directionOLCache.load(modulationParams.directionCacheFile);
+[directionCacheFile, startsStopsFileName] = assembleDirectionCacheAnsStartsStopFileNames(protocolParams, modulationParams, directionName);
+directionCacheFile
+startsStopsFileName
+fprintf('Checking that file-naming code. Do the above names make sense?\n');
+pause
+
+[cacheData,isStale] = directionOLCache.load(directionCacheFile);
 assert(~isStale,'Cache file is stale, aborting.');  
 directionParams = cacheData.directionParams;
 directionData = cacheData.data(protocolParams.observerAgeInYrs);
@@ -188,9 +196,16 @@ modulationData.modulation = modulation;
 modulationData.waveform = waveform;
 
 %% Save out the modulation
-fullOutputFilename = fullfile(modulationParams.modulationDir, modulationParams.startsStopsName);
-if (beVerbose); fprintf(['* Saving modulation to ' fullOutputFilename '\n']); end;
-save(fullOutputFilename, 'modulationData', '-v7.3');
+if (beVerbose); fprintf(['* Saving modulation to ' startsStopsFileName '\n']); end;
+save(startsStopsFileName, 'modulationData', '-v7.3');
 if (beVerbose); fprintf('  - Done.\n'); end;
 end
+
+function [directionCacheFileName, startsStopsFileName] = assembleDirectionCacheAnsStartsStopFileNames(protocolParams, modulationParams, directionName)
+    fullDirectionName = sprintf('Direction_%s', OLMakeApproachDirectionName(directionName,protocolParams));
+    fullStartsStopsName = sprintf('StartsStops_%s', OLMakeApproachDirectionName(directionName,protocolParams));
+    directionCacheFileName = fullfile(getpref(protocolParams.approach,'DirectionCorrectedPrimariesBasePath'), protocolParams.observerID,protocolParams.todayDate,protocolParams.sessionName, fullDirectionName);
+    startsStopsFileName = fullfile(modulationParams.modulationDir, protocolParams.observerID,protocolParams.todayDate,protocolParams.sessionName, fullStartsStopsName);
+end
+
 
