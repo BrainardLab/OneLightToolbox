@@ -201,9 +201,10 @@ save(startsStopsFileName, 'modulationData', '-v7.3');
 if (beVerbose); fprintf('  - Done.\n'); end;
 end
 
+% THIS FILE NAME SHOULD BE OF FORM 'ModulationStartsStops_<ModulationName>_<DirectionName>'
 function [directionCacheFileName, startsStopsFileName] = assembleDirectionCacheAnsStartsStopFileNames(protocolParams, modulationParams, directionName)
     fullDirectionName = sprintf('Direction_%s', OLMakeApproachDirectionName(directionName,protocolParams));
-    fullStartsStopsName = sprintf('StartsStops_%s', OLMakeApproachDirectionName(directionName,protocolParams));
+    fullStartsStopsName = sprintf('Modulation_%s', OLMakeApproachDirectionName(directionName,protocolParams));
     directionCacheFileName = fullfile(getpref(protocolParams.approach,'DirectionCorrectedPrimariesBasePath'), protocolParams.observerID,protocolParams.todayDate,protocolParams.sessionName, fullDirectionName);
     startsStopsFileName = fullfile(modulationParams.modulationDir, protocolParams.observerID,protocolParams.todayDate,protocolParams.sessionName, fullStartsStopsName);
 end

@@ -82,8 +82,9 @@ if (~forceRecompute)
         [cacheData,isStale] = directionOlCache.load(directionCacheFileName);
         
         % Compare cacheData.describe.params against currently passed
-        % parameters to determine if cache is stale.
-        isStale = OLCheckCacheParamsAgainstCurrentParams(cacheData.describe.params, params, 'DirectionNominalPrimaries');
+        % parameters to determine if everything is hunky-dory.  This throws
+        % an error if not.
+        OLCheckCacheParamsAgainstCurrentParams(cacheData.describe.params, params, 'DirectionNominalPrimaries');
         
         if (~isStale)
             wasRecomputed = false;

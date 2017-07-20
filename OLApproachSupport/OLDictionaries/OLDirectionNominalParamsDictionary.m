@@ -1,7 +1,13 @@
-%OLDirectionNominalParamsDictionary
+% OLDirectionNominalParamsDictionary
 %
 % Description:
-%   Generate dictionary with params for the examined modulation directions
+%     Generate dictionary with params for the examined modulation directions
+%
+% Note:
+%     When you add a new type, you need to add that type to the corresponding switch statment
+%     in OLCheckCacheParamsAgainstCurrentParams.
+%
+% See also: OLCheckCacheParamsAgainstCurrentParams.
 
 % 6/22/17  npc  Wrote it.
 % 6/28/18  dhb  backgroundType -> backgroundName. Use names of routine that creates backgrounds.
@@ -14,6 +20,7 @@
 %               Defaults and checking are done according to type. params.photoreceptorClasses is now a cell array
 
 function d = OLDirectionNominalParamsDictionary()
+
 % Initialize dictionary
 d = containers.Map();
 
@@ -39,7 +46,7 @@ params.whichReceptorsToIsolate = [4];
 params.whichReceptorsToIgnore = [];
 params.whichReceptorsToMinimize = [];
 params.backgroundType = 'optimized';
-params.backgroundName = OLMakeApproachBackgroundName('MelanopsinDirected',params);
+params.backgroundName = OLMakeApproachDirectionBackgroundName('MelanopsinDirected',params);
 params.name = OLMakeApproachDirectionName(baseName,params);
 params.cacheFile = ['Direction_' params.name '.mat'];
 d = paramsValidateAndAppendToDictionary(d, params);
@@ -66,7 +73,7 @@ params.whichReceptorsToIsolate = [1 2 3];
 params.whichReceptorsToIgnore = [];
 params.whichReceptorsToMinimize = [];
 params.backgroundType = 'optimized';
-params.backgroundName = OLMakeApproachBackgroundName('LMSDirected',params);
+params.backgroundName = OLMakeApproachDirectionBackgroundName('LMSDirected',params);
 params.name = OLMakeApproachDirectionName(baseName,params);
 params.cacheFile = ['Direction_' params.name '.mat'];
 d = paramsValidateAndAppendToDictionary(d, params);
@@ -93,7 +100,7 @@ params.whichReceptorsToIsolate = [4];
 params.whichReceptorsToIgnore = [];
 params.whichReceptorsToMinimize = [];
 params.backgroundType = 'optimized';
-params.backgroundName = OLMakeApproachBackgroundName('MelanopsinDirected',params);
+params.backgroundName = OLMakeApproachDirectionBackgroundName('MelanopsinDirected',params);
 params.name = OLMakeApproachDirectionName(baseName,params);
 params.cacheFile = ['Direction_' params.name '.mat'];
 d = paramsValidateAndAppendToDictionary(d, params);
@@ -120,7 +127,7 @@ params.whichReceptorsToIsolate = [1 2 3];
 params.whichReceptorsToIgnore = [];
 params.whichReceptorsToMinimize = [];
 params.backgroundType = 'optimized';
-params.backgroundName = OLMakeApproachBackgroundName('LMSDirected',params);
+params.backgroundName = OLMakeApproachDirectionBackgroundName('LMSDirected',params);
 params.name = OLMakeApproachDirectionName(baseName,params);
 params.cacheFile = ['Direction_' params.name '.mat'];
 d = paramsValidateAndAppendToDictionary(d, params);
@@ -150,15 +157,15 @@ end
 % Test that all expected params exist and that they have the expected type
 switch (params.type)
     case 'pulse'
-        assert((isfield(params, 'dictionaryType')             && ischar(params.dictionaryType)),                      sprintf('params.dictionaryType does not exist or it does not contain a string value.'));
+        assert((isfield(params, 'dictionaryType')             && ischar(params.dictionaryType)),            sprintf('params.dictionaryType does not exist or it does not contain a string value.'));
         assert((isfield(params, 'type')                       && ischar(params.type)),                      sprintf('params.type does not exist or it does not contain a string value.'));
         assert((isfield(params, 'name')                       && ischar(params.name)),                      sprintf('params.name does not exist or it does not contain a string value.'));
         assert((isfield(params, 'baseModulationContrast')     && isnumeric(params.baseModulationContrast)), sprintf('params.baseModulationContrast does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'primaryHeadRoom')            && isnumeric(params.primaryHeadRoom)),        sprintf('params.primaryHeadRoom does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'photoreceptorClasses')       && iscell(params.photoreceptorClasses)),      sprintf('params.photoreceptorClasses does not exist or it does not contain a cell value.'));
-        assert((isfield(params, 'fieldSizeDegrees')           && isscalar(params.fieldSizeDegrees)),        sprintf('params.ieldSizeDegrees does not exist or it does not contain a number.'));
-        assert((isfield(params, 'pupilDiameterMm')            && isscalar(params.pupilDiameterMm)),         sprintf('params.pupilDiameterMm does not exist or it does not contain a number.'));
-        assert((isfield(params, 'maxPowerDiff')               && isscalar(params.maxPowerDiff)),            sprintf('params.maxPowerDiff does not exist or it does not contain a number.'));
+        assert((isfield(params, 'fieldSizeDegrees')           && isnumeric(params.fieldSizeDegrees)),       sprintf('params.ieldSizeDegrees does not exist or it does not contain a number.'));
+        assert((isfield(params, 'pupilDiameterMm')            && isnumeric(params.pupilDiameterMm)),        sprintf('params.pupilDiameterMm does not exist or it does not contain a number.'));
+        assert((isfield(params, 'maxPowerDiff')               && isnumeric(params.maxPowerDiff)),           sprintf('params.maxPowerDiff does not exist or it does not contain a number.'));
         assert((isfield(params, 'modulationDirection')        && ischar(params.modulationDirection)),       sprintf('params.modulationDirection does not exist or it does not contain a string value.'));
         assert((isfield(params, 'modulationDirection')        && ischar(params.modulationDirection)),       sprintf('params.modulationDirection does not exist or it does not contain a string value.'));
         assert((isfield(params, 'modulationContrast')         && (isnumeric(params.modulationContrast) || iscell(params.whichReceptorsToIsolate))),         sprintf('params.modulationContrast does not exist or it does not contain a numeric value.'));
@@ -172,7 +179,7 @@ switch (params.type)
         assert((isfield(params, 'doSelfScreening')            && islogical(params.doSelfScreening)),        sprintf('params.doSelfScreening does not exist or it does not contain a logical value.'));
         assert((isfield(params, 'backgroundType')             && ischar(params.backgroundType)),            sprintf('params.backgroundType does not exist or it does not contain a string value.'));
         assert((isfield(params, 'backgroundName')             && ischar(params.backgroundName)),            sprintf('params.backgroundName does not exist or it does not contain a string value.'));
-        assert((isfield(params, 'backgroundObserverAge')      && isscalar(params.backgroundObserverAge)),   sprintf('params.backgroundObserverAge does not exist or it does not contain a number.'));
+        assert((isfield(params, 'backgroundObserverAge')      && isnumeric(params.backgroundObserverAge)),  sprintf('params.backgroundObserverAge does not exist or it does not contain a number.'));
         assert((isfield(params, 'cacheFile')                  && ischar(params.cacheFile)),                 sprintf('params.cacheFile does not exist or it does not contain a string value.'));
     otherwise
         error('Unknown direction type specified: ''%s''.\n', params.type);
@@ -214,5 +221,16 @@ switch (type)
         error('Unknown direction type specified: ''%s''.\n', type);
 end
 
+end
+
+% OLMakeApproachDirectionBackgroundName
+% 
+% Description:
+%     Local function so that we can make the background file name from the
+%     backgroundType filed in the direction parameters structure.  A little ugly,
+%     but probably sufficiently localized that it is OK.
+function theName = OLMakeApproachDirectionBackgroundName(name,params)
+params.type = params.backgroundType;
+theName = OLMakeApproachBackgroundName('MelanopsinDirected',params);
 end
 

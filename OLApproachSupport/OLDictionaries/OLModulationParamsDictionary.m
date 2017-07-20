@@ -1,8 +1,14 @@
-%ModulationParamsDictionary
+% ModulationParamsDictionary
 %
 % Description:
-%   Generate dictionary with modulation params
+%     Generate dictionary with modulation params.
 %
+% Note:
+%     When you add a new type, you need to add that type to the corresponding switch statment
+%     in OLCheckCacheParamsAgainstCurrentParams.
+%
+% See also: OLCheckCacheParamsAgainstCurrentParams.
+
 % 6/23/17  npc  Wrote it.
 % 7/19/17  npc  Added a type for each modulation. For now, there is only one type: 'basic'. 
 %               Defaults and checking are done according to type.
@@ -12,21 +18,13 @@ function d = OLModulationParamsDictionary(protocolParams)
 % Initialize dictionary
 d = containers.Map();
 
-%% Modulation-MaxMelPulsePsychophysics-PulseMaxLMS_3s_MaxContrast3sSegment
-modulationName = 'Modulation_MaxContrast3sSegment';
+%% MaxContrast3sSegment
+modulationName = 'MaxContrast3sSegment';
 type = 'basic';
+
 params = defaultParams(type);
 params.name = modulationName;
-%params.directionCacheFile = assembleDirectionCacheFileName(protocolParams, params.direction);
 d = paramsValidateAndAppendToDictionary(d, params);
-
-% %% Modulation-MaxMelPulsePsychophysics-PulseMaxLightFlux_3s_MaxContrast3sSegment
-% modulationName = 'Modulation-PulseMaxLightFlux_3s_MaxContrast3sSegment';
-% type = 'basic';
-% params = defaultParams(type);
-% params.direction = 'LightFluxMaxPulse';
-% params.directionCacheFile = 'Direction_LightFluxMaxPulse.mat';
-% d = paramsValidateAndAppendToDictionary(d,  params);
 
 end
 
@@ -50,6 +48,7 @@ end
 % Test that all expected params exist and that they have the expected type
 switch (params.type)
     case 'basic'
+        assert((isfield(params, 'dictionaryType')           && ischar(params.dictionaryType)),              sprintf('params.dictionaryType does not exist or it does not contain a string value.'));
         assert((isfield(params, 'type')                     && ischar(params.type)),                        sprintf('params.type does not exist or it does not contain a string value.'));
         assert((isfield(params, 'name')                     && ischar(params.name)),                        sprintf('params.name does not exist or it does not contain a string value.'));
         assert((isfield(params, 'trialDuration')            && isnumeric(params.trialDuration)),            sprintf('params.trialDuration does not exist or it does not contain a numeric value.'));
@@ -91,6 +90,7 @@ params.name = '';
 
 switch (type)
     case 'basic'
+        params.dictionaryType = 'Modulation';
         params.trialDuration = 3;                   % Number of seconds to show each trial
         params.timeStep = 1/64;                     % Number ms of each sample time
         params.cosineWindowIn = true;               % If true, have a cosine fade-in
