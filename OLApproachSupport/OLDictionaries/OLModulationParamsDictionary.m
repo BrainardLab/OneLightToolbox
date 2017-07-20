@@ -13,28 +13,12 @@ function d = OLModulationParamsDictionary(protocolParams)
 d = containers.Map();
 
 %% Modulation-MaxMelPulsePsychophysics-PulseMaxLMS_3s_MaxContrast3sSegment
-modulationName = 'Modulation-PulseMaxLMS_3s_MaxContrast3sSegment';
+modulationName = 'Modulation_MaxContrast3sSegment';
 type = 'basic';
-
 params = defaultParams(type);
 params.name = modulationName;
-params.direction = 'Direction_MaxLMS_275_80_667';
-params.startsStopsName = 'StartsStops_MaxLMS_275_80_667';
-params.directionCacheFile = assembleDirectionCacheFileName(protocolParams, params.direction);
+%params.directionCacheFile = assembleDirectionCacheFileName(protocolParams, params.direction);
 d = paramsValidateAndAppendToDictionary(d, params);
-
-
-%% Modulation-MaxMelPulsePsychophysics-PulseMaxMel_3s_MaxContrast3sSegment
-modulationName = 'Modulation-PulseMaxMel_3s_MaxContrast3sSegment';
-type = 'basic';
-
-params = defaultParams(type);
-params.name = modulationName;
-params.direction = 'Direction_MaxMel_275_80_667';
-params.startsStopsName = 'StartsStops_MaxMel_275_80_667';
-params.directionCacheFile = assembleDirectionCacheFileName(protocolParams, params.direction);
-d = paramsValidateAndAppendToDictionary(d, params);
-
 
 % %% Modulation-MaxMelPulsePsychophysics-PulseMaxLightFlux_3s_MaxContrast3sSegment
 % modulationName = 'Modulation-PulseMaxLightFlux_3s_MaxContrast3sSegment';

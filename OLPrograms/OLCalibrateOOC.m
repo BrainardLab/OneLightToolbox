@@ -81,7 +81,7 @@ try
             cal.describe.nGammaBands = 16;
         case 'BoxB'
             cal.describe.gammaFitType = 'betacdfpiecelin';
-            cal.describe.useAverageGamma = false;
+            cal.describe.useAverageGamma = true;
             cal.describe.nShortPrimariesSkip = 5;
             cal.describe.nLongPrimariesSkip = 3;
             cal.describe.nGammaBands = 16;

@@ -45,8 +45,6 @@ if(~exist(CorrectedPrimariesDir))
     mkdir(CorrectedPrimariesDir)
 end
 
-
-
 for d = 1:length(theDirections)
     
     if (~theDirectionsCorrect(d))
@@ -61,7 +59,8 @@ for d = 1:length(theDirections)
     % Correct the cache
     fprintf(' * Starting spectrum-seeking loop...\n');
     
-    % THIS IS OUR ATTEMPT TO DO IT THE OLD WAY WITH THE NEW CODE.
+    % THIS IS OUR ATTEMPT TO DO IT THE OLD WAY WITH THE NEW CODE.  THIS IS BOX D.  THIS IS ALSO OUR BEST
+    % CURRENT GUESS FOR BOX A.
     [cacheData, olCache, spectroRadiometerOBJ, cal] = OLCorrectCacheFileOOC(...
         sprintf('%s.mat', fullfile(NominalPrimariesDir, theDirectionCacheFileNames{d})), ...
         'jryan@mail.med.upenn.edu', ...
@@ -89,7 +88,7 @@ for d = 1:length(theDirections)
         'simulate', protocolParams.simulate, ...
         'approach', protocolParams.approach);
 
-% THIS IS SET UP TO DO IT THE NEW WAY
+% THIS IS SET UP TO DO IT THE NEW WAY.  THIS IS BOX B.  ALSO OUR BEST CURRENT GUESS FOR BOX C.
 %        [cacheData olCache spectroRadiometerOBJ] = OLCorrectCacheFileOOC(...
 %         fullfile(NominalPrimariesDir, ['Direction_' theDirections{d} '.mat']), ...
 %         'jryan@mail.med.upenn.edu', ...

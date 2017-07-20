@@ -1,3 +1,7 @@
+ACCEPT direction names.  Use these to construct both direction file name for read ("Direction_directionName") and
+the name of the output file (modulationName_directionName).  Remove references to directions and startsstopsname from modulations dictionary.
+Update header comments!
+
 function OLReceptorIsolateMakeModulationStartsStops(modulationName, protocolParams, varargin)
 %OLReceptorIsolateMakeModulationStartsStops  Creates the starts/stops cache data for a given config file.
 %

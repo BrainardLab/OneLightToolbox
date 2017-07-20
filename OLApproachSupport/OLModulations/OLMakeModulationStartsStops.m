@@ -1,8 +1,8 @@
-function OLMakeModulationStartsStops(modulationNames,protocolParams,varargin)
+function OLMakeModulationStartsStops(modulationNames,directionNames,protocolParams,varargin)
 %OLMakeModulationStartsStops  Make the modulations starts/stops for a protocol subject/date/session
 %
 % Usage:
-%     OLMakeModulationStartsStops(modulationNames,protocolParams)
+%     OLMakeModulationStartsStops(modulationNames,directionNames,protocolParams)
 %
 % Description:
 %     This script reads in the primaries for the modulations in the experiment and computes the starts stops.
@@ -19,6 +19,8 @@ function OLMakeModulationStartsStops(modulationNames,protocolParams,varargin)
 %
 % Input:
 %      modulationNames (cell array)         Cell array with the names of the modulations that are used in
+%                                           the current protocol.
+%      directionNames (cell array)          Cell array with the names of the directions that are used in
 %                                           the current protocol.
 %      protocolParams (struct)              Parameter structure for protocol.
 %                                             NEED TO SAY OR POINT TO DESCRIPTION OF WHAT KEY FIELDS ARE.
@@ -45,7 +47,7 @@ OLSessionLog(protocolParams,mfilename,'StartEnd','start');
 
 %customSuffix = ['_' protocolParams.observerID '_' protocolParams.todayDate];
 for ii = 1:length(modulationNames)
-    OLReceptorIsolateMakeModulationStartsStops(modulationNames{ii}, protocolParams,'verbose',p.Results.verbose);
+    OLReceptorIsolateMakeModulationStartsStops(modulationNames{ii}, directionNames{ii}, protocolParams,'verbose',p.Results.verbose);
 end
 
 % Update session log file
