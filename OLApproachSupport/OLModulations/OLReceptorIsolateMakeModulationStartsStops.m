@@ -1,6 +1,6 @@
 %ACCEPT direction names.  Use these to construct both direction file name for read ("Direction_directionName") and
 %the name of the output file (modulationName_directionName).  Remove references to directions and startsstopsname from modulations dictionary.
-%Update header comments!
+%Update header comments! Note to remove starts/stops from routine at the bottom.
 
 function OLReceptorIsolateMakeModulationStartsStops(modulationName, directionName, protocolParams, varargin)
 %OLReceptorIsolateMakeModulationStartsStops  Creates the starts/stops cache data for a given config file.
@@ -99,7 +99,7 @@ directionOLCache = OLCache(directionCacheDir, modulationParams.oneLightCal);
 % Because we currently only handle one direction, map it to a nonconfusing variable
 % name.  If there is someday a reason to allow more than one, this is where the code
 % would start having to deal with it.
-
+assert(length(directionFilenames) == 1,'Only one modulation direction currently supported');
 [directionCacheFile, startsStopsFileName] = assembleDirectionCacheAnsStartsStopFileNames(protocolParams, modulationParams, directionName);
 directionCacheFile
 startsStopsFileName

@@ -1,14 +1,14 @@
-function cacheIsStale = OLCheckCacheParamsAgainstCurrentParams(cacheparams, currentParams, type)
+function cacheIsStale = OLCheckCacheParamsAgainstCurrentParams(cacheParams, currentParams, type)
 % OLCheckCacheParamsAgainstCurrentParams - Checks cached vs. current params to determine if cache is stale.
 %
 % Usage:
-%     cacheIsStale = OLCheckCacheParamsAgainstCurrentParams(cacheparams, currentParams, type)
+%     cacheIsStale = OLCheckCacheParamsAgainstCurrentParams(cacheParams, currentParams, type)
 %
 % Description:
 %     Check wether the cached and the current params agree or not. If they do not the cache is labeled as stale.
 %
 % Input:
-%     cacheparams          Parameters loaded from the cache
+%     cacheParams          Parameters loaded from the cache
 %
 %     currentParams        Current Parameters 
 %
@@ -19,15 +19,15 @@ function cacheIsStale = OLCheckCacheParamsAgainstCurrentParams(cacheparams, curr
 
 switch (type)
     case 'BackgroundNominalPrimaries'
-        cacheIsStale = checkBackgroundNominalParams(cacheparams, currentParams);
+        cacheIsStale = checkBackgroundNominalParams(cacheParams, currentParams);
     case 'DirectionNominalPrimaries'
-        cacheIsStale = checkDirectionNominalParams(cacheparams, currentParams);
+        cacheIsStale = checkDirectionNominalParams(cacheParams, currentParams);
     otherwise
         error('Unknown type: ''%s''.\n', type);
 end
 end
 
-function cacheIsStale = checkBackgroundNominalParams(cacheparams, currentParams)
+function cacheIsStale = checkBackgroundNominalParams(cacheParams, currentParams)
     % NCP: Right here need to compare cacheData.describe.params with the
     % currently passed parameters.  If any fields differ, then a recompute 
     % should be forced.
@@ -40,7 +40,7 @@ function cacheIsStale = checkBackgroundNominalParams(cacheparams, currentParams)
     %  and make sure this isn't triggered in some nuisance manner.
     fprintf('Checking weather the BackgroundNominalParams cache is stale.\n');
     fprintf('Cache params:\n');
-    cacheparams
+    cacheParams
     fprintf('Current params:\n');
     currentParams
     fprintf('Here we need to actually check if the two sets of params agree in order to determine if the cache is stale.\n');
@@ -48,7 +48,7 @@ function cacheIsStale = checkBackgroundNominalParams(cacheparams, currentParams)
     cacheIsStale = false;
 end
 
-function cacheIsStale = checkDirectionNominalParams(cacheparams, currentParams)
+function cacheIsStale = checkDirectionNominalParams(cacheParams, currentParams)
     % NCP: Right here need to compare cacheData.describe.params with the
     % currently passed parameters.  If any fields differ, then a recompute 
     % should be forced.
@@ -61,7 +61,7 @@ function cacheIsStale = checkDirectionNominalParams(cacheparams, currentParams)
     %  and make sure this isn't triggered in some nuisance manner.
     fprintf('Checking weather the DirectionNominalParams cache is stale.\n')
     fprintf('Cache params:\n');
-    cacheparams
+    cacheParams
     fprintf('Current params:\n');
     currentParams
     fprintf('Here we need to actually check if the two sets of params agree in order to determine if the cache is stale.\n');

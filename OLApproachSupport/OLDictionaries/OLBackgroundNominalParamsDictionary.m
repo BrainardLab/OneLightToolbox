@@ -163,7 +163,8 @@ end
 switch (type)
     case 'basic'
         % Test that all expected params exist and that they have the expected type
-        assert((isfield(params, 'type')                       && ischar(params.type)),                        sprintf('params.type does not exist or it does not contain a string value.'));
+        assert((isfield(params, 'dictionaryType')             && ischar(params.dictionaryType)),            sprintf('params.dictionaryType does not exist or it does not contain a string value.'));
+        assert((isfield(params, 'type')                       && ischar(params.type)),                      sprintf('params.type does not exist or it does not contain a string value.'));
         assert((isfield(params, 'name')                       && ischar(params.name)),                      sprintf('params.name does not exist or it does not contain a string value.'));
         assert((isfield(params, 'backgroundType')             && ischar(params.backgroundType)),            sprintf('params.backgroundType does not exist or it does not contain a string value.'));
         assert((isfield(params, 'baseModulationContrast')     && isnumeric(params.baseModulationContrast)), sprintf('params.baseModulationContrast does not exist or it does not contain a numeric value.'));
@@ -200,6 +201,7 @@ params.name = '';
 
 switch (type)
     case 'basic'
+        params.dictionaryType = 'Background';
         params.backgroundType = 'optimized';
         params.pegBackground = false;           
         params.baseModulationContrast = 4/6;

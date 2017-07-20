@@ -1,5 +1,8 @@
 function photopicLuminance = OLAnalyzeValidationReceptorIsolateShort(valFileNameFull, postreceptoralCombinations)
 % OLAnalyzeValidationReceptorIsolate(valFileNameFull)
+%
+% THIS NEEDS COMMENTING.  WHAT I THINK IT DOES IS TAKE A SPECTRUM AND ASK HOW MUCH CONTRAST IT PRODUCES ON CERTAIN
+% RECEPTORS.
 
 [validationDir, valFileName] = fileparts(valFileNameFull);
 val = LoadCalFile(valFileName, [], [validationDir '/']);

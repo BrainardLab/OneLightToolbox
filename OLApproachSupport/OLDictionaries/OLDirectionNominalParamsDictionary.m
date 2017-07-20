@@ -150,6 +150,7 @@ end
 % Test that all expected params exist and that they have the expected type
 switch (params.type)
     case 'pulse'
+        assert((isfield(params, 'dictionaryType')             && ischar(params.dictionaryType)),                      sprintf('params.dictionaryType does not exist or it does not contain a string value.'));
         assert((isfield(params, 'type')                       && ischar(params.type)),                      sprintf('params.type does not exist or it does not contain a string value.'));
         assert((isfield(params, 'name')                       && ischar(params.name)),                      sprintf('params.name does not exist or it does not contain a string value.'));
         assert((isfield(params, 'baseModulationContrast')     && isnumeric(params.baseModulationContrast)), sprintf('params.baseModulationContrast does not exist or it does not contain a numeric value.'));
@@ -188,6 +189,7 @@ params.name = '';
 
 switch (type)
     case 'pulse'
+        params.dictionaryType = 'Direction';
         params.baseModulationContrast = 4/6;
         params.primaryHeadRoom = 0.005;
         params.photoreceptorClasses = {'LConeTabulatedAbsorbance', 'MConeTabulatedAbsorbance', 'SConeTabulatedAbsorbance', 'Melanopsin'};

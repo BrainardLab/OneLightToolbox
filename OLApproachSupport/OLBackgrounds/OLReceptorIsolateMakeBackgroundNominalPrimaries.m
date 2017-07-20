@@ -89,7 +89,7 @@ if (~forceRecompute)
 end
 
 %% OK, need to recompute
-switch params.backgroundType
+switch params.type
     case 'named'
         % These are cases where we just do something very specific with the
         % name.
