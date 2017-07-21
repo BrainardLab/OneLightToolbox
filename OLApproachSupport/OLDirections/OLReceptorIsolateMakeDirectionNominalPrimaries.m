@@ -84,7 +84,7 @@ if (~forceRecompute)
         % Compare cacheData.describe.params against currently passed
         % parameters to determine if everything is hunky-dory.  This throws
         % an error if not.
-        OLCheckCacheParamsAgainstCurrentParams(cacheData.describe.params, params, 'DirectionNominalPrimaries');
+        OLCheckCacheParamsAgainstCurrentParams(cacheData, params);
         
         if (~isStale)
             wasRecomputed = false;

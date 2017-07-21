@@ -164,7 +164,7 @@ if (~all(ismember(fieldnames(params), allFieldNames)))
     error('Remove extra params or update defaultParams\n');
 end
 
-switch (type)
+switch (params.type)
     case 'optimized'
         % Test that all expected params exist and that they have the expected type
         assert((isfield(params, 'dictionaryType')             && ischar(params.dictionaryType)),            sprintf('params.dictionaryType does not exist or it does not contain a string value.'));
@@ -229,12 +229,16 @@ switch (type)
         params.directionsYoked = [0];                                             % See ReceptorIsolate.
         params.directionsYokedAbs = [0];                                          % See ReceptorIsolate.
         params.useAmbient = true;                                                 % Use measured ambient in calculations if true. If false, set ambient to zero.
+        params.cacheFile = '';                                                    % Place holder, modulation name and type-specific . Just declaring the field here.
+        params.modulationDirection = '';                                          % Place holder, modulation name and type-specific . Just declaring the field here.
     case 'lightfluxchrom'
         params.dictionaryType = 'Background';                                     % What type of dictionary is this?
         params.primaryHeadRoom = 0.01;                                            % How close to edge of [0-1] primary gamut do we want to get? (Check if actually used someday.) 
         params.lightFluxDesiredXY = [0.54 0.38];                                  % Background chromaticity.
         params.lightFluxDownFactor = 5;                                           % Factor to decrease background after initial values found.  Determines how big a pulse we can put on it.
         params.useAmbient = true;                                                 % Use measured ambient in calculations if true. If false, set ambient to zero.
+        params.cacheFile = '';                                                    % Place holder, modulation name and type-specific . Just declaring the field here.
+        params.modulationDirection = '';                                          % Place holder, modulation name and type-specific . Just declaring the field here.
     otherwise
         error('Unknown background type specified: ''%s''.\n', type)
 end % switch

@@ -77,7 +77,7 @@ if (~forceRecompute)
         
         % Compare cacheData.describe.params against currently passed
         % parameters to determine if cache is stale.
-        isStale = OLCheckCacheParamsAgainstCurrentParams(cacheData.describe.params, params, 'BackgroundNominalPrimaries');
+        OLCheckCacheParamsAgainstCurrentParams(cacheData, params);
  
         if (~isStale)
             wasRecomputed = false;
