@@ -6,11 +6,15 @@
 % 6/27/17  dhb    Wrote it.
 
 %% Clear prefs
+% 
+% We use these, clear before setting below.
 if (ispref('OneLightToolbox'))
     rmpref('OneLightToolbox');
 end
 
 %% Clear prefs
+%
+% This clears old legacy code preference.
 if (ispref('OneLight'))
     rmpref('OneLight');
 end
