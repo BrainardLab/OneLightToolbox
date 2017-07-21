@@ -54,8 +54,8 @@ photopicLuminanceCdM2 = T_xyz(2,:)*radianceWattsPerM2Sr;
 chromaticityXY = T_xyz(1:2,:)*radianceWattsPerM2Sr/sum(T_xyz*radianceWattsPerM2Sr);
 
 %% Get cone spectral sensitivities to use to compute isomerization rates
-[T_cones, T_quantalIsom] = GetHumanPhotoreceptorSS(S, {'LCone' 'MCone' 'SCone'}, fieldSizeDegrees, observerAgeInYears, pupilDiameterMm, [], []);
-%[T_conesHemo, T_quantalIsomHemo]  = GetHumanPhotoreceptorSS(S, {'LConeHemo' 'MConeHemo' 'SConeHemo'}, fieldSizeDegrees, observerAgeInYears, pupilDiameterMm, [], []);
+[T_cones, T_quantalIsom] = GetHumanPhotoreceptorSS(S, {'LConeTabulatedAbsorbance' 'MConeTabulatedAbsorbance' 'SConeTabulatedAbsorbance'}, fieldSizeDegrees, observerAgeInYears, pupilDiameterMm, [], []);
+[T_conesHemo, T_quantalIsomHemo]  = GetHumanPhotoreceptorSS(S, {'LConeTabulatedAbsorbancePenumbral' 'MConeTabulatedAbsorbancePenumbral' 'SConeTabulatedAbsorbancePenumbral'}, fieldSizeDegrees, observerAgeInYears, pupilDiameterMm, [], []);
 
 %% Compute irradiance, trolands, etc.
 pupilAreaMm2 = pi*((pupilDiameterMm/2)^2);
