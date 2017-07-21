@@ -99,12 +99,12 @@ directionOLCache = OLCache(directionCacheDir, modulationParams.oneLightCal);
 % Because we currently only handle one direction, map it to a nonconfusing variable
 % name.  If there is someday a reason to allow more than one, this is where the code
 % would start having to deal with it.
-assert(length(directionFilenames) == 1,'Only one modulation direction currently supported');
-[directionCacheFile, startsStopsFileName] = assembleDirectionCacheAnsStartsStopFileNames(protocolParams, modulationParams, directionName);
-directionCacheFile
-startsStopsFileName
-fprintf('Checking that file-naming code. Do the above names make sense?\n');
-pause
+
+%Note from Nicolas. The assert statemement below is not needed (and is in fact wrong)
+%because we are passed a single string from OLMakeModulationStartsStops
+%assert(numel(directionName) == 1,'Only one modulation direction currently supported');
+
+[directionCacheFile, startsStopsFileName, modulationParams.direction] = OLAssembleDirectionCacheAndStartsStopFileNames(protocolParams, modulationParams, directionName);
 
 [cacheData,isStale] = directionOLCache.load(directionCacheFile);
 assert(~isStale,'Cache file is stale, aborting.');  
@@ -202,11 +202,21 @@ if (beVerbose); fprintf('  - Done.\n'); end;
 end
 
 % THIS FILE NAME SHOULD BE OF FORM 'ModulationStartsStops_<ModulationName>_<DirectionName>'
-function [directionCacheFileName, startsStopsFileName] = assembleDirectionCacheAnsStartsStopFileNames(protocolParams, modulationParams, directionName)
-    fullDirectionName = sprintf('Direction_%s', OLMakeApproachDirectionName(directionName,protocolParams));
-    fullStartsStopsName = sprintf('Modulation_%s', OLMakeApproachDirectionName(directionName,protocolParams));
+function [directionCacheFileName, startsStopsFileName, directionName] = OLAssembleDirectionCacheAndStartsStopFileNames(protocolParams, modulationParams, directionName)
+
+    % Hack to get the direction type
+    for k = 1:numel(protocolParams.directionNames)
+        if (strcmp(protocolParams.directionNames{k}, directionName))
+            protocolParams.type = protocolParams.directionTypes{k};
+        end
+    end
+
+    directionName = OLMakeApproachDirectionName(directionName,protocolParams);
+    fullDirectionName = sprintf('Direction_%s', directionName);
+    fullStartsStopsName = sprintf('ModulationStartsStops_%s_%s', modulationParams.name, directionName);
     directionCacheFileName = fullfile(getpref(protocolParams.approach,'DirectionCorrectedPrimariesBasePath'), protocolParams.observerID,protocolParams.todayDate,protocolParams.sessionName, fullDirectionName);
-    startsStopsFileName = fullfile(modulationParams.modulationDir, protocolParams.observerID,protocolParams.todayDate,protocolParams.sessionName, fullStartsStopsName);
+    startsStopsFileName = fullfile(modulationParams.modulationDir, fullStartsStopsName);
 end
+
 
 

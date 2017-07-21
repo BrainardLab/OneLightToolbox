@@ -233,4 +233,3 @@ function theName = OLMakeApproachDirectionBackgroundName(name,params)
 params.type = params.backgroundType;
 theName = OLMakeApproachBackgroundName('MelanopsinDirected',params);
 end
-

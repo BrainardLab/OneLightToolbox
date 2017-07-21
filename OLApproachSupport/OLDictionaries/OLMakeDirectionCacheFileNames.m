@@ -19,7 +19,12 @@ function directionCacheFileNames = OLMakeDirectionCacheFileNames(protocolParams)
 %
 % See also: OLMakeApproachDirectionName.
 
+    paramsDictionary = OLDirectionNominalParamsDictionary();
     for k = 1:numel(protocolParams.directionNames)
-        directionCacheFileNames{k} = sprintf('Direction_%s',OLMakeApproachDirectionName(protocolParams.directionNames{k},protocolParams));
+        % A little ugly, but we need to have the type field according to the directionType
+        protocolParams.type = protocolParams.directionTypes{k};
+        directionName = OLMakeApproachDirectionName(protocolParams.directionNames{k}, protocolParams); %sprintf('%s_%d_%d_%d',protocolParams.directionNames{k},round(10*protocolParams.fieldSizeDegrees),round(10*protocolParams.pupilDiameterMm),round(1000*protocolParams.baseModulationContrast));
+        directionParams = paramsDictionary(directionName);
+        directionCacheFileNames{k} = strrep(directionParams.cacheFile, '.mat', '');
     end
 end

@@ -25,6 +25,6 @@ switch (params.type)
     case 'pulse'
         name = sprintf('%s_%d_%d_%d',baseName,round(10*params.fieldSizeDegrees),round(10*params.pupilDiameterMm),round(1000*params.baseModulationContrast));
     otherwise
-        error('Unknown background type');
+        error('Unknown direction type');
 end
 
