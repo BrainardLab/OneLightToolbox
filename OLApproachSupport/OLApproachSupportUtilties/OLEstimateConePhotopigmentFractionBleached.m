@@ -5,15 +5,8 @@ function fractionBleached = OLEstimateConePhotopigmentFractionBleached(S,theSpd,
 %     fractionBleached = OLEstimateConePhotopigmentFractionBleached(S,spd,pupilDiameterMm,fieldSizeDegrees,observerAgeInYears,photoreceptorClasses)
 %
 % Description:
-%     Compute isomerization rates of cones to a passed spectral radiance
-%     and use this informaiton to estimate fraction of pigment bleached.
-%
-%     Inner segment diameter is taken to be that provided in the structure
-%     obtaine via the following, independent of the passed field size. This
-%     is OK because we're looking at log unit effects with this
-%     calculation.
-%        photoreceptors = DefaultPhotoreceptors('CIE10Deg');
-%        photoreceptors = FillInPhotoreceptors(photoreceptors);
+%     Compute fraction of pigment bleached in passed photoreceptor classes. This is a wrapper for the SilentSubstitutionToolbox routine
+%     GetConeFractionBleachedFromSpectrum.
 %
 % Input:
 %     S                          Wavelength sampling as row vector: [startWl deltaWl nWls],
@@ -30,66 +23,24 @@ function fractionBleached = OLEstimateConePhotopigmentFractionBleached(S,theSpd,
 %     observerAgeInYears         Observer age in years for cone spectral sensitivity computations.
 %
 %     photoreceptorClasses       Cell array of strings describing photoreceptor classes of interest.
-%                                Options are 'LCone', 'MCone', 'SCone','LConeHemo', 'MConeHemo', 'SConeHemo.
+%                                Options are 'LCone', 'MCone', 'SCone','LConePenumbral', 'MConePenumbral', 'SConePenumbral.
 %                                See GetHumanPhotoreceptorSS for description of exactly what these denote.
 %
 % Output:
 %     fractionBleached           Vector of fraction photopigment bleached
 %                                for specified classes.  For any other classes passed, fraction
 %                                bleached is returned as zero.
+%
+% See also: GetConeFractionBleachedFromSpectrum.
 
 % 07/05/17  dhb  Pulled this out as its own function.
+% 07/21/17  dhb  Call into SST routine rather than doing calcs de novo here.
+%           dhb  Change 'Hemo' -> 'Penumbral'.
 
-%% Some basic radiometric calcs on the Spd.
-% Need to make sure we start optimization at background.
-radianceWattsPerM2Sr = theSpd;
-radianceWattsPerM2Sr(radianceWattsPerM2Sr < 0) = 0;
-radianceWattsPerCm2Sr = (10.^-4)*radianceWattsPerM2Sr;
-radianceQuantaPerCm2SrSec = EnergyToQuanta(S,radianceWattsPerCm2Sr);
+%% Call into SST routine to get fraction bleached for LMS cones and penumbral cones.
+[fractionBleachedFromIsom, fractionBleachedFromIsomHemo] = GetConeFractionBleachedFromSpectrum(S, theSpd, fieldSizeDegrees, observerAgeInYears, pupilDiameterMm, [], []);
 
-%% Load CIE functions so we can compute luminance
-load T_xyz1931
-T_xyz = SplineCmf(S_xyz1931,683*T_xyz1931,S);
-photopicLuminanceCdM2 = T_xyz(2,:)*radianceWattsPerM2Sr;
-chromaticityXY = T_xyz(1:2,:)*radianceWattsPerM2Sr/sum(T_xyz*radianceWattsPerM2Sr);
-
-%% Get cone spectral sensitivities to use to compute isomerization rates
-[T_cones, T_quantalIsom] = GetHumanPhotoreceptorSS(S, {'LConeTabulatedAbsorbance' 'MConeTabulatedAbsorbance' 'SConeTabulatedAbsorbance'}, fieldSizeDegrees, observerAgeInYears, pupilDiameterMm, [], []);
-[T_conesHemo, T_quantalIsomHemo]  = GetHumanPhotoreceptorSS(S, {'LConeTabulatedAbsorbancePenumbral' 'MConeTabulatedAbsorbancePenumbral' 'SConeTabulatedAbsorbancePenumbral'}, fieldSizeDegrees, observerAgeInYears, pupilDiameterMm, [], []);
-
-%% Compute irradiance, trolands, etc.
-pupilAreaMm2 = pi*((pupilDiameterMm/2)^2);
-eyeLengthMm = 17;
-degPerMm = RetinalMMToDegrees(1,eyeLengthMm);
-irradianceWattsPerUm2 = RadianceToRetIrradiance(radianceWattsPerM2Sr,S,pupilAreaMm2,eyeLengthMm);
-irradianceScotTrolands = RetIrradianceToTrolands(irradianceWattsPerUm2, S, 'Scotopic', [], num2str(eyeLengthMm));
-irradiancePhotTrolands = RetIrradianceToTrolands(irradianceWattsPerUm2, S, 'Photopic', [], num2str(eyeLengthMm));
-irradianceQuantaPerUm2Sec = EnergyToQuanta(S,irradianceWattsPerUm2);
-irradianceWattsPerCm2 = (10.^8)*irradianceWattsPerUm2;
-irradianceQuantaPerCm2Sec = (10.^8)*irradianceQuantaPerUm2Sec;
-irradianceQuantaPerDeg2Sec = (degPerMm^2)*(10.^-2)*irradianceQuantaPerCm2Sec;
-
-%% This is just to get cone inner segment diameter
-photoreceptors = DefaultPhotoreceptors('CIE10Deg');
-photoreceptors = FillInPhotoreceptors(photoreceptors);
-ISDiameter = photoreceptors.ISdiameter.value;
-
-%% Get isomerizations
-theLMSIsomerizations = PhotonAbsorptionRate(irradianceQuantaPerUm2Sec,S, ...
-    T_quantalIsom,S,ISDiameter);
-% theLMSIsomerizationsHemo = PhotonAbsorptionRate(irradianceQuantaPerUm2Sec,S, ...
-%     T_quantalIsomHemo,S,ISDiameter);
-
-%% Get fraction bleached
-fractionBleachedFromIsom = zeros(3,1);
-fractionBleachedFromIsomHemo = zeros(3,1);
-for i = 1:3
-    fractionBleachedFromIsom(i) = ComputePhotopigmentBleaching(theLMSIsomerizations(i),'cones','isomerizations','Boynton');
-%    fractionBleachedFromIsomHemo(i) = ComputePhotopigmentBleaching(theLMSIsomerizationsHemo(i),'cones','isomerizations','Boynton');
-end
-
-% We can now assign the fraction bleached for each photoreceptor
-% class.
+% Assign the fraction bleached for each photoreceptor class.
 for p = 1:length(photoreceptorClasses)
     switch photoreceptorClasses{p}
         case 'LCone'
@@ -98,11 +49,11 @@ for p = 1:length(photoreceptorClasses)
             fractionBleached(p) = fractionBleachedFromIsom(2);
         case 'SCone'
             fractionBleached(p) = fractionBleachedFromIsom(3);
-        case 'LConeHemo'
+        case 'LConePenumbral'
             fractionBleached(p) = fractionBleachedFromIsomHemo(1);
-        case 'MConeHemo'
+        case 'MConePenumbral'
             fractionBleached(p) = fractionBleachedFromIsomHemo(2);
-        case 'SConeHemo'
+        case 'SConePenumbral'
             fractionBleached(p) = fractionBleachedFromIsomHemo(3);
         otherwise
             fractionBleached(p) = 0;
