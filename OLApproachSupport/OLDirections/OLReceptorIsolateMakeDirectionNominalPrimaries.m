@@ -1,15 +1,15 @@
-function [cacheData, directionOlCache, wasRecomputed] = OLReceptorIsolateMakeDirectionNominalPrimaries(approach,params,forceRecompute)
+function [cacheData, directionOlCache, wasRecomputed] = OLReceptorIsolateMakeDirectionNominalPrimaries(approach,directionParams,forceRecompute,varargin)
 % OLReceptorIsolateMakeDirectionNominalPrimaries  Computes nominal primaries for receptor-isolating directions.
 %
 % Usage:
-%     [cacheData, olCache, wasRecomputed] = OLReceptorIsolateMakeDirectionNominalPrimaries(approach,params,forceRecompute)
+%     [cacheData, olCache, wasRecomputed] = OLReceptorIsolateMakeDirectionNominalPrimaries(approach,directionParams,forceRecompute)
 %
 % Description:
 %     Use the calibration file and observer age to find the nominal
 %     primaries that will produce various receptor isolating modulations.
-%     The params
-%     structure contains all of the important information, and is defined in
-%     the OLDirectionNominalPrimaries dictionary.
+%     The directionParams structure contains all of the important
+%     information, and is defined in the OLDirectionNominalPrimaries
+%     dictionary.
 %
 %     This checks the cache file, and if things have already been computed
 %     for the current calibration, it just returns what is there.  Cache
@@ -28,10 +28,10 @@ function [cacheData, directionOlCache, wasRecomputed] = OLReceptorIsolateMakeDir
 % Input:
 %     approach (string)          Name of whatever approach is invoking this.
 %
-%     params (struct)            Parameters struct for the direction.  See
+%     directionParams (struct)            Parameters struct for the direction.  See
 %                                OLDirectionNominalParamsDictionary.
 %
-%     forceRecompute (logical)   If true, forces a recompute of the data found in the config file.
+%     forceRecompute (logical)   If true, forces a recompute of the data found in the config file.z
 %                                Default: false
 %
 % Output:
@@ -48,9 +48,18 @@ function [cacheData, directionOlCache, wasRecomputed] = OLReceptorIsolateMakeDir
 % 04/19/13   dhb, ms     Update for new convention for desired contrasts in routine ReceptorIsolate.
 % 02/25/14   ms          Modularized.
 % 06/15/17   dhb et al.  Handle isStale return from updated cache code.
+% 07/22/17   dhb         Enforce verbose
+
+%% Parse input
+p = inputParser;
+p.addRequired('approach',@ischar);
+p.addRequired('directionParams',@isstruct);
+p.addRequired('forceRecompute',@islogical);
+p.addParameter('verbose',false,@islogical);
+p.parse(approach,directionParams,forceRecompute,varargin{:});
 
 %% Setup the directories we'll use. Directions go in their special place under the materials path approach directory.
-cacheDir = fullfile(getpref(params.approach, 'MaterialsPath'), 'Experiments',params.approach,'DirectionNominalPrimaries');
+cacheDir = fullfile(getpref(directionParams.approach, 'MaterialsPath'), 'Experiments',directionParams.approach,'DirectionNominalPrimaries');
 if ~isdir(cacheDir)
     mkdir(cacheDir);
 end
@@ -59,16 +68,16 @@ end
 backgroundCacheDir = fullfile(getpref(approach, 'MaterialsPath'), 'Experiments',approach,'BackgroundNominalPrimaries');
 
 %% Load the calibration file
-cal = LoadCalFile(OLCalibrationTypes.(params.calibrationType).CalFileName, [], fullfile(getpref(approach, 'MaterialsPath'), 'Experiments',approach,'OneLightCalData'));
+cal = LoadCalFile(OLCalibrationTypes.(directionParams.calibrationType).CalFileName, [], fullfile(getpref(approach, 'MaterialsPath'), 'Experiments',approach,'OneLightCalData'));
 assert(~isempty(cal), 'OLFlickerComputeModulationSpectra:NoCalFile', 'Could not load calibration file: %s', ...
-    OLCalibrationTypes.(params.calibrationType).CalFileName);
+    OLCalibrationTypes.(directionParams.calibrationType).CalFileName);
 
 %% Pull out S
 S = cal.describe.S;
 
 %% Create the direction cache object and filename
 directionOlCache = OLCache(cacheDir, cal);
-[~, directionCacheFileName] = fileparts(params.cacheFile);
+[~, directionCacheFileName] = fileparts(directionParams.cacheFile);
 
 %% Create the background cache object
 backgroundOlCache = OLCache(backgroundCacheDir, cal);
@@ -84,7 +93,7 @@ if (~forceRecompute)
         % Compare cacheData.describe.params against currently passed
         % parameters to determine if everything is hunky-dory.  This throws
         % an error if not.
-        OLCheckCacheParamsAgainstCurrentParams(cacheData, params);
+        OLCheckCacheParamsAgainstCurrentParams(cacheData, directionParams);
         
         if (~isStale)
             wasRecomputed = false;
@@ -98,13 +107,13 @@ end
 %% OK, if we're here we need to compute.
 %
 % The switch handles different types of modulations we might encounter.
-switch params.type
+switch directionParams.type
     case {'modulation', 'pulse'}
         %% Pupil diameter in mm.
-        pupilDiameterMm = params.pupilDiameterMm;
+        pupilDiameterMm = directionParams.pupilDiameterMm;
         
         %% Photoreceptor classes: cell array of strings
-        photoreceptorClasses = params.photoreceptorClasses;
+        photoreceptorClasses = directionParams.photoreceptorClasses;
         
         %% Set up what will be common to all observer ages
         % Pull out the 'M' matrix
@@ -112,53 +121,53 @@ switch params.type
         
         % Set up some parameters for the optimization
         whichPrimariesToPin = [];       % Primaries we want to pin
-        whichReceptorsToIgnore = params.whichReceptorsToIgnore;    % Receptors to ignore
-        whichReceptorsToIsolate = params.whichReceptorsToIsolate;    % Receptors to stimulate
-        whichReceptorsToMinimize = params.whichReceptorsToMinimize;
+        whichReceptorsToIgnore = directionParams.whichReceptorsToIgnore;    % Receptors to ignore
+        whichReceptorsToIsolate = directionParams.whichReceptorsToIsolate;    % Receptors to stimulate
+        whichReceptorsToMinimize = directionParams.whichReceptorsToMinimize;
         
         % Peg desired contrasts
-        if ~isempty(params.modulationContrast)
-            desiredContrasts = params.modulationContrast;
+        if ~isempty(directionParams.modulationContrast)
+            desiredContrasts = directionParams.modulationContrast;
         else
             desiredContrasts = [];
         end
         
         % Assign a zero 'ambientSpd' variable if we're not using the
         % measured ambient.
-        if params.useAmbient
+        if directionParams.useAmbient
             ambientSpd = cal.computed.pr650MeanDark;
         else
             ambientSpd = zeros(size(B_primary,1),1);
         end
         
-        fprintf('\nGenerating stimuli which isolate receptor classes:');
+        if (p.Results.verbose), fprintf('\nGenerating stimuli which isolate receptor classes:'); end;
         for i = 1:length(whichReceptorsToIsolate)
-            fprintf('\n  - %s', photoreceptorClasses{whichReceptorsToIsolate(i)});
+            if (p.Results.verbose), fprintf('\n  - %s', photoreceptorClasses{whichReceptorsToIsolate(i)}); end;
         end
-        fprintf('\nGenerating stimuli which ignore receptor classes:');
+        if (p.Results.verbose), fprintf('\nGenerating stimuli which ignore receptor classes:'); end;
         if ~(length(whichReceptorsToIgnore) == 0)
             for i = 1:length(whichReceptorsToIgnore)
-                fprintf('\n  - %s', photoreceptorClasses{whichReceptorsToIgnore(i)});
+                if (p.Results.verbose), fprintf('\n  - %s', photoreceptorClasses{whichReceptorsToIgnore(i)}); end;
             end
         else
-            fprintf('\n  - None');
+            if (p.Results.verbose), fprintf('\n  - None'); end;
         end
         
         %% Make direction information for each observer age
         for observerAgeInYears = 20:60
             % Say hello
-            fprintf('\nObserver age: %g\n',observerAgeInYears);
+            if (p.Results.verbose), fprintf('\nObserver age: %g\n',observerAgeInYears); end;
             
             % Grab the background from the cache file
-            backgroundCacheFile = ['Background_' params.backgroundName '.mat'];
+            backgroundCacheFile = ['Background_' directionParams.backgroundName '.mat'];
             [backgroundCacheData,isStale] = backgroundOlCache.load([backgroundCacheFile]);
             assert(~isStale,'Background cache file is stale, aborting.');
-            backgroundPrimary = backgroundCacheData.data(params.backgroundObserverAge).backgroundPrimary;
+            backgroundPrimary = backgroundCacheData.data(directionParams.backgroundObserverAge).backgroundPrimary;
             backgroundSpd = OLPrimaryToSpd(cal, backgroundPrimary);
             
             % Get fraction bleached for background we're actually using
-            if (params.doSelfScreening)
-                fractionBleached = OLEstimateConePhotopigmentFractionBleached(S,backgroundSpd,pupilDiameterMm,params.fieldSizeDegrees,observerAgeInYears,photoreceptorClasses);
+            if (directionParams.doSelfScreening)
+                fractionBleached = OLEstimateConePhotopigmentFractionBleached(S,backgroundSpd,pupilDiameterMm,directionParams.fieldSizeDegrees,observerAgeInYears,photoreceptorClasses);
             else
                 fractionBleached = zeros(1,length(photoreceptorClasses));
             end
@@ -167,7 +176,7 @@ switch params.type
             lambdaMaxShift = [];
             
             % Construct the receptor matrix based on the bleaching fraction to this background.
-            T_receptors = GetHumanPhotoreceptorSS(S,photoreceptorClasses,params.fieldSizeDegrees,observerAgeInYears,pupilDiameterMm,lambdaMaxShift,fractionBleached);
+            T_receptors = GetHumanPhotoreceptorSS(S,photoreceptorClasses,directionParams.fieldSizeDegrees,observerAgeInYears,pupilDiameterMm,lambdaMaxShift,fractionBleached);
             
             % Calculate the receptor coordinates of the background
             backgroundReceptors = T_receptors*backgroundSpd;
@@ -176,7 +185,7 @@ switch params.type
             initialPrimary = backgroundPrimary;
             modulationPrimary = ReceptorIsolate(T_receptors, whichReceptorsToIsolate, ...
                 whichReceptorsToIgnore,whichReceptorsToMinimize,B_primary,backgroundPrimary,...
-                initialPrimary,whichPrimariesToPin,params.primaryHeadRoom,params.maxPowerDiff,...
+                initialPrimary,whichPrimariesToPin,directionParams.primaryHeadRoom,directionParams.maxPowerDiff,...
                 desiredContrasts,ambientSpd);
             modulationSpd = OLPrimaryToSpd(cal, modulationPrimary);
             modulationReceptors = T_receptors*modulationSpd;
@@ -209,7 +218,7 @@ switch params.type
             
             % If it is a pulse rather than a modulation, we replace the background with the low end, and the difference
             % with the swing between low and high.
-            if (strcmp(params.type,'pulse'))
+            if (strcmp(directionParams.type,'pulse'))
                 backgroundPrimary = modulationPrimarySignedNegative;
                 backgroundSpd = modulationSpdSignedNegative;
                 differencePrimary = modulationPrimarySignedPositive-modulationPrimarySignedNegative;
@@ -220,7 +229,7 @@ switch params.type
             %% Assign all the cache fields
             %
             % Description
-            cacheData.data(observerAgeInYears).describe.params = params;
+            cacheData.data(observerAgeInYears).describe.params = directionParams;
             cacheData.data(observerAgeInYears).describe.B_primary = B_primary;
             cacheData.data(observerAgeInYears).describe.ambientSpd = ambientSpd;
             cacheData.data(observerAgeInYears).describe.photoreceptors = photoreceptorClasses;
@@ -228,8 +237,8 @@ switch params.type
             cacheData.data(observerAgeInYears).describe.S = S;
             cacheData.data(observerAgeInYears).describe.T_receptors = T_receptors;
             cacheData.data(observerAgeInYears).describe.S_receptors = S;
-            cacheData.data(observerAgeInYears).describe.params.maxPowerDiff = params.maxPowerDiff;
-            cacheData.data(observerAgeInYears).describe.params.primaryHeadRoom = params.primaryHeadRoom;
+            cacheData.data(observerAgeInYears).describe.params.maxPowerDiff = directionParams.maxPowerDiff;
+            cacheData.data(observerAgeInYears).describe.params.primaryHeadRoom = directionParams.primaryHeadRoom;
             
             cacheData.data(observerAgeInYears).describe.contrast = isolateContrastsSignedPositive;
             cacheData.data(observerAgeInYears).describe.contrastSignedPositive = isolateContrastsSignedPositive;
@@ -311,7 +320,7 @@ end
 
 %% Tuck in the calibration structure for return
 cacheData.cal = cal;
-cacheData.directionParams = params;
+cacheData.directionParams = directionParams;
 wasRecomputed = true;
 
 

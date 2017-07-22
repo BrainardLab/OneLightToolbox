@@ -1,4 +1,4 @@
-function OLMakeDirectionNominalPrimaries(approachParams)
+function OLMakeDirectionNominalPrimaries(approachParams,varargin)
 % OLMakeDirectionNominalPrimaries - Calculate the nominal direction primaries for the experiment
 %
 % Usage:
@@ -21,33 +21,49 @@ function OLMakeDirectionNominalPrimaries(approachParams)
 %
 %     The output is cached in the directory specified by
 %     getpref(approachParams.approach,'DirectionNominalPrimariesPath');
+%
+% Input:
+%
+% Output:
+%     Creates nominal direction files in the right place (specified by approach prefs).
+%
+% Optional key/value pairs:
+%     verbose (logical)    Be chatty? (default false)
 
 % 6/18/17  dhb  Added header comment.
 % 6/22/17  npc  Dictionarized direction params, cleaned up.
 % 7/05/17  dhb  Big rewrite.
+% 07/22/17 dhb  Enforce verbose flag
 
-    % Make dictionary with direction-specific params for all directions
-    paramsDictionary = OLDirectionNominalParamsDictionary();
-    
-    %% Loop over directions
-    for ii = 1:length(approachParams.directionNames)
-        generateAndSaveBackgroundPrimaries(approachParams,paramsDictionary,approachParams.directionNames{ii});
-    end
+%% Parse 
+p = inputParser;
+p.addRequired('approachParams',@isstruct);
+p.addOptional('verbose',false,@islogical);
+p.parse(approachParams,varargin{:});
+approachParams.verbose = p.Results.verbose;
+
+%% Get dictionary with direction-specific params for all directions
+paramsDictionary = OLDirectionNominalParamsDictionary();
+
+%% Loop over directions
+for ii = 1:length(approachParams.directionNames)
+    generateAndSaveBackgroundPrimaries(approachParams,paramsDictionary,approachParams.directionNames{ii});
+end
 end
 
 function generateAndSaveBackgroundPrimaries(approachParams, paramsDictionary, directionName)
-    % Get background primaries
-    directionParams = OLMergeBaseParamsWithParamsFromDictionaryEntry(approachParams, paramsDictionary, directionName);
-    
-    % The called routine checks whether the cacheFile exists, and if so and
-    % it isnt' stale, just returns the data.
-    [cacheDataDirection, olCacheDirection, wasRecomputed] = OLReceptorIsolateMakeDirectionNominalPrimaries(approachParams.approach,directionParams,false);
+% Get background primaries
+directionParams = OLMergeBaseParamsWithParamsFromDictionaryEntry(approachParams, paramsDictionary, directionName);
 
-    % Save the direction primaries in a cache file, if it was recomputed.
-    if (wasRecomputed)
-        [~, cacheFileName] = fileparts(directionParams.cacheFile);
-        olCacheDirection.save(cacheFileName, cacheDataDirection);
-    end
+% The called routine checks whether the cacheFile exists, and if so and
+% it isnt' stale, just returns the data.
+[cacheDataDirection, olCacheDirection, wasRecomputed] = OLReceptorIsolateMakeDirectionNominalPrimaries(approachParams.approach,directionParams,false,'verbose',approachParams.verbose);
+
+% Save the direction primaries in a cache file, if it was recomputed.
+if (wasRecomputed)
+    [~, cacheFileName] = fileparts(directionParams.cacheFile);
+    olCacheDirection.save(cacheFileName, cacheDataDirection);
+end
 end
 
 
