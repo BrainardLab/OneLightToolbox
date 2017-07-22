@@ -1,9 +1,39 @@
-function photopicLuminance = OLAnalyzeValidationReceptorIsolateShort(valFileNameFull, postreceptoralCombinations)
-% OLAnalyzeValidationReceptorIsolate(valFileNameFull)
+function photopicLuminanceCdM2 = OLAnalyzeValidationReceptorIsolate(valFileNameFull, postreceptoralCombinations)
+% OLAnalyzeValidationReceptorIsolate  Compute photoreceptor contrasts for spectra in a validation file and report
 %
-% THIS NEEDS COMMENTING.  WHAT I THINK IT DOES IS TAKE A SPECTRUM AND ASK HOW MUCH CONTRAST IT PRODUCES ON CERTAIN
-% RECEPTORS.
+% Usage:
+%     photopicLuminanceCdM2 = OLAnalyzeValidationReceptorIsolate(valFileNameFull)
+%
+% Description:
+%     This is basically a wrapper for the descriptive function SilentSubstitutionToolbox/ComputeAndReportContrastsFromSpds.
+%     It provides a printout to the command wndow of some basic facts about the contrasts produced by the modulation specified
+%     in a validation file.
+%
+%     Also writes its output into a text file that lives in the same place as the file being analyzed.
+%
+%     This has some crufty things in it.
+%       a) Why is it using LoadCalFile rather than just load?
+%       b) It special cases substrings in the input filename to control its behavior.
+%       c) It is very difficult to understand, primarily because the underlying ComputeAndReportContrastsFromSpds is
+%          not well commented, and because what values postreceptoralCombinations may take on and what these values
+%          mean is opaque.
+%
+% Input:
+%      valFileNameFull (string)              Name of validation file to be analyzed.
+%
+%      postreceptoralCombinations (what)     Presumably controls what this produces.
+%     
+% Output:
+%      photopicLuminanceCdM2 (number         Photopic luminance of background in cd/m2.
+%
+% Optional key/value pairs:
+%    None.
+%
+% See also: OLCorrectCacheFileOOC, OLValidateCacheFileOOC, ComputeAndReportContrastsFromSpds.
 
+% 7/21/17  dhb   Put in comment placeholders and did my best.
+
+%% Read in validation
 [validationDir, valFileName] = fileparts(valFileNameFull);
 val = LoadCalFile(valFileName, [], [validationDir '/']);
 
