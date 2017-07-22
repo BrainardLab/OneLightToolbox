@@ -1,8 +1,8 @@
-function [cacheData, olCache, wasRecomputed] = OLReceptorIsolateMakeBackgroundNominalPrimaries(approach,params,forceRecompute)
+function [cacheData, olCache, wasRecomputed] = OLReceptorIsolateMakeBackgroundNominalPrimaries(approach,backgroundParams,forceRecompute, varargin)
 % OLReceptorIsolateMakeBackgroundNominalPrimaries  Finds backgrounds according to background parameters.
 %
 % Usage:
-%     [cacheData, olCache, wasRecomputed] = OLReceptorIsolateMakeBackgroundNominalPrimaries(approach,params,forceRecompute)
+%     [cacheData, olCache, wasRecomputed] = OLReceptorIsolateMakeBackgroundNominalPrimaries(approach,backgroundParams,forceRecompute)
 %
 % Description:
 %     Use calibration file information to make backgrounds with specified
@@ -19,7 +19,7 @@ function [cacheData, olCache, wasRecomputed] = OLReceptorIsolateMakeBackgroundNo
 %     background dictionary, so that each direction's parameters are
 %     associated with a background name.
 %
-%     The background is just computed for a nominal (params.backgroundObserverAge) observer age,
+%     The background is just computed for a nominal (backgroundParams.backgroundObserverAge) observer age,
 %     because we don't need perfection for this, just something about right.
 %
 %     This routine knows about different types of backgrounds:
@@ -30,7 +30,7 @@ function [cacheData, olCache, wasRecomputed] = OLReceptorIsolateMakeBackgroundNo
 % Input:
 %     approach (string)          Name of whatever approach is invoking this.
 %
-%     params (struct)            Parameters struct for backgrounds.  See
+%     backgroundParams (struct)  Parameters struct for backgrounds.  See
 %                                OLBackgroundNominalParamsDictionary.
 %
 %     forceRecompute (logical)   If true, forces a recompute of the data found in the config file.
@@ -44,10 +44,20 @@ function [cacheData, olCache, wasRecomputed] = OLReceptorIsolateMakeBackgroundNo
 %     wasRecomptued (boolean)    Was the cacheData recomputed?
 %
 % Optional key/value pairs
-%     None.
+%     'verbose'                  Be chatty? (default, false).
 
 % 06/29/17   dhb         Cleaning up.
 % 07/05/17   dhb         Better comments.
+
+% 07/22/17   dhb         Enforce verbose
+
+%% Parse input
+p = inputParser;
+p.addRequired('approach',@ischar);
+p.addRequired('backroundParams',@isstruct);
+p.addRequired('forceRecompute',@islogical);
+p.addParameter('verbose',false,@islogical);
+p.parse(approach,backgroundParams,forceRecompute,varargin{:});
 
 %% Setup the directories we'll use. Backgrounds go in their special place under the materials path approach directory.
 cacheDir = fullfile(getpref(approach, 'MaterialsPath'), 'Experiments',approach,'BackgroundNominalPrimaries');
@@ -56,16 +66,16 @@ if ~isdir(cacheDir)
 end
 
 %% Load the calibration file
-cal = LoadCalFile(OLCalibrationTypes.(params.calibrationType).CalFileName, [], fullfile(getpref(approach, 'MaterialsPath'), 'Experiments',approach,'OneLightCalData'));
+cal = LoadCalFile(OLCalibrationTypes.(backgroundParams.calibrationType).CalFileName, [], fullfile(getpref(approach, 'MaterialsPath'), 'Experiments',approach,'OneLightCalData'));
 assert(~isempty(cal), 'OLFlickerComputeModulationSpectra:NoCalFile', 'Could not load calibration file: %s', ...
-    OLCalibrationTypes.(params.calibrationType).CalFileName);
+    OLCalibrationTypes.(backgroundParams.calibrationType).CalFileName);
 
 %% Pull out S
 S = cal.describe.S;
 
 %% Create the cache object and filename
 olCache = OLCache(cacheDir, cal);
-[~, cacheFileName] = fileparts(params.cacheFile);
+[~, cacheFileName] = fileparts(backgroundParams.cacheFile);
 
 %% Need to check here whether we can just use the current cached data and do so if possible.
 %
@@ -77,7 +87,7 @@ if (~forceRecompute)
         
         % Compare cacheData.describe.params against currently passed
         % parameters to determine if cache is stale.
-        OLCheckCacheParamsAgainstCurrentParams(cacheData, params);
+        OLCheckCacheParamsAgainstCurrentParams(cacheData, backgroundParams);
  
         if (~isStale)
             wasRecomputed = false;
@@ -89,11 +99,11 @@ if (~forceRecompute)
 end
 
 %% OK, need to recompute
-switch params.type
+switch backgroundParams.type
     case 'named'
         % These are cases where we just do something very specific with the
         % name.
-        switch params.name
+        switch backgroundParams.name
             case 'BackgroundHalfOn'
                 backgroundPrimary = 0.5*ones(size(cal.computed.pr650M,2),1);
             case 'BackgroundEES'
@@ -105,19 +115,19 @@ switch params.type
     case 'lightfluxchrom'
         % Background at specified chromaticity that allows a large light
         % flux pulse modulation.
-        maxBackgroundPrimary = OLBackgroundInvSolveChrom(cal, params.lightFluxDesiredXY);
-        backgroundPrimary = maxBackgroundPrimary/params.lightFluxDownFactor;
+        maxBackgroundPrimary = OLBackgroundInvSolveChrom(cal, backgroundParams.lightFluxDesiredXY);
+        backgroundPrimary = maxBackgroundPrimary/backgroundParams.lightFluxDownFactor;
         
     case 'optimized'
         % These backgrounds get optimized according to the parameters in
         % the structure.  Backgrounds are optimized with respect to a
-        % params.backgroundObserverAge year old observer, and no correction
+        % backgroundParams.backgroundObserverAge year old observer, and no correction
         % for photopigment bleaching is applied.  We are just trying to get
         % pretty good backgrounds, so we don't need to fuss with small
         % effects.
         
         %% Photoreceptor classes: cell array of strings
-        photoreceptorClasses = params.photoreceptorClasses;
+        photoreceptorClasses = backgroundParams.photoreceptorClasses;
         
         %% Set up what will be common to all observer ages
         % Pull out the 'M' matrix
@@ -125,20 +135,20 @@ switch params.type
         
         %% Set up parameters for the optimization
         whichPrimariesToPin = [];
-        whichReceptorsToIgnore = params.whichReceptorsToIgnore;
-        whichReceptorsToIsolate = params.whichReceptorsToIsolate;
-        whichReceptorsToMinimize = params.whichReceptorsToMinimize;
+        whichReceptorsToIgnore = backgroundParams.whichReceptorsToIgnore;
+        whichReceptorsToIsolate = backgroundParams.whichReceptorsToIsolate;
+        whichReceptorsToMinimize = backgroundParams.whichReceptorsToMinimize;
         
         % Peg desired contrasts
-        if ~isempty(params.modulationContrast)
-            desiredContrasts = params.modulationContrast;
+        if ~isempty(backgroundParams.modulationContrast)
+            desiredContrasts = backgroundParams.modulationContrast;
         else
             desiredContrasts = [];
         end
         
         % Assign a zero 'ambientSpd' variable if we're not using the
         % measured ambient.
-        if params.useAmbient
+        if backgroundParams.useAmbient
             ambientSpd = cal.computed.pr650MeanDark;
         else
             ambientSpd = zeros(size(B_primary,1),1);
@@ -146,7 +156,7 @@ switch params.type
         
         % We get backgrounds for the nominal observer age, and hope for the
         % best for other observer ages.
-        observerAgeInYears = params.backgroundObserverAge;
+        observerAgeInYears = backgroundParams.backgroundObserverAge;
         
         %% Initial background
         %
@@ -156,14 +166,14 @@ switch params.type
         %% Construct the receptor matrix
         lambdaMaxShift = zeros(1, length(photoreceptorClasses));
         fractionBleached = zeros(1,length(photoreceptorClasses));
-        T_receptors = GetHumanPhotoreceptorSS(S, photoreceptorClasses, params.fieldSizeDegrees, observerAgeInYears, params.pupilDiameterMm, lambdaMaxShift, fractionBleached);
+        T_receptors = GetHumanPhotoreceptorSS(S, photoreceptorClasses, backgroundParams.fieldSizeDegrees, observerAgeInYears, backgroundParams.pupilDiameterMm, lambdaMaxShift, fractionBleached);
         
         %% Isolate the receptors by calling the wrapper
         initialPrimary = backgroundPrimary;
         optimizedBackgroundPrimaries = ReceptorIsolateOptimBackgroundMulti(T_receptors, whichReceptorsToIsolate, ...
             whichReceptorsToIgnore,whichReceptorsToMinimize,B_primary,backgroundPrimary,...
-            initialPrimary,whichPrimariesToPin,params.primaryHeadRoom,params.maxPowerDiff,...
-            desiredContrasts,ambientSpd,params.directionsYoked,params.directionsYokedAbs,params.pegBackground);
+            initialPrimary,whichPrimariesToPin,backgroundParams.primaryHeadRoom,backgroundParams.maxPowerDiff,...
+            desiredContrasts,ambientSpd,backgroundParams.directionsYoked,backgroundParams.directionsYokedAbs,backgroundParams.pegBackground);
         
         %% Pull out what we want
         backgroundPrimary = optimizedBackgroundPrimaries{1};   
@@ -182,7 +192,7 @@ end
  end
  
 % Calibration file, and note that we recomputed the cache data.
-cacheData.params = params;
+cacheData.params = backgroundParams;
 cacheData.cal = cal;
 wasRecomputed = true;
 

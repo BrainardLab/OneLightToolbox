@@ -43,7 +43,7 @@ function [cacheData, directionOlCache, wasRecomputed] = OLReceptorIsolateMakeDir
 %     wasRecomptued (boolean)    Was the cacheData recomputed?
 %
 % Optional key/value pairs
-%     None.
+%     'verbose'                  Be chatty? (default, false).
 
 % 04/19/13   dhb, ms     Update for new convention for desired contrasts in routine ReceptorIsolate.
 % 02/25/14   ms          Modularized.
