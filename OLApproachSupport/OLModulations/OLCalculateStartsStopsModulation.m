@@ -1,5 +1,5 @@
 function waveform = OLCalculateStartsStopsModulation(waveform, cal, backgroundPrimary, diffPrimaryPos, diffPrimaryNeg)
-%OLCalculateStartsStopsModulation  Calculate various modulations given background and pos/neg primary differences.
+% OLCalculateStartsStopsModulation  Calculate various modulations given background and pos/neg primary differences.
 %
 % Usage:
 %     waveform = OLCalculateStartsStopsModulation(waveform, cal, backgroundPrimary, diffPrimaryPos, diffPrimaryNeg)
@@ -7,10 +7,18 @@ function waveform = OLCalculateStartsStopsModulation(waveform, cal, backgroundPr
 % Description:
 %     DESPARATELY SEEKING HEADER COMMENTS.
 %
-%     We think that if diffPrimayNeg is empty, only the positive arm is used (for a pulse).
+%     It looks like if diffPrimayNeg is empty, only the positive arm is used (i.e. to make a pulse).
+%
+% Input:
+%
+% Output:
+%
+% Optional key/value pairs.
+%    None.
+%
+% See also:
 
-%% Pull out what we want
-dbstop if error
+% 7/21/17  dhb  Tried to improve comments.
 
 % Figure out the power levels
 switch waveform.modulationMode
@@ -24,8 +32,7 @@ switch waveform.modulationMode
         cosineWindowReverse = cosineWindow(end:-1:1);
         
         powerLevels(pulseStartIndx-waveform.window.nWindowed:pulseStartIndx-1) = waveform.theContrastRelMax*cosineWindow;
-        powerLevels(pulseEndIndx+1:pulseEndIndx+waveform.window.nWindowed) = waveform.theContrastRelMax*cosineWindowReverse;
-        
+        powerLevels(pulseEndIndx+1:pulseEndIndx+waveform.window.nWindowed) = waveform.theContrastRelMax*cosineWindowReverse;  
     case 'AM'
         waveModulation = 0.5+0.5*sin(2*pi*waveform.theEnvelopeFrequencyHz*waveform.t - waveform.thePhaseRad);
         eval(['waveCarrier = waveform.theContrastRelMax*' waveform.modulationWaveform '(2*pi*waveform.theFrequencyHz*waveform.t);']);
