@@ -41,21 +41,27 @@ function fractionBleached = OLEstimateConePhotopigmentFractionBleached(S,theSpd,
 [fractionBleachedFromIsom, fractionBleachedFromIsomHemo] = GetConeFractionBleachedFromSpectrum(S, theSpd, fieldSizeDegrees, observerAgeInYears, pupilDiameterMm, [], []);
 
 % Assign the fraction bleached for each photoreceptor class.
+%
+% We have a lot of receptor types.  Only some support fraction bleached.  This throws an error if the code ends 
+% up here with something that is surprising.  It might be OK, particularly if a new type was recently defined
+% within GetHumanPhotoreceptorSS, but throwing an error will force a check by hand, which seems wise.
 for p = 1:length(photoreceptorClasses)
     switch photoreceptorClasses{p}
-        case 'LCone'
+        case {'LConeTabulatedAbsorbance', 'LConeTabulatedAbsorbance2Deg', 'LConeTabulatedAbsorbance10Deg'}
             fractionBleached(p) = fractionBleachedFromIsom(1);
-        case 'MCone'
+        case {'MConeTabulatedAbsorbance', 'MConeTabulatedAbsorbance2Deg', 'MConeTabulatedAbsorbance10Deg'}
             fractionBleached(p) = fractionBleachedFromIsom(2);
-        case 'SCone'
+        case {'SConeTabulatedAbsorbance' 'SConeTabulatedAbsorbance2Deg', 'SConeTabulatedAbsorbance10Deg'}
             fractionBleached(p) = fractionBleachedFromIsom(3);
-        case 'LConePenumbral'
+        case 'LConeTabulatedAbsorbancePenumbral'
             fractionBleached(p) = fractionBleachedFromIsomHemo(1);
-        case 'MConePenumbral'
+        case 'MConeTabulatedAbsorbancePenumbral'
             fractionBleached(p) = fractionBleachedFromIsomHemo(2);
-        case 'SConePenumbral'
+        case 'SConeTabulatedAbsorbancePenumbral'
             fractionBleached(p) = fractionBleachedFromIsomHemo(3);
-        otherwise
+        case {'Melanopsin', 'Rods'}
             fractionBleached(p) = 0;
+        otherwise
+            error('Using receptor type %s and trying to get fraction bleached, but this is not supported',photoreceptorClasses{p});
     end
 end

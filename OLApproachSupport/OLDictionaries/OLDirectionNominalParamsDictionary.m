@@ -1,7 +1,11 @@
 % OLDirectionNominalParamsDictionary
 %
 % Description:
-%     Generate dictionary with params for the examined modulation directions
+%     Generate dictionary with params for the examined modulation directions.  The fields
+%     are explained at the end of this routine, where default values are assigned.
+%
+%     This routine does its best to check that all and only needed fields are present in
+%     the dictionary structures.
 %
 % Note:
 %     When you add a new type, you need to add that type to the corresponding switch statment
@@ -18,6 +22,8 @@
 % 7/5/17   dhb  Bringing up to speed.
 % 7/19/17  npc  Added a type for each background. For now, there is only one type: 'pulse'. 
 %               Defaults and checking are done according to type. params.photoreceptorClasses is now a cell array
+% 7/22/17  dhb  No more modulationDirection field.
+% 7/23/17  dhb  Comment field meanings.
 
 function d = OLDirectionNominalParamsDictionary()
 
@@ -136,9 +142,6 @@ end
 
 function d = paramsValidateAndAppendToDictionary(d, params)
 
-% Update modulationDirection
-params.modulationDirection = params.name;
-
 % Get all the expected field names for this type
 allFieldNames = fieldnames(defaultParams(params.type));
 
@@ -166,8 +169,6 @@ switch (params.type)
         assert((isfield(params, 'fieldSizeDegrees')           && isnumeric(params.fieldSizeDegrees)),       sprintf('params.ieldSizeDegrees does not exist or it does not contain a number.'));
         assert((isfield(params, 'pupilDiameterMm')            && isnumeric(params.pupilDiameterMm)),        sprintf('params.pupilDiameterMm does not exist or it does not contain a number.'));
         assert((isfield(params, 'maxPowerDiff')               && isnumeric(params.maxPowerDiff)),           sprintf('params.maxPowerDiff does not exist or it does not contain a number.'));
-        assert((isfield(params, 'modulationDirection')        && ischar(params.modulationDirection)),       sprintf('params.modulationDirection does not exist or it does not contain a string value.'));
-        assert((isfield(params, 'modulationDirection')        && ischar(params.modulationDirection)),       sprintf('params.modulationDirection does not exist or it does not contain a string value.'));
         assert((isfield(params, 'modulationContrast')         && (isnumeric(params.modulationContrast) || iscell(params.whichReceptorsToIsolate))),         sprintf('params.modulationContrast does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'whichReceptorsToIsolate')    && (isnumeric(params.whichReceptorsToIsolate) || iscell(params.whichReceptorsToIsolate))),    sprintf('params.whichReceptorsToIsolate does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'whichReceptorsToIgnore')     && (isnumeric(params.whichReceptorsToIgnore) || iscell(params.whichReceptorsToIgnore))),      sprintf('params.whichReceptorsToIgnore does not exist or it does not contain a numeric value.'));
@@ -196,26 +197,26 @@ params.name = '';
 
 switch (type)
     case 'pulse'
-        params.dictionaryType = 'Direction';
-        params.baseModulationContrast = 4/6;
-        params.primaryHeadRoom = 0.005;
-        params.photoreceptorClasses = {'LConeTabulatedAbsorbance', 'MConeTabulatedAbsorbance', 'SConeTabulatedAbsorbance', 'Melanopsin'};
-        params.fieldSizeDegrees = 27.5;
-        params.pupilDiameterMm = 8.0;
-        params.maxPowerDiff = 0.1;
-        params.modulationDirection = '';
-        params.modulationContrast = [4/6];
-        params.whichReceptorsToIsolate = {[4]};
-        params.whichReceptorsToIgnore = {[]};
-        params.whichReceptorsToMinimize = {[]};
-        params.directionsYoked = [0];
-        params.directionsYokedAbs = [0];
-        params.receptorIsolateMode = 'Standard';
-        params.useAmbient = true;
-        params.doSelfScreening = true;
-        params.backgroundType = 'optimized';
-        params.backgroundName = '';
-        params.backgroundObserverAge = 32;
+        params.dictionaryType = 'Direction';                                     % What type of dictionary is this?
+        params.baseModulationContrast = 4/6;                                     % How much symmetric modulation contrast do we want to enable?  Used to generate background name.    
+        params.primaryHeadRoom = 0.005;                                          % How close to edge of [0-1] primary gamut do we want to get?
+        params.photoreceptorClasses = ...                                        % Names of photoreceptor classes being considered.
+            {'LConeTabulatedAbsorbance', 'MConeTabulatedAbsorbance', 'SConeTabulatedAbsorbance', 'Melanopsin'};
+        params.fieldSizeDegrees = 27.5;                                          % Field size used in background seeking. Affects fundamentals.
+        params.pupilDiameterMm = 8.0;                                            % Pupil diameter used in background seeking. Affects fundamentals.
+        params.maxPowerDiff = 0.1;                                               % Smoothing parameter for routine that finds backgrounds.
+        params.modulationContrast = [params.baseModulationContrast];             % Vector of constrasts sought in isolation.
+        params.whichReceptorsToIsolate = {[4]};                                  % Which receptor classes are not being silenced.
+        params.whichReceptorsToIgnore = {[]};                                    % Receptor classes ignored in calculations.
+        params.whichReceptorsToMinimize = {[]};                                  % These receptors are minimized in contrast, subject to other constraints.
+        params.directionsYoked = [0];                                            % See ReceptorIsolate.
+        params.directionsYokedAbs = [0];                                         % See ReceptorIsolate.
+        params.receptorIsolateMode = 'Standard';                                 % See ReceptorIsolate.
+        params.useAmbient = true;                                                % Use measured ambient in calculations if true. If false, set ambient to zero.
+        params.doSelfScreening = false;                                          % Adjust photoreceptors for self-screening?
+        params.backgroundType = 'optimized';                                     % Type of background
+        params.backgroundName = '';                                              % Name of background 
+        params.backgroundObserverAge = 32;                                       % Observer age expected in background 
         params.cacheFile = '';
     otherwise
         error('Unknown direction type specified: ''%s''.\n', type);

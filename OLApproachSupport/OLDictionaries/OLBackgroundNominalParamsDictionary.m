@@ -1,7 +1,11 @@
 %OLBackgroundNominalParamsDictionary
 %
 % Description:
-%     Generate dictionary with params for backgrounds.
+%     Generate dictionary with params for backgrounds.   The fields
+%     are explained at the end of this routine, where default values are assigned.
+%
+%     This routine does its best to check that all and only needed fields are present in
+%     the dictionary structures.
 %
 % Note:
 %     When you add a new type, you need to add that type to the corresponding switch statment
@@ -15,14 +19,13 @@
 %          dhb  Bring in params.photoreceptorClasses.  These go with directions/backgrounds.
 %          dhb  Bring in params.useAmbient.  This goes with directions/backgrounds.
 % 6/29/18  dhb  More extended names to reflect key parameters, so that protocols can check
+% 7/19/17  npc  Added a type for each background. For now, there is only one type: 'basic'. 
+%               Defaults and checking are done according to type. params.photoreceptorClasses is now a cell array.
+% 7/22/17  dhb  No more modulationDirection field.
 
 % NEED TO ADD THESE as type 'named'
 %          'BackgroundHalfOn' - Primaries set to 0.5;
 %          'BackgroundEES' - Background metameric to an equal energy spectrum, scaled in middle of gamut.
-%
-% 7/19/17  npc  Added a type for each background. For now, there is only one type: 'basic'. 
-%               Defaults and checking are done according to type. params.photoreceptorClasses is now a cell array.
-
 
 function d = OLBackgroundNominalParamsDictionary()
     % Initialize dictionary
@@ -146,8 +149,6 @@ function d = OLBackgroundNominalParamsDictionary()
 end
 
 function d = paramsValidateAndAppendToDictionary(d, params)
-% Update modulationDirection
-params.modulationDirection = params.name;
 
 % Get all the expected field names for this type
 allFieldNames = fieldnames(defaultParams(params.type));
@@ -211,6 +212,7 @@ params.type = type;
 params.name = '';
 
 switch (type)
+    % Background is optimized to allow a maximal modulation.
     case 'optimized'
         params.dictionaryType = 'Background';                                     % What type of dictionary is this?
         params.pegBackground = false;                                             % Passed to the routine that optimizes backgrounds.         
@@ -230,7 +232,7 @@ switch (type)
         params.directionsYokedAbs = [0];                                          % See ReceptorIsolate.
         params.useAmbient = true;                                                 % Use measured ambient in calculations if true. If false, set ambient to zero.
         params.cacheFile = '';                                                    % Place holder, modulation name and type-specific . Just declaring the field here.
-        params.modulationDirection = '';                                          % Place holder, modulation name and type-specific . Just declaring the field here.
+        
     case 'lightfluxchrom'
         params.dictionaryType = 'Background';                                     % What type of dictionary is this?
         params.primaryHeadRoom = 0.01;                                            % How close to edge of [0-1] primary gamut do we want to get? (Check if actually used someday.) 
@@ -238,7 +240,7 @@ switch (type)
         params.lightFluxDownFactor = 5;                                           % Factor to decrease background after initial values found.  Determines how big a pulse we can put on it.
         params.useAmbient = true;                                                 % Use measured ambient in calculations if true. If false, set ambient to zero.
         params.cacheFile = '';                                                    % Place holder, modulation name and type-specific . Just declaring the field here.
-        params.modulationDirection = '';                                          % Place holder, modulation name and type-specific . Just declaring the field here.
+
     otherwise
         error('Unknown background type specified: ''%s''.\n', type)
 end % switch
