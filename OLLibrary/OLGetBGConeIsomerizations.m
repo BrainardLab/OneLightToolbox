@@ -58,7 +58,7 @@ photopicLuminanceCdM2 = scaleFactor*photopicLuminanceCdM2;
 %% Get cone spectral sensitivities to use to compute isomerization rates
 lambdaMaxShift = [];
 [T_cones, T_quantalIsom]  = GetHumanPhotopigmentSS(S, {'LCone' 'MCone' 'SCone'}, fieldSizeDegs, ageInYears, pupilDiameterMm, lambdaMaxShift,[]);
-[T_conesHemo, T_quantalIsomHemo]  = GetHumanPhotopigmentSS(S, {'LConeHemo' 'MConeHemo' 'SConeHemo'}, fieldSizeDegs, ageInYears, pupilDiameterMm, lambdaMaxShift,[]);
+[T_conesHemo, T_quantalIsomHemo]  = GetHumanPhotopigmentSS(S, {'LConePenumbral' 'MConePenumbral' 'SConePenumbral'}, fieldSizeDegs, ageInYears, pupilDiameterMm, lambdaMaxShift,[]);
 
 %% Compute irradiance, trolands, etc.
 pupilAreaMm2 = pi*((pupilDiameterMm/2)^2);
@@ -122,7 +122,7 @@ fprintf('  * Fraction bleached from isomerization rates: LHemo, %0.2f; MHemo, %0
         
 %% Compute bleached cone sensitivities and isomerizations
 [T_conesBleached,T_quantalIsomBleached] = GetHumanPhotopigmentSS(S, {'LCone' 'MCone' 'SCone'}, fieldSizeDegs, ageInYears, pupilDiameterMm, lambdaMaxShift, fractionBleachedFromIsom);
-[T_conesHemoBleached] = GetHumanPhotopigmentSS(S, {'LConeHemo' 'MConeHemo' 'SConeHemo'}, fieldSizeDegs, ageInYears, pupilDiameterMm, lambdaMaxShift, fractionBleachedFromIsom);
+[T_conesHemoBleached] = GetHumanPhotopigmentSS(S, {'LConePenumbral' 'MConePenumbral' 'SConePenumbral'}, fieldSizeDegs, ageInYears, pupilDiameterMm, lambdaMaxShift, fractionBleachedFromIsom);
 theLMSIsomerizationsBleached = PhotonAbsorptionRate(irradianceQuantaPerUm2Sec,S, ...
 	T_quantalIsomBleached,S,photoreceptors.ISdiameter.value);
 fprintf('  * LMS bleached isomerizations/cone-sec: %0.4g, %0.4g, %0.4g\n',...
