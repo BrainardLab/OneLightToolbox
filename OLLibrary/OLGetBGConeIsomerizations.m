@@ -58,7 +58,7 @@ photopicLuminanceCdM2 = scaleFactor*photopicLuminanceCdM2;
 %% Get cone spectral sensitivities to use to compute isomerization rates
 lambdaMaxShift = [];
 [T_cones, T_quantalIsom]  = GetHumanPhotopigmentSS(S, {'LCone' 'MCone' 'SCone'}, fieldSizeDegs, ageInYears, pupilDiameterMm, lambdaMaxShift,[]);
-[T_conesHemo, T_quantalIsomHemo]  = GetHumanPhotopigmentSS(S, {'LConePenumbral' 'MConePenumbral' 'SConePenumbral'}, fieldSizeDegs, ageInYears, pupilDiameterMm, lambdaMaxShift,[]);
+[T_conesPenumbral, T_quantalIsomPenumbral]  = GetHumanPhotopigmentSS(S, {'LConePenumbral' 'MConePenumbral' 'SConePenumbral'}, fieldSizeDegs, ageInYears, pupilDiameterMm, lambdaMaxShift,[]);
 
 %% Compute irradiance, trolands, etc.
 pupilAreaMm2 = pi*((pupilDiameterMm/2)^2);
@@ -79,8 +79,8 @@ photoreceptors = FillInPhotoreceptors(photoreceptors);
 %% Get isomerizations
 theLMSIsomerizations = PhotonAbsorptionRate(irradianceQuantaPerUm2Sec,S, ...
 	T_quantalIsom,S,photoreceptors.ISdiameter.value);
-theLMSIsomerizationsHemo = PhotonAbsorptionRate(irradianceQuantaPerUm2Sec,S, ...
-	T_quantalIsomHemo,S,photoreceptors.ISdiameter.value);
+theLMSIsomerizationsPenumbral = PhotonAbsorptionRate(irradianceQuantaPerUm2Sec,S, ...
+	T_quantalIsomPenumbral,S,photoreceptors.ISdiameter.value);
 
 %% Report on stimulus
 fprintf('\n');
@@ -96,8 +96,8 @@ fprintf('  * Stimulus retinal irradiance %0.1f log10 quanta/[cm2-sec]\n',log10(s
 fprintf('  * Stimulus retinal irradiance %0.1f log10 quanta/[deg2-sec]\n',log10(sum(irradianceQuantaPerDeg2Sec)));
 fprintf('  * LMS isomerizations/cone-sec: %0.4g, %0.4g, %0.4g\n',...
         theLMSIsomerizations(1),theLMSIsomerizations(2),theLMSIsomerizations(3));
-fprintf('  * LMSHemo isomerizations/cone-sec: %0.4g, %0.4g, %0.4g\n',...
-        theLMSIsomerizationsHemo(1),theLMSIsomerizationsHemo(2),theLMSIsomerizationsHemo(3));
+fprintf('  * LMSPenumbral isomerizations/cone-sec: %0.4g, %0.4g, %0.4g\n',...
+        theLMSIsomerizationsPenumbral(1),theLMSIsomerizationsPenumbral(2),theLMSIsomerizationsPenumbral(3));
     
 %% Simple check
 % Calculating for a 10-deg field, IsomerizationsInEyeDemo says that the average (2 L per 1 M) isomerizations/cone-sec
@@ -109,20 +109,20 @@ fprintf('  * Check: Photopic trolands times 128: %0.4g, 2:1 average L and M: %0.
 %% Get fraction bleached
 fractionBleachedFromTrolands = ComputePhotopigmentBleaching(irradiancePhotTrolands,'cones','trolands','Boynton');
 fractionBleachedFromIsom = zeros(3,1);
-fractionBleachedFromIsomHemo = zeros(3,1);
+fractionBleachedFromIsomPenumbral = zeros(3,1);
 for i = 1:3
     fractionBleachedFromIsom(i) = ComputePhotopigmentBleaching(theLMSIsomerizations(i),'cones','isomerizations','Boynton');
-    fractionBleachedFromIsomHemo(i) = ComputePhotopigmentBleaching(theLMSIsomerizationsHemo(i),'cones','isomerizations','Boynton');
+    fractionBleachedFromIsomPenumbral(i) = ComputePhotopigmentBleaching(theLMSIsomerizationsPenumbral(i),'cones','isomerizations','Boynton');
 end
 fprintf('  * Fraction bleached computed from trolands (applies to L and M cones): %0.2f\n',fractionBleachedFromTrolands);
 fprintf('  * Fraction bleached from isomerization rates: L, %0.2f; M, %0.2f; S, %0.2f\n', ...
     fractionBleachedFromIsom(1),fractionBleachedFromIsom(2),fractionBleachedFromIsom(3));
-fprintf('  * Fraction bleached from isomerization rates: LHemo, %0.2f; MHemo, %0.2f; SHemo, %0.2f\n', ...
-    fractionBleachedFromIsomHemo(1),fractionBleachedFromIsomHemo(2),fractionBleachedFromIsomHemo(3));
+fprintf('  * Fraction bleached from isomerization rates: LPenumbral, %0.2f; MPenumbral, %0.2f; SPenumbral, %0.2f\n', ...
+    fractionBleachedFromIsomPenumbral(1),fractionBleachedFromIsomPenumbral(2),fractionBleachedFromIsomPenumbral(3));
         
 %% Compute bleached cone sensitivities and isomerizations
 [T_conesBleached,T_quantalIsomBleached] = GetHumanPhotopigmentSS(S, {'LCone' 'MCone' 'SCone'}, fieldSizeDegs, ageInYears, pupilDiameterMm, lambdaMaxShift, fractionBleachedFromIsom);
-[T_conesHemoBleached] = GetHumanPhotopigmentSS(S, {'LConePenumbral' 'MConePenumbral' 'SConePenumbral'}, fieldSizeDegs, ageInYears, pupilDiameterMm, lambdaMaxShift, fractionBleachedFromIsom);
+[T_conesPenumbralBleached] = GetHumanPhotopigmentSS(S, {'LConePenumbral' 'MConePenumbral' 'SConePenumbral'}, fieldSizeDegs, ageInYears, pupilDiameterMm, lambdaMaxShift, fractionBleachedFromIsom);
 theLMSIsomerizationsBleached = PhotonAbsorptionRate(irradianceQuantaPerUm2Sec,S, ...
 	T_quantalIsomBleached,S,photoreceptors.ISdiameter.value);
 fprintf('  * LMS bleached isomerizations/cone-sec: %0.4g, %0.4g, %0.4g\n',...
@@ -148,19 +148,19 @@ set(gca,'FontName','Helvetica','FontSize',18);
 plot(SToWls(S),T_cones(1,:)','r','LineWidth',4);
 plot(SToWls(S),T_cones(2,:)','g','LineWidth',4);
 plot(SToWls(S),T_cones(3,:)','b','LineWidth',4);
-plot(SToWls(S),T_conesHemo','k','LineWidth',2);
+plot(SToWls(S),T_conesPenumbral','k','LineWidth',2);
 xlabel('Wavelegnth','FontSize',20);
 ylabel('Sensitivity','FontSize',20);
 xlim([380 750]); ylim([0 1]);
 title(sprintf('Effect of hemoglobin'));
 
-% Hemo cones, effect of bleaching
+% Penumbral cones, effect of bleaching
 theFig3 = figure; clf; hold on
 set(gca,'FontName','Helvetica','FontSize',18);
-plot(SToWls(S),T_conesHemo(1,:)','r','LineWidth',4);
-plot(SToWls(S),T_conesHemo(2,:)','g','LineWidth',4);
-plot(SToWls(S),T_conesHemo(3,:)','b','LineWidth',4);
-plot(SToWls(S),T_conesHemoBleached','k','LineWidth',2);
+plot(SToWls(S),T_conesPenumbral(1,:)','r','LineWidth',4);
+plot(SToWls(S),T_conesPenumbral(2,:)','g','LineWidth',4);
+plot(SToWls(S),T_conesPenumbral(3,:)','b','LineWidth',4);
+plot(SToWls(S),T_conesPenumbralBleached','k','LineWidth',2);
 xlabel('Wavelegnth','FontSize',20);
 ylabel('Sensitivity','FontSize',20);
 xlim([380 750]); ylim([0 1]);
@@ -187,7 +187,7 @@ cd(plotFolder);
 FigureSave(plotRoot,theFig1,'png');
 cd(curDir);
 
-plotRoot = sprintf(['HemoConePlot_%d_%d_' cal.describe.date(1:11)],10*pupilDiameterMm,round(photopicLuminanceCdM2));
+plotRoot = sprintf(['PenumbralConePlot_%d_%d_' cal.describe.date(1:11)],10*pupilDiameterMm,round(photopicLuminanceCdM2));
 plotRoot = strrep(plotRoot, ' ', '_');
 plotRoot = strrep(plotRoot, '-', '_');
 plotRoot = strrep(plotRoot, ':', '.');
@@ -196,7 +196,7 @@ cd(plotFolder);
 FigureSave(plotRoot,theFig1,'png');
 cd(curDir);
 
-plotRoot = sprintf(['HemoConeBleachingPlot_%d_%d_' cal.describe.date(1:11)],10*pupilDiameterMm,round(photopicLuminanceCdM2));
+plotRoot = sprintf(['PenumbralConeBleachingPlot_%d_%d_' cal.describe.date(1:11)],10*pupilDiameterMm,round(photopicLuminanceCdM2));
 plotRoot = strrep(plotRoot, ' ', '_');
 plotRoot = strrep(plotRoot, '-', '_');
 plotRoot = strrep(plotRoot, ':', '.');

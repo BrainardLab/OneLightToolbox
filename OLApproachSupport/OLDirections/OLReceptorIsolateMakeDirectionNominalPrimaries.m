@@ -92,7 +92,8 @@ if (~forceRecompute)
         
         % Compare cacheData.describe.params against currently passed
         % parameters to determine if everything is hunky-dory.  This throws
-        % an error if not.
+        % an error if not.  Could recompute, but we want the user to
+        % think about this case and make sure it wasn't just an error.
         OLCheckCacheParamsAgainstCurrentParams(cacheData, directionParams);
         
         if (~isStale)

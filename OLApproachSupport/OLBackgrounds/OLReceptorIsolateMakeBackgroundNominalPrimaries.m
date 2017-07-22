@@ -24,7 +24,9 @@ function [cacheData, olCache, wasRecomputed] = OLReceptorIsolateMakeBackgroundNo
 %
 %     This routine knows about different types of backgrounds:
 %       named - a specific named background
+%
 %       lightfluxchrom - background of a specified chromaticity, scaled to allow a light flux modulation.
+%
 %       optimized - a background optimized for some modulation.
 %
 % Input:
@@ -86,7 +88,9 @@ if (~forceRecompute)
         [cacheData,isStale] = olCache.load(cacheFileName);
         
         % Compare cacheData.describe.params against currently passed
-        % parameters to determine if cache is stale.
+        % parameters to determine if cache is stale.   Could recompute, but
+        % we want the user to think about this case and make sure it wasn't
+        % just an error.
         OLCheckCacheParamsAgainstCurrentParams(cacheData, backgroundParams);
  
         if (~isStale)

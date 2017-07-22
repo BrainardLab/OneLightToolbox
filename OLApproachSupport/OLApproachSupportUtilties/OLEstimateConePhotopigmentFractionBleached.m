@@ -38,7 +38,7 @@ function fractionBleached = OLEstimateConePhotopigmentFractionBleached(S,theSpd,
 %           dhb  Change 'Hemo' -> 'Penumbral'.
 
 %% Call into SST routine to get fraction bleached for LMS cones and penumbral cones.
-[fractionBleachedFromIsom, fractionBleachedFromIsomHemo] = GetConeFractionBleachedFromSpectrum(S, theSpd, fieldSizeDegrees, observerAgeInYears, pupilDiameterMm, [], []);
+[fractionBleachedFromIsom, fractionBleachedFromIsomPenumbral] = GetConeFractionBleachedFromSpectrum(S, theSpd, fieldSizeDegrees, observerAgeInYears, pupilDiameterMm, [], []);
 
 % Assign the fraction bleached for each photoreceptor class.
 %
@@ -54,11 +54,11 @@ for p = 1:length(photoreceptorClasses)
         case {'SConeTabulatedAbsorbance' 'SConeTabulatedAbsorbance2Deg', 'SConeTabulatedAbsorbance10Deg'}
             fractionBleached(p) = fractionBleachedFromIsom(3);
         case 'LConeTabulatedAbsorbancePenumbral'
-            fractionBleached(p) = fractionBleachedFromIsomHemo(1);
+            fractionBleached(p) = fractionBleachedFromIsomPenumbral(1);
         case 'MConeTabulatedAbsorbancePenumbral'
-            fractionBleached(p) = fractionBleachedFromIsomHemo(2);
+            fractionBleached(p) = fractionBleachedFromIsomPenumbral(2);
         case 'SConeTabulatedAbsorbancePenumbral'
-            fractionBleached(p) = fractionBleachedFromIsomHemo(3);
+            fractionBleached(p) = fractionBleachedFromIsomPenumbral(3);
         case {'Melanopsin', 'Rods'}
             fractionBleached(p) = 0;
         otherwise
