@@ -90,7 +90,7 @@ params.name = '';
 
 switch (type)
     case 'basic'
-        params.dictionaryType = 'Modulation';
+        params.dictionaryType = 'Modulation';       % What type of dictionary is this?
         params.trialDuration = 3;                   % Number of seconds to show each trial
         params.timeStep = 1/64;                     % Number ms of each sample time
         params.cosineWindowIn = true;               % If true, have a cosine fade-in
