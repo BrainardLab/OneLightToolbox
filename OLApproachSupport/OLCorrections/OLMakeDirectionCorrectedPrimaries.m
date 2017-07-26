@@ -31,31 +31,38 @@ tic;
 %% Update Session Log File
 protocolParams = OLSessionLog(protocolParams,mfilename,'StartEnd','start');
 
-theDirections = protocolParams.directionNames; % {'MaxMel' 'MaxLMS' 'LightFluxMaxPulse' };
+%% Grab the relevant directions name and get the cache file name
+theDirections = protocolParams.directionNames;
 theDirectionCacheFileNames = OLMakeDirectionCacheFileNames(protocolParams);
 
+%% THIS NEEDS TO BE DEALT WITH.  IT IS LEFT OVER.
+error('You need to pass theDirectionsCorrect as field of the parameters structure and its length must match number of directions');
 theDirectionsCorrect = [true true];
 spectroRadiometerOBJ=[];
-% CorrectedPrimariesDir is MELA_materials.../DirectionNominalPrimaries
-NominalPrimariesDir =  fullfile(getpref(protocolParams.approach, 'MaterialsPath'), 'Experiments',protocolParams.approach,'DirectionNominalPrimaries');
-% materialsPath, please rename, and send to
-% MELA_materials.../DirectionCorrectedPrimaries
-CorrectedPrimariesDir = fullfile(getpref(protocolParams.approach, 'DataPath'), 'Experiments', protocolParams.approach, protocolParams.protocol, 'DirectionCorrectedPrimaries', protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
-if(~exist(CorrectedPrimariesDir))
-    mkdir(CorrectedPrimariesDir)
+
+%% Get dir where the nominal and corrected primaries live
+%
+% Need to change over to use the directly specified preference rather than to build it up.
+nominalPrimariesDir =  fullfile(getpref(protocolParams.approach, 'MaterialsPath'), 'Experiments',protocolParams.approach,'DirectionNominalPrimaries');
+correctedPrimariesDir = fullfile(getpref(protocolParams.approach, 'DataPath'), 'Experiments', protocolParams.approach, protocolParams.protocol, 'DirectionCorrectedPrimaries', protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
+if(~exist(correctedPrimariesDir,'dir'))
+    mkdir(correctedPrimariesDir)
 end
 
-% Obtain correction params from OLCorrectionParamsDictionary, according
-% to the boxName specified in protocolParams.boxName
+%% Obtain correction params from OLCorrectionParamsDictionary
+%
+% This is box specific, and specified as protocolParams.boxName
 d = OLCorrectionParamsDictionary();
 correctionParams = d(protocolParams.boxName);
 
+%% Loop through and do correction for each desired direction.
 for d = 1:length(theDirections)
-    
+    % Are we correction this direction? If not, should we do a copy here or just leave it alone?
     if (~theDirectionsCorrect(d))
          fprintf(' * Skipping direction:\t<strong>%s</strong>\n', theDirections{d});
         continue;
     end
+    
     % Print out some information
     fprintf(' * Direction:\t<strong>%s</strong>\n', theDirections{d});
     fprintf(' * Observer:\t<strong>%s</strong>\n', protocolParams.observerID);
@@ -65,11 +72,11 @@ for d = 1:length(theDirections)
     fprintf(' * Starting spectrum-seeking loop...\n');
     
     [cacheData, olCache, spectroRadiometerOBJ, cal] = OLCorrectCacheFileOOC(...
-        sprintf('%s.mat', fullfile(NominalPrimariesDir, theDirectionCacheFileNames{d})), ...
+        sprintf('%s.mat', fullfile(nominalPrimariesDir, theDirectionCacheFileNames{d})), ...
         'jryan@mail.med.upenn.edu', ...
         'PR-670', spectroRadiometerOBJ, protocolParams.spectroRadiometerOBJWillShutdownAfterMeasurement, ...
         'doCorrection',                 theDirectionsCorrect(d), ...
-        'outDir',                       fullfile(CorrectedPrimariesDir, protocolParams.observerID), ...
+        'outDir',                       fullfile(correctedPrimariesDir, protocolParams.observerID), ...
         'OBSERVER_AGE',                 protocolParams.observerAgeInYrs, ...
         'selectedCalType',              protocolParams.calibrationType, ...
         'takeTemperatureMeasurements',  protocolParams.takeTemperatureMeasurements, ...
@@ -120,10 +127,10 @@ for d = 1:length(theDirections)
     
     % Save the cache
     fprintf(' * Saving cache ...');
-    olCache = OLCache(CorrectedPrimariesDir,cal);
+    olCache = OLCache(correctedPrimariesDir,cal);
     %zparams = cacheData.data(zparams.observerAgeInYrs).describe.zparams;
     protocolParams.modulationDirection = theDirections{d};
-    protocolParams.cacheFile = fullfile(NominalPrimariesDir, theDirectionCacheFileNames{d});
+    protocolParams.cacheFile = fullfile(nominalPrimariesDir, theDirectionCacheFileNames{d});
     fprintf('Cache saved to %s\n', protocolParams.cacheFile);
     olCache.save(protocolParams.cacheFile, cacheData);
     fprintf('done!\n');

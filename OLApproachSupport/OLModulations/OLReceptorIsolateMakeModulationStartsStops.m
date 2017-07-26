@@ -1,7 +1,3 @@
-%ACCEPT direction names.  Use these to construct both direction file name for read ("Direction_directionName") and
-%the name of the output file (modulationName_directionName).  Remove references to directions and startsstopsname from modulations dictionary.
-%Update header comments! Note to remove starts/stops from routine at the bottom.
-
 function OLReceptorIsolateMakeModulationStartsStops(modulationName, directionName, protocolParams, varargin)
 %OLReceptorIsolateMakeModulationStartsStops  Creates the starts/stops cache data for a given config file.
 %
@@ -46,9 +42,8 @@ p.parse(modulationName, directionName, protocolParams, varargin{:});
 beVerbose = p.Results.verbose;
 
 %% Get params from modulation params dictionary
-d = OLModulationParamsDictionary(protocolParams);
+d = OLModulationParamsDictionary;
 modulationParams = d(modulationName);
-
 
 %% Setup the directories we'll use.
 % We count on the standard relative directory structure that we always use
@@ -134,7 +129,7 @@ end
 
 %% Here compute the modulation and waveform as specified in the modulation file.
 %
-% It would be nice if we understood this a little better.
+% IT WOULD BE NICE IF WE UNDERSTOOD THIS A LITTLE BETTER.
 for f = 1:modulationParams.nFrequencies
     for p = 1:modulationParams.nPhases
         for c = 1:modulationParams.nContrastScalars

@@ -1,4 +1,5 @@
-% ModulationParamsDictionary
+function d = OLModulationParamsDictionary
+%ModulationParamsDictionary  Generate dictionary with modulation params.
 %
 % Description:
 %     Generate dictionary with modulation params.
@@ -14,7 +15,6 @@
 %               Defaults and checking are done according to type.
 %               Isomorphic direction name and cache filename.
 
-function d = OLModulationParamsDictionary(protocolParams)
 % Initialize dictionary
 d = containers.Map();
 
