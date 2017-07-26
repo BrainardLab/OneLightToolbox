@@ -22,19 +22,19 @@ d = containers.Map();
 
 boxName = 'BoxA';
 type = 'standardCorrection';
-params = defaultParams(type, protocolParams);
+params = defaultParams(type);
 params.boxName = boxName;
 d = paramsValidateAndAppendToDictionary(d, params);
 
 boxName = 'BoxD';
 type = 'standardCorrection';
-params = defaultParams(type, protocolParams);
+params = defaultParams(type);
 params.boxName = boxName;
 d = paramsValidateAndAppendToDictionary(d, params);
 
 boxName = 'BoxB';
 type = 'standardCorrection';
-params = defaultParams(type, protocolParams);
+params = defaultParams(type);
 params.boxName = boxName;
 params.learningRate = 0.5;
 params.learningRateDecrease = true;
@@ -46,7 +46,7 @@ d = paramsValidateAndAppendToDictionary(d, params);
 
 boxName = 'BoxC';
 type = 'standardCorrection';
-params = defaultParams(type, protocolParams);
+params = defaultParams(type);
 params.boxName = boxName;
 params.learningRate = 0.5;
 params.learningRateDecrease = true;
@@ -124,7 +124,7 @@ switch (type)
         params.asympLearningRateFactor = 0.5;                                               % ??
         params.smoothness = 0.1;                                                            % ??
         params.iterativeSearch = false;                                                     % ??
-        params.iterationsNum = 1;                                                           % ??
+        params.iterationsNum = 10;                                                           % ??
         params.powerLevels = [0 1.0000];                                                    % ??
         params.postreceptoralCombinations = [1 1 1 0 ; 1 -1 0 0 ; 0 0 1 0 ; 0 0 0 1];       % ??
         params.useAverageGamma = false;                                                     % whether to use the average (across channels) gamma

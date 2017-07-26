@@ -36,8 +36,8 @@ theDirections = protocolParams.directionNames;
 theDirectionCacheFileNames = OLMakeDirectionCacheFileNames(protocolParams);
 
 %% THIS NEEDS TO BE DEALT WITH.  IT IS LEFT OVER.
-error('You need to pass theDirectionsCorrect as field of the parameters structure and its length must match number of directions');
-theDirectionsCorrect = [true true];
+assert(numel(protocolParams.directionNames) == numel(protocolParams.directionsCorrect), 'protocolParams.directionsCorrect does not have the same length protocolParams.directionNames');
+theDirectionsCorrect = protocolParams.directionsCorrect;
 spectroRadiometerOBJ=[];
 
 %% Get dir where the nominal and corrected primaries live
@@ -53,6 +53,7 @@ end
 %
 % This is box specific, and specified as protocolParams.boxName
 d = OLCorrectionParamsDictionary();
+fprintf('Getting correction params for box ''%s''\n', protocolParams.boxName);
 correctionParams = d(protocolParams.boxName);
 
 %% Loop through and do correction for each desired direction.
