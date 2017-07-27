@@ -1,4 +1,4 @@
-function protocolParams = OLValidateDirectionCorrectedPrimaries(protocolParams,PrePost)
+function protocolParams = OLValidateDirectionCorrectedPrimaries(protocolParams,prePost)
 %OLValidateCorrectedPrimaries  Measure and check the corrected primaries
 %
 % Description:
@@ -9,21 +9,10 @@ function protocolParams = OLValidateDirectionCorrectedPrimaries(protocolParams,P
 
 % 6/18/17  dhb  Added header comment.
 
-% Update session log file
-protocolParams = OLSessionLog(protocolParams,mfilename,'StartEnd','start','PrePost',PrePost);
+%% Update session log file
+protocolParams = OLSessionLog(protocolParams,mfilename,'StartEnd','start','PrePost',prePost);
 
-% Assign the default choice index the first time we run this script. We
-% clear this after the pre-experimental validation.
-choiceIndex = 1;
-
-tic;
-
-% Prompt the user to state if we're before or after the experiment
-if ~exist('choiceIndex', 'var')
-    choiceIndex = ChoiceMenuFromList({'Before the experiment', 'After the experiment'}, '> Validation before or after the experiment?');
-end
-
-% Set up some parameters
+%% Set up some parameters
 spectroRadiometerOBJ = [];
 theDirectionCacheFileNames = OLMakeDirectionCacheFileNames(protocolParams);
 
@@ -44,6 +33,7 @@ NTotalMeas = NMeas*NDirections;
 d = OLCorrectionParamsDictionary();
 correctionParams = d(protocolParams.boxName);
 
+%% Validate each direction
 for ii = 1:NMeas;
     for d = 1:NDirections
         % Inform the user where we are in the validation
@@ -59,23 +49,30 @@ for ii = 1:NMeas;
         end
         
         % Take the measurement
-        [~, ~, ~, spectroRadiometerOBJ] = OLValidateCacheFileOOC(protocolParams, ...
-            fullfile(cacheDir, sprintf('%s.mat', theDirectionCacheFileNames{d})), ...
-            'jryan@mail.med.upenn.edu', ...
-            'PR-670', spectroRadiometerOBJ, protocolParams.spectroRadiometerOBJWillShutdownAfterMeasurement, ...
+        results = OLValidateCacheFileOOC(fullfile(cacheDir, sprintf('%s.mat', theDirectionCacheFileNames{d})),'PR-670', ...
             'pr670sensitivityMode',         'STANDARD', ...
             'CalStateMeas',                 calStateFlag, ...
             'outDir',                       outDir, ...
             'OBSERVER_AGE',                 protocolParams.observerAgeInYrs, ...
             'selectedCalType',              protocolParams.calibrationType, ...
             'takeTemperatureMeasurements',  protocolParams.takeTemperatureMeasurements, ...
-            'FullOnMeas',                   correctionParams.fullOnMeas, ...
-            'DarkMeas',                     correctionParams.darkMeas, ...
-            'ReducedPowerLevels',           correctionParams.reducedPowerLevels, ...
-            'CALCULATE_SPLATTER',           correctionParams.calculateSplatter, ...
             'powerLevels',                  correctionParams.powerLevels, ...
-            'postreceptoralCombinations',   correctionParams.postreceptoralCombinations...
-            );
+            'postreceptoralCombinations',   correctionParams.postreceptoralCombinations, ...
+            'useAverageGamma',              correctionParams.useAverageGamma, ...
+            'zeroPrimariesAwayFromPeak',    correctionParams.zeroPrimariesAwayFromPeak, ...
+            'emailRecipient',               protocolParams.emailRecipient, ...
+            'verbose',                      p.Results.verbose);
+      
+        
+        % Save the cache
+%         if (p.Results.verbose), fprintf(' * Saving cache ...'); end;
+%         olCache = OLCache(correctedPrimariesDir,cal);
+%         protocolParams.modulationDirection = theDirections{d};
+%         protocolParams.cacheFile = fullfile(nominalPrimariesDir, theDirectionCacheFileNames{d});
+%         if (p.Results.verbose), fprintf('Cache saved to %s\n', protocolParams.cacheFile); end
+%         olCache.save(protocolParams.cacheFile, cacheData);
+%         if (p.Results.verbose), fprintf('Cache saved to %s\n', protocolParams.cacheFile); end
+    
         % Increment the counter
         c = c+1;
     end
@@ -85,12 +82,5 @@ if (~isempty(spectroRadiometerOBJ))
     spectroRadiometerOBJ.shutDown();
     spectroRadiometerOBJ = [];
 end
-fprintf('\n************************************************');
-fprintf('\n*** <strong>Validation all complete</strong> ***');
-fprintf('\n************************************************\n');
-protocolParams = OLSessionLog(protocolParams,mfilename,'StartEnd','end','PrePost',PrePost);
-toc;
 
-% Clear the choiceIndex. Note that this is only relevant for the
-% pre-experimental validations.
-clear choiceIndex;
+protocolParams = OLSessionLog(protocolParams,mfilename,'StartEnd','end','PrePost',prePost);

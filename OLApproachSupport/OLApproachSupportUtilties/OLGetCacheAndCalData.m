@@ -1,26 +1,25 @@
-function [olCache, cacheData,cal, cacheDir, cacheFileName] = OLGetNominalDirectionCacheAndCalData(cacheFileNameFullPath, params)
-%OLGetNominalDirectionCacheAndCalData  Open a modulation cache file and get the data for a particular calibration, as well as the cal data.
+function [cacheData,cal] = OLGetCacheAndCalData(cacheFileNameFullPath, params, varargin)
+%OLGetCacheAndCalData  Open a modulation cache file and get the data for a particular calibration, as well as the cal data.
 %
 % Usage:
-%    [olCache, cacheData,cal,cacheDir,cacheFileName] = OLGetNominalDirectionCacheAndCalData(cacheFileNameFullPath, describe);
+%    [olCache, cacheData,cal,cacheDir,cacheFileName] = OLGetCacheAndCalData(cacheFileNameFullPath, describe);
 %
 % Input:
 %     cacheFileNameFullPath           - Full path to cache file.
 %     params                          - Parameter struct with the following fields:
 %                                         approach - Name of approach
-%                                         calibrationType - type of calibration. Will prompt
-%                                         if this isn't there.
+%                                         calibrationType - type of calibration. 
 % 
 % Output:
+%    cacheData                        - The nominal direction cache data structure.
+%    cal                              - The corresponding calibration structure.
 %
 % Optional key/value pairs:
-%     None.
-
-% 7/27/17  dhb   Commenting and cleaning.
+%     None
 
 %% Open cache file and get data
 %
-% Make sure an absolute path is passed.  We do
+% Force the file to be an absolute path instead of a relative one.  We do
 % this because files with relative paths can match anything on the path,
 % which may not be what was intended.  The regular expression looks for
 % string that begins with '/' or './'.
@@ -46,40 +45,16 @@ foundCalTypes = sort(fieldnames(data));
 for i = 1:length(foundCalTypes)
     typeExists(i) = any(strcmp(foundCalTypes{i}, validCalTypes));
 end
-assert(any(typeExists),'InvalidCacheFile','File contains does not contain at least one valid calibration type');
+assert(any(typeExists), 'InvalidCacheFile', 'File contains does not contain at least one valid calibration type');
 
-%% Select calibration type to validate
-%
-% Either it was passed and we select that one, or we ask the user.
-while true
-    % Check if 'selectedCalType' was passed.  Go with that if it was in the
-    % calibration file.
-    %
-    % It might be clever to check that the passed type is valid.
-    if (isfield(params, 'calibrationType')) && any(strcmp(foundCalTypes, params.calibrationType))
-        selectedCalType = params.calibrationType;
-        break;
-    end
-    
-    % Prompt user, distinguishing currently valid types in menu.
-    fprintf('\n- Calibration Types in Cache File (*** = valid)\n\n');   
-    for i = 1:length(foundCalTypes)
-        if typeExists(i)
-            typeState = '***';
-        else
-            typeState = '---';
-        end
-        fprintf('%i (%s): %s\n', i, typeState, foundCalTypes{i});
-    end
-    fprintf('\n'); 
-    t = GetInput('Select a Number', 'number', 1);
-    if t >= 1 && t <= length(foundCalTypes) && typeExists(t);
-        fprintf('\n');
-        selectedCalType = foundCalTypes{t};
-        break;
-    else
-        fprintf('\n*** Invalid selection try again***\n\n');
-    end
+%% Got to have a type available, check
+assert(isfield(params, 'calibrationType'),'No calibration type','Must provide params.calibraitionType'); 
+
+%% Get the calibration type
+if (any(strcmp(foundCalTypes, params.calibrationType))
+    selectedCalType = params.calibrationType;
+else
+    error('No calibration of specified type available');
 end
 
 %% Load the calibration file associated with this calibration type.

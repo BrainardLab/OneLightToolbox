@@ -24,11 +24,10 @@ function [cacheData, adjustedCal] = OLCorrectCacheFileOOC(cacheFileNameFullPath,
 % Optional key/value pairs:
 %      Keyword                         Default                          Behavior
 %
-%     'approach'                       []                               What approach is calling us?
+%     'approach'                       ''                               What approach is calling us?
 %     'calStateMeas'                   true                             State measurements
 %     'observerAgeInYrs'               32                               Observer age to correct for.
 %     'noRadiometerAdjustment '        true                             Does not pause  to allow aiming of radiometer.
-%     'selectedCalType'                'EyeTrackerLongCableEyePiece1'   Calibration type
 %     'nIterations'                    20                               Number of iterations
 %     'learningRate'                   0.8                              Learning rate
 %     'learningRateDecrease'           true                             Decrease learning rate over iterations?
@@ -36,7 +35,8 @@ function [cacheData, adjustedCal] = OLCorrectCacheFileOOC(cacheFileNameFullPath,
 %                                                                       asymptotic learning rate is (1-asympLearningRateFactor)*learningRate
 %     'smoothness'                     0.001                            Smoothness parameter for OLSpdToPrimary
 %     'iterativeSearch'                false                            Do iterative search?
-%     'regressionPredict'              false                            Use regression to make predictions, rather than calibration
+%     'calibrationType'                ''                               Calibration type
+%     'doCorrection'                   true                             Actually do the correction?
 %     'postreceptoralCombinations'     []                               Post-receptoral combinations to calculate contrast w.r.t.
 %     'takeTemperatureMeasurements'    false                            Whether to take temperature measurements (requires a
 %                                                                       connected LabJack dev with a temperature probe)
@@ -58,7 +58,7 @@ function [cacheData, adjustedCal] = OLCorrectCacheFileOOC(cacheFileNameFullPath,
 
 % Parse the input
 p = inputParser;
-p.addParameter('approach', [], @isstr);
+p.addParameter('approach','', @isstr);
 p.addParameter('calStateMeas', false, @islogical);
 p.addParameter('noRadiometerAdjustment', false, @islogical);
 p.addParameter('observerAgeInYrs', 32, @isscalar);
@@ -68,8 +68,7 @@ p.addParameter('learningRateDecrease',true,@islogical);
 p.addParameter('asympLearningRateFactor',0.5,@isnumeric);
 p.addParameter('smoothness', 0.001, @isscalar);
 p.addParameter('iterativeSearch',false, @islogical);
-p.addParameter('regressionPredict',false, @islogical);
-p.addParameter('calibrationType', [], @isstr);
+p.addParameter('calibrationType','', @isstr);
 p.addParameter('doCorrection', true, @islogical);
 p.addParameter('postreceptoralCombinations', [], @isnumeric);
 p.addParameter('takeTemperatureMeasurements', false, @islogical);
@@ -82,8 +81,8 @@ p.addParameter('verbose',false,@islogical);
 p.parse(varargin{:});
 correctDescribe = p.Results;
 
-%% Get cached modulation data as well as calibration file
-[cacheData,adjustedCal] = OLGetNominalDirectionCacheAndCalData(cacheFileNameFullPath, correctDescribe);
+%% Get cached direction data as well as calibration file
+[cacheData,adjustedCal] = OLGetCacheAndCalData(cacheFileNameFullPath, correctDescribe);
 
 %% We might not want to seek
 %
@@ -110,7 +109,7 @@ end
 %% Open up a radiometer object
 %
 % Set meterToggle so that we don't use the Omni radiometer in various measuremnt calls below.
-[spectroRadiometerOBJ,S,nAverage,theMeterTypeID] = OLOpenSpectroRadiometerObj(meterType);
+[spectroRadiometerOBJ,S,nAverage] = OLOpenSpectroRadiometerObj(meterType);
 meterToggle = [true false];
 
 %% Attempt to open the LabJack temperature sensing device
