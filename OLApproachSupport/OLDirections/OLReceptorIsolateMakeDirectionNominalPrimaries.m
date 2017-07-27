@@ -23,7 +23,7 @@ function [cacheData, directionOlCache, wasRecomputed] = OLReceptorIsolateMakeDir
 %     This routine knows about different types of directions:
 %       modulation - symmetric modulation around a background.
 %       pulse - incremental positive pulse relative to low end of swing around background.
-%       lightflux - 
+%       lightflux -
 %
 % Input:
 %     approach (string)          Name of whatever approach is invoking this.
@@ -161,7 +161,7 @@ switch directionParams.type
             
             % Grab the background from the cache file
             backgroundCacheFile = ['Background_' directionParams.backgroundName '.mat'];
-            [backgroundCacheData,isStale] = backgroundOlCache.load([backgroundCacheFile]);
+            [backgroundCacheData,isStale] = backgroundOlCache.load(backgroundCacheFile);
             assert(~isStale,'Background cache file is stale, aborting.');
             backgroundPrimary = backgroundCacheData.data(directionParams.backgroundObserverAge).backgroundPrimary;
             backgroundSpd = OLPrimaryToSpd(cal, backgroundPrimary);
@@ -199,7 +199,7 @@ switch directionParams.type
                 error('Out of bounds.')
             end
             
-            %% Compute and report constrasts
+            % Compute and report constrasts
             differenceSpdSignedPositive = B_primary*differencePrimary;
             differenceReceptorsPositive = T_receptors*differenceSpdSignedPositive;
             isolateContrastsSignedPositive = differenceReceptorsPositive ./ backgroundReceptors;
@@ -238,9 +238,6 @@ switch directionParams.type
             cacheData.data(observerAgeInYears).describe.S = S;
             cacheData.data(observerAgeInYears).describe.T_receptors = T_receptors;
             cacheData.data(observerAgeInYears).describe.S_receptors = S;
-            cacheData.data(observerAgeInYears).describe.params.maxPowerDiff = directionParams.maxPowerDiff;
-            cacheData.data(observerAgeInYears).describe.params.primaryHeadRoom = directionParams.primaryHeadRoom;
-            
             cacheData.data(observerAgeInYears).describe.contrast = isolateContrastsSignedPositive;
             cacheData.data(observerAgeInYears).describe.contrastSignedPositive = isolateContrastsSignedPositive;
             cacheData.data(observerAgeInYears).describe.contrastSignedNegative = isolateContrastsSignedNegative;
@@ -257,64 +254,43 @@ switch directionParams.type
             cacheData.data(observerAgeInYears).modulationPrimarySignedPositive = modulationPrimarySignedPositive;
             cacheData.data(observerAgeInYears).modulationPrimarySignedNegative = modulationPrimarySignedNegative;
             cacheData.data(observerAgeInYears).modulationSpdSignedPositive = modulationSpdSignedPositive;
-            cacheData.data(observerAgeInYears).modulationSpdSignedNegative = modulationSpdSignedNegative;  
+            cacheData.data(observerAgeInYears).modulationSpdSignedNegative = modulationSpdSignedNegative;
         end
         
-    case 'lightflux'
+    case 'lightfluxpulse'
         
-        %     %% Melanopsin-directed
-%     [paramsMelBackground, paramsMaxMel, cacheDataBackground, cacheDataMaxMel] = generateAndSavePrimaries(baseParams, paramsDictionary, 'MelanopsinDirected', 'MelanopsinDirectedSuperMaxMel');
-% 
-%     %% MaxLMS-directed
-%     [paramsLMSBackground, paramsMaxLMS, cacheDataBackground, cacheDataMaxLMS] = generateAndSavePrimaries(baseParams, paramsDictionary, 'LMSDirected', 'LMSDirectedSuperMaxLMS');
-% 
-%     %% Light flux
-%     %
-%     % For the light flux, we'd like a background that is the average
-%     % chromaticity between the two MaxMel and MaxLMS backgrounds. The
-%     % appropriate chromaticities are (approx.):
-%     %   x = 0.54, y = 0.38
-% 
-%     % Get the cal files
-%     cal = LoadCalFile(OLCalibrationTypes.(baseParams.calibrationType).CalFileName, [], fullfile(getpref(baseParams.approach, 'MaterialsPath'), 'Experiments',baseParams.approach,'OneLightCalData'));
-%     cacheDir = fullfile(getpref(baseParams.approach, 'MaterialsPath'),'Experiments',baseParams.approach,'DirectionNominalPrimaries');
-%     
-%     % Modulation 
-%     desiredChromaticity = [0.54 0.38];
-%     modPrimary = OLInvSolveChrom(cal, desiredChromaticity);
-% 
-%     % Background
-%     %
-%     % This 5 here is hard coding the fact that we want a 400% light flux
-%     % modulation.
-%     bgPrimary = modPrimary/5;
-% 
-%     % We copy over the information from the LMS cache file
-%     cacheDataMaxPulseLightFlux = cacheDataMaxLMS;
-%     paramsMaxPulseLightFlux = paramsMaxLMS;
-% 
-%     % Set up the cache structure
-%     olCacheMaxPulseLightFlux = OLCache(cacheDir, cal);
-% 
-%     % Replace the values
-%     for observerAgeInYrs = 20:60
-%         cacheDataMaxPulseLightFlux.data(observerAgeInYrs).backgroundPrimary = bgPrimary;
-%         cacheDataMaxPulseLightFlux.data(observerAgeInYrs).backgroundSpd = [];
-%         cacheDataMaxPulseLightFlux.data(observerAgeInYrs).differencePrimary = modPrimary-bgPrimary;
-%         cacheDataMaxPulseLightFlux.data(observerAgeInYrs).differenceSpd = [];
-%         cacheDataMaxPulseLightFlux.data(observerAgeInYrs).modulationPrimarySignedPositive = [];
-%         cacheDataMaxPulseLightFlux.data(observerAgeInYrs).modulationSpdSignedPositive = [];
-%         cacheDataMaxPulseLightFlux.data(observerAgeInYrs).modulationPrimarySignedNegative = [];
-%         cacheDataMaxPulseLightFlux.data(observerAgeInYrs).modulationSpdSignedNegative = [];
-%     end
+        % Get desired chromaticity from parameters;
+        x = directionParams.lightFluxDesiredXY(1);
+        y = directionParams.lightFluxDesiredXY(2);
         
-        % If the modulation we want is an isochromatic one, we simply scale
-        % the background Spectrum. Otherwise, we call ReceptorIsolate. Due
-        % to the ambient, we play a little game of adding a little bit to
-        % scale the background just right.
-        if strfind(directionCacheFileName, 'LightFlux')
-            modulationPrimary = backgroundPrimary+backgroundPrimary*max(desiredContrasts);
+        % Grab the background from the cache file
+        backgroundCacheFile = ['Background_' directionParams.backgroundName '.mat'];
+        [backgroundCacheData,isStale] = backgroundOlCache.load(backgroundCacheFile);
+        assert(~isStale,'Background cache file is stale, aborting.');
+        backgroundPrimary = backgroundCacheData.data(directionParams.backgroundObserverAge).backgroundPrimary;
+        backgroundSpd = OLPrimaryToSpd(cal, backgroundPrimary);
+        
+        % Modulation.  This is the background scaled up by the factor that the background
+        % was originally scaled down by.
+        modulationPrimary = backgroundPrimary*directionParamsarams.lightFluxDownFactor;
+        modulationSpd = OLPrimaryToSpd(cal, modulationPrimary);
+        
+        % Set up the cache structure
+        olCacheMaxPulseLightFlux = OLCache(cacheDir, cal);
+        
+        % Replace the values
+        for observerAgeInYrs = 20:60
+            cacheDataMaxPulseLightFlux.data(observerAgeInYrs).backgroundPrimary = bgPrimary;
+            cacheDataMaxPulseLightFlux.data(observerAgeInYrs).backgroundSpd = backgroundSpd;
+            cacheDataMaxPulseLightFlux.data(observerAgeInYrs).differencePrimary = modulationPrimary-bgPrimary;
+            cacheDataMaxPulseLightFlux.data(observerAgeInYrs).differenceSpd = modulationSpd-backgroundSpd;
+            cacheDataMaxPulseLightFlux.data(observerAgeInYrs).modulationPrimarySignedPositive = modulationPrimary;
+            cacheDataMaxPulseLightFlux.data(observerAgeInYrs).modulationSpdSignedPositive = modulationSpd;
+            cacheDataMaxPulseLightFlux.data(observerAgeInYrs).modulationPrimarySignedNegative = [];
+            cacheDataMaxPulseLightFlux.data(observerAgeInYrs).modulationSpdSignedNegative = [];
         end
+        
+ 
     otherwise
         error('Unknown direction type specified');
 end

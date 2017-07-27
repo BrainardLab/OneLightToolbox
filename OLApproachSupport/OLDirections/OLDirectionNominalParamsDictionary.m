@@ -24,7 +24,6 @@
 %               Defaults and checking are done according to type. params.photoreceptorClasses is now a cell array
 % 7/22/17  dhb  No more modulationDirection field.
 % 7/23/17  dhb  Comment field meanings.
-% 7/27/17  dhb  Light flux entry
 
 function d = OLDirectionNominalParamsDictionary()
 
@@ -141,14 +140,12 @@ d = paramsValidateAndAppendToDictionary(d, params);
 
 %% LightFlux_54_38_5.0
 baseName = 'LightFlux';
-type = 'lightfluxpulse';
+type = 'lightfluxchrom';
 
 params = defaultParams(type);
 params.lightFluxDesiredXY = [0.54,0.38];
 params.lightFluxDownFactor = 5;
 params.name = OLMakeApproachDirectionName(baseName,params);
-params.backgroundType = 'lightfluxchrom';
-params.backgroundName = OLMakeApproachDirectionBackgroundName('LightFlux',params);
 params.cacheFile = ['Direction_' params.name '.mat'];
 d = paramsValidateAndAppendToDictionary(d, params);
 end
@@ -195,17 +192,6 @@ switch (params.type)
         assert((isfield(params, 'backgroundName')             && ischar(params.backgroundName)),            sprintf('params.backgroundName does not exist or it does not contain a string value.'));
         assert((isfield(params, 'backgroundObserverAge')      && isnumeric(params.backgroundObserverAge)),  sprintf('params.backgroundObserverAge does not exist or it does not contain a number.'));
         assert((isfield(params, 'cacheFile')                  && ischar(params.cacheFile)),                 sprintf('params.cacheFile does not exist or it does not contain a string value.'));
-        
-    case 'lightfluxpulse'
-        assert((isfield(params, 'dictionaryType')             && ischar(params.dictionaryType)),            sprintf('params.dictionaryType does not exist or it does not contain a string value.'));
-        assert((isfield(params, 'type')                       && ischar(params.type)),                      sprintf('params.type does not exist or it does not contain a string value.'));
-        assert((isfield(params, 'name')                       && ischar(params.name)),                      sprintf('params.name does not exist or it does not contain a string value.'));
-        assert((isfield(params, 'primaryHeadRoom')            && isnumeric(params.primaryHeadRoom)),        sprintf('params.primaryHeadRoom does not exist or it does not contain a numeric value.'));
-        assert((isfield(params, 'lightFluxDesiredXY')         && isnumeric(params.lightFluxDesiredXY)),     sprintf('params.lightFluxDesiredXY does not exit or it does not contain numeric values.'));
-        assert((isfield(params, 'lightFluxDownFactor')        && isnumeric(params.lightFluxDownFactor)),    sprintf('params.lightFluxDownFactor does not exit or it is not numeric.'));
-        assert((isfield(params, 'useAmbient')                 && islogical(params.useAmbient)),             sprintf('params.useAmbient does not exist or it does not contain a logical value.'));
-        assert((isfield(params, 'cacheFile')                  && ischar(params.cacheFile)),                 sprintf('params.cacheFile does not exist or it does not contain a string value.'));
-        
     otherwise
         error('Unknown direction type specified: ''%s''.\n', params.type);
 end
@@ -242,17 +228,6 @@ switch (type)
         params.backgroundName = '';                                              % Name of background 
         params.backgroundObserverAge = 32;                                       % Observer age expected in background 
         params.cacheFile = '';
-        
-    case 'lightfluxpulse'
-        params.dictionaryType = 'Direction';                                     % What type of dictionary is this?
-        params.primaryHeadRoom = 0.01;                                           % How close to edge of [0-1] primary gamut do we want to get? (Check if actually used someday.) 
-        params.lightFluxDesiredXY = [0.54 0.38];                                 % Background chromaticity.
-        params.lightFluxDownFactor = 5;                                          % Factor to decrease background after initial values found.  Determines how big a pulse we can put on it.
-        params.useAmbient = true;                                                % Use measured ambient in calculations if true. If false, set ambient to zero.
-        params.backgroundType = 'lightfluxchrom';                                % Type of background
-        params.backgroundName = '';                                              % Name of background 
-        params.cacheFile = ''; 
-        
     otherwise
         error('Unknown direction type specified: ''%s''.\n', type);
 end
@@ -267,5 +242,5 @@ end
 %     but probably sufficiently localized that it is OK.
 function theName = OLMakeApproachDirectionBackgroundName(name,params)
 params.type = params.backgroundType;
-theName = OLMakeApproachBackgroundName(name,params);
+theName = OLMakeApproachBackgroundName('MelanopsinDirected',params);
 end
