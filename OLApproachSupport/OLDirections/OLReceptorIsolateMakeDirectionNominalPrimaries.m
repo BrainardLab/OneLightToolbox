@@ -110,13 +110,13 @@ end
 % The switch handles different types of modulations we might encounter.
 switch directionParams.type
     case {'modulation', 'pulse'}
-        %% Pupil diameter in mm.
+        % Pupil diameter in mm.
         pupilDiameterMm = directionParams.pupilDiameterMm;
         
-        %% Photoreceptor classes: cell array of strings
+        % Photoreceptor classes: cell array of strings
         photoreceptorClasses = directionParams.photoreceptorClasses;
         
-        %% Set up what will be common to all observer ages
+        % Set up what will be common to all observer ages
         % Pull out the 'M' matrix
         B_primary = cal.computed.pr650M;
         
@@ -154,7 +154,7 @@ switch directionParams.type
             if (p.Results.verbose), fprintf('\n  - None'); end;
         end
         
-        %% Make direction information for each observer age
+        % Make direction information for each observer age
         for observerAgeInYears = 20:60
             % Say hello
             if (p.Results.verbose), fprintf('\nObserver age: %g\n',observerAgeInYears); end;
@@ -258,6 +258,11 @@ switch directionParams.type
         end
         
     case 'lightfluxpulse'
+        % A positive light flux pulse, computed given background.
+        % 
+        % Note: This has access to useAmbient and primaryHeadRoom parameters but does
+        % not currently use them. That is because this counts on the background having
+        % been set up to accommodate the desired modulation.
         
         % Get desired chromaticity from parameters;
         x = directionParams.lightFluxDesiredXY(1);
@@ -270,27 +275,39 @@ switch directionParams.type
         backgroundPrimary = backgroundCacheData.data(directionParams.backgroundObserverAge).backgroundPrimary;
         backgroundSpd = OLPrimaryToSpd(cal, backgroundPrimary);
         
+        % Check that the universe is consistent
+        if (~strcmp(backgroundCacheData.params.type,'lightfluxchrom'))
+            error('Background type is not lightfluxchrom');
+        end
+        if (~all(backgroundCacheData.params.lightFluxDesiredXY == directionParams.lightFluxDesiredXY))
+            error('Background and direction chromaticities not the same');
+        end
+        if (backgroundCacheData.params.lightFluxDownFactor ~= directionParams.lightFluxDownFactor)
+            error('Background and direction lightFluxDownFactors not the same');
+        end
+
         % Modulation.  This is the background scaled up by the factor that the background
         % was originally scaled down by.
-        modulationPrimary = backgroundPrimary*directionParamsarams.lightFluxDownFactor;
+        modulationPrimary = backgroundPrimary*directionParams.lightFluxDownFactor;
         modulationSpd = OLPrimaryToSpd(cal, modulationPrimary);
         
-        % Set up the cache structure
-        olCacheMaxPulseLightFlux = OLCache(cacheDir, cal);
+        % Check gamut
+        if (any(modulationPrimary > 1) | any(modulationPrimary < 0))
+            error('Out of gamut error for the modulation');
+        end
         
         % Replace the values
         for observerAgeInYrs = 20:60
-            cacheDataMaxPulseLightFlux.data(observerAgeInYrs).backgroundPrimary = bgPrimary;
+            cacheDataMaxPulseLightFlux.data(observerAgeInYrs).backgroundPrimary = backgroundPrimary;
             cacheDataMaxPulseLightFlux.data(observerAgeInYrs).backgroundSpd = backgroundSpd;
-            cacheDataMaxPulseLightFlux.data(observerAgeInYrs).differencePrimary = modulationPrimary-bgPrimary;
+            cacheDataMaxPulseLightFlux.data(observerAgeInYrs).differencePrimary = modulationPrimary-backgroundPrimary;
             cacheDataMaxPulseLightFlux.data(observerAgeInYrs).differenceSpd = modulationSpd-backgroundSpd;
             cacheDataMaxPulseLightFlux.data(observerAgeInYrs).modulationPrimarySignedPositive = modulationPrimary;
             cacheDataMaxPulseLightFlux.data(observerAgeInYrs).modulationSpdSignedPositive = modulationSpd;
             cacheDataMaxPulseLightFlux.data(observerAgeInYrs).modulationPrimarySignedNegative = [];
             cacheDataMaxPulseLightFlux.data(observerAgeInYrs).modulationSpdSignedNegative = [];
         end
-        
- 
+
     otherwise
         error('Unknown direction type specified');
 end
