@@ -14,8 +14,8 @@ function OLMakeModulationStartsStops(modulationNames,directionNames,protocolPara
 %     because the primaries depend on age specific receptor fundamentals.  Is
 %     is date specific because we often do spectrum seeking.
 %
-%      The output is cached in the directory specified by
-%      getpref('MaxPulsePsychophysics','ModulationStartsStopsDir');
+%      The output is cached in a directory under
+%      getpref(protocolParams.approach,'ModulationStartsStopsDir');
 %
 % Input:
 %      modulationNames (cell array)         Cell array with the names of the modulations that are used in

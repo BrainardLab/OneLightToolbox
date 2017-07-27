@@ -12,5 +12,6 @@ outDir = fullfile(getpref(protocolParams.approach,'DataPath'), 'Experiments', pr
 if ~exist(outDir)
    mkdir(outDir); 
 end
+
 % Save out the calibration
 SaveCalFile(calMeasOnly, 'StateMeasurements.mat', outDir);

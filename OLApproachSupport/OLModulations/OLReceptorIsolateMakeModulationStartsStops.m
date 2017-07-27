@@ -63,7 +63,7 @@ end
 
 %% Load the calibration file.
 cType = OLCalibrationTypes.(protocolParams.calibrationType);
-modulationParams.oneLightCal = LoadCalFile(cType.CalFileName, [], fullfile(getpref(protocolParams.approach, 'MaterialsPath'), 'Experiments',protocolParams.approach,'OneLightCalData'));
+modulationParams.oneLightCal = LoadCalFile(cType.CalFileName, [], fullfile(getpref(protocolParams.approach, 'OneLightCalDataPath')));
 
 %% Get the corrected direction primaries
 % 

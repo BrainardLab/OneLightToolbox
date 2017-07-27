@@ -11,6 +11,8 @@
 clear; close all;
 
 %% Get some data to analyze
+%
+% THIS WILL NEED UPDATING TO POINT AT THE RIGHT PLACE, WHEN WE DEBUG IT.
 cachePath = getpref('OneLight', 'materialsPath');
 
 %load(fullfile(cachePath, 'MaxMelPulsePsychophysics', '060217',  'Cache-LMSDirectedSuperMaxLMS_HERO_test_OldVers_060217'));

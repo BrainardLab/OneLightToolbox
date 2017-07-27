@@ -59,16 +59,16 @@ p.addParameter('verbose',false,@islogical);
 p.parse(approach,directionParams,forceRecompute,varargin{:});
 
 %% Setup the directories we'll use. Directions go in their special place under the materials path approach directory.
-cacheDir = fullfile(getpref(directionParams.approach, 'MaterialsPath'), 'Experiments',directionParams.approach,'DirectionNominalPrimaries');
+cacheDir = fullfile(getpref(directionParams.approach, 'DirectionNominalPrimariesPath'));
 if ~isdir(cacheDir)
     mkdir(cacheDir);
 end
 
 % Background cache files, which we use here, have their own happy home.
-backgroundCacheDir = fullfile(getpref(approach, 'MaterialsPath'), 'Experiments',approach,'BackgroundNominalPrimaries');
+backgroundCacheDir = fullfile(getpref(approach, 'BackgroundNominalPrimariesPath'));
 
 %% Load the calibration file
-cal = LoadCalFile(OLCalibrationTypes.(directionParams.calibrationType).CalFileName, [], fullfile(getpref(approach, 'MaterialsPath'), 'Experiments',approach,'OneLightCalData'));
+cal = LoadCalFile(OLCalibrationTypes.(directionParams.calibrationType).CalFileName, [], fullfile(getpref(approach, 'OneLightCalDataPath')));
 assert(~isempty(cal), 'OLFlickerComputeModulationSpectra:NoCalFile', 'Could not load calibration file: %s', ...
     OLCalibrationTypes.(directionParams.calibrationType).CalFileName);
 
