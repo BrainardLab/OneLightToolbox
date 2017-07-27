@@ -1,9 +1,12 @@
 function [cacheData, adjustedCal] = OLCorrectCacheFileOOC(cacheFileNameFullPath, meterType, varargin)
 %%OLCorrectCacheFileOOC  Use iterated procedure to optimize modulations in a cache file
+%
+% Usage:
 %    results = OLCorrectCacheFileOOC(cacheFileNameFullPath, meterType)
 %
-% Uses an iterated procedure to bring a modulation as close as possible to
-% its specified spectrum.
+% Description:
+%   Uses an iterated procedure to bring a modulation as close as possible to
+%   its specified spectrum.
 %
 % Input:
 %     cacheFileNameFullPath (string) - The name of the cache file to validate.  The
@@ -21,14 +24,12 @@ function [cacheData, adjustedCal] = OLCorrectCacheFileOOC(cacheFileNameFullPath,
 % Optional key/value pairs:
 %      Keyword                         Default                          Behavior
 %
-%     'ReferenceMode'                  true                             Adds suffix to file name
-%     'CalStateMeas'                   true                             State measurements
-%     'SkipBackground'                 false                            Background
-%     'OBSERVER_AGE'                   32                               Observer age to correct for.
-%     'ReducedPowerLevels'             true                             Only 3 levels
-%     'NoAdjustment '                  true                             Does not pause
+%     'approach'                       []                               What approach is calling us?
+%     'calStateMeas'                   true                             State measurements
+%     'observerAgeInYrs'               32                               Observer age to correct for.
+%     'noRadiometerAdjustment '        true                             Does not pause  to allow aiming of radiometer.
 %     'selectedCalType'                'EyeTrackerLongCableEyePiece1'   Calibration type
-%     'NIter'                          20                               Number of iterations
+%     'nIterations'                    20                               Number of iterations
 %     'learningRate'                   0.8                              Learning rate
 %     'learningRateDecrease'           true                             Decrease learning rate over iterations?
 %     'asympLearningRateFactor'        0.5                              If learningRateDecrease is true, the
@@ -39,6 +40,7 @@ function [cacheData, adjustedCal] = OLCorrectCacheFileOOC(cacheFileNameFullPath,
 %     'postreceptoralCombinations'     []                               Post-receptoral combinations to calculate contrast w.r.t.
 %     'takeTemperatureMeasurements'    false                            Whether to take temperature measurements (requires a
 %                                                                       connected LabJack dev with a temperature probe)
+%     'powerLevels'                    [0 1]                            Power levels of diff modulation to seek for
 %     'useAverageGamma'                false                            Force the useAverageGamma mode in the
 %                                                                       calibration.  When false, the value that was in the calibration file
 %                                                                       is used.  When true, useAverageGamma is set to true.
@@ -56,13 +58,11 @@ function [cacheData, adjustedCal] = OLCorrectCacheFileOOC(cacheFileNameFullPath,
 
 % Parse the input
 p = inputParser;
-p.addParameter('ReferenceMode', true, @islogical);
-p.addParameter('CalStateMeas', false, @islogical);
-p.addParameter('SkipBackground', false, @islogical);
-p.addParameter('ReducedPowerLevels', true, @islogical);
-p.addParameter('NoAdjustment', false, @islogical);
-p.addParameter('OBSERVER_AGE', 32, @isscalar);
-p.addParameter('NIter', 20, @isscalar);
+p.addParameter('approach', [], @isstr);
+p.addParameter('calStateMeas', false, @islogical);
+p.addParameter('noRadiometerAdjustment', false, @islogical);
+p.addParameter('observerAgeInYrs', 32, @isscalar);
+p.addParameter('nIterations', 20, @isscalar);
 p.addParameter('learningRate', 0.8, @isscalar);
 p.addParameter('learningRateDecrease',true,@islogical);
 p.addParameter('asympLearningRateFactor',0.5,@isnumeric);
@@ -72,12 +72,10 @@ p.addParameter('regressionPredict',false, @islogical);
 p.addParameter('calibrationType', [], @isstr);
 p.addParameter('doCorrection', true, @islogical);
 p.addParameter('postreceptoralCombinations', [], @isnumeric);
-p.addParameter('outDir', [], @isstr);
 p.addParameter('takeTemperatureMeasurements', false, @islogical);
 p.addParameter('powerLevels', [0 1.0000], @isnumeric);
 p.addParameter('useAverageGamma', false, @islogical);
 p.addParameter('zeroPrimariesAwayFromPeak', false, @islogical);
-p.addParameter('approach', [], @isstr);
 p.addParameter('emailRecipient','igdalova@mail.med.upenn.edu', @isstr);
 p.addParameter('verbose',false,@islogical);
 
@@ -135,7 +133,7 @@ end
 %
 % And let user get the radiometer set up if desired.
 ol = OneLight('simulate', correctDescribe.simulate);
-if ~correctDescribe.NoAdjustment
+if ~correctDescribe.noRadiometerAdjustment
     ol.setAll(true);
     pauseDuration = 0;
     fprintf('- Focus the radiometer and press enter to pause %d seconds and start measuring.\n', pauseDuration);
@@ -151,7 +149,7 @@ try
     fprintf('- Performing radiometer measurements.\n');
     
     %% Take reference measurements
-    if correctDescribe.CalStateMeas
+    if correctDescribe.calStateMeas
         fprintf('- State measurements \n');
         [~, correctDescribe.calStateMeas] = OLCalibrator.TakeStateMeasurements(adjustedCal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, 'standAlone',true);
     end
@@ -162,20 +160,20 @@ try
     correctDescribe.powerLevels = [0 1];
     nPowerLevels = length(correctDescribe.powerLevels);
     
-    for iter = 1:correctDescribe.NIter
+    for iter = 1:correctDescribe.nIterations
         
         % Only get the primaries from the cache file if it's the
         % first iteration.  In this case we also store them for
         % future reference, since they are replaced on every
         % iteration.
         if iter == 1
-            backgroundPrimaryUsed = cacheData.data(correctDescribe.OBSERVER_AGE).backgroundPrimary;
-            differencePrimaryUsed = cacheData.data(correctDescribe.OBSERVER_AGE).differencePrimary;
-            modulationPrimaryUsed = cacheData.data(correctDescribe.OBSERVER_AGE).backgroundPrimary+cacheData.data(correctDescribe.OBSERVER_AGE).differencePrimary;
+            backgroundPrimaryUsed = cacheData.data(correctDescribe.observerAgeInYrs).backgroundPrimary;
+            differencePrimaryUsed = cacheData.data(correctDescribe.observerAgeInYrs).differencePrimary;
+            modulationPrimaryUsed = cacheData.data(correctDescribe.observerAgeInYrs).backgroundPrimary+cacheData.data(correctDescribe.observerAgeInYrs).differencePrimary;
             
-            backgroundPrimaryInitial = cacheData.data(correctDescribe.OBSERVER_AGE).backgroundPrimary;
-            differencePrimaryInitial = cacheData.data(correctDescribe.OBSERVER_AGE).differencePrimary;
-            modulationPrimaryInitial = cacheData.data(correctDescribe.OBSERVER_AGE).backgroundPrimary+cacheData.data(correctDescribe.OBSERVER_AGE).differencePrimary;
+            backgroundPrimaryInitial = cacheData.data(correctDescribe.observerAgeInYrs).backgroundPrimary;
+            differencePrimaryInitial = cacheData.data(correctDescribe.observerAgeInYrs).differencePrimary;
+            modulationPrimaryInitial = cacheData.data(correctDescribe.observerAgeInYrs).backgroundPrimary+cacheData.data(correctDescribe.observerAgeInYrs).differencePrimary;
         else
             backgroundPrimaryUsed = backgroundNextPrimaryTruncatedLearningRate;
             modulationPrimaryUsed = modulationNextPrimaryTruncatedLearningRate;
@@ -187,7 +185,7 @@ try
         
         % Set learning rate to use this iteration
         if (p.Results.learningRateDecrease)
-            learningRateThisIter = correctDescribe.learningRate*(1-(iter-1)*correctDescribe.asympLearningRateFactor/(correctDescribe.NIter-1));
+            learningRateThisIter = correctDescribe.learningRate*(1-(iter-1)*correctDescribe.asympLearningRateFactor/(correctDescribe.nIterations-1));
         else
             learningRateThisIter = correctDescribe.learningRate;
         end
@@ -278,8 +276,8 @@ try
         
         % Compute and print out information about the quality of
         % the current measurement, in contrast terms.
-        theCanonicalPhotoreceptors = cacheData.data(correctDescribe.OBSERVER_AGE).describe.photoreceptors;
-        T_receptors = cacheData.data(correctDescribe.OBSERVER_AGE).describe.T_receptors;
+        theCanonicalPhotoreceptors = cacheData.data(correctDescribe.observerAgeInYrs).describe.photoreceptors;
+        T_receptors = cacheData.data(correctDescribe.observerAgeInYrs).describe.T_receptors;
         [contrasts(:,iter) postreceptoralContrasts(:,iter)] = ComputeAndReportContrastsFromSpds(['Iteration ' num2str(iter, '%02.0f')] ,theCanonicalPhotoreceptors,T_receptors,...
             backgroundSpdMeasured,modulationSpdMeasured,correctDescribe.postreceptoralCombinations,true);
         
@@ -301,7 +299,7 @@ try
     % the rest, just to avoid accidently thinking we have corrected spectra where we do not.
     
     for ii = 1:length(cacheData.data)
-        if ii == correctDescribe.OBSERVER_AGE;
+        if ii == correctDescribe.observerAgeInYrs;
             cacheData.data(ii).correctDescribe = correctDescribe;
             cacheData.data(ii).cal = adjustedCal;
             cacheData.data(ii).correction.kScale = kScale;

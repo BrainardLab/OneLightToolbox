@@ -39,7 +39,6 @@ p.addRequired('directionName',@isstr);
 p.addRequired('protocolParams',@isstruct);
 p.addParameter('verbose',true,@islogical);
 p.parse(modulationName, directionName, protocolParams, varargin{:});
-beVerbose = p.Results.verbose;
 
 %% Get params from modulation params dictionary
 d = OLModulationParamsDictionary;
@@ -107,7 +106,6 @@ directionParams = cacheData.directionParams;
 directionData = cacheData.data(protocolParams.observerAgeInYrs);
 clear cacheData
 
-
 %% Say hello
 if (p.Results.verbose); fprintf('\n* Computing modulation %s\n',modulationName); end;
 
@@ -169,7 +167,7 @@ for f = 1:modulationParams.nFrequencies
             waveform.window.type = 'cosine';
             waveform.window.nWindowed = modulationParams.cosineWindowDurationSecs/modulationParams.timeStep;
             
-            if (beVerbose)
+            if (p.Results.verbose)
                 fprintf('*   Calculating %0.f s of %s, %.2f Hz, %.2f deg, %.1f pct contrast (of max)\n         ', waveform.duration, waveform.direction, waveform.theFrequencyHz, waveform.thePhaseDeg, 100*waveform.theContrastRelMax); 
             end;
             switch (directionParams.type)
@@ -180,7 +178,7 @@ for f = 1:modulationParams.nFrequencies
                 otherwise
                     error('Unknown direction type specified.');
             end
-            if (beVerbose); fprintf('  - Done.\n'); end;
+            if (p.Results.verbose); fprintf('  - Done.\n'); end;
         end
     end
 end
@@ -191,9 +189,9 @@ modulationData.modulation = modulation;
 modulationData.waveform = waveform;
 
 %% Save out the modulation
-if (beVerbose); fprintf(['* Saving modulation to ' startsStopsFileName '\n']); end;
+if (p.Results.verbose); fprintf(['* Saving modulation to ' startsStopsFileName '\n']); end;
 save(startsStopsFileName, 'modulationData', '-v7.3');
-if (beVerbose); fprintf('  - Done.\n'); end;
+if (p.Results.verbose); fprintf('  - Done.\n'); end;
 end
 
 % THIS FILE NAME SHOULD BE OF FORM 'ModulationStartsStops_<ModulationName>_<DirectionName>'

@@ -43,13 +43,13 @@ p.addRequired('protocolParams',@isstruct);
 p.addParameter('verbose',true,@isstr);
 p.parse(modulationNames,directionNames,protocolParams,varargin{:});
 
-% Update session log file
+%% Update session log file
 OLSessionLog(protocolParams,mfilename,'StartEnd','start');
 
-%customSuffix = ['_' protocolParams.observerID '_' protocolParams.todayDate];
+%% Do each modulation
 for ii = 1:length(modulationNames)
     OLReceptorIsolateMakeModulationStartsStops(modulationNames{ii}, directionNames{ii}, protocolParams,'verbose',p.Results.verbose);
 end
 
-% Update session log file
+%% Update session log file
 OLSessionLog(protocolParams,mfilename,'StartEnd','end');

@@ -81,17 +81,13 @@ switch (params.type)
         assert((isfield(params, 'dictionaryType')             && ischar(params.dictionaryType)),            sprintf('params.dictionaryType does not exist or it does not contain a string value.'));
         assert((isfield(params, 'type')                       && ischar(params.type)),                      sprintf('params.type does not exist or it does not contain a string value.'));
         assert((isfield(params, 'boxName')                    && ischar(params.boxName)),                   sprintf('params.boxName does not exist or it does not contain a string value.'));
-        assert((isfield(params, 'fullOnMeas')                 && islogical(params.fullOnMeas)),             sprintf('params.fullOnMeas does not exist or it does not contain a logical value.'));
         assert((isfield(params, 'calStateMeas')               && islogical(params.calStateMeas)),           sprintf('params.calStateMeas does not exist or it does not contain a logical value.'));
-        assert((isfield(params, 'darkMeas')                   && islogical(params.darkMeas)),               sprintf('params.darkMeas does not exist or it does not contain a logical value.'));
-        assert((isfield(params, 'reducedPowerLevels')         && islogical(params.reducedPowerLevels)),     sprintf('params.reducedPowerLevels does not exist or it does not contain a logical value.'));
-        assert((isfield(params, 'calculateSplatter')          && islogical(params.calculateSplatter)),      sprintf('params.calculateSplatter does not exist or it does not contain a logical value.'));
+        assert((isfield(params, 'iterativeSearch')            && islogical(params.iterativeSearch)),        sprintf('params.iterativeSearch does not exist or it does not contain a logical value.'));
         assert((isfield(params, 'learningRate')               && isnumeric(params.learningRate)),           sprintf('params.learningRate does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'learningRateDecrease')       && islogical(params.learningRateDecrease)),   sprintf('params.learningRateDecrease does not exist or it does not contain a logical value.'));
         assert((isfield(params, 'asympLearningRateFactor')    && isnumeric(params.asympLearningRateFactor)),sprintf('params.asympLearningRateFactor does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'smoothness')                 && isnumeric(params.smoothness)),             sprintf('params.smoothness does not exist or it does not contain a numeric value.'));
-        assert((isfield(params, 'iterativeSearch')            && islogical(params.iterativeSearch)),        sprintf('params.iterativeSearch does not exist or it does not contain a logical value.'));
-        assert((isfield(params, 'iterationsNum')              && isnumeric(params.iterationsNum)),          sprintf('params.iterationsNum does not exist or it does not contain a numeric value.'));
+        assert((isfield(params, 'nIterations')                && isnumeric(params.nIterations)),            sprintf('params.nIterations does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'powerLevels')                && isnumeric(params.powerLevels)),            sprintf('params.powerLevels does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'postreceptoralCombinations') && isnumeric(params.postreceptoralCombinations)), sprintf('params.postreceptoralCombinations does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'useAverageGamma')            && islogical(params.useAverageGamma)),        sprintf('params.useAverageGamma does not exist or it does not contain a logical value.'));
@@ -114,21 +110,18 @@ params.boxName = '';
 
 switch (type)
     case 'standardCorrection'
-        params.fullOnMeas = false;                                                          % Whether to take FULL-ON measurements
         params.calStateMeas = false;                                                        % Whether to take a state measurements
-        params.darkMeas = false;                                                            % Whether to take dark measurements
-        params.reducedPowerLevels = false;                                                  % ??
-        params.calculateSplatter = false;                                                   % Whether to calculte splatter
-        params.learningRate = 0.8;                                                          % ??
-        params.learningRateDecrease = false;                                                % ??
-        params.asympLearningRateFactor = 0.5;                                               % ??
-        params.smoothness = 0.1;                                                            % ??
-        params.iterativeSearch = false;                                                     % ??
-        params.iterationsNum = 10;                                                           % ??
-        params.powerLevels = [0 1.0000];                                                    % ??
-        params.postreceptoralCombinations = [1 1 1 0 ; 1 -1 0 0 ; 0 0 1 0 ; 0 0 0 1];       % ??
-        params.useAverageGamma = false;                                                     % whether to use the average (across channels) gamma
-        params.zeroPrimariesAwayFromPeak = false;                                           % ??
+        params.iterativeSearch = true;                                                      % When false, this just does a simple non-iterative correction.
+        params.learningRate = 0.8;                                                          % How much adjustment is done on each seeking iteration.
+        params.learningRateDecrease = false;                                                % When true, learning rate is decreased over iterations.
+        params.asympLearningRateFactor = 0.5;                                               % If learningRateDecrease is true, this affects how fast it decreases.
+        params.smoothness = 0.1;                                                            % Smoothness parameter for OLSpdToPrimary
+        params.nIterations = 10;                                                            % Number of iterations to do before declaring victory.
+        params.powerLevels = [0 1.0000];                                                    % Seek for these values of difference.
+        params.postreceptoralCombinations = [1 1 1 0 ; 1 -1 0 0 ; 0 0 1 0 ; 0 0 0 1];       % Report contrasts with respect to these post-receptoral contrast directions (L,M,S, Mel).
+        params.useAverageGamma = false;                                                     % Whether to use the average (across channels) gamma, independent of what is in calibration file.
+        params.zeroPrimariesAwayFromPeak = false;                                           % Force spd of OL primaries to be zero away from their peaks.
+        
     otherwise
         error('Unknown correction type specified: ''%s''.\n', type);
 end

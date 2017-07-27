@@ -1,5 +1,5 @@
-function protocolParams = OLMakeDirectionCorrectedPrimaries(protocolParams)
-%OLMakeDirectionCorrectedPrimaries - Make the corrected primaries from the nominal primaries
+function protocolParams = OLMakeDirectionCorrectedPrimaries(protocolParams,varargin)
+%OLMakeDirectionCorrectedPrimaries  Make the corrected primaries from the nominal primaries
 %
 % Description:
 %    The nominal primaries do not exactly have the desired properties,
@@ -13,11 +13,19 @@ function protocolParams = OLMakeDirectionCorrectedPrimaries(protocolParams)
 %
 %    The output is cached in a directory specified by
 %    getpref(protocolParams.approach, 'DirectionCorrectedPrimariesBasePath');
+%
+% Optional key/value pairs
+%     'verbose' (boolean)    Print out diagnostic information?
 
 % 6/18/17  dhb       Added header comments.  Renamed.
-% 6/19/17  mab, jr   Added saving the cache data to the outDir location specified in OLCorrectCacheFileOOC.m  
+% 6/19/17  mab, jr   Added saving the cache data to the outDir location specified in OLCorrectCacheFileOOC.m 
 
-%% Update Session Log File
+%% Parse input to get key/value pairs
+p = inputParser;
+p.addParameter('verbose',true,@islogical);
+p.parse(varargin{:});
+
+%% Update session log file
 protocolParams = OLSessionLog(protocolParams,mfilename,'StartEnd','start');
 
 %% Grab the relevant directions name and get the cache file name
@@ -41,52 +49,48 @@ end
 %
 % This is box specific, and specified as protocolParams.boxName
 d = OLCorrectionParamsDictionary();
-if (protocolParams.verbose), fprintf('* Getting correction params for <strong>%s</strong>\n', protocolParams.boxName); end;
+if (p.Results.verbose), fprintf('* Getting correction params for <strong>%s</strong>\n', protocolParams.boxName); end;
 correctionParams = d(protocolParams.boxName);
 
 %% Loop through and do correction for each desired direction.
 for d = 1:length(theDirections)
   
     % Print out some information
-    if (protocolParams.verbose), fprintf(' * Direction:\t<strong>%s</strong>\n', theDirections{d}); end;
-    if (protocolParams.verbose), fprintf(' * Observer:\t<strong>%s</strong>\n', protocolParams.observerID); end;
-    if (protocolParams.verbose), fprintf(' * Date:\t<strong>%s</strong>\n', protocolParams.todayDate); end;
+    if (p.Results.verbose), fprintf(' * Direction:\t<strong>%s</strong>\n', theDirections{d}); end;
+    if (p.Results.verbose), fprintf(' * Observer:\t<strong>%s</strong>\n', protocolParams.observerID); end;
+    if (p.Results.verbose), fprintf(' * Date:\t<strong>%s</strong>\n', protocolParams.todayDate); end;
     
     % Correct the cache
-    if (protocolParams.verbose), fprintf(' * Starting spectrum-seeking loop...\n'); end;
-    
+    if (p.Results.verbose), fprintf(' * Starting spectrum-seeking loop...\n'); end;
     [cacheData, cal] = OLCorrectCacheFileOOC(...
         sprintf('%s.mat', fullfile(nominalPrimariesDir, theDirectionCacheFileNames{d})),'PR-670', ...
+        'approach',                     protocolParams.approach, ...
         'doCorrection',                 theDirectionsCorrect(d), ...
-        'outDir',                       fullfile(correctedPrimariesDir, protocolParams.observerID), ...
-        'OBSERVER_AGE',                 protocolParams.observerAgeInYrs, ...
+        'observerAgeInYrs',             protocolParams.observerAgeInYrs, ...
         'calibrationType',              protocolParams.calibrationType, ...
         'takeTemperatureMeasurements',  protocolParams.takeTemperatureMeasurements, ...
-        'approach',                     protocolParams.approach, ...
-        'ReducedPowerLevels',           correctionParams.reducedPowerLevels, ...
         'learningRate',                 correctionParams.learningRate, ...
         'learningRateDecrease',         correctionParams.learningRateDecrease, ...
         'asympLearningRateFactor',      correctionParams.asympLearningRateFactor, ...
         'smoothness',                   correctionParams.smoothness, ...
         'iterativeSearch',              correctionParams.iterativeSearch, ...
-        'NIter',                        correctionParams.iterationsNum, ...
+        'nIterations',                correctionParams.nIterations, ...
         'powerLevels',                  correctionParams.powerLevels, ...
         'postreceptoralCombinations',   correctionParams.postreceptoralCombinations, ...
         'useAverageGamma',              correctionParams.useAverageGamma, ...
         'zeroPrimariesAwayFromPeak',    correctionParams.zeroPrimariesAwayFromPeak, ...
         'emailRecipient',               protocolParams.emailRecipient, ...
-        'verbose',                      protocolParams.verbose);    
-
-    if (protocolParams.verbose), fprintf(' * Spectrum seeking finished!\n'); end;
+        'verbose',                      p.Results.verbose);    
+    if (p.Results.verbose), fprintf(' * Spectrum seeking finished!\n'); end;
     
     % Save the cache
-    if (protocolParams.verbose), fprintf(' * Saving cache ...'); end;
+    if (p.Results.verbose), fprintf(' * Saving cache ...'); end;
     olCache = OLCache(correctedPrimariesDir,cal);
     protocolParams.modulationDirection = theDirections{d};
     protocolParams.cacheFile = fullfile(nominalPrimariesDir, theDirectionCacheFileNames{d});
-    if (protocolParams.verbose), fprintf('Cache saved to %s\n', protocolParams.cacheFile); end
+    if (p.Results.verbose), fprintf('Cache saved to %s\n', protocolParams.cacheFile); end
     olCache.save(protocolParams.cacheFile, cacheData);
-    if (protocolParams.verbose), fprintf('Cache saved to %s\n', protocolParams.cacheFile); end
+    if (p.Results.verbose), fprintf('Cache saved to %s\n', protocolParams.cacheFile); end
 end
 
 %% Update session log info
