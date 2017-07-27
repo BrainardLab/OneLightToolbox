@@ -28,8 +28,8 @@ spectroRadiometerOBJ = [];
 theDirectionCacheFileNames = OLMakeDirectionCacheFileNames(protocolParams);
 
 NDirections = length(theDirectionCacheFileNames);
-cacheDir = fullfile(getpref(protocolParams.approach, 'DataPath'),'Experiments',protocolParams.approach, protocolParams.protocol, 'DirectionCorrectedPrimaries', protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
-outDir = fullfile(getpref(protocolParams.approach, 'DataPath'),'Experiments',protocolParams.approach, protocolParams.protocol, 'DirectionValidationFiles', protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
+cacheDir = fullfile(getpref(protocolParams.approach, 'DirectionCorrectedPrimariesBasePath'), protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
+outDir = fullfile(getpref(protocolParams.approach, 'DirectionCorrectedValidationBasePath'), protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
 if(~exist(outDir))
     mkdir(outDir)
 end

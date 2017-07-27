@@ -62,13 +62,13 @@ p.addParameter('verbose',false,@islogical);
 p.parse(approach,backgroundParams,forceRecompute,varargin{:});
 
 %% Setup the directories we'll use. Backgrounds go in their special place under the materials path approach directory.
-cacheDir = fullfile(getpref(approach, 'MaterialsPath'), 'Experiments',approach,'BackgroundNominalPrimaries');
+cacheDir = fullfile(getpref(approach, 'BackgroundNominalPrimariesPath'));
 if ~isdir(cacheDir)
     mkdir(cacheDir);
 end
 
 %% Load the calibration file
-cal = LoadCalFile(OLCalibrationTypes.(backgroundParams.calibrationType).CalFileName, [], fullfile(getpref(approach, 'MaterialsPath'), 'Experiments',approach,'OneLightCalData'));
+cal = LoadCalFile(OLCalibrationTypes.(backgroundParams.calibrationType).CalFileName, [], fullfile(getpref(approach,'OneLightCalDataPath'));
 assert(~isempty(cal), 'OLFlickerComputeModulationSpectra:NoCalFile', 'Could not load calibration file: %s', ...
     OLCalibrationTypes.(backgroundParams.calibrationType).CalFileName);
 

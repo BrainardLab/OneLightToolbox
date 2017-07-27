@@ -11,8 +11,8 @@ function protocolParams = OLMakeDirectionCorrectedPrimaries(protocolParams)
 %    This is sufficiently time consuming that we only do it for the age of
 %    the observer who is about to run.
 %
-%    The output is cached in the directory specified by
-%    getpref('MaxPulsePsychophysics','DirectionCorrectedPrimariesDir');
+%    The output is cached in a directory specified by
+%    getpref(protocolParams.approach, 'DirectionCorrectedPrimariesBasePath');
 
 % 6/18/17  dhb       Added header comments.  Renamed.
 % 6/19/17  mab, jr   Added saving the cache data to the outDir location specified in OLCorrectCacheFileOOC.m  
@@ -43,8 +43,8 @@ spectroRadiometerOBJ=[];
 %% Get dir where the nominal and corrected primaries live
 %
 % Need to change over to use the directly specified preference rather than to build it up.
-nominalPrimariesDir =  fullfile(getpref(protocolParams.approach, 'MaterialsPath'), 'Experiments',protocolParams.approach,'DirectionNominalPrimaries');
-correctedPrimariesDir = fullfile(getpref(protocolParams.approach, 'DataPath'), 'Experiments', protocolParams.approach, protocolParams.protocol, 'DirectionCorrectedPrimaries', protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
+nominalPrimariesDir =  fullfile(getpref(protocolParams.approach, 'DirectionNominalPrimariesPath'));
+correctedPrimariesDir = fullfile(getpref(protocolParams.approach, 'DirectionCorrectedPrimariesBasePath'), protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
 if(~exist(correctedPrimariesDir,'dir'))
     mkdir(correctedPrimariesDir)
 end
