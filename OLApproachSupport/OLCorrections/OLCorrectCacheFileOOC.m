@@ -1,53 +1,50 @@
-function [cacheData olCache openSpectroRadiometerOBJ, cal] = OLCorrectCacheFileOOC(cacheFileNameFullPath, emailRecipient, ...
-    meterType, spectroRadiometerOBJ, spectroRadiometerOBJWillShutdownAfterMeasurement, varargin)
+function [cacheData, adjustedCal] = OLCorrectCacheFileOOC(cacheFileNameFullPath, meterType, varargin)
 %%OLCorrectCacheFileOOC  Use iterated procedure to optimize modulations in a cache file
-%    results = OLCorrectCacheFileOOC(cacheFileNameFullPath, emailRecipient, ...
-%    meterType, spectroRadiometerOBJ, spectroRadiometerOBJWillShutdownAfterMeasurement, varargin)
+%    results = OLCorrectCacheFileOOC(cacheFileNameFullPath, meterType)
 %
 % Uses an iterated procedure to bring a modulation as close as possible to
 % its specified spectrum.
 %
 % Input:
-% cacheFileNameFullPath (string) - The name of the cache file to validate.  The
-%                             file name must be a full absolute path.  This is
-%                             because relative path can match anything on the
-%                             Matlab path, which could lead to unintended
-%                             results.
-% emailRecipient (string)   - Email address to receive notifications
-% meterType (string)        - Meter type to use.
-% spectroRadiometerOBJ      - A previously open PR650 or PR670 object
-% spectroRadiometerOBJWillShutdownAfterMeasurement - Boolean, indicating
-%                             whether to shutdown the radiometer object
-% Output:
-% results (struct) - Results struct. This is different depending on which mode is used.
-% validationDir (str) - Validation directory.
+%     cacheFileNameFullPath (string) - The name of the cache file to validate.  The
+%                                       file name must be a full absolute path.  This is
+%                                       because relative path can match anything on the
+%                                       Matlab path, which could lead to unintended
+%                                       results.
+%      emailRecipient (string)        - Email address to receive notifications
+%      meterType (string)             - Meter type to use (e.g. 'PR-670');
 %
-% varargin (keyword-value)  - Optional key/value pairs
-%      Keyword              Default   Behavior
-%     'ReferenceMode'       true      Adds suffix to file name
-%     'FullOnMeas'          true      Full-on
-%     'HalfOnMeas'          false     Half-on
-%     'CalStateMeas'        true      State measurements
-%     'SkipBackground'      false     Background
-%     'OBSERVER_AGE'        32        Observer age to correct for.
-%     'ReducedPowerLevels'  true      Only 3 levels
-%     'NoAdjustment '       true      Does not pause
-%     'selectedCalType'     'EyeTrackerLongCableEyePiece1' Calibration type
-%     'NIter'               scalar    number of iterations
-%     'learningRate'        0.8       Learning rate
-%     'learningRateDecrease' true     Decrease learning rate over iterations?
-%     'asympLearningRateFactor' 0.5   If learningRateDecrease is true, the
-%                                     asymptotic learning rate is (1-asympLearningRateFactor)*learningRate
-%     'smoothness'          0.001     Smoothness parameter for OLSpdToPrimary
-%     'iterativeSearch'     false     Do iterative search?
-%     'regressionPredict'   false     Use regression to make predictions, rather than calibration
-%     'postreceptoralCombinations'  scalar Post-receptoral combinations to calculate contrast w.r.t.
-%     'takeTemperatureMeasurements' false  Whether to take temperature measurements (requires a
-%                                          connected LabJack dev with a temperature probe)
-%     'useAverageGamma'     false     Force the useAverageGamma mode in the
-%                                     calibration.  When false, the value that was in the calibration file
-%                                     is used.  When true, useAverageGamma is set to true.
-%     'zeroPrimariesAwayFromPeak' false    Zero out calibrated primaries well away from their peaks.
+% Output:
+%     cacheData (struct)              - Contains the results
+%     adjustedCal                     - Calibration struct as updated by this routine.
+%
+% Optional key/value pairs:
+%      Keyword                         Default                          Behavior
+%
+%     'ReferenceMode'                  true                             Adds suffix to file name
+%     'CalStateMeas'                   true                             State measurements
+%     'SkipBackground'                 false                            Background
+%     'OBSERVER_AGE'                   32                               Observer age to correct for.
+%     'ReducedPowerLevels'             true                             Only 3 levels
+%     'NoAdjustment '                  true                             Does not pause
+%     'selectedCalType'                'EyeTrackerLongCableEyePiece1'   Calibration type
+%     'NIter'                          20                               Number of iterations
+%     'learningRate'                   0.8                              Learning rate
+%     'learningRateDecrease'           true                             Decrease learning rate over iterations?
+%     'asympLearningRateFactor'        0.5                              If learningRateDecrease is true, the
+%                                                                       asymptotic learning rate is (1-asympLearningRateFactor)*learningRate
+%     'smoothness'                     0.001                            Smoothness parameter for OLSpdToPrimary
+%     'iterativeSearch'                false                            Do iterative search?
+%     'regressionPredict'              false                            Use regression to make predictions, rather than calibration
+%     'postreceptoralCombinations'     []                               Post-receptoral combinations to calculate contrast w.r.t.
+%     'takeTemperatureMeasurements'    false                            Whether to take temperature measurements (requires a
+%                                                                       connected LabJack dev with a temperature probe)
+%     'useAverageGamma'                false                            Force the useAverageGamma mode in the
+%                                                                       calibration.  When false, the value that was in the calibration file
+%                                                                       is used.  When true, useAverageGamma is set to true.
+%     'zeroPrimariesAwayFromPeak'      false                            Zero out calibrated primaries well away from their peaks.
+%     'emailRecipient'                 'igdalova@mail.med.upenn.edu'    Who gets email when this finishes.
+%     'verbose'                        false                            Print out things in progress.
 
 % 1/21/14   dhb, ms  Convert to use OLSettingsToStartsStops.
 % 1/30/14   ms       Added keyword parameters to make this useful.
@@ -60,9 +57,6 @@ function [cacheData olCache openSpectroRadiometerOBJ, cal] = OLCorrectCacheFileO
 % Parse the input
 p = inputParser;
 p.addParameter('ReferenceMode', true, @islogical);
-p.addParameter('FullOnMeas', true, @islogical);
-p.addParameter('HalfOnMeas', false, @islogical);
-p.addParameter('DarkMeas', false, @islogical);
 p.addParameter('CalStateMeas', false, @islogical);
 p.addParameter('SkipBackground', false, @islogical);
 p.addParameter('ReducedPowerLevels', true, @islogical);
@@ -75,8 +69,7 @@ p.addParameter('asympLearningRateFactor',0.5,@isnumeric);
 p.addParameter('smoothness', 0.001, @isscalar);
 p.addParameter('iterativeSearch',false, @islogical);
 p.addParameter('regressionPredict',false, @islogical);
-p.addParameter('selectedCalType', [], @isstr);
-p.addParameter('CALCULATE_SPLATTER', true, @islogical);
+p.addParameter('calibrationType', [], @isstr);
 p.addParameter('doCorrection', true, @islogical);
 p.addParameter('postreceptoralCombinations', [], @isnumeric);
 p.addParameter('outDir', [], @isstr);
@@ -84,31 +77,15 @@ p.addParameter('takeTemperatureMeasurements', false, @islogical);
 p.addParameter('powerLevels', [0 1.0000], @isnumeric);
 p.addParameter('useAverageGamma', false, @islogical);
 p.addParameter('zeroPrimariesAwayFromPeak', false, @islogical);
-p.addParameter('simulate', false, @islogical);
 p.addParameter('approach', [], @isstr);
+p.addParameter('emailRecipient','igdalova@mail.med.upenn.edu', @isstr);
+p.addParameter('verbose',false,@islogical);
 
 p.parse(varargin{:});
 correctDescribe = p.Results;
 
-%% Set up email recipient
-if isempty(emailRecipient)
-    emailRecipient = GetWithDefault('Send status email to','igdalova@mail.med.upenn.edu');
-end
-
 %% Get cached modulation data as well as calibration file
-[olCache,cacheData,cal,cacheDir,cacheFileName] = OLGetModulationCacheData(cacheFileNameFullPath, correctDescribe);
-
-%% Force useAverageGamma?
-if (correctDescribe.useAverageGamma)
-    cal.describe.useAverageGamma = 1;
-end
-
-%% Clean up cal file primaries by zeroing out light we don't think is really there.
-if (correctDescribe.zeroPrimariesAwayFromPeak)
-    zeroItWLRangeMinus = 100;
-    zeroItWLRangePlus = 100;
-    cal = OLZeroCalPrimariesAwayFromPeak(cal,zeroItWLRangeMinus,zeroItWLRangePlus);
-end
+[cacheData,adjustedCal] = OLGetNominalDirectionCacheAndCalData(cacheFileNameFullPath, correctDescribe);
 
 %% We might not want to seek
 %
@@ -120,38 +97,35 @@ if ~(correctDescribe.doCorrection)
     return;
 end
 
+%% Force useAverageGamma?
+if (correctDescribe.useAverageGamma)
+    adjustedCal.describe.useAverageGamma = 1;
+end
+
+%% Clean up cal file primaries by zeroing out light we don't think is really there.
+if (correctDescribe.zeroPrimariesAwayFromPeak)
+    zeroItWLRangeMinus = 100;
+    zeroItWLRangePlus = 100;
+    adjustedCal = OLZeroCalPrimariesAwayFromPeak(adjustedCal,zeroItWLRangeMinus,zeroItWLRangePlus);
+end
+
 %% Open up a radiometer object
 %
-% Set meterToggle so that we don't use the Omni radiometer here.
-%
-% All variables assigned in the following if (isempty(..)) block (except
-% spectroRadiometerOBJ) must be declared as persistent.
-%
-% DHB: I DON'T UNDERSTAND THE USE OF PERSISTENT VARIABLES HERE.  CAN'T WE GET
-% THESE OUT OF THE RETURNED OBJECT WHENEVER WE WANT THEM?
-persistent S
-persistent nAverage
-persistent theMeterTypeID
-if (isempty(spectroRadiometerOBJ))
-    [spectroRadiometerOBJ,S,nAverage,theMeterTypeID] = OLOpenSpectroRadiometerObj(meterType);
-end
+% Set meterToggle so that we don't use the Omni radiometer in various measuremnt calls below.
+[spectroRadiometerOBJ,S,nAverage,theMeterTypeID] = OLOpenSpectroRadiometerObj(meterType);
 meterToggle = [true false];
-
-%% Save a copy of the radiometer object
-%
-% DHB: I DON'T UNDERSTAND WHY THIS IS NEEDED.  CAN'T WE JUST PASS BACK THE
-% ONE WE HAVE?
-openSpectroRadiometerOBJ = spectroRadiometerOBJ;
 
 %% Attempt to open the LabJack temperature sensing device
 %
-% DHB: WHAT IS THE QUITNOW VARIABLE?  RETURNING WITHOUT MAKING ANY
-% MEASUREMENTS DOES NOT SEEM LIKE THE RIGHT MOVE HERE.  CHECK.
+% If quitNow is true, the user has responded to a prompt in the called routine 
+% saying to give up.  Throw an error in that case.
 if (correctDescribe.takeTemperatureMeasurements)
-    % Gracefully attempt to open the LabJack
+    % Gracefully attempt to open the LabJack.  If it doesn't work and the user OK's the
+    % change, then the takeTemperature measurements flag is set to false and we proceed.
+    % Otherwise it either worked (good) or we give up and throw an error.
     [correctDescribe.takeTemperatureMeasurements, quitNow, theLJdev] = OLCalibrator.OpenLabJackTemperatureProbe(correctDescribe.takeTemperatureMeasurements);
     if (quitNow)
-        return;
+        error('Unable to get temperature measurements to work as requested');
     end
 else
     theLJdev = [];
@@ -164,8 +138,7 @@ ol = OneLight('simulate', correctDescribe.simulate);
 if ~correctDescribe.NoAdjustment
     ol.setAll(true);
     pauseDuration = 0;
-    fprintf('- Focus the radiometer and press enter to pause %d seconds and start measuring.\n', ...
-        pauseDuration);
+    fprintf('- Focus the radiometer and press enter to pause %d seconds and start measuring.\n', pauseDuration);
     input('');
     ol.setAll(false);
     pause(pauseDuration);
@@ -178,53 +151,9 @@ try
     fprintf('- Performing radiometer measurements.\n');
     
     %% Take reference measurements
-    %
-    % DHB: DO WE NEED ALL OF THESE, OR DO THE CALSTATEMEASUREMENTS SUBSUME
-    % THE OTHERS?
-    %
-    % MS: THE FIRST THREE CAN GO AWAY, WE THINK.  LET'S IMPLEMENT SOMETIME
-    % SAFE AND SEE WHAT BREAKS.
-    if correctDescribe.FullOnMeas
-        fprintf('- Full-on measurement \n');
-        [starts,stops] = OLSettingsToStartsStops(cal,1*ones(cal.describe.numWavelengthBands));
-        results.fullOnMeas.meas = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
-        results.fullOnMeas.starts = starts;
-        results.fullOnMeas.stops = stops;
-        results.fullOnMeas.predictedFromCal = cal.raw.fullOn(:, 1);
-        if (correctDescribe.takeTemperatureMeasurements)
-            printf('Taking temperature for fullOnMeas\n');
-            [status, results.temperature.fullOnMeas] = theLJdev.measure();
-        end
-    end
-    
-    if correctDescribe.HalfOnMeas
-        fprintf('- Half-on measurement \n');
-        [starts,stops] = OLSettingsToStartsStops(cal,0.5*ones(cal.describe.numWavelengthBands));
-        results.halfOnMeas.meas = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
-        results.halfOnMeas.starts = starts;
-        results.halfOnMeas.stops = stops;
-        results.halfOnMeas.predictedFromCal = cal.raw.halfOnMeas(:, 1);
-        if (correctDescribe.takeTemperatureMeasurements)
-            [status, results.temperature.halfOnMeas] = theLJdev.measure();
-        end
-    end
-    
-    if correctDescribe.DarkMeas
-        fprintf('- Dark measurement \n');
-        [starts,stops] = OLSettingsToStartsStops(cal,0*ones(cal.describe.numWavelengthBands));
-        results.offMeas.meas = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
-        results.offMeas.starts = starts;
-        results.offMeas.stops = stops;
-        results.offMeas.predictedFromCal = cal.raw.darkMeas(:, 1);
-        if (correctDescribe.takeTemperatureMeasurements)
-            [status, results.temperature.offMeas] = theLJdev.measure();
-        end
-    end
-    
     if correctDescribe.CalStateMeas
         fprintf('- State measurements \n');
-        [~, calStateMeas] = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, 'standAlone',true);
-        OLCalibrator.SaveStateMeasurements(cal, calStateMeas);
+        [~, correctDescribe.calStateMeas] = OLCalibrator.TakeStateMeasurements(adjustedCal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, 'standAlone',true);
     end
     
     %% Do the seeking for modulation background pairs
@@ -273,10 +202,10 @@ try
             primariesThisIter = backgroundPrimaryUsed+correctDescribe.powerLevels(i).*differencePrimaryUsed;
             
             % Convert the primaries to mirror settings.
-            settings = OLPrimaryToSettings(cal, primariesThisIter);
+            settings = OLPrimaryToSettings(adjustedCal, primariesThisIter);
             
             % Compute the mirror starts and stops.
-            [starts,stops] = OLSettingsToStartsStops(cal, settings);
+            [starts,stops] = OLSettingsToStartsStops(adjustedCal, settings);
             
             % Take the measurements
             results.modulationAllMeas(i).meas = OLTakeMeasurementOOC(ol, [], spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
@@ -302,7 +231,7 @@ try
             % primaries match those from the cache file, possibly
             % scaled by the appropriate power level.
             if (iter == 1)
-                spdsDesired(:,i) = OLPrimaryToSpd(cal,primariesThisIter);
+                spdsDesired(:,i) = OLPrimaryToSpd(adjustedCal,primariesThisIter);
             end
         end
         
@@ -331,16 +260,16 @@ try
         end
         
         % Find delta primaries using small signal linear methods.
-        backgroundDeltaPrimaryTruncatedLearningRate = OLLinearDeltaPrimaries(backgroundPrimaryUsed,kScale*backgroundSpdMeasured,backgroundSpdDesired,learningRateThisIter,correctDescribe.smoothness,cal);
-        modulationDeltaPrimaryTruncatedLearningRate = OLLinearDeltaPrimaries(modulationPrimaryUsed,kScale*modulationSpdMeasured,modulationSpdDesired,learningRateThisIter,correctDescribe.smoothness,cal);
+        backgroundDeltaPrimaryTruncatedLearningRate = OLLinearDeltaPrimaries(backgroundPrimaryUsed,kScale*backgroundSpdMeasured,backgroundSpdDesired,learningRateThisIter,correctDescribe.smoothness,adjustedCal);
+        modulationDeltaPrimaryTruncatedLearningRate = OLLinearDeltaPrimaries(modulationPrimaryUsed,kScale*modulationSpdMeasured,modulationSpdDesired,learningRateThisIter,correctDescribe.smoothness,adjustedCal);
         
         % Optionally use fmincon to improve the truncated learning
         % rate delta primaries by iterative search.
         %
         % Put that in your pipe and smoke it!
         if (correctDescribe.iterativeSearch)
-            backgroundDeltaPrimaryTruncatedLearningRate = OLIterativeDeltaPrimaries(backgroundDeltaPrimaryTruncatedLearningRate,backgroundPrimaryUsed,kScale*backgroundSpdMeasured,backgroundSpdDesired,learningRateThisIter,cal);
-            modulationDeltaPrimaryTruncatedLearningRate = OLIterativeDeltaPrimaries(modulationDeltaPrimaryTruncatedLearningRate,modulationPrimaryUsed,kScale*modulationSpdMeasured,modulationSpdDesired,learningRateThisIter,cal);
+            backgroundDeltaPrimaryTruncatedLearningRate = OLIterativeDeltaPrimaries(backgroundDeltaPrimaryTruncatedLearningRate,backgroundPrimaryUsed,kScale*backgroundSpdMeasured,backgroundSpdDesired,learningRateThisIter,adjustedCal);
+            modulationDeltaPrimaryTruncatedLearningRate = OLIterativeDeltaPrimaries(modulationDeltaPrimaryTruncatedLearningRate,modulationPrimaryUsed,kScale*modulationSpdMeasured,modulationSpdDesired,learningRateThisIter,adjustedCal);
         end
         
         % Compute and store the settings to use next time through
@@ -374,7 +303,7 @@ try
     for ii = 1:length(cacheData.data)
         if ii == correctDescribe.OBSERVER_AGE;
             cacheData.data(ii).correctDescribe = correctDescribe;
-            cacheData.data(ii).cal = cal;
+            cacheData.data(ii).cal = adjustedCal;
             cacheData.data(ii).correction.kScale = kScale;
             
             % Store the answer after the iteration.  This is storing the
@@ -428,11 +357,9 @@ try
     ol.setAll(false);
     
     % Close the radiometer
-    if (spectroRadiometerOBJWillShutdownAfterMeasurement)
-        if (~isempty(spectroRadiometerOBJ))
-            spectroRadiometerOBJ.shutDown();
-            openSpectroRadiometerOBJ = [];
-        end
+    if (~isempty(spectroRadiometerOBJ))
+        spectroRadiometerOBJ.shutDown();
+        openSpectroRadiometerOBJ = [];
     end
     
     % Check if we want to do splatter calculations

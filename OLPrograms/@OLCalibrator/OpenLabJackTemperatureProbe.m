@@ -1,6 +1,6 @@
 % [takeTemperatureMeasurements, quitNow, theLJdev] = OpenLabJackTemperatureProbe(takeTemperatureMeasurements0)
 % Open a LabJack device (UE9 or U3) for temperature measurements
-%
+
 % 12/21/16  npc     Updated for new class @LJTemperatureProbe
 
 function [takeTemperatureMeasurements, quitNow, theLJdev] = OpenLabJackTemperatureProbe(takeTemperatureMeasurements0)

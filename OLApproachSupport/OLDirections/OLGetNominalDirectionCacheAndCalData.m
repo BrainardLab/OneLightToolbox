@@ -1,11 +1,22 @@
-function [olCache, cacheData,cal, cacheDir, cacheFileName] = OLGetModulationCacheData(cacheFileNameFullPath, params)
-%%OLGetModulationCacheData  Open a modulation cache file and get the data for a particular calibration.
-%    [olCache, cacheData,cal,cacheDir,cacheFileName] = OLGetModulationCacheData(cacheFileNameFullPath, describe);
+function [cacheData,cal] = OLGetNominalDirectionCacheAndCalData(cacheFileNameFullPath, params, varargin)
+%OLGetNominalDirectionCacheAndCalData  Open a modulation cache file and get the data for a particular calibration, as well as the cal data.
 %
-% DHB: NEED TO FIGURE OUT WHAT FIELDS OF DESCRIBE ARE NEEDED AND DOCUMENT
-% THEM HERE.
+% Usage:
+%    [olCache, cacheData,cal,cacheDir,cacheFileName] = OLGetNominalDirectionCacheAndCalData(cacheFileNameFullPath, describe);
 %
-%     User is prompoted for desired calibration file.
+% Input:
+%     cacheFileNameFullPath           - Full path to cache file.
+%     params                          - Parameter struct with the following fields:
+%                                         approach - Name of approach
+%                                         calibrationType - type of calibration. Will prompt
+%                                         if this isn't there.
+% 
+% Output:
+%    cacheData                        - The nominal direction cache data structure.
+%    cal                              - The corresponding calibration structure.
+%
+% Optional key/value pairs:
+%     None
 
 %% Open cache file and get data
 %
@@ -45,7 +56,7 @@ assert(any(typeExists), 'OLValidateCacheFile:InvalidCacheFile', ...
 %
 % Either it was passed and we select that one, or we ask the user.
 while true
-    % Check if 'selectedCalType' was passed.  Go with that if it was in the
+    % Check if 'calibrationType' was passed as a field of params.  Go with that if it was in the
     % calibration file.
     %
     % It might be clever to check that the passed type is valid.

@@ -1,4 +1,4 @@
-function [protocolParams] = OLSessionLog(protocolParams,theStep,varargin)
+function protocolParams = OLSessionLog(protocolParams,theStep,varargin)
 %OLSessionLog  Session Record Keeping
 %
 %  Description:
@@ -9,11 +9,11 @@ function [protocolParams] = OLSessionLog(protocolParams,theStep,varargin)
 %     about the session **more info to be added here once specifics have
 %     been decided on**
 %
-% Input
+% Input:
+%     [DHB NOTE: PLEASE SAY WHAT THE INPUTS ARE]
 %
 % Output:
-%     status - general output to be decided later.
-%     params - updated param struct with session info.
+%     protocolParams - updated param struct with session info.
 
 % 06/23/17 mab,jar created file and green text.
 % 06/26/17 mab,jar added switch
@@ -35,21 +35,21 @@ switch theStep
         dirStatus = dir(sessionDir);
         dirStatus=dirStatus(~ismember({dirStatus.name},{'.','..','.DS_Store'}));
         
-        if exist(sessionDir) && ~isempty(dirStatus)
+        if exist(sessionDir,'dir') && ~isempty(dirStatus)
             dirString = ls(sessionDir);
             priorSessionNumber = str2double(regexp(dirString, '(?<=session_[^0-9]*)[0-9]*\.?[0-9]+', 'match'));
             currentSessionNumber = max(priorSessionNumber) + 1;
             protocolParams.sessionName =['session_' num2str(currentSessionNumber)];
             protocolParams.sessionLogOutDir = fullfile(getpref(protocolParams.approach,'SessionRecordsBasePath'),protocolParams.observerID,protocolParams.todayDate,protocolParams.sessionName);
-            if ~exist(protocolParams.sessionLogOutDir)
-                mkdir(protocolParams.sessionLogOutDir)
+            if ~exist(protocolParams.sessionLogOutDir,'dir')
+                mkdir(protocolParams.sessionLogOutDir);
             end
         else
             currentSessionNumber = 1;
             protocolParams.sessionName =['session_' num2str(currentSessionNumber)];
             protocolParams.sessionLogOutDir = fullfile(getpref(protocolParams.approach,'SessionRecordsBasePath'),protocolParams.observerID,protocolParams.todayDate,protocolParams.sessionName);
-            if ~exist(protocolParams.sessionLogOutDir)
-                mkdir(protocolParams.sessionLogOutDir)
+            if ~exist(protocolParams.sessionLogOutDir,'dir')
+                mkdir(protocolParams.sessionLogOutDir);
             end
         end
         
@@ -67,7 +67,6 @@ switch theStep
         fclose(fileID);
         
     case 'OLMakeDirectionCorrectedPrimaries'
-        protocolParams
         fileID = fopen(protocolParams.fullFileName,'a');
         switch p.StartEnd
             case 'start'
