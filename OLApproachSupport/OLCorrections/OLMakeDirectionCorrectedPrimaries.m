@@ -1,5 +1,8 @@
-function protocolParams = OLMakeDirectionCorrectedPrimaries(protocolParams,varargin)
+function OLMakeDirectionCorrectedPrimaries(ol,protocolParams,varargin)
 %OLMakeDirectionCorrectedPrimaries  Make the corrected primaries from the nominal primaries
+%
+% Syntax:
+%    OLMakeDirectionCorrectedPrimaries(ol,protocolParams);
 %
 % Description:
 %    The nominal primaries do not exactly have the desired properties,
@@ -14,8 +17,14 @@ function protocolParams = OLMakeDirectionCorrectedPrimaries(protocolParams,varar
 %    The output is cached in a directory specified by
 %    getpref(protocolParams.approach, 'DirectionCorrectedPrimariesBasePath');
 %
+% Input:
+%     ol (object)            Open OneLight object.
+%     protocolParams         Protocol parameters structure.
+%
 % Optional key/value pairs
 %     'verbose' (boolean)    Print out diagnostic information?
+% 
+% See also: OLCorrectCacheFileOOC, OLGetCacheAndCalData.
 
 % 6/18/17  dhb       Added header comments.  Renamed.
 % 6/19/17  mab, jr   Added saving the cache data to the outDir location specified in OLCorrectCacheFileOOC.m 
@@ -26,7 +35,7 @@ p.addParameter('verbose',true,@islogical);
 p.parse(varargin{:});
 
 %% Update session log file
-protocolParams = OLSessionLog(protocolParams,mfilename,'StartEnd','start');
+OLSessionLog(protocolParams,mfilename,'StartEnd','start');
 
 %% Grab the relevant directions name and get the cache file name
 theDirections = protocolParams.directionNames;
@@ -62,9 +71,9 @@ for d = 1:length(theDirections)
     
     % Correct the cache
     if (p.Results.verbose), fprintf(' * Starting spectrum-seeking loop...\n'); end;
-    [cacheData, cal] = OLCorrectCacheFileOOC(...
-        sprintf('%s.mat', fullfile(nominalPrimariesDir, theDirectionCacheFileNames{d})),'PR-670', ...
+    [cacheData, cal] = OLCorrectCacheFileOOC(sprintf('%s.mat', fullfile(nominalPrimariesDir, theDirectionCacheFileNames{d})),ol, 'PR-670', ...
         'approach',                     protocolParams.approach, ...
+        'simulate',                     protocolParams.simulate, ...
         'doCorrection',                 theDirectionsCorrect(d), ...
         'observerAgeInYrs',             protocolParams.observerAgeInYrs, ...
         'calibrationType',              protocolParams.calibrationType, ...

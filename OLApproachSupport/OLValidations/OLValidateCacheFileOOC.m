@@ -1,39 +1,40 @@
-function results = OLValidateCacheFileOOC(cacheFileName, meterType, varargin)
-%OLValidateCacheFileOOC  Validate spectra in a cache fiel
+function results = OLValidateCacheFileOOC(cacheFileName, ol, meterType, varargin)
+%OLValidateCacheFileOOC  Validate spectra in a cache file
 %
 % Usage:
-%     results = OLValidateCacheFileOOC(cacheFileName, meterType, varargin)
+%     results = OLValidateCacheFileOOC(cacheFileName, ol, meterType)
 %
 % Description:
 %     Measures the primaries in a cache file so we can see how well they are doing
-%     waht they are supposed to.
+%     what they are supposed to.
 %
 % Input:
-%     cacheFileName (string)    - Absolute full name of the cache file to validate.
+%     cacheFileName (string)    - Absolute path full name of the cache file to validate.
+%     ol (object)               - Open OneLight object.
 %     meterType (string)        - Meter type to use.
 %
 % Output:
-%     results (struct)          - Results struct.
+%     results (struct)          - Results structure
 %
 % Optional key/value pairs:
 %      Keyword                         Default                          Behavior
 %
 %     'approach'                       ''                               What approach is calling us?
-%     'calStateMeas'                   true                             State measurements
+%     'simulate'                       false                            Run in simulation mode.
 %     'observerAgeInYrs'               32                               Observer age to correct for.
-%     'noRadiometerAdjustment '        true                             Does not pause  to allow aiming of radiometer.
+%     'noRadiometerAdjustment '        true                             Does not pause to allow aiming of radiometer.
+%     'pauseDuration'                  0                                How long to pause (in secs) after radiometer is aimed by user.
 %     'calibrationType'                ''                               Calibration type
-%     'doValidation'                   true                             Actually do the validation?
-%     'postreceptoralCombinations'     []                               Post-receptoral combinations to calculate contrast w.r.t.
-%     'takeTemperatureMeasurements'    false                            Whether to take temperature measurements (requires a
-%                                                                       connected LabJack dev with a temperature probe)
+%     'takeTemperatureMeasurements'    false                            Take temperature measurements? (Requires a connected LabJack dev with a temperature probe.)
+%     'takeCalStateMeasurements'       true                             Take OneLight state measurements
 %     'powerLevels'                    [0 1]                            Power levels of diff modulation to seek for
-%     'useAverageGamma'                false                            Force the useAverageGamma mode in the
-%                                                                       calibration.  When false, the value that was in the calibration file
-%                                                                       is used.  When true, useAverageGamma is set to true.
+%     'postreceptoralCombinations'     []                               Post-receptoral combinations to calculate contrast w.r.t.
+%     'useAverageGamma'                false                            Force the useAverageGamma mode in the calibration?
 %     'zeroPrimariesAwayFromPeak'      false                            Zero out calibrated primaries well away from their peaks.
 %     'emailRecipient'                 'igdalova@mail.med.upenn.edu'    Who gets email when this finishes.
 %     'verbose'                        false                            Print out things in progress.
+%
+% See also: OLValidateDirectionCorrectedPrimaries, OLGetCacheAndCalData
 
 % 1/21/14  dhb, ms  Convert to use OLSettingsToStartsStops.
 % 1/30/14  ms       Added keyword parameters to make this useful.
@@ -47,55 +48,47 @@ function results = OLValidateCacheFileOOC(cacheFileName, meterType, varargin)
 % Parse the input
 p = inputParser;
 p.addParameter('approach','', @isstr);
-p.addParameter('calStateMeas', false, @islogical);
+p.addParameter('simulate',false,@islogical);
 p.addParameter('noRadiometerAdjustment', false, @islogical);
+p.addParameter('pauseDuration',0,@inumeric);
 p.addParameter('observerAgeInYrs', 32, @isscalar);
 p.addParameter('calibrationType','', @isstr);
-p.addParameter('doValidation', true, @islogical);
-p.addParameter('postreceptoralCombinations', [], @isnumeric);
+p.addParameter('takeCalStateMeasurements', false, @islogical);
 p.addParameter('takeTemperatureMeasurements', false, @islogical);
 p.addParameter('powerLevels', [0 1.0000], @isnumeric);
+p.addParameter('postreceptoralCombinations', [], @isnumeric);
 p.addParameter('useAverageGamma', false, @islogical);
 p.addParameter('zeroPrimariesAwayFromPeak', false, @islogical);
 p.addParameter('emailRecipient','igdalova@mail.med.upenn.edu', @isstr);
 p.addParameter('verbose',false,@islogical);
 p.parse(varargin{:});
-validateDescribe = p.Results;
-powerLevels = validateDescribe.powerLevels;
-takeTemperatureMeasurements = validateDescribe.takeTemperatureMeasurements;
+validationDescribe = p.Results;
+powerLevels = validationDescribe.powerLevels;
 
-%% Get cached direction data as well as calibration file
-[cacheData,adjustedCal] = OLGetCacheAndCalData(cacheFileNameFullPath, validateDescribe);
-
-%% Need to check whether we're validating, and do something simple for simulation
-
-%% Force useAverageGamma?
-if (validateDescribe.useAverageGamma)
-    adjustedCal.validateDescribe.useAverageGamma = 1;
-end
-
-%% Clean up cal file primaries by zeroing out light we don't think is really there?
-if (validateDescribe.zeroPrimariesAwayFromPeak)
-    zeroItWLRangeMinus = 100;
-    zeroItWLRangePlus = 100;
-    adjustedCal = OLZeroCalPrimariesAwayFromPeak(adjustedCal,zeroItWLRangeMinus,zeroItWLRangePlus);
-end
+%% Get cached direction data as well as calibration file.  
+[cacheData,adjustedCal] = OLGetCacheAndCalData(cacheFileName, validationDescribe);
 
 %% Open up a radiometer object
 %
 % Set meterToggle so that we don't use the Omni radiometer in various measuremnt calls below.
-[spectroRadiometerOBJ,S,nAverage] = OLOpenSpectroRadiometerObj(meterType);
-meterToggle = [true false]; od = [];
+if (~validationDescribe.simulate)
+    [spectroRadiometerOBJ,S,nAverage] = OLOpenSpectroRadiometerObj(meterType);
+    meterToggle = [true false]; od = [];
+else
+    spectroRadiometerOBJ = [];
+    S = adjustedCal.describe.S;
+    nAverage = 1;
+end
 
 %% Attempt to open the LabJack temperature sensing device
 %
 % If quitNow is true, the user has responded to a prompt in the called routine
 % saying to give up.  Throw an error in that case.
-if (validateDescribe.takeTemperatureMeasurements)
+if (~validationDescribe.simulate & validationDescribe.takeTemperatureMeasurements)
     % Gracefully attempt to open the LabJack.  If it doesn't work and the user OK's the
     % change, then the takeTemperature measurements flag is set to false and we proceed.
     % Otherwise it either worked (good) or we give up and throw an error.
-    [validateDescribe.takeTemperatureMeasurements, quitNow, theLJdev] = OLCalibrator.OpenLabJackTemperatureProbe(validateDescribe.takeTemperatureMeasurements);
+    [validationDescribe.takeTemperatureMeasurements, quitNow, theLJdev] = OLCalibrator.OpenLabJackTemperatureProbe(validationDescribe.takeTemperatureMeasurements);
     if (quitNow)
         error('Unable to get temperature measurements to work as requested');
     end
@@ -103,160 +96,116 @@ else
     theLJdev = [];
 end
 
-% Open up the OneLight
-ol = OneLight;
-
-% Turn the mirrors full on so the user can focus the radiometer.
-if validateDescribe.noRadiometerAdjustment
+%% Let user get the radiometer set up if desired.
+if (~validationDescribe.noRadiometerAdjustment)
     ol.setAll(true);
-    pauseDuration = 0;
-    fprintf('- Focus the radiometer and press enter to pause %d seconds and start measuring.\n', ...
-        pauseDuration);
+    commandwindow;
+    fprintf('- Focus the radiometer and press enter to pause %d seconds and start measuring.\n', validationDescribe.pauseDuration);
     input('');
     ol.setAll(false);
-    pause(pauseDuration);
+    pause(validationDescribe.pauseDuration);
 else
     ol.setAll(false);
 end
 
+%% Since we're working with hardware, things can go wrong.
+%
+% Use a try/catch to maximize robustness.
 try
+    % Keep time
     startMeas = GetSecs;
-    fprintf('- Performing radiometer measurements.\n');
     
-    if validateDescribe.calStateMeas
-        fprintf('- State measurements \n');
-        [~, calStateMeas] = OLCalibrator.TakeStateMeasurements(adjustedCal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, 'standAlone',true);
-        OLCalibrator.SaveStateMeasurements(adjustedCal, calStateMeas, protocolParams);
+    % Say hello
+    if (validationDescribe.verbose), fprintf('- Performing radiometer measurements.\n'); end;
+    
+    % State and temperature measurements
+    if (~validationDescribe.simulate & validationDescribe.calStateMeas)
+        if (validationDescribe.verbose), fprintf('- State measurements \n'); end;
+        [~, results.calStateMeas] = OLCalibrator.TakeStateMeasurements(adjustedCal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, 'standAlone',true);
     else
-        calStateMeas = [];
+        results.calStateMeas = [];
     end
+    if (~validationDescribe.simulate & validationDescribe.takeTemperatureMeasurements)
+        [~, results.temperatureMeas] = theLJdev.measure();
+    else
+        results.temperatureMeas = [];
+    end
+        
+    % Get background primary and max positive difference primary
+    backgroundPrimary = cacheData.data(validationDescribe.observerAgeInYrs).backgroundPrimary;
+    differencePrimary = cacheData.data(validationDescribe.observerAgeInYrs).differencePrimary;
     
-    
-    % Loop over the stimuli in the cache file and take a measurement
-    
-    
-    % Refactor the cache data spectrum primaries to the power level.
-    backgroundPrimary = cacheData.data(validateDescribe.observerAgeInYrs).backgroundPrimary;
-    differencePrimary = cacheData.data(validateDescribe.observerAgeInYrs).differencePrimary;
-    
+    % Make measurements for each power level
+    nPowerLevels = length(powerLevels);
     for i = 1:nPowerLevels
-        fprintf('- Measuring spectrum %d, level %g...\n', i, powerLevels(i));
+        if (validationDescribe.verbose), fprintf('- Measuring spectrum %d, level %g...\n', i, powerLevels(i)); end;
+        
+        % Get primaries for this power level
         primaries = backgroundPrimary+powerLevels(i).*differencePrimary;
         
-        % Convert the primaries to mirror settings.
+        % Convert the primaries to starts/stops mirror settings in two easy steps
         settings = OLPrimaryToSettings(adjustedCal, primaries);
-        
-        % Compute the stop mirrors.
         [starts,stops] = OLSettingsToStartsStops(adjustedCal, settings);
         
-        % Take the measurements
-        results.modulationAllMeas(i).meas = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
-        
-        % Save out information about this.
-        results.modulationAllMeas(i).powerLevel = powerLevels(i);
-        results.modulationAllMeas(i).primaries = primaries;
-        results.modulationAllMeas(i).settings = settings;
-        results.modulationAllMeas(i).starts = starts;
-        results.modulationAllMeas(i).stops = stops;
-        results.modulationAllMeas(i).predictedSpd = adjustedCal.computed.pr650M*primaries + adjustedCal.computed.pr650MeanDark;
-        
-        % Take temperature
-        if (takeTemperatureMeasurements)
-            [status, results.temperature.modulationAllMeas(i, :)] = theLJdev.measure();
+        % Take the measurements.  Simulate with OLPrimaryToSpd when not measuring.
+        if (~validationDescribe.simulate)
+            results.directionMeas(i).meas = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
+        else
+            results.directionMeas(i).meas.pr650.spectrum = OLPrimaryToSpd(adjustedCal,primaries);
+            results.directionMeas(i).meas.pr650.time = [mglGetSecs mglGetSecs];
+            results.directionMeas(i).meas.omni = [];
         end
         
+        % Save out information about this power level.
+        results.directionMeas(i).powerLevel = powerLevels(i);
+        results.directionMeas(i).primaries = primaries;
+        results.directionMeas(i).settings = settings;
+        results.directionMeas(i).starts = starts;
+        results.directionMeas(i).stops = stops;
+        results.directionMeas(i).predictedSpd = OLPrimaryToSpd(adjustedCal,primaries); 
     end
     
-    % For convenience we pull out the max., min. and background.
-    theMaxIndex = find([results.modulationAllMeas(:).powerLevel] == 1);
-    theMinIndex = find([results.modulationAllMeas(:).powerLevel] == -1);
-    theBGIndex = find([results.modulationAllMeas(:).powerLevel] == 0);
-    if ~isempty(theMaxIndex)
-        results.modulationMaxMeas = results.modulationAllMeas(theMaxIndex);
-    end
-    
-    if ~isempty(theBGIndex)
-        results.modulationMinMeas = results.modulationAllMeas(theMinIndex);
-    else % Some times there's no negative excursion. We set it to BG
-        results.modulationMinMeas = results.modulationAllMeas(theBGIndex);
-    end
-    
-    if ~isempty(theBGIndex)
-        results.modulationBGMeas = results.modulationAllMeas(theBGIndex);
-    end
-    
-    %         case 'Standard'
-    %             % For each spectrum we'll measure a range of fractional power levels
-    %             % defined by the vector below.
-    %             results.powerLevels = [0.5 1];
-    %             numPowerLevels = length(results.powerLevels);
-    %
-    %             % If the cacheData has a field called 'whichSettingIndexToValidate',
-    %             % iterate only over these
-    %             if isfield(cacheData, 'whichSettingIndexToValidate');
-    %                 iter = cacheData.whichSettingIndexToValidate;
-    %             else
-    %                 iter = 1:size(cacheData.targetSpds, 2);
-    %             end
-    %             for i = iter
-    %                 for j = 1:numPowerLevels
-    %                     fprintf('- Measuring spectrum %d, Power level %g...', i, results.powerLevels(j));
-    %
-    %                     % Refactor the cache data spectrum primaries to the power level.
-    %                     primaries = cacheData.primaries(:,i) * results.powerLevels(j);
-    %
-    %                     % Convert the primaries to mirror settings.
-    %                     settings = OLPrimaryToSettings(cal, primaries);
-    %
-    %                     % Compute the start/stop mirrors.
-    %                     [starts,stops] = OLSettingsToStartsStops(cal,settings);
-    %                     results.meas(j, i) = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
-    %
-    %                     if (takeTemperatureMeasurements)
-    %                         [status, results.temperature.meas(j, i, :)] = theLJdev.measure();
-    %                     end
-    %                     fprintf('Done\n');
-    %                 end
-    %             end
-    %     end
+    % Time at finish
     stopMeas = GetSecs;
     
     % Turn the OneLight mirrors off.
     ol.setAll(false);
     
     % Close the radiometer
-    if (~isempty(spectroRadiometerOBJ))
-        spectroRadiometerOBJ.shutDown();
+    if (~validationDescribe.simulate)
+        if (~isempty(spectroRadiometerOBJ))
+            spectroRadiometerOBJ.shutDown();
+        end
     end
     
     % Save out useful information
     [calID, calIDTitle] = OLGetCalID(adjustedCal);
-    results.validateDescribe.calID = calID;
-    results.validateDescribe.calIDTitle = calIDTitle;
-    results.validateDescribe.cal = adjustedCal;
-    results.validateDescribe.cache.data = cacheData.data;
-    results.validateDescribe.cache.cacheFileName = cacheFileName;
-    results.validateDescribe.cache.observerAgeInYrs = validateDescribe.observerAgeInYrs;
-    results.validateDescribe.validationDate = validationDate;
-    results.validateDescribe.validationTime = validationTime;
-    results.validateDescribe.startMeas = startMeas;
-    results.validateDescribe.stopMeas = stopMeas;
-    results.validateDescribe.calibrationType = char(OLCalibrationTypes.(calibrationType));
-    results.validateDescribe.meterType = theMeterTypeID;
-    results.validateDescribe.meterToggle = meterToggle;
-    results.validateDescribe.observerAgeInYrs = validateDescribe.observerAgeInYrs;
-    results.validateDescribe.S = S;
-    results.validateDescribe.calStateMeas = calStateMeas;
-    results.validateDescribe.takeTemperatureMeasurements = takeTemperatureMeasurements;
-    
-    % Check if we want to do splatter calculations
-    OLAnalyzeValidationReceptorIsolate(validationPath, validateDescribe.postreceptoralCombinations);
-    
+    results.validationDescribe = validationDescribe;
+    results.validationDescribe.calID = calID;
+    results.validationDescribe.calIDTitle = calIDTitle;
+    results.validationDescribe.cal = adjustedCal;
+    results.validationDescribe.cache.data = cacheData.data;
+    results.validationDescribe.cache.cacheFileName = cacheFileName;
+    results.validationDescribe.validationDate = datestr(now, 'mmddyy');
+    results.validationDescribe.validationTime = datestr(now, 'hh:mm:ss');
+    results.validationDescribe.startMeas = startMeas;
+    results.validationDescribe.stopMeas = stopMeas;
+    results.validationDescribe.meterType = meterType;
+    results.validationDescribe.S = S;
+
+% Handle the error case
 catch e
-    if (~isempty(spectroRadiometerOBJ))
-        spectroRadiometerOBJ.shutDown();
+    
+    % Turn the OneLight mirrors off.
+    ol.setAll(false);
+    
+     % Close the radiometer
+    if (~validationDescribe.simulate)
+        if (~isempty(spectroRadiometerOBJ))
+            spectroRadiometerOBJ.shutDown();
+        end
     end
     
-    SendEmail(emailRecipient, ['[OL] ' cacheFileName '/Validation failed'], e.message);
+    % Rethrow the error
     rethrow(e)
 end

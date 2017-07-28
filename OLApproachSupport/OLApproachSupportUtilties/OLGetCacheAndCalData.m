@@ -1,21 +1,34 @@
-function [cacheData,cal] = OLGetCacheAndCalData(cacheFileNameFullPath, params, varargin)
+function [cacheData,adjustedCal] = OLGetCacheAndCalData(cacheFileNameFullPath, params, varargin)
 %OLGetCacheAndCalData  Open a modulation cache file and get the data for a particular calibration, as well as the cal data.
 %
 % Usage:
-%    [olCache, cacheData,cal,cacheDir,cacheFileName] = OLGetCacheAndCalData(cacheFileNameFullPath, describe);
+%    [cacheData, adjustedCal] = OLGetCacheAndCalData(cacheFileNameFullPath, params);
+%
+% Description:
+%    Get the cached data and associated calibration file.
+%
+%    The calibration file can be adjusted according to the parameters.  We probably do not
+%    want to adjust very often - better to set the parameters appropriately for each box
+%    at calibration time.  But adjusting is useful when experimenting with spectrum seeking
+%    methods.  At some point, might want to force no adjustment here by throwing an error.
 %
 % Input:
 %     cacheFileNameFullPath           - Full path to cache file.
 %     params                          - Parameter struct with the following fields:
 %                                         approach - Name of approach
-%                                         calibrationType - type of calibration. 
+%                                         calibrationType - Type of calibration. 
+%                                         useAverageGamma - Force cal file to use average gamma?
+%                                         zeroPrimariesAwayFromPeak - Force cal to zero primaries away from peak?  The range used
+%                                                                     is hard coded here.
 % 
 % Output:
 %    cacheData                        - The nominal direction cache data structure.
-%    cal                              - The corresponding calibration structure.
+%    adjustedCal                      - The corresponding calibration structure, after adjustment.
 %
 % Optional key/value pairs:
 %     None
+
+% 07/28/17  dhb  Put cal adjutment in here, improve comments.
 
 %% Open cache file and get data
 %
@@ -50,18 +63,30 @@ assert(any(typeExists), 'InvalidCacheFile', 'File contains does not contain at l
 %% Got to have a type available, check
 assert(isfield(params, 'calibrationType'),'No calibration type','Must provide params.calibraitionType'); 
 
-%% Get the calibration type
-if (any(strcmp(foundCalTypes, params.calibrationType))
+%% Get the calibration type 
+if (any(strcmp(foundCalTypes, params.calibrationType)))
     selectedCalType = params.calibrationType;
 else
     error('No calibration of specified type available');
 end
 
-%% Load the calibration file associated with this calibration type.
-cal = LoadCalFile(OLCalibrationTypes.(selectedCalType).CalFileName, [], fullfile(getpref(params.approach, 'OneLightCalDataPath')));
+%% Load the calibration file associated with this calibration type, and adjust.
+adjustedCal = LoadCalFile(OLCalibrationTypes.(selectedCalType).CalFileName, [], fullfile(getpref(params.approach, 'OneLightCalDataPath')));
+
+% Force useAverageGamma?
+if (params.useAverageGamma)
+    adjustedCal.describe.useAverageGamma = 1;
+end
+
+% Clean up cal file primaries by zeroing out light we don't think is really there.
+if (params.zeroPrimariesAwayFromPeak)
+    zeroItWLRangeMinus = 100;
+    zeroItWLRangePlus = 100;
+    adjustedCal = OLZeroCalPrimariesAwayFromPeak(adjustedCal,zeroItWLRangeMinus,zeroItWLRangePlus);
+end
 
 %% Setup the OLCache object.
-olCache = OLCache(cacheDir,cal);
+olCache = OLCache(cacheDir,adjustedCal);
 
 %% Load the cached data for the desired calibration.
 %

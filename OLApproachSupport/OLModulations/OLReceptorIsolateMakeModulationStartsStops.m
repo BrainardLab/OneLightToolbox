@@ -129,23 +129,23 @@ end
 %
 % IT WOULD BE NICE IF WE UNDERSTOOD THIS A LITTLE BETTER.
 for f = 1:modulationParams.nFrequencies
-    for p = 1:modulationParams.nPhases
+    for pp = 1:modulationParams.nPhases
         for c = 1:modulationParams.nContrastScalars
             % Construct the time vector
             if strcmp(modulationParams.modulationMode, 'AM')
                 waveform.theEnvelopeFrequencyHz = modulationParams.modulationFrequencyTrials(1); % Modulation frequency
-                waveform.thePhaseDeg = modulationParams.modulationPhase(p);
-                waveform.thePhaseRad = deg2rad(modulationParams.modulationPhase(p));
+                waveform.thePhaseDeg = modulationParams.modulationPhase(pp);
+                waveform.thePhaseRad = deg2rad(modulationParams.modulationPhase(pp));
                 waveform.theFrequencyHz = modulationParams.carrierFrequency(f);
             elseif ~isempty(strfind(modulationParams.modulationMode, 'pulse'))
-                waveform.phaseRandSec = modulationParams.phaseRandSec(p);
+                waveform.phaseRandSec = modulationParams.phaseRandSec(pp);
                 waveform.stepTimeSec = modulationParams.stepTimeSec(f);
                 waveform.preStepTimeSec = modulationParams.preStepTimeSec(f);
                 waveform.theFrequencyHz = -1;
                 waveform.thePhaseDeg = -1;
             else
-                waveform.thePhaseDeg = modulationParams.carrierPhase(p);
-                waveform.thePhaseRad = deg2rad(modulationParams.carrierPhase(p));
+                waveform.thePhaseDeg = modulationParams.carrierPhase(pp);
+                waveform.thePhaseRad = deg2rad(modulationParams.carrierPhase(pp));
                 waveform.theFrequencyHz = modulationParams.carrierFrequency(f);
             end
             
@@ -172,9 +172,9 @@ for f = 1:modulationParams.nFrequencies
             end;
             switch (directionParams.type)
                 case 'modulation'
-                    modulation(f, p, c) = OLCalculateStartsStopsModulation(waveform, modulationParams.oneLightCal, backgroundPrimary, diffPrimaryPos, diffPrimaryNeg);
+                    modulation(f, pp, c) = OLCalculateStartsStopsModulation(waveform, modulationParams.oneLightCal, backgroundPrimary, diffPrimaryPos, diffPrimaryNeg);
                 case 'pulse'
-                    modulation(f, p, c) = OLCalculateStartsStopsModulation(waveform, modulationParams.oneLightCal, backgroundPrimary, diffPrimaryPos, []);
+                    modulation(f, pp, c) = OLCalculateStartsStopsModulation(waveform, modulationParams.oneLightCal, backgroundPrimary, diffPrimaryPos, []);
                 otherwise
                     error('Unknown direction type specified.');
             end

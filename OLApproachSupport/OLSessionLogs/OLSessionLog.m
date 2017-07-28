@@ -1,7 +1,10 @@
 function protocolParams = OLSessionLog(protocolParams,theStep,varargin)
 %OLSessionLog  Session Record Keeping
 %
-%  Description:
+% Usage:
+%     [DHB NOTE: Provide an example of how this would be called here.]
+%
+% Description:
 %     This function creates a session specific directory for each subject
 %     within an experiment. This will also check for the existance of prior
 %     session with the option to append or create new session. This
@@ -13,24 +16,26 @@ function protocolParams = OLSessionLog(protocolParams,theStep,varargin)
 %     [DHB NOTE: PLEASE SAY WHAT THE INPUTS ARE]
 %
 % Output:
-%     protocolParams - updated param struct with session info.
+%     [DHB NOTE: PLEASE SAY WHAT THE INPUTS ARE]
+%
+% Optional key/value pairs:
+%     [DHB NOTE: PLEASE SAY WHAT THESE ARE]
 
 % 06/23/17 mab,jar created file and green text.
 % 06/26/17 mab,jar added switch
 
-
-% set up vars
+%% Set up vars
 p = inputParser;
 p.addParameter('StartEnd',[],@isstr);
 p.addParameter('PrePost',[],@isstr);
 p.parse(varargin{:});
 p = p.Results;
 
-%% Swtich
+%% Swtich on what we are doing now.
 switch theStep
     case 'OLSessionInit'
         
-        %% Check for prior sessions
+        % Check for prior sessions
         sessionDir = fullfile(getpref(protocolParams.approach,'SessionRecordsBasePath'),protocolParams.observerID,protocolParams.todayDate);
         dirStatus = dir(sessionDir);
         dirStatus=dirStatus(~ismember({dirStatus.name},{'.','..','.DS_Store'}));
@@ -53,7 +58,7 @@ switch theStep
             end
         end
         
-        %% Start Log File
+        % Start Log File
         fileName = [protocolParams.observerID '_' protocolParams.sessionName '.log'];
         protocolParams.fullFileName = fullfile(protocolParams.sessionLogOutDir,fileName);
         
@@ -75,6 +80,7 @@ switch theStep
                 fprintf(fileID,'%s Finished @ %s.\n',theStep,datestr(now,'HH:MM:SS'));
         end
         fclose(fileID);
+        
     case 'OLMakeModulationStartsStops'
         fileID = fopen(protocolParams.fullFileName,'a');
         switch p.StartEnd
@@ -84,6 +90,7 @@ switch theStep
                 fprintf(fileID,'%s Finished @ %s.\n',theStep,datestr(now,'HH:MM:SS'));
         end
         fclose(fileID);
+        
     case 'OLValidateDirectionCorrectedPrimaries'
         fileID = fopen(protocolParams.fullFileName,'a');
         switch p.StartEnd
@@ -92,6 +99,7 @@ switch theStep
             case 'end'
                 fprintf(fileID,'%s%s: Finished @ %s.\n',p.PrePost, theStep,datestr(now,'HH:MM:SS'));
         end
+        
     case 'Demo'
         fileID = fopen(protocolParams.fullFileName,'a');
         switch p.StartEnd
@@ -100,6 +108,7 @@ switch theStep
             case 'end'
                 fprintf(fileID,'%s: Finished @ %s.\n',theStep,datestr(now,'HH:MM:SS'));
         end
+        
     case 'Experiment'
         fileID = fopen(protocolParams.fullFileName,'a');
         switch p.StartEnd
@@ -108,6 +117,7 @@ switch theStep
             case 'end'
                 fprintf(fileID,'%s%s: Finished @ %s.\n',p.PrePost, theStep,datestr(now,'HH:MM:SS'));
         end
+        
     otherwise
         warning('%s unkown as a step.',theStep)
 end

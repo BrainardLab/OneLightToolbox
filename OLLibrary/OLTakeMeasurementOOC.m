@@ -1,42 +1,47 @@
 function [meas, omniSpectrumSaturated] = OLTakeMeasurementOOC(ol, od, prOBJ, starts, stops, S, meterToggle,  nAverage)
-% OLTakeMeasurement - Takes a spectrum measurement using the PR-6XX and/or the OmniDriver.
+%OLTakeMeasurement  Takes a spectrum measurement using the PR-6XX and/or the OmniDriver.
 %
 % Syntax:
-% meas = OLTakeMeasurement(ol, od, prOBJ, starts, stops, S);
-% meas = OLTakeMeasurement(ol, od, prOBJ, starts, stops, S, meterToggle);
-% meas = OLTakeMeasurement(ol, od, prOBJ, starts, stops, S, meterToggle);
-% meas = OLTakeMeasurement(ol, od, prOBJ, starts, stops, S, meterToggle, nAverage);
+%     meas = OLTakeMeasurement(ol, od, prOBJ, starts, stops, S);
+%     meas = OLTakeMeasurement(ol, od, prOBJ, starts, stops, S, meterToggle);
+%     meas = OLTakeMeasurement(ol, od, prOBJ, starts, stops, S, meterToggle);
+%     meas = OLTakeMeasurement(ol, od, prOBJ, starts, stops, S, meterToggle, nAverage);
 %
 % Description:
-% Takes a spectrum measurement using the PR-6XX and/or the OmniDriver.
+%     Takes a spectrum measurement using the PR-6XX and/or the OmniDriver.
+%
+%     Omni measurements are normalized by integration time.
 %
 % Input:
-% ol (OneLight)      - OneLight class object to control the device.  If empty,
-%                      the function doesn't set the mirrors, i.e. starts and stops are
-%                      ignored.
-% od (OmniDriver)    - OmniDriver class object to control the OmniDriver.
-% prOBJ              - PR650/PR670 class object to control the PR650 or PR670.
-%                      These objects must be instantiated by the parent
-%                      method (see OOC_PR650_PR670_Usage.m in BrainardLabToolbox for example usage).
-% starts (1xNumCols) - starts vector as accepted by the setMirrors method of an OL object.
-% stops (1xNumCols)  - stops vector as accepted by the setMirrors method of an OL object.
-% S (1x3)            - Wavelength sampling parameter used to sample the SPD by the PR-650/PR670dev objects.
-% meterToggle (1x2)  - Logical array specifying which meter(s) to use.  The
-%                      first element represents the PR-6XX, the second represents the
-%                      OmniDriver.  Defaults to [true, false].
-% nAverage           - number of PR-6XX measurements to average.  Defaults to 1.
+%     ol (OneLight)      - OneLight class object to control the device.  If empty,
+%                          the function doesn't set the mirrors, i.e. starts and stops are
+%                          ignored.
+%     od (OmniDriver)    - OmniDriver class object to control the OmniDriver.
+%     prOBJ              - PR650/PR670 class object to control the PR650 or PR670.
+%                          These objects must be instantiated by the parent
+%                          method (see OOC_PR650_PR670_Usage.m in BrainardLabToolbox for example usage).
+%     starts (1xNumCols) - starts vector as accepted by the setMirrors method of an OL object.
+%     stops (1xNumCols)  - stops vector as accepted by the setMirrors method of an OL object.
+%     S (1x3)            - Wavelength sampling parameter used to sample the SPD by the PR-650/PR670dev objects.
+%     meterToggle (1x2)  - Logical array specifying which meter(s) to use.  The
+%                          first element represents the PR-6XX, the second represents the
+%                          OmniDriver.  Defaults to [true, false].
+%     nAverage           - number of PR-6XX measurements to average.  Defaults to 1.
 %
 % Output:
-% meas (struct) - Contains the measurements and some support data for the
-%     two device measurements.  The struct contains 2 fields: pr650 and
-%     omni.  Both fields contain 2 subfields: spectrum and time.  The
-%     spectrum is the result of the device measure commands.  The time
-%     variable is a 2 element vector containing the result of mglGetSeconds
-%     before and after the measurements were taken.  If a particular device
-%     wasn't toggled, then its subfield will be empty, e.g. meas.pr650 = [].
+%     meas (struct)      - Contains the measurements and some support data for the
+%                          two device measurements.  The struct contains 2 fields: pr650 and
+%                          omni.  Both fields contain 2 subfields: spectrum and time.  The
+%                          spectrum is the result of the device measure commands.  The time
+%                          variable is a 2 element vector containing the result of mglGetSeconds
+%                          before and after the measurements were taken.  If a particular device
+%                          wasn't toggled, then its subfield will be empty, e.g. meas.pr650 = [].
 %
-% Omni measurements are normalized by integration time.
+% Optional key/value pairs:
+%     None:
 %
+% See also:
+     
 % 1/17/14  dhb, ms   Comment tuning.
 % 4/15/16  npc       Adapted to use PR650dev/PR670dev objects
 
