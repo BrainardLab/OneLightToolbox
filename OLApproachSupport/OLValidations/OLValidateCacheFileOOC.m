@@ -27,7 +27,6 @@ function results = OLValidateCacheFileOOC(cacheFileName, ol, meterType, varargin
 %     'calibrationType'                ''                               Calibration type
 %     'takeTemperatureMeasurements'    false                            Take temperature measurements? (Requires a connected LabJack dev with a temperature probe.)
 %     'takeCalStateMeasurements'       true                             Take OneLight state measurements
-%     'powerLevels'                    [0 1]                            Power levels of diff modulation to seek for
 %     'postreceptoralCombinations'     []                               Post-receptoral combinations to calculate contrast w.r.t.
 %     'useAverageGamma'                false                            Force the useAverageGamma mode in the calibration?
 %     'zeroPrimariesAwayFromPeak'      false                            Zero out calibrated primaries well away from their peaks.
@@ -55,7 +54,6 @@ p.addParameter('observerAgeInYrs', 32, @isscalar);
 p.addParameter('calibrationType','', @isstr);
 p.addParameter('takeCalStateMeasurements', false, @islogical);
 p.addParameter('takeTemperatureMeasurements', false, @islogical);
-p.addParameter('powerLevels', [0 1.0000], @isnumeric);
 p.addParameter('postreceptoralCombinations', [], @isnumeric);
 p.addParameter('useAverageGamma', false, @islogical);
 p.addParameter('zeroPrimariesAwayFromPeak', false, @islogical);
@@ -63,7 +61,6 @@ p.addParameter('emailRecipient','igdalova@mail.med.upenn.edu', @isstr);
 p.addParameter('verbose',false,@islogical);
 p.parse(varargin{:});
 validationDescribe = p.Results;
-powerLevels = validationDescribe.powerLevels;
 
 %% Get cached direction data as well as calibration file.  
 [cacheData,adjustedCal] = OLGetCacheAndCalData(cacheFileName, validationDescribe);
@@ -136,12 +133,13 @@ try
     differencePrimary = cacheData.data(validationDescribe.observerAgeInYrs).differencePrimary;
     
     % Make measurements for each power level
-    nPowerLevels = length(powerLevels);
+    validationDescribe.powerLevels = cacheData.directionParams.validationPowerLevels;
+    nPowerLevels = length(validationDescribe.powerLevels);
     for i = 1:nPowerLevels
-        if (validationDescribe.verbose), fprintf('- Measuring spectrum %d, level %g...\n', i, powerLevels(i)); end;
+        if (validationDescribe.verbose), fprintf('- Measuring spectrum %d, level %g...\n', i, validationDescribe.powerLevels(i)); end;
         
         % Get primaries for this power level
-        primaries = backgroundPrimary+powerLevels(i).*differencePrimary;
+        primaries = backgroundPrimary+validationDescribe.powerLevels(i).*differencePrimary;
         
         % Convert the primaries to starts/stops mirror settings in two easy steps
         settings = OLPrimaryToSettings(adjustedCal, primaries);
@@ -157,7 +155,7 @@ try
         end
         
         % Save out information about this power level.
-        results.directionMeas(i).powerLevel = powerLevels(i);
+        results.directionMeas(i).powerLevel = validationDescribe.powerLevels(i);
         results.directionMeas(i).primaries = primaries;
         results.directionMeas(i).settings = settings;
         results.directionMeas(i).starts = starts;

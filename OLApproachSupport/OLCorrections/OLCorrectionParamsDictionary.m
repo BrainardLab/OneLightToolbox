@@ -88,7 +88,6 @@ switch (params.type)
         assert((isfield(params, 'asympLearningRateFactor')    && isnumeric(params.asympLearningRateFactor)),sprintf('params.asympLearningRateFactor does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'smoothness')                 && isnumeric(params.smoothness)),             sprintf('params.smoothness does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'nIterations')                && isnumeric(params.nIterations)),            sprintf('params.nIterations does not exist or it does not contain a numeric value.'));
-        assert((isfield(params, 'powerLevels')                && isnumeric(params.powerLevels)),            sprintf('params.powerLevels does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'postreceptoralCombinations') && isnumeric(params.postreceptoralCombinations)), sprintf('params.postreceptoralCombinations does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'useAverageGamma')            && islogical(params.useAverageGamma)),        sprintf('params.useAverageGamma does not exist or it does not contain a logical value.'));
         assert((isfield(params, 'zeroPrimariesAwayFromPeak')  && islogical(params.zeroPrimariesAwayFromPeak)),  sprintf('params.zeroPrimariesAwayFromPeak does not exist or it does not contain a logical value.'));
@@ -117,7 +116,6 @@ switch (type)
         params.asympLearningRateFactor = 0.5;                                               % If learningRateDecrease is true, this affects how fast it decreases.
         params.smoothness = 0.1;                                                            % Smoothness parameter for OLSpdToPrimary
         params.nIterations = 10;                                                            % Number of iterations to do before declaring victory.
-        params.powerLevels = [0 1.0000];                                                    % Seek for these values of difference.
         params.postreceptoralCombinations = [1 1 1 0 ; 1 -1 0 0 ; 0 0 1 0 ; 0 0 0 1];       % Report contrasts with respect to these post-receptoral contrast directions (L,M,S, Mel).
         params.useAverageGamma = false;                                                     % Whether to use the average (across channels) gamma, independent of what is in calibration file.
         params.zeroPrimariesAwayFromPeak = false;                                           % Force spd of OL primaries to be zero away from their peaks.

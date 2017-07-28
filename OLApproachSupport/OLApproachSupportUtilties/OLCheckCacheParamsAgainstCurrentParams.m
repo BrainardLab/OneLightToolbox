@@ -54,6 +54,15 @@ switch (cacheParams.type)
           if ~(AreStructsEqualOnFields(cacheParams, currentParams, fieldsToCompare))
               error('DirectionNominalParams cache data and CurrentParams differ on fields!!\n');
           end
+    case 'lightfluxpulse'
+         fieldsToCompare = {...
+             'lightFluxDesiredXY', ...
+             'lightFluxDownFactor' , ...
+             'baseModulationContrast' ...
+             };
+          if ~(AreStructsEqualOnFields(cacheParams, currentParams, fieldsToCompare))
+              error('DirectionNominalParams cache data and CurrentParams differ on fields!!\n');
+          end
     otherwise
         error('Unknown background type specified');
 end

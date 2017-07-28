@@ -68,7 +68,7 @@ if ~isdir(cacheDir)
 end
 
 %% Load the calibration file
-cal = LoadCalFile(OLCalibrationTypes.(backgroundParams.calibrationType).CalFileName, [], fullfile(getpref(approach,'OneLightCalDataPath'));
+cal = LoadCalFile(OLCalibrationTypes.(backgroundParams.calibrationType).CalFileName, [], fullfile(getpref(approach,'OneLightCalDataPath')));
 assert(~isempty(cal), 'OLFlickerComputeModulationSpectra:NoCalFile', 'Could not load calibration file: %s', ...
     OLCalibrationTypes.(backgroundParams.calibrationType).CalFileName);
 

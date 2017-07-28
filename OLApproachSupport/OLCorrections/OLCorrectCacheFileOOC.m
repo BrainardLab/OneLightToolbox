@@ -29,7 +29,6 @@ function [cacheData, adjustedCal] = OLCorrectCacheFileOOC(cacheFileNameFullPath,
 %     'calibrationType'                ''                               Calibration type
 %     'takeTemperatureMeasurements'    false                            Take temperature measurements? (Requires a connected LabJack dev with a temperature probe.)
 %     'takeCalStateMeasurements'       true                             Take OneLight state measurements
-%     'powerLevels'                    [0 1]                            Power levels of diff modulation to seek for
 %     'postreceptoralCombinations'     []                               Post-receptoral combinations to calculate contrast w.r.t.
 %     'useAverageGamma'                false                            Force the useAverageGamma mode in the calibration?
 %     'zeroPrimariesAwayFromPeak'      false                            Zero out calibrated primaries well away from their peaks.
@@ -62,7 +61,6 @@ p.addParameter('observerAgeInYrs', 32, @isscalar);
 p.addParameter('calibrationType','', @isstr);
 p.addParameter('takeCalStateMeasurements', false, @islogical);
 p.addParameter('takeTemperatureMeasurements', false, @islogical);
-p.addParameter('powerLevels', [0 1.0000], @isnumeric);
 p.addParameter('postreceptoralCombinations', [], @isnumeric);
 p.addParameter('useAverageGamma', false, @islogical);
 p.addParameter('zeroPrimariesAwayFromPeak', false, @islogical);
@@ -154,6 +152,7 @@ try
     end
     
     % Do the seeking for each iteration and power level
+    correctionDescribe.powerLevels = cacheData.directionParams.correctionPowerLevels;
     nPowerLevels = length(correctionDescribe.powerLevels);  
     for iter = 1:correctionDescribe.nIterations
         
