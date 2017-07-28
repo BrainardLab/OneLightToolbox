@@ -40,7 +40,7 @@ p = inputParser;
 p.addRequired('modulationNames',@iscell);
 p.addRequired('directionNames', @iscell);
 p.addRequired('protocolParams',@isstruct);
-p.addParameter('verbose',true,@isstr);
+p.addParameter('verbose',true,@islogical);
 p.parse(modulationNames,directionNames,protocolParams,varargin{:});
 
 %% Update session log file

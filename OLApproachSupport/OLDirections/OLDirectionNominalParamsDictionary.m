@@ -194,6 +194,8 @@ switch (params.type)
         assert((isfield(params, 'backgroundType')             && ischar(params.backgroundType)),            sprintf('params.backgroundType does not exist or it does not contain a string value.'));
         assert((isfield(params, 'backgroundName')             && ischar(params.backgroundName)),            sprintf('params.backgroundName does not exist or it does not contain a string value.'));
         assert((isfield(params, 'backgroundObserverAge')      && isnumeric(params.backgroundObserverAge)),  sprintf('params.backgroundObserverAge does not exist or it does not contain a number.'));
+        assert((isfield(params, 'correctionPowerLevels')      && isnumeric(params.correctionPowerLevels)),  sprintf('params.correctionPowerLevels does not exist or it does not contain a number.'));
+        assert((isfield(params, 'validationPowerLevels')      && isnumeric(params.validationPowerLevels)),  sprintf('params.validationPowerLevels does not exist or it does not contain a number.'));
         assert((isfield(params, 'cacheFile')                  && ischar(params.cacheFile)),                 sprintf('params.cacheFile does not exist or it does not contain a string value.'));
         
     case 'lightfluxpulse'
@@ -207,6 +209,8 @@ switch (params.type)
         assert((isfield(params, 'backgroundType')             && ischar(params.backgroundType)),            sprintf('params.backgroundType does not exist or it does not contain a string value.'));
         assert((isfield(params, 'backgroundName')             && ischar(params.backgroundName)),            sprintf('params.backgroundName does not exist or it does not contain a string value.'));
         assert((isfield(params, 'backgroundObserverAge')      && isnumeric(params.backgroundObserverAge)),  sprintf('params.backgroundObserverAge does not exist or it does not contain a number.'));
+        assert((isfield(params, 'correctionPowerLevels')      && isnumeric(params.correctionPowerLevels)),  sprintf('params.correctionPowerLevels does not exist or it does not contain a number.'));
+        assert((isfield(params, 'validationPowerLevels')      && isnumeric(params.validationPowerLevels)),  sprintf('params.validationPowerLevels does not exist or it does not contain a number.'));
         assert((isfield(params, 'cacheFile')                  && ischar(params.cacheFile)),                 sprintf('params.cacheFile does not exist or it does not contain a string value.'));
         
     otherwise
@@ -244,8 +248,10 @@ switch (type)
         params.backgroundType = 'optimized';                                     % Type of background
         params.backgroundName = '';                                              % Name of background 
         params.backgroundObserverAge = 32;                                       % Observer age expected in background 
-        params.cacheFile = '';
-        
+        params.correctionPowerLevels = [0 1];                                    % Power levels to measure at during correction
+        params.validationPowerLevels = [0 1];                                    % Power levels to measure at during validation
+        params.cacheFile = '';                                                   % Cache filename goes here
+
     case 'lightfluxpulse'
         params.dictionaryType = 'Direction';                                     % What type of dictionary is this?
         params.primaryHeadRoom = 0.01;                                           % How close to edge of [0-1] primary gamut do we want to get? (Check if actually used someday.) 
@@ -255,7 +261,9 @@ switch (type)
         params.backgroundType = 'lightfluxchrom';                                % Type of background
         params.backgroundName = '';                                              % Name of background 
         params.backgroundObserverAge = 32;                                       % Observer age expected in background
-        params.cacheFile = ''; 
+        params.correctionPowerLevels = [0 1];                                    % Power levels to measure at during correction
+        params.validationPowerLevels = [0 1];                                    % Power levels to measure at during validation
+        params.cacheFile = '';                                                   % Cache filename goes here
         
     otherwise
         error('Unknown direction type specified: ''%s''.\n', type);
