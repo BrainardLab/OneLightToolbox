@@ -34,8 +34,8 @@ OLSessionLog(protocolParams,mfilename,'StartEnd','start','PrePost',prePost);
 theDirectionCacheFileNames = OLMakeDirectionCacheFileNames(protocolParams);
 
 %% Input and output file locations.
-cacheDir = fullfile(getpref(protocolParams.approach, 'DirectionCorrectedPrimariesBasePath'), protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
-outDir = fullfile(getpref(protocolParams.approach, 'DirectionCorrectedValidationBasePath'), protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
+cacheDir = fullfile(getpref(protocolParams.protocol, 'DirectionCorrectedPrimariesBasePath'), protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
+outDir = fullfile(getpref(protocolParams.protocol, 'DirectionCorrectedValidationBasePath'), protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
 if(~exist(outDir,'dir'))
     mkdir(outDir)
 end
@@ -82,7 +82,6 @@ for ii = 1:protocolParams.nValidationsPerDirection
             'takeTemperatureMeasurements',  protocolParams.takeTemperatureMeasurements, ...
             'useAverageGamma',              correctionParams.useAverageGamma, ...
             'zeroPrimariesAwayFromPeak',    correctionParams.zeroPrimariesAwayFromPeak, ...
-            'emailRecipient',               protocolParams.emailRecipient, ...
             'verbose',                      protocolParams.verbose);
           
         % Save the validation information in an ordinary .mat file.  Append prePost and iteration number in name.

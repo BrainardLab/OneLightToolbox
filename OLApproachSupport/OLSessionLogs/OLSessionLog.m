@@ -36,7 +36,7 @@ switch theStep
     case 'OLSessionInit'
         
         % Check for prior sessions
-        sessionDir = fullfile(getpref(protocolParams.approach,'SessionRecordsBasePath'),protocolParams.observerID,protocolParams.todayDate);
+        sessionDir = fullfile(getpref(protocolParams.protocol,'SessionRecordsBasePath'),protocolParams.observerID,protocolParams.todayDate);
         dirStatus = dir(sessionDir);
         dirStatus=dirStatus(~ismember({dirStatus.name},{'.','..','.DS_Store'}));
         
@@ -45,14 +45,14 @@ switch theStep
             priorSessionNumber = str2double(regexp(dirString, '(?<=session_[^0-9]*)[0-9]*\.?[0-9]+', 'match'));
             currentSessionNumber = max(priorSessionNumber) + 1;
             protocolParams.sessionName =['session_' num2str(currentSessionNumber)];
-            protocolParams.sessionLogOutDir = fullfile(getpref(protocolParams.approach,'SessionRecordsBasePath'),protocolParams.observerID,protocolParams.todayDate,protocolParams.sessionName);
+            protocolParams.sessionLogOutDir = fullfile(getpref(protocolParams.protocol,'SessionRecordsBasePath'),protocolParams.observerID,protocolParams.todayDate,protocolParams.sessionName);
             if ~exist(protocolParams.sessionLogOutDir,'dir')
                 mkdir(protocolParams.sessionLogOutDir);
             end
         else
             currentSessionNumber = 1;
             protocolParams.sessionName =['session_' num2str(currentSessionNumber)];
-            protocolParams.sessionLogOutDir = fullfile(getpref(protocolParams.approach,'SessionRecordsBasePath'),protocolParams.observerID,protocolParams.todayDate,protocolParams.sessionName);
+            protocolParams.sessionLogOutDir = fullfile(getpref(protocolParams.protocol,'SessionRecordsBasePath'),protocolParams.observerID,protocolParams.todayDate,protocolParams.sessionName);
             if ~exist(protocolParams.sessionLogOutDir,'dir')
                 mkdir(protocolParams.sessionLogOutDir);
             end

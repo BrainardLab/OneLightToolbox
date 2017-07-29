@@ -169,7 +169,6 @@ try
     results.validationDescribe.validationTime = datestr(now, 'hh:mm:ss');
     results.validationDescribe.startMeas = startMeas;
     results.validationDescribe.stopMeas = stopMeas;
-    results.validationDescribe.meterType = meterType;
     results.validationDescribe.S = S;
 
 % Handle the error case

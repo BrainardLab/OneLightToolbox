@@ -8,6 +8,9 @@ function [cacheData, adjustedCal] = OLCorrectCacheFileOOC(cacheFileNameFullPath,
 %   Uses an iterated procedure to bring a modulation as close as possible to
 %   its specified spectrum.
 %
+%   At present, this only works for powerLevels 0 (background) and 1 (maximum positive excursion).
+%   It could be generalized fairly easily.
+%
 % Input:
 %     cacheFileNameFullPath (string)  - Absolute path full name of the cache file to validate.
 %     ol (object)                     - Open OneLight object.
@@ -137,7 +140,10 @@ try
     
     % Do the seeking for each iteration and power level
     correctionDescribe.powerLevels = cacheData.directionParams.correctionPowerLevels;
-    nPowerLevels = length(correctionDescribe.powerLevels);  
+    nPowerLevels = length(correctionDescribe.powerLevels); 
+    if (nPowerLevels ~= 2 | correctionDescribe.powerLevels(1) ~= 0 | correctionDescribe.powerLevels(2) ~= 1)
+        error('This routine is currently set up only for powerLevels = [0 1]');
+    end
     for iter = 1:correctionDescribe.nIterations
         
         % Only get the primaries from the cache file if it's the
@@ -213,19 +219,19 @@ try
         
         % For convenience we pull out from the set of power level
         % measurements those corresonding to the background
-        % (powerLevel == 0) and max (powerLevel == 1).
-        theMaxIndex = find([results.directionMeas(iter,:).powerLevel] == 1);
+        % (powerLevel == 0) and max positive modulation (powerLevel == 1).
+        thePosIndex = find([results.directionMeas(iter,:).powerLevel] == 1);
         theBGIndex = find([results.directionMeas(iter,:).powerLevel] == 0);
-        if (isempty(theMaxIndex) || isempty(theBGIndex))
+        if (isempty(thePosIndex) || isempty(theBGIndex))
             error('Should have measurements for power levels 0 and 1');
         end
-        results.modulationMaxMeas = results.directionMeas(iter,theMaxIndex);
-        modulationSpdDesired = spdsDesired(:,theMaxIndex);
-        modulationSpdMeasured = results.modulationMaxMeas.meas.pr650.spectrum;
+        modulationMaxMeas = results.directionMeas(iter,thePosIndex);
+        modulationSpdDesired = spdsDesired(:,thePosIndex);
+        modulationSpdMeasured = modulationMaxMeas.meas.pr650.spectrum;
         
-        results.modulationBGMeas = results.directionMeas(iter,theBGIndex);
+        modulationBGMeas = results.directionMeas(iter,theBGIndex);
         backgroundSpdDesired = spdsDesired(:,theBGIndex);
-        backgroundSpdMeasured = results.modulationBGMeas.meas.pr650.spectrum;
+        backgroundSpdMeasured = modulationBGMeas.meas.pr650.spectrum;
         
         % If first time through, figure out a scaling factor from
         % the first measurement which puts the measured spectrum
@@ -252,7 +258,7 @@ try
         backgroundNextPrimaryTruncatedLearningRate = backgroundPrimaryUsed + backgroundDeltaPrimaryTruncatedLearningRate;
         modulationNextPrimaryTruncatedLearningRate = modulationPrimaryUsed + modulationDeltaPrimaryTruncatedLearningRate;
               
-        % Save the information in a convenient form for later.
+        % Save the information for this iteration in a convenient form for later.
         backgroundSpdMeasuredAll(:,iter) = backgroundSpdMeasured;
         modulationSpdMeasuredAll(:,iter) = modulationSpdMeasured;
         backgroundPrimaryUsedAll(:,iter) = backgroundPrimaryUsed;
@@ -262,7 +268,6 @@ try
         modulationNextPrimaryTruncatedLearningRateAll(:,iter) = modulationNextPrimaryTruncatedLearningRate;
         modulationDeltaPrimaryTruncatedLearningRateAll(:,iter)= modulationDeltaPrimaryTruncatedLearningRate;
     end
-    
     
     %% Store information about corrected modulations for return.
     %
@@ -274,15 +279,15 @@ try
             cacheData.data(ii).cal = adjustedCal;
             cacheData.data(ii).correction.kScale = kScale;
             
-            % Store the answer after the iteration.  This is storing the
-            % next prediction.  We probably want to comb through everything
-            % and pick the best we've seen so far.
+            % Store the answer after the iteration.  This block is the part
+            % that other code cares about.  
             cacheData.data(ii).backgroundPrimary = backgroundNextPrimaryTruncatedLearningRateAll(:, end);
             cacheData.data(ii).modulationPrimarySignedPositive = modulationNextPrimaryTruncatedLearningRateAll(:, end);
             cacheData.data(ii).differencePrimary = modulationNextPrimaryTruncatedLearningRateAll(:, end)-backgroundNextPrimaryTruncatedLearningRateAll(:, end);
             cacheData.data(ii).modulationPrimarySignedNegative = [];
             
-            % Store target spectra and initial primaries used.
+            % Store target spectra and initial primaries used.  This information is useful
+            % for debugging the seeking procedure.
             cacheData.data(ii).correction.backgroundSpdDesired = backgroundSpdDesired;
             cacheData.data(ii).correction.modulationSpdDesired =  modulationSpdDesired;
             cacheData.data(ii).correction.backgroundPrimaryInitial = backgroundPrimaryInitial;

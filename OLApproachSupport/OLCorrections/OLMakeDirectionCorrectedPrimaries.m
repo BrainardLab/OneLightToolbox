@@ -15,7 +15,7 @@ function OLMakeDirectionCorrectedPrimaries(ol,protocolParams,varargin)
 %    the observer who is about to run.
 %
 %    The output is cached in a directory specified by
-%    getpref(protocolParams.approach, 'DirectionCorrectedPrimariesBasePath');
+%    getpref(protocolParams.protocol, 'DirectionCorrectedPrimariesBasePath');
 %
 % Input:
 %     ol (object)            Open OneLight object.
@@ -49,7 +49,7 @@ theDirectionsCorrect = protocolParams.directionsCorrect;
 %
 % Need to change over to use the directly specified preference rather than to build it up.
 nominalPrimariesDir =  fullfile(getpref(protocolParams.approach, 'DirectionNominalPrimariesPath'));
-correctedPrimariesDir = fullfile(getpref(protocolParams.approach, 'DirectionCorrectedPrimariesBasePath'), protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
+correctedPrimariesDir = fullfile(getpref(protocolParams.protocol, 'DirectionCorrectedPrimariesBasePath'), protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
 if(~exist(correctedPrimariesDir,'dir'))
     mkdir(correctedPrimariesDir);
 end
@@ -107,7 +107,6 @@ for corrD = 1:length(theDirections)
         'nIterations',                  correctionParams.nIterations, ...
         'useAverageGamma',              correctionParams.useAverageGamma, ...
         'zeroPrimariesAwayFromPeak',    correctionParams.zeroPrimariesAwayFromPeak, ...
-        'emailRecipient',               protocolParams.emailRecipient, ...
         'verbose',                      p.Results.verbose);    
     if (p.Results.verbose), fprintf(' * Spectrum seeking finished!\n'); end;
     

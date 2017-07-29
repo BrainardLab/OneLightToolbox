@@ -49,13 +49,13 @@ modulationParams = d(modulationName);
 % in our (Aguirre/Brainard Lab) experiments.
 %
 % Get where the corrected direction files live.  This had better exist.
-directionCacheDir = fullfile(getpref(protocolParams.approach,'DirectionCorrectedPrimariesBasePath'), protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
+directionCacheDir = fullfile(getpref(protocolParams.protocol,'DirectionCorrectedPrimariesBasePath'), protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
 if (~exist(directionCacheDir,'dir'))
     error('Corrected direction primaries directory does not exist');
 end
 
 % Output for starts/stops. Create if it doesn't exist.
-modulationParams.modulationDir = fullfile(getpref(protocolParams.approach, 'ModulationStartsStopsBasePath'),protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
+modulationParams.modulationDir = fullfile(getpref(protocolParams.protocol, 'ModulationStartsStopsBasePath'),protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
 if(~exist(modulationParams.modulationDir,'dir'))
     mkdir(modulationParams.modulationDir)
 end
@@ -205,7 +205,7 @@ function [directionCacheFileName, startsStopsFileName, directionName] = OLAssemb
 
     fullDirectionName = sprintf('Direction_%s', directionName);
     fullStartsStopsName = sprintf('ModulationStartsStops_%s_%s', modulationParams.name, directionName);
-    directionCacheFileName = fullfile(getpref(protocolParams.approach,'DirectionCorrectedPrimariesBasePath'), protocolParams.observerID,protocolParams.todayDate,protocolParams.sessionName, fullDirectionName);
+    directionCacheFileName = fullfile(getpref(protocolParams.protocol,'DirectionCorrectedPrimariesBasePath'), protocolParams.observerID,protocolParams.todayDate,protocolParams.sessionName, fullDirectionName);
     startsStopsFileName = fullfile(modulationParams.modulationDir, fullStartsStopsName);
 end
 
