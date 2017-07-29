@@ -1,4 +1,4 @@
-function results = OLValidateCacheFileOOC(cacheFileName, ol, meterType, varargin)
+function results = OLValidateCacheFileOOC(cacheFileName, ol, spectroRadiometerOBJ, S, theLJdev, varargin)
 %OLValidateCacheFileOOC  Validate spectra in a cache file
 %
 % Usage:
@@ -9,12 +9,14 @@ function results = OLValidateCacheFileOOC(cacheFileName, ol, meterType, varargin
 %     what they are supposed to.
 %
 % Input:
-%     cacheFileName (string)    - Absolute path full name of the cache file to validate.
-%     ol (object)               - Open OneLight object.
-%     meterType (string)        - Meter type to use.
+%     cacheFileName (string)          - Absolute path full name of the cache file to validate.
+%     ol (object)                     - Open OneLight object.
+%     spectroRadiometerOBJ (object)   - Object for the measurement meter. Can be passed empty if simulating.
+%     S                               - Wavelength sampling for measurements. Can be passed empty if simulating.
+%     theLJdev                        - Lab jack device.  Pass empty will skip temperature measurements.
 %
 % Output:
-%     results (struct)          - Results structure
+%     results (struct)                - Results structure
 %
 % Optional key/value pairs:
 %      Keyword                         Default                          Behavior
@@ -27,10 +29,8 @@ function results = OLValidateCacheFileOOC(cacheFileName, ol, meterType, varargin
 %     'calibrationType'                ''                               Calibration type
 %     'takeTemperatureMeasurements'    false                            Take temperature measurements? (Requires a connected LabJack dev with a temperature probe.)
 %     'takeCalStateMeasurements'       true                             Take OneLight state measurements
-%     'postreceptoralCombinations'     []                               Post-receptoral combinations to calculate contrast w.r.t.
 %     'useAverageGamma'                false                            Force the useAverageGamma mode in the calibration?
 %     'zeroPrimariesAwayFromPeak'      false                            Zero out calibrated primaries well away from their peaks.
-%     'emailRecipient'                 'igdalova@mail.med.upenn.edu'    Who gets email when this finishes.
 %     'verbose'                        false                            Print out things in progress.
 %
 % See also: OLValidateDirectionCorrectedPrimaries, OLGetCacheAndCalData
@@ -48,50 +48,31 @@ function results = OLValidateCacheFileOOC(cacheFileName, ol, meterType, varargin
 p = inputParser;
 p.addParameter('approach','', @isstr);
 p.addParameter('simulate',false,@islogical);
-p.addParameter('noRadiometerAdjustment', false, @islogical);
+p.addParameter('noRadiometerAdjustment', true, @islogical);
 p.addParameter('pauseDuration',0,@inumeric);
 p.addParameter('observerAgeInYrs', 32, @isscalar);
 p.addParameter('calibrationType','', @isstr);
 p.addParameter('takeCalStateMeasurements', false, @islogical);
 p.addParameter('takeTemperatureMeasurements', false, @islogical);
-p.addParameter('postreceptoralCombinations', [], @isnumeric);
 p.addParameter('useAverageGamma', false, @islogical);
 p.addParameter('zeroPrimariesAwayFromPeak', false, @islogical);
-p.addParameter('emailRecipient','igdalova@mail.med.upenn.edu', @isstr);
 p.addParameter('verbose',false,@islogical);
 p.parse(varargin{:});
 validationDescribe = p.Results;
 
+%% Check input OK
+if (~validationDescribe.simulate & (isempty(spectroRadiometerOBJ) | isempty(S)))
+    error('Must pass radiometer objecta and S, unless simulating');
+end
+
 %% Get cached direction data as well as calibration file.  
 [cacheData,adjustedCal] = OLGetCacheAndCalData(cacheFileName, validationDescribe);
-
-%% Open up a radiometer object
-%
-% Set meterToggle so that we don't use the Omni radiometer in various measuremnt calls below.
-if (~validationDescribe.simulate)
-    [spectroRadiometerOBJ,S,nAverage] = OLOpenSpectroRadiometerObj(meterType);
-    meterToggle = [true false]; od = [];
-else
-    spectroRadiometerOBJ = [];
+if (isempty(S))
     S = adjustedCal.describe.S;
-    nAverage = 1;
 end
 
-%% Attempt to open the LabJack temperature sensing device
-%
-% If quitNow is true, the user has responded to a prompt in the called routine
-% saying to give up.  Throw an error in that case.
-if (~validationDescribe.simulate & validationDescribe.takeTemperatureMeasurements)
-    % Gracefully attempt to open the LabJack.  If it doesn't work and the user OK's the
-    % change, then the takeTemperature measurements flag is set to false and we proceed.
-    % Otherwise it either worked (good) or we give up and throw an error.
-    [validationDescribe.takeTemperatureMeasurements, quitNow, theLJdev] = OLCalibrator.OpenLabJackTemperatureProbe(validationDescribe.takeTemperatureMeasurements);
-    if (quitNow)
-        error('Unable to get temperature measurements to work as requested');
-    end
-else
-    theLJdev = [];
-end
+%% Set meterToggle so that we don't use the Omni radiometer in various measuremnt calls below.
+meterToggle = [true false]; od = [];
 
 %% Let user get the radiometer set up if desired.
 if (~validationDescribe.noRadiometerAdjustment)
@@ -122,7 +103,7 @@ try
     else
         results.calStateMeas = [];
     end
-    if (~validationDescribe.simulate & validationDescribe.takeTemperatureMeasurements)
+    if (~validationDescribe.simulate & validationDescribe.takeTemperatureMeasurements & ~isempty(theLJdev))
         [~, results.temperatureMeas] = theLJdev.measure();
     else
         results.temperatureMeas = [];
@@ -201,6 +182,10 @@ catch e
     if (~validationDescribe.simulate)
         if (~isempty(spectroRadiometerOBJ))
             spectroRadiometerOBJ.shutDown();
+        end
+        
+        if (~isempty(theLJdev))
+            theLJdev.close;
         end
     end
     

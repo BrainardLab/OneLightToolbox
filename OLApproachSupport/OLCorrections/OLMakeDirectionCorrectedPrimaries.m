@@ -1,5 +1,5 @@
 function OLMakeDirectionCorrectedPrimaries(ol,protocolParams,varargin)
-%OLMakeDirectionCorrectedPrimaries  Make the corrected primaries from the nominal primaries
+%%OLMakeDirectionCorrectedPrimaries  Make the corrected primaries from the nominal primaries
 %
 % Syntax:
 %    OLMakeDirectionCorrectedPrimaries(ol,protocolParams);
@@ -39,7 +39,7 @@ OLSessionLog(protocolParams,mfilename,'StartEnd','start');
 
 %% Grab the relevant directions name and get the cache file name
 theDirections = protocolParams.directionNames;
-theDirectionCacheFileNames = OLMakeDirectionCacheFileNames(protocolParams);
+directionCacheFileNames = OLMakeDirectionCacheFileNames(protocolParams);
 
 %% Make sure we have booleans for all of the passed directions
 assert(numel(protocolParams.directionNames) == numel(protocolParams.directionsCorrect), 'protocolParams.directionsCorrect does not have the same length protocolParams.directionNames');
@@ -61,6 +61,27 @@ corrD = OLCorrectionParamsDictionary();
 if (p.Results.verbose), fprintf('* Getting correction params for <strong>%s</strong>\n', protocolParams.boxName); end;
 correctionParams = corrD(protocolParams.boxName);
 
+%% Open up a radiometer object
+if (~protocolParams.simulate)
+    [spectroRadiometerOBJ,S] = OLOpenSpectroRadiometerObj('PR-670');
+else
+    spectroRadiometerOBJ = [];
+    S = [];
+end
+
+%% Open up lab jack for temperature measurements
+if (~protocolParams.simulate & protocolParams.takeTemperatureMeasurements)
+    % Gracefully attempt to open the LabJack.  If it doesn't work and the user OK's the
+    % change, then the takeTemperature measurements flag is set to false and we proceed.
+    % Otherwise it either worked (good) or we give up and throw an error.
+    [protocolParams.takeTemperatureMeasurements, quitNow, theLJdev] = OLCalibrator.OpenLabJackTemperatureProbe(protocolParams.takeTemperatureMeasurements);
+    if (quitNow)
+        error('Unable to get temperature measurements to work as requested');
+    end
+else
+    theLJdev = [];
+end
+
 %% Loop through and do correction for each desired direction.
 for corrD = 1:length(theDirections)
   
@@ -71,7 +92,7 @@ for corrD = 1:length(theDirections)
     
     % Correct the cache
     if (p.Results.verbose), fprintf(' * Starting spectrum-seeking loop...\n'); end;
-    [cacheData, cal] = OLCorrectCacheFileOOC(sprintf('%s.mat', fullfile(nominalPrimariesDir, theDirectionCacheFileNames{corrD})),ol, 'PR-670', ...
+    [cacheData, cal] = OLCorrectCacheFileOOC(sprintf('%s.mat', fullfile(nominalPrimariesDir, directionCacheFileNames{corrD})), ol, spectroRadiometerOBJ, S, theLJdev, ...
         'approach',                     protocolParams.approach, ...
         'simulate',                     protocolParams.simulate, ...
         'doCorrection',                 theDirectionsCorrect(corrD), ...
@@ -84,7 +105,6 @@ for corrD = 1:length(theDirections)
         'smoothness',                   correctionParams.smoothness, ...
         'iterativeSearch',              correctionParams.iterativeSearch, ...
         'nIterations',                  correctionParams.nIterations, ...
-        'postreceptoralCombinations',   correctionParams.postreceptoralCombinations, ...
         'useAverageGamma',              correctionParams.useAverageGamma, ...
         'zeroPrimariesAwayFromPeak',    correctionParams.zeroPrimariesAwayFromPeak, ...
         'emailRecipient',               protocolParams.emailRecipient, ...
@@ -95,10 +115,21 @@ for corrD = 1:length(theDirections)
     if (p.Results.verbose), fprintf(' * Saving cache ...'); end;
     olCache = OLCache(correctedPrimariesDir,cal);
     protocolParams.modulationDirection = theDirections{corrD};
-    protocolParams.cacheFile = fullfile(nominalPrimariesDir, theDirectionCacheFileNames{corrD});
+    protocolParams.cacheFile = fullfile(nominalPrimariesDir, directionCacheFileNames{corrD});
     if (p.Results.verbose), fprintf('Cache saved to %s\n', protocolParams.cacheFile); end
     olCache.save(protocolParams.cacheFile, cacheData);
     if (p.Results.verbose), fprintf('Cache saved to %s\n', protocolParams.cacheFile); end
+end
+
+%% Close the radiometer object
+if (~protocolParams.simulate)
+    if (~isempty(spectroRadiometerOBJ))
+        spectroRadiometerOBJ.shutDown();
+    end
+    
+    if (~isempty(theLJdev))
+        theLJdev.close;
+    end
 end
 
 %% Update session log info

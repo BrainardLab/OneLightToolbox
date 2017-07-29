@@ -110,7 +110,7 @@ params.boxName = '';
 switch (type)
     case 'standardCorrection'
         params.calStateMeas = false;                                                        % Whether to take a state measurements
-        params.iterativeSearch = true;                                                      % When false, this just does a simple non-iterative correction.
+        params.iterativeSearch = true;                                                      % Do iterative search with fmincon on each measurement iteration?
         params.learningRate = 0.8;                                                          % How much adjustment is done on each seeking iteration.
         params.learningRateDecrease = false;                                                % When true, learning rate is decreased over iterations.
         params.asympLearningRateFactor = 0.5;                                               % If learningRateDecrease is true, this affects how fast it decreases.

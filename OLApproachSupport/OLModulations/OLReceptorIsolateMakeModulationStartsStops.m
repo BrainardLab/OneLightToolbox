@@ -94,10 +94,6 @@ directionOLCache = OLCache(directionCacheDir, modulationParams.oneLightCal);
 % name.  If there is someday a reason to allow more than one, this is where the code
 % would start having to deal with it.
 
-%Note from Nicolas. The assert statemement below is not needed (and is in fact wrong)
-%because we are passed a single string from OLMakeModulationStartsStops
-%assert(numel(directionName) == 1,'Only one modulation direction currently supported');
-
 [directionCacheFile, startsStopsFileName, modulationParams.direction] = OLAssembleDirectionCacheAndStartsStopFileNames(protocolParams, modulationParams, directionName);
 
 [cacheData,isStale] = directionOLCache.load(directionCacheFile);
@@ -118,7 +114,7 @@ switch (directionParams.type)
         modulationPrimary = directionData.modulationPrimarySignedPositive;
         diffPrimaryPos = directionData.modulationPrimarySignedPositive-backgroundPrimary;
         diffPrimaryNeg = directionData.modulationPrimarySignedNegative-backgroundPrimary;
-    case 'pulse'
+    case {'pulse' 'lightfluxpulse'}
         modulationPrimary = directionData.modulationPrimarySignedPositive;
         diffPrimaryPos = modulationPrimary-backgroundPrimary;
     otherwise
@@ -173,7 +169,7 @@ for f = 1:modulationParams.nFrequencies
             switch (directionParams.type)
                 case 'modulation'
                     modulation(f, pp, c) = OLCalculateStartsStopsModulation(waveform, modulationParams.oneLightCal, backgroundPrimary, diffPrimaryPos, diffPrimaryNeg);
-                case 'pulse'
+                case {'pulse' 'lightfluxpulse'}
                     modulation(f, pp, c) = OLCalculateStartsStopsModulation(waveform, modulationParams.oneLightCal, backgroundPrimary, diffPrimaryPos, []);
                 otherwise
                     error('Unknown direction type specified.');
@@ -194,7 +190,10 @@ save(startsStopsFileName, 'modulationData', '-v7.3');
 if (p.Results.verbose); fprintf('  - Done.\n'); end;
 end
 
-% THIS FILE NAME SHOULD BE OF FORM 'ModulationStartsStops_<ModulationName>_<DirectionName>'
+%%OLAssembleDirectionCacheAndStartsStopFileNames
+%
+% Put together the modulation file name from the modulation name and the direction name, and also
+% get the name of the cache file where we'll read the direction.
 function [directionCacheFileName, startsStopsFileName, directionName] = OLAssembleDirectionCacheAndStartsStopFileNames(protocolParams, modulationParams, directionName)
 
     % Hack to get the direction type
@@ -204,7 +203,6 @@ function [directionCacheFileName, startsStopsFileName, directionName] = OLAssemb
         end
     end
 
-    directionName = OLMakeApproachDirectionName(directionName,protocolParams);
     fullDirectionName = sprintf('Direction_%s', directionName);
     fullStartsStopsName = sprintf('ModulationStartsStops_%s_%s', modulationParams.name, directionName);
     directionCacheFileName = fullfile(getpref(protocolParams.approach,'DirectionCorrectedPrimariesBasePath'), protocolParams.observerID,protocolParams.todayDate,protocolParams.sessionName, fullDirectionName);

@@ -298,14 +298,14 @@ switch directionParams.type
         
         % Replace the values
         for observerAgeInYrs = 20:60
-            cacheDataMaxPulseLightFlux.data(observerAgeInYrs).backgroundPrimary = backgroundPrimary;
-            cacheDataMaxPulseLightFlux.data(observerAgeInYrs).backgroundSpd = backgroundSpd;
-            cacheDataMaxPulseLightFlux.data(observerAgeInYrs).differencePrimary = modulationPrimary-backgroundPrimary;
-            cacheDataMaxPulseLightFlux.data(observerAgeInYrs).differenceSpd = modulationSpd-backgroundSpd;
-            cacheDataMaxPulseLightFlux.data(observerAgeInYrs).modulationPrimarySignedPositive = modulationPrimary;
-            cacheDataMaxPulseLightFlux.data(observerAgeInYrs).modulationSpdSignedPositive = modulationSpd;
-            cacheDataMaxPulseLightFlux.data(observerAgeInYrs).modulationPrimarySignedNegative = [];
-            cacheDataMaxPulseLightFlux.data(observerAgeInYrs).modulationSpdSignedNegative = [];
+            cacheData.data(observerAgeInYrs).backgroundPrimary = backgroundPrimary;
+            cacheData.data(observerAgeInYrs).backgroundSpd = backgroundSpd;
+            cacheData.data(observerAgeInYrs).differencePrimary = modulationPrimary-backgroundPrimary;
+            cacheData.data(observerAgeInYrs).differenceSpd = modulationSpd-backgroundSpd;
+            cacheData.data(observerAgeInYrs).modulationPrimarySignedPositive = modulationPrimary;
+            cacheData.data(observerAgeInYrs).modulationSpdSignedPositive = modulationSpd;
+            cacheData.data(observerAgeInYrs).modulationPrimarySignedNegative = [];
+            cacheData.data(observerAgeInYrs).modulationSpdSignedNegative = [];
         end
 
     otherwise

@@ -47,11 +47,11 @@ paramsDictionary = OLDirectionNominalParamsDictionary();
 
 %% Loop over directions
 for ii = 1:length(approachParams.directionNames)
-    generateAndSaveBackgroundPrimaries(approachParams,paramsDictionary,approachParams.directionNames{ii});
+    generateAndSaveDirectionPrimaries(approachParams,paramsDictionary,approachParams.directionNames{ii});
 end
 end
 
-function generateAndSaveBackgroundPrimaries(approachParams, paramsDictionary, directionName)
+function generateAndSaveDirectionPrimaries(approachParams, paramsDictionary, directionName)
 % Get background primaries
 directionParams = OLMergeBaseParamsWithParamsFromDictionaryEntry(approachParams, paramsDictionary, directionName);
 

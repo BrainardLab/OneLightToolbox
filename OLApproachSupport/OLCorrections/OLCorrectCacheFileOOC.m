@@ -1,8 +1,8 @@
-function [cacheData, adjustedCal] = OLCorrectCacheFileOOC(cacheFileNameFullPath, ol, meterType, varargin)
+function [cacheData, adjustedCal] = OLCorrectCacheFileOOC(cacheFileNameFullPath, ol, spectroRadiometerOBJ, S, theLJdev, varargin)
 %%OLCorrectCacheFileOOC  Use iterated procedure to optimize modulations in a cache file
 %
 % Usage:
-%    results = OLCorrectCacheFileOOC(cacheFileNameFullPath, ol, meterType)
+%    [cacheData, adjustedCal] = OLCorrectCacheFileOOC(cacheFileNameFullPath, ol, spectroRadiometerOBJ, S, theLJdev);
 %
 % Description:
 %   Uses an iterated procedure to bring a modulation as close as possible to
@@ -11,7 +11,9 @@ function [cacheData, adjustedCal] = OLCorrectCacheFileOOC(cacheFileNameFullPath,
 % Input:
 %     cacheFileNameFullPath (string)  - Absolute path full name of the cache file to validate.
 %     ol (object)                     - Open OneLight object.
-%     meterType (string)              - Meter type to use (e.g. 'PR-670');
+%     spectroRadiometerOBJ (object)   - Object for the measurement meter. Can be passed empty if simulating.
+%     S                               - Wavelength sampling for measurements. Can be passed empty if simulating.
+%     theLJdev                        - Lab jack device.  Pass empty will skip temperature measurements.
 %
 % Output:
 %     cacheData (struct)              - Contains the results
@@ -29,17 +31,16 @@ function [cacheData, adjustedCal] = OLCorrectCacheFileOOC(cacheFileNameFullPath,
 %     'calibrationType'                ''                               Calibration type
 %     'takeTemperatureMeasurements'    false                            Take temperature measurements? (Requires a connected LabJack dev with a temperature probe.)
 %     'takeCalStateMeasurements'       true                             Take OneLight state measurements
-%     'postreceptoralCombinations'     []                               Post-receptoral combinations to calculate contrast w.r.t.
 %     'useAverageGamma'                false                            Force the useAverageGamma mode in the calibration?
 %     'zeroPrimariesAwayFromPeak'      false                            Zero out calibrated primaries well away from their peaks.
-%     'emailRecipient'                 'igdalova@mail.med.upenn.edu'    Who gets email when this finishes.
 %     'verbose'                        false                            Print out things in progress.
 %     'nIterations'                    20                               Number of iterations
 %     'learningRate'                   0.8                              Learning rate
 %     'learningRateDecrease'           true                             Decrease learning rate over iterations?
 %     'asympLearningRateFactor'        0.5                              If learningRateDecrease is true, the asymptotic learning rate is (1-asympLearningRateFactor)*learningRate
 %     'smoothness'                     0.001                            Smoothness parameter for OLSpdToPrimary
-%     'iterativeSearch'                false                            Do iterative search?
+%     'iterativeSearch'                false                            Do iterative search with fmincon on each measurement interation?
+%     'nAverage'                       1                                Number of measurements to average for each spectrum measured.
 
 % 1/21/14   dhb, ms  Convert to use OLSettingsToStartsStops.
 % 1/30/14   ms       Added keyword parameters to make this useful.
@@ -48,23 +49,22 @@ function [cacheData, adjustedCal] = OLCorrectCacheFileOOC(cacheFileNameFullPath,
 % 12/21/16  npc      Updated for new class @LJTemperatureProbe
 % 01/03/16  dhb      Refactoring, cleaning, documenting.
 % 06/05/17  dhb      Remove old style verbose arg from calls to OLSettingsToStartsStops
-% 07/27/17 dhb       Massive interface redo.
+% 07/27/17  dhb      Massive interface redo.
+% 07/29/17  dhb      Pull out radiometer open to one level up.
 
 % Parse the input
 p = inputParser;
 p.addParameter('approach','', @isstr);
 p.addParameter('simulate',false,@islogical);
 p.addParameter('doCorrection', true, @islogical);
-p.addParameter('noRadiometerAdjustment', false, @islogical);
+p.addParameter('noRadiometerAdjustment', true, @islogical);
 p.addParameter('pauseDuration',0,@inumeric);
 p.addParameter('observerAgeInYrs', 32, @isscalar);
 p.addParameter('calibrationType','', @isstr);
 p.addParameter('takeCalStateMeasurements', false, @islogical);
 p.addParameter('takeTemperatureMeasurements', false, @islogical);
-p.addParameter('postreceptoralCombinations', [], @isnumeric);
 p.addParameter('useAverageGamma', false, @islogical);
 p.addParameter('zeroPrimariesAwayFromPeak', false, @islogical);
-p.addParameter('emailRecipient','igdalova@mail.med.upenn.edu', @isstr);
 p.addParameter('verbose',false,@islogical);
 p.addParameter('nIterations', 20, @isscalar);
 p.addParameter('learningRate', 0.8, @isscalar);
@@ -72,11 +72,20 @@ p.addParameter('learningRateDecrease',true,@islogical);
 p.addParameter('asympLearningRateFactor',0.5,@isnumeric);
 p.addParameter('smoothness', 0.001, @isscalar);
 p.addParameter('iterativeSearch',false, @islogical);
+p.addParameter('nAverage',1,@isnumeric);
 p.parse(varargin{:});
 correctionDescribe = p.Results;
 
+%% Check input OK
+if (~correctionDescribe.simulate & (isempty(spectroRadiometerOBJ) | isempty(S)))
+    error('Must pass radiometer objecta and S, unless simulating');
+end
+
 %% Get cached direction data as well as calibration file
 [cacheData,adjustedCal] = OLGetCacheAndCalData(cacheFileNameFullPath, correctionDescribe);
+if (isempty(S))
+    S = adjustedCal.describe.S;
+end
 
 %% We might not want to seek
 %
@@ -88,33 +97,8 @@ if ~(correctionDescribe.doCorrection)
     return;
 end
 
-%% Open up a radiometer object
-%
-% Set meterToggle so that we don't use the Omni radiometer in various measuremnt calls below.
-if (~correctionDescribe.simulate)
-    [spectroRadiometerOBJ,S,nAverage] = OLOpenSpectroRadiometerObj(meterType);
-    meterToggle = [true false]; od = [];
-else
-    spectroRadiometerOBJ = [];
-    S = adjustedCal.describe.S;
-    nAverage = 1;
-end
-
-%% Attempt to open the LabJack temperature sensing device
-%
-% If quitNow is true, the user has responded to a prompt in the called routine
-% saying to give up.  Throw an error in that case.
-if (~correctionDescribe.simulate & correctionDescribe.takeTemperatureMeasurements)
-    % Gracefully attempt to open the LabJack.  If it doesn't work and the user OK's the
-    % change, then the takeTemperature measurements flag is set to false and we proceed.
-    % Otherwise it either worked (good) or we give up and throw an error.
-    [correctionDescribe.takeTemperatureMeasurements, quitNow, theLJdev] = OLCalibrator.OpenLabJackTemperatureProbe(correctionDescribe.takeTemperatureMeasurements);
-    if (quitNow)
-        error('Unable to get temperature measurements to work as requested');
-    end
-else
-    theLJdev = [];
-end
+%% Set meterToggle so that we don't use the Omni radiometer in various measuremnt calls below.
+meterToggle = [true false]; od = [];
 
 %% Let user get the radiometer set up if desired.
 if (~correctionDescribe.noRadiometerAdjustment)
@@ -141,11 +125,11 @@ try
     % State and temperature measurements
     if (~correctionDescribe.simulate & correctionDescribe.calStateMeas)
         if (correctionDescribe.verbose), fprintf('- State measurements \n'); end;
-        [~, results.calStateMeas] = OLCalibrator.TakeStateMeasurements(adjustedCal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, 'standAlone',true);
+        [~, results.calStateMeas] = OLCalibrator.TakeStateMeasurements(adjustedCal, ol, od, spectroRadiometerOBJ, meterToggle, correctDescribe.nAverage, theLJdev, 'standAlone',true);
     else
         results.calStateMeas = [];
     end
-    if (~correctionDescribe.simulate & correctionDescribe.takeTemperatureMeasurements)
+    if (~correctionDescribe.simulate & correctionDescribe.takeTemperatureMeasurements & ~isempty(theLJdev))
         [~, results.temperatureMeas] = theLJdev.measure();
     else
         results.temperatureMeas = [];
@@ -199,7 +183,7 @@ try
             
             % Take the measurements.  Simulate with OLPrimaryToSpd when not measuring.
             if (~correctionDescribe.simulate)
-                results.directionMeas(iter,i).meas = OLTakeMeasurementOOC(ol, [], spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
+                results.directionMeas(iter,i).meas = OLTakeMeasurementOOC(ol, [], spectroRadiometerOBJ, starts, stops, S, meterToggle, correctDescribe.nAverage);
             else
                 results.directionMeas(iter,i).meas.pr650.spectrum = OLPrimaryToSpd(adjustedCal,primariesThisIter);
                 results.directionMeas(iter,i).meas.pr650.time = [mglGetSecs mglGetSecs];
@@ -267,14 +251,7 @@ try
         % Compute and store the settings to use next time through
         backgroundNextPrimaryTruncatedLearningRate = backgroundPrimaryUsed + backgroundDeltaPrimaryTruncatedLearningRate;
         modulationNextPrimaryTruncatedLearningRate = modulationPrimaryUsed + modulationDeltaPrimaryTruncatedLearningRate;
-        
-        % Compute and print out information about the quality of
-        % the current measurement, in contrast terms.
-        theCanonicalPhotoreceptors = cacheData.data(correctionDescribe.observerAgeInYrs).describe.photoreceptors;
-        T_receptors = cacheData.data(correctionDescribe.observerAgeInYrs).describe.T_receptors;
-        [contrasts(:,iter) postreceptoralContrasts(:,iter)] = ComputeAndReportContrastsFromSpds(['Iteration ' num2str(iter, '%02.0f')] ,theCanonicalPhotoreceptors,T_receptors,...
-            backgroundSpdMeasured,modulationSpdMeasured,correctionDescribe.postreceptoralCombinations,true);
-        
+              
         % Save the information in a convenient form for later.
         backgroundSpdMeasuredAll(:,iter) = backgroundSpdMeasured;
         modulationSpdMeasuredAll(:,iter) = modulationSpdMeasured;
@@ -321,9 +298,6 @@ try
             cacheData.data(ii).correction.modulationSpdMeasuredAll = modulationSpdMeasuredAll;
             cacheData.data(ii).correction.modulationNextPrimaryTruncatedLearningRateAll = modulationNextPrimaryTruncatedLearningRateAll;
             cacheData.data(ii).correction.modulationDeltaPrimaryTruncatedLearningRateAll = modulationDeltaPrimaryTruncatedLearningRateAll;
-            
-            cacheData.data(ii).correction.contrasts = contrasts;
-            cacheData.data(ii).correction.postreceptoralContrasts = postreceptoralContrasts;
         else
             cacheData.data(ii).describe = [];
             cacheData.data(ii).backgroundPrimary = [];
@@ -342,23 +316,20 @@ try
     
     % Turn the OneLight mirrors off.
     ol.setAll(false);
+      
+% Something went wrong, try to close radiometer gracefully
+catch e
+  % Turn the OneLight mirrors off.
+    ol.setAll(false);
     
     % Close the radiometer
     if (~correctionDescribe.simulate)
         if (~isempty(spectroRadiometerOBJ))
             spectroRadiometerOBJ.shutDown();
         end
-    end
-    
-% Something went wrong, try to close radiometer gracefully
-catch e
-  % Turn the OneLight mirrors off.
-    ol.setAll(false);
-    
-     % Close the radiometer
-    if (~correctionDescribe.simulate)
-        if (~isempty(spectroRadiometerOBJ))
-            spectroRadiometerOBJ.shutDown();
+        
+        if (~isempty(theLJdev))
+            theLJdev.close;
         end
     end
     
