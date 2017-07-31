@@ -8,20 +8,18 @@ function OLReceptorIsolateMakeModulationStartsStops(modulationName, directionNam
 %     Converts primary settings for modulations into starts/stops arrays and
 %     stores them in a cache file.  Included in this is filling in the
 %     intermediate contrasts, as the input primaries are generally for the
-%     maximum modulation.
-%
-%     The information in the modulations parameter in the dictionary includes modulation
-%     directions.  These are read from the corrected versions of the primary files, which
-%     are located in directory.
+%     modulation extrema.
 %
 % Input:
-%     configName (string)       The name of config for retrieving the appropriate modulation params
-%     protocolParams (struct)   Provides some needed information.  Relevant fields are:
-%                                 GIVE OR POINT TO THE RELEVANT FIELDS HERE.
+%     modulationName (string)       The name of the modulation in the modulations dictionary.
+%     directionName (string)        The name of the direciton in the directions dictionary.
+%     protocolParams (struct)       Provides some needed information.  Relevant fields are:
+%                                     GIVE OR POINT TO THE RELEVANT FIELDS HERE.
 %
 % Output:
-%     Creates file with starts/stops needed to produce the desired modulation inside.
-%     NEED TO SAY WHERE THESE GO.
+%     Creates file with starts/stops needed to produce the desired modulation inside and
+%     puts this into the protocol's ModulationStartsStops directory, with subfolder by
+%     subject, date and session.
 %
 % Optional key/value pairs
 %     'verbose' (boolean)    Print out diagnostic information?
@@ -40,15 +38,18 @@ p.addRequired('protocolParams',@isstruct);
 p.addParameter('verbose',true,@islogical);
 p.parse(modulationName, directionName, protocolParams, varargin{:});
 
-%% Get params from modulation params dictionary
+%% Say hello
+if (p.Results.verbose); fprintf('\n* Computing modulation %s+%s\n',modulationName,directionName); end;
+
+%% Get modulation params from modulation params dictionary
 d = OLModulationParamsDictionary;
 modulationParams = d(modulationName);
 
-%% Setup the directories we'll use.
+%% Set up the input and output directories
 % We count on the standard relative directory structure that we always use
 % in our (Aguirre/Brainard Lab) experiments.
 %
-% Get where the corrected direction files live.  This had better exist.
+% Get where the input corrected direction files live.  This had better exist.
 directionCacheDir = fullfile(getpref(protocolParams.protocol,'DirectionCorrectedPrimariesBasePath'), protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
 if (~exist(directionCacheDir,'dir'))
     error('Corrected direction primaries directory does not exist');
@@ -60,55 +61,36 @@ if(~exist(modulationParams.modulationDir,'dir'))
     mkdir(modulationParams.modulationDir)
 end
 
-%% Load the calibration file.
+%% Load the calibration file and tack it onto the modulationParams structure.
+%
+% Not entirely sure whether that structure is the right place for the calibration information
+% but leaving it be for now.
 cType = OLCalibrationTypes.(protocolParams.calibrationType);
 modulationParams.oneLightCal = LoadCalFile(cType.CalFileName, [], fullfile(getpref(protocolParams.approach, 'OneLightCalDataPath')));
 
 %% Get the corrected direction primaries
 % 
-% These are currently in a cache file.  Perhaps someday we will uncache them,
-% and perhaps not.  These particular files should never be stale, so the
-% only role of using a cache file is that we could detect staleness.  But,
-% given that these are written in subject/date/session specific directories,
-% staleness is not really a problem we need to worry about.
+% These are currently in a cache file. These particular files should never
+% be stale, so the role of using a cache file is to allow us to keep things
+% separate by calibration and to detect staleness.  But, given that these
+% are written in subject/date/session specific directories, staleness is
+% and multiple cal files are both unlikely.
 %
 % Setup the cache object for read, and do the read.
 directionOLCache = OLCache(directionCacheDir, modulationParams.oneLightCal);
-%directionFilenames{1} = modulationParams.directionCacheFile;
-% for i = 1:length(directionFilenames)
-%     % Create the cache file name for each direction specified as part of the
-%     % modulation.
-%     [~, directionCacheFilename] = fileparts(directionFilenames{i});
-%     
-%     % Load the cached direction data.
-%     [cacheData,isStale] = directionOLCache.load(directionCacheFilename);
-%     assert(~isStale,'Cache file is stale, aborting.');  
-%     directionParams(i) = cacheData.params;
-%     directionData(i) = cacheData.data(protocolParams.observerAgeInYrs);
-% end
-
-% Currently we can only handle one direction, so break at this point if more
-% than one specified in the modulation parameters.  
-%
-% Because we currently only handle one direction, map it to a nonconfusing variable
-% name.  If there is someday a reason to allow more than one, this is where the code
-% would start having to deal with it.
-
 [directionCacheFile, startsStopsFileName, modulationParams.direction] = OLAssembleDirectionCacheAndStartsStopFileNames(protocolParams, modulationParams, directionName);
 
+% Load direciton data, check for staleness, and pull out what we want
 [cacheData,isStale] = directionOLCache.load(directionCacheFile);
 assert(~isStale,'Cache file is stale, aborting.');  
 directionParams = cacheData.directionParams;
 directionData = cacheData.data(protocolParams.observerAgeInYrs);
 clear cacheData
 
-%% Say hello
-if (p.Results.verbose); fprintf('\n* Computing modulation %s\n',modulationName); end;
-
 %% Get the background
 backgroundPrimary = directionData.backgroundPrimary;
 
-% Get the modulation background and differences.
+%% Put primary data for direction into canonical form
 switch (directionParams.type)
     case 'modulation'
         modulationPrimary = directionData.modulationPrimarySignedPositive;
@@ -117,6 +99,7 @@ switch (directionParams.type)
     case {'pulse' 'lightfluxpulse'}
         modulationPrimary = directionData.modulationPrimarySignedPositive;
         diffPrimaryPos = modulationPrimary-backgroundPrimary;
+        diffPrimaryNeg = [];
     otherwise
         error('Unknown direction type specified')
 end

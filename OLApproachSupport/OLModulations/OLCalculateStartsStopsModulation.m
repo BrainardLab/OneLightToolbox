@@ -128,4 +128,6 @@ switch waveform.modulationMode
         waveform.stops = stopsBuffer(IC,:);
         waveform.spd = (cal.computed.pr650M * waveform.primaries + repmat(cal.computed.pr650MeanDark, 1, size(waveform.primaries, 2)));
 end
+
+%% Make the starts/stops for the background
 [waveform.background.starts, waveform.background.stops] = OLSettingsToStartsStops(cal, OLPrimaryToSettings(cal, backgroundPrimary));
