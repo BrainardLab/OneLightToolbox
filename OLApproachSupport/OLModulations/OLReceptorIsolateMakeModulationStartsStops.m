@@ -1,5 +1,5 @@
 function OLReceptorIsolateMakeModulationStartsStops(modulationName, directionName, protocolParams, varargin)
-%OLReceptorIsolateMakeModulationStartsStops  Creates the starts/stops cache data for a given config file.
+%OLReceptorIsolateMakeModulationStartsStops  Creates the starts/stops cache data for a given config file
 %
 % Usage:
 %     OLReceptorIsolateMakeModulationStartsStops(modulationName, directionName, topLevelParams)
