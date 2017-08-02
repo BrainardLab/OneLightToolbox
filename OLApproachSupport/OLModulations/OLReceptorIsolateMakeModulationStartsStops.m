@@ -10,11 +10,15 @@ function OLReceptorIsolateMakeModulationStartsStops(modulationName, directionNam
 %     intermediate contrasts, as the input primaries are generally for the
 %     modulation extrema.
 %
+%     Calls OLCalculateStartsStopsModulation to do most of the work -- this is primarily
+%     a wrapper for that routine that handles parameter massaging as well as multiple
+%     frequencies, phases and contrasts.
+%
 % Input:
 %     modulationName (string)       The name of the modulation in the modulations dictionary.
 %     directionName (string)        The name of the direciton in the directions dictionary.
 %     protocolParams (struct)       Provides some needed information.  Relevant fields are:
-%                                     GIVE OR POINT TO THE RELEVANT FIELDS HERE.
+%                                   [DHB NOTE: GIVE OR POINT TO THE RELEVANT FIELDS HERE.]
 %
 % Output:
 %     Creates file with starts/stops needed to produce the desired modulation inside and
@@ -24,7 +28,7 @@ function OLReceptorIsolateMakeModulationStartsStops(modulationName, directionNam
 % Optional key/value pairs
 %     'verbose' (boolean)    Print out diagnostic information?
 %
-% See also:
+% See also: OLMakeModulationsStartsStops, OLCacluateStartsStopsModulation, OLModulationParamsDictionary.
 
 % 4/19/13   dhb, ms     Update for new convention for desired contrasts in routine ReceptorIsolate.
 % 6/17/18   dhb         Merge with mab version and expand comments.
@@ -106,26 +110,41 @@ end
 
 %% Here compute the modulation and waveform as specified in the modulation file.
 %
-% IT WOULD BE NICE IF WE UNDERSTOOD THIS A LITTLE BETTER.
+% There are three parameters, related to modulation temporal frequency, temporal phase, and contrast
+% that get dealt with in a crossed design.  All other parameters must be dealt with by creating
+% separate modulations for each choice of parameters.
+%
+% Exactly how the parameters are interpreted depends on the modulation type.
+%
+% This next bit of code sets up parameters for describing the waveform in a format that
+% routine OLCalculateStartsStopsModulations understands, and then calls that routine to
+% make the starts/stops that implement the waveform.
 for f = 1:modulationParams.nFrequencies
     for pp = 1:modulationParams.nPhases
         for c = 1:modulationParams.nContrastScalars
-            % Construct the time vector
-            if strcmp(modulationParams.modulationMode, 'AM')
-                waveform.theEnvelopeFrequencyHz = modulationParams.modulationFrequencyTrials(1); % Modulation frequency
-                waveform.thePhaseDeg = modulationParams.modulationPhase(pp);
-                waveform.thePhaseRad = deg2rad(modulationParams.modulationPhase(pp));
-                waveform.theFrequencyHz = modulationParams.carrierFrequency(f);
-            elseif ~isempty(strfind(modulationParams.modulationMode, 'pulse'))
-                waveform.phaseRandSec = modulationParams.phaseRandSec(pp);
-                waveform.stepTimeSec = modulationParams.stepTimeSec(f);
-                waveform.preStepTimeSec = modulationParams.preStepTimeSec(f);
-                waveform.theFrequencyHz = -1;
-                waveform.thePhaseDeg = -1;
-            else
-                waveform.thePhaseDeg = modulationParams.carrierPhase(pp);
-                waveform.thePhaseRad = deg2rad(modulationParams.carrierPhase(pp));
-                waveform.theFrequencyHz = modulationParams.carrierFrequency(f);
+            
+            % Construct the waverofrm parameters for the particular type of modulation we
+            % are constructing.
+            switch (modulationParams.modulationMode)
+                case 'AM'
+                    % Amplitude modulation of an underlying carrier frequency
+                    waveform.theEnvelopeFrequencyHz = modulationParams.modulationFrequencyTrials(1); % Modulation frequency
+                    waveform.thePhaseDeg = modulationParams.modulationPhase(pp);
+                    waveform.thePhaseRad = deg2rad(modulationParams.modulationPhase(pp));
+                    waveform.theFrequencyHz = modulationParams.carrierFrequency(f);
+                case 'pulse'
+                    % A unidirectional pulse
+                    % Frequency and phase parameters are meaningless here, and ignored.
+                    waveform.phaseRandSec = modulationParams.phaseRandSec(pp);
+                    waveform.stepTimeSec = modulationParams.stepTimeSec(f);
+                    waveform.preStepTimeSec = modulationParams.preStepTimeSec(f);
+                    waveform.theFrequencyHz = -1;
+                    waveform.thePhaseDeg = -1;
+                otherwise
+                    % A sinuloidal modulation
+                    waveform.thePhaseDeg = modulationParams.carrierPhase(pp);
+                    waveform.thePhaseRad = deg2rad(modulationParams.carrierPhase(pp));
+                    waveform.theFrequencyHz = modulationParams.carrierFrequency(f);
             end
             
             waveform.direction = modulationParams.direction;

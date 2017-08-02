@@ -5,7 +5,10 @@ function waveform = OLCalculateStartsStopsModulation(waveform, cal, backgroundPr
 %     waveform = OLCalculateStartsStopsModulation(waveform, cal, backgroundPrimary, diffPrimaryPos, diffPrimaryNeg)
 %
 % Description:
-%     DESPARATELY SEEKING HEADER COMMENTS.
+%     DHB NOTE: DESPARATELY SEEKING HEADER COMMENTS.
+%
+%     This is called by OLReceptorIsolateMakeModulationStartsStops to make the starts/stops
+%     that implement a particular waveform, for a specific choice of waveform parameters.
 %
 %     It looks like if diffPrimayNeg is empty, only the positive arm is used (i.e. to make a pulse).
 %
@@ -16,7 +19,7 @@ function waveform = OLCalculateStartsStopsModulation(waveform, cal, backgroundPr
 % Optional key/value pairs.
 %    None.
 %
-% See also:
+% See also: OLMakeModulationsStartsStops, OLReceptorIsolateMakeModulationStartsStops, OLModulationParamsDictionary.
 
 % 7/21/17  dhb  Tried to improve comments.
 
