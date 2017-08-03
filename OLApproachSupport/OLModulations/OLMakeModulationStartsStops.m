@@ -48,7 +48,7 @@ OLSessionLog(protocolParams,mfilename,'StartEnd','start');
 
 %% Do each modulation
 for ii = 1:length(modulationNames)
-    OLReceptorIsolateMakeModulationStartsStops(modulationNames{ii}, directionNames{ii}, protocolParams,'verbose',p.Results.verbose);
+    OLReceptorIsolateMakeModulationStartsStops(ii,modulationNames{ii}, directionNames{ii}, protocolParams,'verbose',p.Results.verbose);
 end
 
 %% Update session log file

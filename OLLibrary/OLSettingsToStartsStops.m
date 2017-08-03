@@ -33,7 +33,7 @@ function [starts,stops] = OLSettingsToStartsStops(cal, settings, varargin)
 %                                     Defaults to false.
 %
 % Output:
-% starts (nSpectra x nCols)         - The starts values for the OneLight, where NumCols is the number
+% starts (nSpectra x nCols)         - The starts values for the OneLight, where nCols is the number
 %                                     of columns on the DMD chip in the OneLight.
 % stops (nSpectra x nCols)          - The stops values for the OneLight.
 %

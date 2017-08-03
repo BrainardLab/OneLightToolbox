@@ -58,17 +58,10 @@ switch (params.type)
         assert((isfield(params, 'cosineWindowIn')           && islogical(params.cosineWindowIn)),           sprintf('params.cosineWindowIn does not exist or it does not contain a boolean value.'));
         assert((isfield(params, 'cosineWindowOut')          && islogical(params.cosineWindowOut)),          sprintf('params.cosineWindowOut does not exist or it does not contain a boolean value.'));
         assert((isfield(params, 'cosineWindowDurationSecs') && isnumeric(params.cosineWindowDurationSecs)), sprintf('params.cosineWindowDurationSecs does not exist or it does not contain a numeric value.'));
-        assert((isfield(params, 'modulationFrequencyTrials')&& isnumeric(params.modulationFrequencyTrials)),sprintf('params.modulationFrequencyTrials does not exist or it does not contain a numeric value.'));
-        assert((isfield(params, 'modulationPhase')          && isnumeric(params.modulationPhase)),          sprintf('params.modulationPhase does not exist or it does not contain a numeric value.'));
-        assert((isfield(params, 'phaseRandSec')             && isnumeric(params.phaseRandSec)),             sprintf('params.phaseRandSec does not exist or it does not contain a numeric value.'));
-        assert((isfield(params, 'preStepTimeSec')           && isnumeric(params.preStepTimeSec)),           sprintf('params.preStepTimeSec does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'stepTimeSec')              && isnumeric(params.stepTimeSec)),              sprintf('params.stepTimeSec does not exist or it does not contain a numeric value.'));
-        assert((isfield(params, 'carrierFrequency')         && isnumeric(params.carrierFrequency)),         sprintf('params.carrierFrequency does not exist or it does not contain a numeric value.'));
-        assert((isfield(params, 'carrierPhase')             && isnumeric(params.carrierPhase)),             sprintf('params.carrierPhase does not exist or it does not contain a numeric value.'));
-        assert((isfield(params, 'contrastScalars')          && isnumeric(params.contrastScalars)),          sprintf('params.contrastScalars does not exist or it does not contain a numeric value.'));
+        assert((isfield(params, 'contrast')                 && isnumeric(params.contrast)),                 sprintf('params.contrast does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'coneNoise')                && isnumeric(params.coneNoise)),                sprintf('params.coneNoise does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'coneNoiseFrequency')       && isnumeric(params.coneNoiseFrequency)),       sprintf('params.coneNoiseFrequency does not exist or it does not contain a numeric value.'));
-        assert((isfield(params, 'stimulationMode')          && ischar(params.stimulationMode)),             sprintf('params.stimulationMode does not exist or it does not contain a string value.'));
     otherwise
         error('Unknown modulation starts/stops type');
 end
@@ -95,23 +88,17 @@ switch (type)
         % MATCH THESE UP TO WAVEFORM GENERATOR CODE AND DECIDE IF WE NEED THEM ALL.
         params.cosineWindowIn = true;               % If true, have a cosine fade-in
         params.cosineWindowOut = true;              % If true, have a cosine fade-out
-        params.cosineWindowDurationSecs = 0.5;      % Duration (in secs) of the cosine fade-in/out
         params.trialDuration = 3;                   % Number of seconds to show each trial
+        params.cosineWindowDurationSecs = 0.5;      % Duration (in secs) of the cosine fade-in/out
         params.stepTimeSec = 2;
-        
-        % THIS STUFF BECOMES A protocolParam so that jitter is part of the experimental
-        % code.
-        % params.preStepTimeSec = 0.5;               % Time before step
-        % params.phaseRandSec = [0];                 % Phase shifts in seconds
-    
+         
         % Contrast scaling
-        params.contrastScalars = [1];              % Contrast scalars (as proportion of max.)
+        params.contrast = 1;                         % Contrast scalars (as proportion of max specified in the direction)
         
-        % MAKE THIS PART OF DIRECTION FILES.
-        % params.maxContrast = 4;
+        % Cone noise parameters. 
+        params.coneNoise = 0;                        % Set to 1 for cone noise
+        params.coneNoiseFrequency = -1;              % Frequency of cone noise
         
-        % Stimulation mode
-        params.stimulationMode = 'maxmel';
     case 'sinusoid'
          error('Need to implement sinusoidal type in the dictionary before you may use it.')
         % params.modulationFrequencyTrials = [];     % Sequence of modulation frequencies
@@ -122,6 +109,7 @@ switch (type)
         % % Carrier frequency parameters
         % params.carrierFrequency = [-1];            % Sequence of carrier frequencies
         % params.carrierPhase = [-1];
+        
     otherwise
         error('Unknown modulation starts/stops type: ''%s''.\n', type);
 end
