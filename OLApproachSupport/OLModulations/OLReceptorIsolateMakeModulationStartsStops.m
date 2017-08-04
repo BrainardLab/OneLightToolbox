@@ -123,56 +123,56 @@ switch (modulationParams.type)
     case 'AM'
         % Amplitude modulation of an underlying carrier frequency
         error('Not yet implemented.  Harmonize the dictionary, the protocolParams.trialTypeParams, and this code.');
-        waveform.theEnvelopeFrequencyHz = modulationParams.modulationFrequencyTrials(1); % Modulation frequency
-        waveform.thePhaseDeg = modulationParams.modulationPhase;
-        waveform.thePhaseRad = deg2rad(modulationParams.modulationPhase);
-        waveform.theFrequencyHz = modulationParams.carrierFrequency;
-        waveform.theContrastRelMax = modulationParams.contrast;
+        waveformParams.theEnvelopeFrequencyHz = modulationParams.modulationFrequencyTrials(1); % Modulation frequency
+        waveformParams.thePhaseDeg = modulationParams.modulationPhase;
+        waveformParams.thePhaseRad = deg2rad(modulationParams.modulationPhase);
+        waveformParams.theFrequencyHz = modulationParams.carrierFrequency;
+        waveformParams.contrast = modulationParams.contrast;
         if (p.Results.verbose)
-            fprintf('*   Calculating %0.f s of %s, %.2f Hz, %.2f deg, %.1f pct contrast (of max)\n', waveform.duration, waveform.direction, waveform.theFrequencyHz, waveform.thePhaseDeg, 100*waveform.theContrastRelMax);
+            fprintf('*   Calculating %0.f s of %s, %.2f Hz, %.2f deg, %.1f pct contrast (of max)\n', waveformParams.duration, waveformParams.direction, waveformParams.theFrequencyHz, waveformParams.thePhaseDeg, 100*waveformParams.contrast);
         end
     case 'pulse'
         % A unidirectional pulse
         % Frequency and phase parameters are meaningless here, and ignored.
-        waveform.stepTimeSec = modulationParams.stepTimeSec;
-        waveform.theContrastRelMax = modulationParams.contrast;
-        waveform.duration = modulationParams.trialDuration;
-        waveform.type = modulationParams.type;
+        waveformParams.stepTimeSec = modulationParams.stepTimeSec;
+        waveformParams.contrast = modulationParams.contrast;
+        waveformParams.duration = modulationParams.trialDuration;
+        waveformParams.type = modulationParams.type;
         if (p.Results.verbose)
-            fprintf('*   Calculating pulse: %0.f s of %s, %.1f pct contrast (of max)\n', waveform.duration, waveform.direction, 100*waveform.theContrastRelMax);
+            fprintf('*   Calculating pulse: %0.f s of %s, %.1f pct contrast (of max)\n', waveformParams.duration, waveformParams.direction, 100*waveformParams.contrast);
         end
     case 'sinusoid'
         % A sinuloidal modulation
         error('Not yet implemented.  Harmonize the dictionary, the protocolParams.trialTypeParams, and this code.');
-        waveform.thePhaseDeg = modulationParams.carrierPhase;
-        waveform.thePhaseRad = deg2rad(modulationParams.carrierPhase);
-        waveform.theFrequencyHz = modulationParams.carrierFrequency;
-        waveform.theContrastRelMax = modulationParams.contrast;
+        waveformParams.thePhaseDeg = modulationParams.carrierPhase;
+        waveformParams.thePhaseRad = deg2rad(modulationParams.carrierPhase);
+        waveformParams.theFrequencyHz = modulationParams.carrierFrequency;
+        waveformParams.contrast = modulationParams.contrast;
         if (p.Results.verbose)
-            fprintf('*   Calculating %0.f s of %s, %.2f Hz, %.2f deg, %.1f pct contrast (of max)\n', waveform.duration, waveform.direction, waveform.theFrequencyHz, waveform.thePhaseDeg, 100*waveform.theContrastRelMax);
+            fprintf('*   Calculating %0.f s of %s, %.2f Hz, %.2f deg, %.1f pct contrast (of max)\n', waveformParams.duration, waveformParams.direction, waveformParams.theFrequencyHz, waveformParams.thePhaseDeg, 100*waveformParams.contrast);
         end
     otherwise
         error('Unknown modulation type specified');
 end
 
 % Waveform timebase
-waveform.t = 0:modulationParams.timeStep:waveform.duration-modulationParams.timeStep;
+waveformParams.t = 0:modulationParams.timeStep:waveformParams.duration-modulationParams.timeStep;
 
 % Parameters common to all modulation types
 %
 % Windowing.  At present all windows are half-cosine.
-waveform.window.type = 'cosine';
-waveform.window.cosineWindowIn = modulationParams.cosineWindowIn;
-waveform.window.cosineWindowOut = modulationParams.cosineWindowOut;
-waveform.window.cosineWindowDurationSecs = modulationParams.cosineWindowDurationSecs;
-waveform.window.nWindowed = modulationParams.cosineWindowDurationSecs/modulationParams.timeStep;
+waveformParams.window.type = 'cosine';
+waveformParams.window.cosineWindowIn = modulationParams.cosineWindowIn;
+waveformParams.window.cosineWindowOut = modulationParams.cosineWindowOut;
+waveformParams.window.cosineWindowDurationSecs = modulationParams.cosineWindowDurationSecs;
+waveformParams.window.nWindowed = modulationParams.cosineWindowDurationSecs/modulationParams.timeStep;
 
 % Exactly how we call the underlying routine depends on the modulation type, so handle that here.
 switch (modulationParams.type)
     case {'AM', 'sinusoid'}
-        modulation = OLCalculateStartsStopsModulation(waveform, modulationParams.oneLightCal, backgroundPrimary, diffPrimaryPos, diffPrimaryNeg);
+        modulation = OLCalculateStartsStopsModulation(waveformParams, modulationParams.oneLightCal, backgroundPrimary, diffPrimaryPos, diffPrimaryNeg);
     case {'pulse'}
-        modulation = OLCalculateStartsStopsModulation(waveform, modulationParams.oneLightCal, backgroundPrimary, diffPrimaryPos, []);
+        modulation = OLCalculateStartsStopsModulation(waveformParams, modulationParams.oneLightCal, backgroundPrimary, diffPrimaryPos, []);
     otherwise
         error('Unknown direction type specified.');
 end
@@ -182,7 +182,6 @@ if (p.Results.verbose); fprintf('  - Done.\n'); end;
 %% Put everything into a return strucure
 modulationData.params = modulationParams;
 modulationData.modulation = modulation;
-modulationData.waveform = waveform;
 
 %% Save out the modulation
 if (p.Results.verbose); fprintf(['* Saving modulation to ' startsStopsFileName '\n']); end;

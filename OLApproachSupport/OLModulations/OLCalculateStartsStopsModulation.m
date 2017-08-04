@@ -1,16 +1,16 @@
-function waveform = OLCalculateStartsStopsModulation(waveform, cal, backgroundPrimary, diffPrimaryPos, diffPrimaryNeg)
+function modulation = OLCalculateStartsStopsModulation(waveformParams, cal, backgroundPrimary, diffPrimaryPos, diffPrimaryNeg)
 % OLCalculateStartsStopsModulation  Calculate various modulations given background and pos/neg primary differences.
 %
 % Usage:
-%     waveform = OLCalculateStartsStopsModulation(waveform, cal, backgroundPrimary, diffPrimaryPos, diffPrimaryNeg)
+%     modulation = OLCalculateStartsStopsModulation(waveformParams, cal, backgroundPrimary, diffPrimaryPos, diffPrimaryNeg)
 %
 % Description:
 %     DHB NOTE: DESPARATELY SEEKING HEADER COMMENTS.
 %
 %     This is called by OLReceptorIsolateMakeModulationStartsStops to make the starts/stops
-%     that implement a particular waveform, for a specific choice of waveform parameters.
+%     that implement a particular modulation, for a specific choice of waveform parameters.
 %
-%     It looks like if diffPrimayNeg is empty, only the positive arm is used (i.e. to make a pulse).
+%     It looks like if diffPrimayNeg iswa empty, only the positive arm is used (i.e. to make a pulse).
 %
 % Input:
 %
@@ -27,41 +27,41 @@ function waveform = OLCalculateStartsStopsModulation(waveform, cal, backgroundPr
 % contrast re max modulation given in the direction file) vary over time according
 % to the desired waveform.  This routine first calculates the desired power level
 % at each time point.
-switch waveform.type
+switch waveformParams.type
     case {'pulse'}
         % Set up power levels, first as a step pulse that goes to the desired
         % contrast.
-        powerLevels = waveform.theContrastRelMax*ones(size(waveform.t));
+        powerLevels = waveformParams.contrast*ones(size(waveformParams.t));
         
         % Then window if specified
-        if (waveform.window.cosineWindowIn | waveform.window.cosineWindowOut);
-            cosineWindow = ((cos(pi + linspace(0, 1, waveform.window.nWindowed)*pi)+1)/2);
+        if (waveformParams.window.cosineWindowIn | waveformParams.window.cosineWindowOut);
+            cosineWindow = ((cos(pi + linspace(0, 1, waveformParams.window.nWindowed)*pi)+1)/2);
             cosineWindowReverse = cosineWindow(end:-1:1);
         end  
-        if (waveform.window.cosineWindowIn)
-            powerLevels(1:waveform.window.nWindowed) = waveform.theContrastRelMax*cosineWindow;
+        if (waveformParams.window.cosineWindowIn)
+            powerLevels(1:waveformParams.window.nWindowed) = waveformParams.contrast*cosineWindow;
         end
-        if (waveform.window.cosineWindowOut)
-        	powerLevels(end-waveform.window.nWindowed+1:end) = waveform.theContrastRelMax*cosineWindowReverse; 
+        if (waveformParams.window.cosineWindowOut)
+        	powerLevels(end-waveformParams.window.nWindowed+1:end) = waveformParams.contrast*cosineWindowReverse; 
         end
         
     case 'AM'
         error('Still need to update AM for modern code');
         % Probably, when this was called in the old days, the modulationWaveform field was set to 'sin', although we didn't go check it explicitly.
         % Hunt around in the modulation config files in the old OLFlickerSensitivity respository if you need to know.
-        waveModulation = 0.5+0.5*sin(2*pi*waveform.theEnvelopeFrequencyHz*waveform.t - waveform.thePhaseRad);
-        eval(['waveCarrier = waveform.theContrastRelMax*' waveform.modulationWaveform '(2*pi*waveform.theFrequencyHz*waveform.t);']);
+        waveModulation = 0.5+0.5*sin(2*pi*waveformParams.theEnvelopeFrequencyHz*waveformParams.t - waveformParams.thePhaseRad);
+        eval(['waveCarrier = waveformParams.contrast*' waveformParams.modulationWaveform '(2*pi*waveformParams.theFrequencyHz*waveformParams.t);']);
         powerLevels = waveModulation .* waveCarrier;
         
     case 'sinusoid'
         error('Still need to update sinusoid for for modern code');
         % When this was called in the old code, the modulationWaveform field was 'sin', so that the eval below produced a sinusoidal modulation.
-        eval(['powerLevels = waveform.theContrastRelMax*' waveform.modulationWaveform '(2*pi*waveform.theFrequencyHz*waveform.t - waveform.thePhaseRad);']);
+        eval(['powerLevels = waveformParams.contrast*' waveformParams.modulationWaveform '(2*pi*waveformParams.theFrequencyHz*waveformParams.t - waveformParams.thePhaseRad);']);
         
     case 'asym_duty'
         error('asym_duty type is not implemented and may never be again');
-        eval(['powerLevels = waveform.theContrastRelMax*' waveform.modulationWaveform '(2*pi*waveform.theFrequencyHz*waveform.t - waveform.thePhaseRad);']);
-        powerLevels = powerLevels.*rectify(square(2*pi*waveform.theEnvelopeFrequencyHz*waveform.t, 2/3*100), 'half');
+        eval(['powerLevels = waveformParams.contrast*' waveformParams.modulationWaveform '(2*pi*waveformParams.theFrequencyHz*waveformParams.t - waveformParams.thePhaseRad);']);
+        powerLevels = powerLevels.*rectify(square(2*pi*waveformParams.theEnvelopeFrequencyHz*waveformParams.t, 2/3*100), 'half');
         
     otherwise
         error('Unknown waveform type specified');
@@ -71,22 +71,26 @@ end
 %% Once the temporal waveform is computed above, most types can follow with a common set of code
 %
 % So this switch has fewer types than the one above.
-switch waveform.type
+switch waveformParams.type
     case {'pulse'}
         % Handle case of a pulse
+        
+                
+        % Store parameters for return
+        modulation.waveformParams = waveformParams;
         
         % Grab number of settings and the power levels over time.
         %
         % Note that nSettings is the same thing as the number of time
         % points.
-        nSettings = length(waveform.t);
-        waveform.powerLevels = powerLevels;
-        
+        nSettings = length(waveformParams.t);
+        modulation.powerLevels = powerLevels;
+
         % Allocate memory
-        waveform.starts = zeros(nSettings, cal.describe.numColMirrors);
-        waveform.stops = zeros(nSettings, cal.describe.numColMirrors);
-        waveform.settings = zeros(nSettings, length(backgroundPrimary));
-        waveform.primaries = zeros(nSettings, length(backgroundPrimary));
+        modulation.starts = zeros(nSettings, cal.describe.numColMirrors);
+        modulation.stops = zeros(nSettings, cal.describe.numColMirrors);
+        modulation.settings = zeros(nSettings, length(backgroundPrimary));
+        modulation.primaries = zeros(nSettings, length(backgroundPrimary));
         
         % Figure out the weight of the background and modulation primary
         % Use a little matrix algebra to add the weighted difference primary
@@ -105,7 +109,7 @@ switch waveform.type
         % Thus the matrix multiply expressed here creates a matrix with one column
         % for each time point, with the entries of the column giving the desired
         % primaries for that time point.
-        waveform.primaries = [backgroundPrimary diffPrimaryPos]*w;
+        modulation.primaries = [backgroundPrimary diffPrimaryPos]*w;
         
         % This next bit of code is designed to save us a little time.  For a pulse,
         % there are many time points where the primaries are the same, and it is 
@@ -116,8 +120,8 @@ switch waveform.type
 
         % Find the unique primary settings.  Note the two transposes because
         % unique operates along the rows. Note also (see the help text for unique)
-        % that with this calling form waveform.primaries' = uniqPrimariesBuffer(IC,:);
-        [uniqPrimariesBuffer, ~, IC] = unique(waveform.primaries', 'rows');
+        % that with this calling form modulation.primaries' = uniqPrimariesBuffer(IC,:);
+        [uniqPrimariesBuffer, ~, IC] = unique(modulation.primaries', 'rows');
         uniqPrimariesBuffer = uniqPrimariesBuffer';
         
         % Convert the unique primaries to starts and stops.  Primaries and settings are column
@@ -132,15 +136,16 @@ switch waveform.type
         end
         
         % Use IC to fill out the full return matrices, taking care with the various row/col conventions.
-        waveform.settings = settingsBuffer(:, IC);
-        waveform.starts = startsBuffer(IC,:);
-        waveform.stops = stopsBuffer(IC,:);
-        for ww = 1:size(waveform.primaries,2)
-            waveform.spd(:,ww) = OLPrimaryToSpd(cal,waveform.primaries(:,ww));
+        modulation.settings = settingsBuffer(:, IC);
+        modulation.starts = startsBuffer(IC,:);
+        modulation.stops = stopsBuffer(IC,:);
+        for ww = 1:size(modulation.primaries,2)
+            modulation.spd(:,ww) = OLPrimaryToSpd(cal,modulation.primaries(:,ww));
         end
         
     case {'AM', 'sinusoid', 'asym_duty'}
         error('None of these cases are yet implemented');
+        % Need to update usage for waveformParams and modulation, instead of just waveform
         if waveform.window.cosineWindowIn
             % Cosine window the modulation
             cosineWindow = ((cos(pi + linspace(0, 1, waveform.window.nWindowed)*pi)+1)/2);
@@ -198,4 +203,4 @@ switch waveform.type
 end
 
 %% Make the starts/stops for the background
-[waveform.background.starts, waveform.background.stops] = OLSettingsToStartsStops(cal, OLPrimaryToSettings(cal, backgroundPrimary));
+[modulation.background.starts, modulation.background.stops] = OLSettingsToStartsStops(cal, OLPrimaryToSettings(cal, backgroundPrimary));
