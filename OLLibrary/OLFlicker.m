@@ -65,8 +65,7 @@ try
 	theTimeToUpdateSpectrum = mglGetSecs + frameDurationSecs;
 	while iterationCount < numIterations
         
-        % Is it time to update spectrum yet?  If so, do it.  If not, carry
-        % on.
+        % Is it time to update spectrum yet?  If so, do it.  If not, carry on.
 		if mglGetSecs >= theTimeToUpdateSpectrum;
 			% Update our settings counter.
 			setCount = 1 + mod(setCount, numSettings);
