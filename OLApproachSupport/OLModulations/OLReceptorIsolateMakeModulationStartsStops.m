@@ -32,7 +32,7 @@ function OLReceptorIsolateMakeModulationStartsStops(trialType, modulationName, d
 % See also: OLMakeModulationsStartsStops, OLCacluateStartsStopsModulation, OLModulationParamsDictionary.
 
 % 4/19/13   dhb, ms     Update for new convention for desired contrasts in routine ReceptorIsolate.
-% 6/17/18   dhb         Merge with mab version and expand comments.
+% 6/17/17   dhb         Merge with mab version and expand comments.
 % 6/23/17   npc         No more config files, get modulation properties from OLModulationParamsDictionary
 
 %% Parse input to get key/value pairs
@@ -161,6 +161,10 @@ waveformParams.t = 0:modulationParams.timeStep:waveformParams.duration-modulatio
 % Parameters common to all modulation types
 %
 % Windowing.  At present all windows are half-cosine.
+%
+%             % Define if there should be a cosine fading at the beginning of
+% end of the stimulus. If yes, this also gets extracted from
+% the config file
 waveformParams.window.type = 'cosine';
 waveformParams.window.cosineWindowIn = modulationParams.cosineWindowIn;
 waveformParams.window.cosineWindowOut = modulationParams.cosineWindowOut;
@@ -207,6 +211,3 @@ fullStartsStopsName = sprintf('ModulationStartsStops_%s_%s', modulationParams.na
 directionCacheFileName = fullfile(getpref(protocolParams.protocol,'DirectionCorrectedPrimariesBasePath'), protocolParams.observerID,protocolParams.todayDate,protocolParams.sessionName, fullDirectionName);
 startsStopsFileName = fullfile(modulationParams.modulationDir, fullStartsStopsName);
 end
-
-
-
