@@ -1,5 +1,5 @@
 function OLReceptorIsolateMakeModulationStartsStops(trialType, modulationName, directionName, protocolParams, varargin)
-%OLReceptorIsolateMakeModulationStartsStops  Creates the starts/stops cache data for a given config file
+%%OLReceptorIsolateMakeModulationStartsStops  Creates the starts/stops cache data for a given config file
 %
 % Usage:
 %     OLReceptorIsolateMakeModulationStartsStops(trialType, modulationName, directionName, topLevelParams)
@@ -16,8 +16,11 @@ function OLReceptorIsolateMakeModulationStartsStops(trialType, modulationName, d
 %
 % Input:
 %     trialType (integer)           Which trial type of the protocol is this.
+
 %     modulationName (string)       The name of the modulation in the modulations dictionary.
+
 %     directionName (string)        The name of the direciton in the directions dictionary.
+%
 %     protocolParams (struct)       Provides some needed information.  Relevant fields are:
 %                                   [DHB NOTE: GIVE OR POINT TO THE RELEVANT FIELDS HERE.]
 %

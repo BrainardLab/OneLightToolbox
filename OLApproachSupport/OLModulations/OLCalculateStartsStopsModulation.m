@@ -1,5 +1,5 @@
 function modulation = OLCalculateStartsStopsModulation(waveformParams, cal, backgroundPrimary, diffPrimaryPos, diffPrimaryNeg)
-% OLCalculateStartsStopsModulation  Calculate various modulations given background and pos/neg primary differences.
+%%OLCalculateStartsStopsModulation  Calculate various modulations given background and pos/neg primary differences.
 %
 % Usage:
 %     modulation = OLCalculateStartsStopsModulation(waveformParams, cal, backgroundPrimary, diffPrimaryPos, diffPrimaryNeg)
@@ -16,6 +16,7 @@ function modulation = OLCalculateStartsStopsModulation(waveformParams, cal, back
 % Input:
 %
 % Output:
+%    modulation             Structure containing (among other things) the starts/stops matrices that produce the modulation.
 %
 % Optional key/value pairs.
 %    None.
