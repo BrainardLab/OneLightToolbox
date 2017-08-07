@@ -5,12 +5,13 @@ function modulation = OLCalculateStartsStopsModulation(waveformParams, cal, back
 %     modulation = OLCalculateStartsStopsModulation(waveformParams, cal, backgroundPrimary, diffPrimaryPos, diffPrimaryNeg)
 %
 % Description:
-%     DHB NOTE: DESPARATELY SEEKING HEADER COMMENTS.
+%     This programes takes the waveform parameters and turns them into
+%     modulations.
 %
 %     This is called by OLReceptorIsolateMakeModulationStartsStops to make the starts/stops
 %     that implement a particular modulation, for a specific choice of waveform parameters.
 %
-%     It looks like if diffPrimayNeg iswa empty, only the positive arm is used (i.e. to make a pulse).
+%     It looks like if diffPrimayNeg is empty, only the positive arm is used (i.e. to make a pulse).
 %
 % Input:
 %
@@ -37,12 +38,12 @@ switch waveformParams.type
         if (waveformParams.window.cosineWindowIn | waveformParams.window.cosineWindowOut);
             cosineWindow = ((cos(pi + linspace(0, 1, waveformParams.window.nWindowed)*pi)+1)/2);
             cosineWindowReverse = cosineWindow(end:-1:1);
-        end  
+        end
         if (waveformParams.window.cosineWindowIn)
             powerLevels(1:waveformParams.window.nWindowed) = waveformParams.contrast*cosineWindow;
         end
         if (waveformParams.window.cosineWindowOut)
-        	powerLevels(end-waveformParams.window.nWindowed+1:end) = waveformParams.contrast*cosineWindowReverse; 
+            powerLevels(end-waveformParams.window.nWindowed+1:end) = waveformParams.contrast*cosineWindowReverse;
         end
         
     case 'AM'
@@ -75,7 +76,7 @@ switch waveformParams.type
     case {'pulse'}
         % Handle case of a pulse
         
-                
+        
         % Store parameters for return
         modulation.waveformParams = waveformParams;
         
@@ -85,7 +86,7 @@ switch waveformParams.type
         % points.
         nSettings = length(waveformParams.t);
         modulation.powerLevels = powerLevels;
-
+        
         % Allocate memory
         modulation.starts = zeros(nSettings, cal.describe.numColMirrors);
         modulation.stops = zeros(nSettings, cal.describe.numColMirrors);
@@ -103,8 +104,8 @@ switch waveformParams.type
         w = [ones(1, nSettings) ; powerLevels];
         
         % The matrix [backgroundPrimary diffPrimaryPos] has the primary values
-        % for the background in its first column and those for the difference at 
-        % full power in the second.  
+        % for the background in its first column and those for the difference at
+        % full power in the second.
         %
         % Thus the matrix multiply expressed here creates a matrix with one column
         % for each time point, with the entries of the column giving the desired
@@ -112,12 +113,12 @@ switch waveformParams.type
         modulation.primaries = [backgroundPrimary diffPrimaryPos]*w;
         
         % This next bit of code is designed to save us a little time.  For a pulse,
-        % there are many time points where the primaries are the same, and it is 
+        % there are many time points where the primaries are the same, and it is
         % a little slow to compute settings and starts/stops.  So, we find the
         % the unique primaries values and only do the conversion to settings and
         % starts/stops we got back into all the places the go in the returned
         % matrices.  This might be too clever for words, but we think it is robuse.
-
+        
         % Find the unique primary settings.  Note the two transposes because
         % unique operates along the rows. Note also (see the help text for unique)
         % that with this calling form modulation.primaries' = uniqPrimariesBuffer(IC,:);

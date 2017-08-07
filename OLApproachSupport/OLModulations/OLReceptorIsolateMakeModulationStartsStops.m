@@ -162,7 +162,7 @@ waveformParams.t = 0:modulationParams.timeStep:waveformParams.duration-modulatio
 %
 % Windowing.  At present all windows are half-cosine.
 %
-%             % Define if there should be a cosine fading at the beginning of
+% Define if there should be a cosine fading at the beginning of
 % end of the stimulus. If yes, this also gets extracted from
 % the config file
 waveformParams.window.type = 'cosine';
