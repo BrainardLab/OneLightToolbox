@@ -35,7 +35,7 @@ switch waveformParams.type
         % contrast.
         powerLevels = waveformParams.contrast*ones(size(waveformParams.t));
         
-        % Then window if specified
+        % Then the half-cosine window if specified
         if (waveformParams.window.cosineWindowIn | waveformParams.window.cosineWindowOut);
             cosineWindow = ((cos(pi + linspace(0, 1, waveformParams.window.nWindowed)*pi)+1)/2);
             cosineWindowReverse = cosineWindow(end:-1:1);
@@ -56,9 +56,19 @@ switch waveformParams.type
         powerLevels = waveModulation .* waveCarrier;
         
     case 'sinusoid'
-        error('Still need to update sinusoid for for modern code');
-        % When this was called in the old code, the modulationWaveform field was 'sin', so that the eval below produced a sinusoidal modulation.
-        eval(['powerLevels = waveformParams.contrast*' waveformParams.modulationWaveform '(2*pi*waveformParams.theFrequencyHz*waveformParams.t - waveformParams.thePhaseRad);']);
+        powerLevels = waveformParams.contrast*sin(2*pi*waveformParams.frequency*waveformParams.t + (pi/180)*waveformParams.phaseDeg);
+        
+        % Then half-cosine window if specified
+        if (waveformParams.window.cosineWindowIn | waveformParams.window.cosineWindowOut);
+            cosineWindow = ((cos(pi + linspace(0, 1, waveformParams.window.nWindowed)*pi)+1)/2);
+            cosineWindowReverse = cosineWindow(end:-1:1);
+        end
+        if (waveformParams.window.cosineWindowIn)
+            powerLevels(1:waveformParams.window.nWindowed) = powerLevels*cosineWindow;
+        end
+        if (waveformParams.window.cosineWindowOut)
+            powerLevels(end-waveformParams.window.nWindowed+1:end) = powerLevels*cosineWindowReverse;
+        end
         
     case 'asym_duty'
         error('asym_duty type is not implemented and may never be again');
@@ -74,10 +84,9 @@ end
 %
 % So this switch has fewer types than the one above.
 switch waveformParams.type
-    case {'pulse'}
+    case {'pulse', 'sinusoid'}
         % Handle case of a pulse
-        
-        
+ 
         % Store parameters for return
         modulation.waveformParams = waveformParams;
         
@@ -106,12 +115,22 @@ switch waveformParams.type
         
         % The matrix [backgroundPrimary diffPrimaryPos] has the primary values
         % for the background in its first column and those for the difference at
-        % full power in the second.
+        % full power in the second.  And similarly for diffPrimaryNeg.
         %
         % Thus the matrix multiply expressed here creates a matrix with one column
         % for each time point, with the entries of the column giving the desired
         % primaries for that time point.
-        modulation.primaries = [backgroundPrimary diffPrimaryPos]*w;
+        %
+        % We allow for asymmetric positive and negative excursions.
+        index = find(powerLevels >= 0);
+        if (~isempty(index))
+         modulation.primaries(:,index) = [backgroundPrimary diffPrimaryPos]*w(:,index);
+        end
+        index = find(powerLevels < 0);
+        if (~isempty(index))
+            assert(~isempty(diffPrimaryNeg),'diffPrimaryNeg cannot be empty if there are negative power values');
+            modulation.primaries(:,index) = [backgroundPrimary diffPrimaryNeg]*w(:,index);
+        end
         
         % This next bit of code is designed to save us a little time.  For a pulse,
         % there are many time points where the primaries are the same, and it is
@@ -145,8 +164,8 @@ switch waveformParams.type
             modulation.spd(:,ww) = OLPrimaryToSpd(cal,modulation.primaries(:,ww));
         end
         
-    case {'AM', 'sinusoid', 'asym_duty'}
-        error('None of these cases are yet implemented');
+    case {'AM', 'asym_duty'}
+        error('These cases are yet implemented');
         % Need to update usage for waveformParams and modulation, instead of just waveform
         if waveform.window.cosineWindowIn
             % Cosine window the modulation

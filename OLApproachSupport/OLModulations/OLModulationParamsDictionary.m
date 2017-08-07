@@ -58,8 +58,21 @@ switch (params.type)
         assert((isfield(params, 'cosineWindowIn')           && islogical(params.cosineWindowIn)),           sprintf('params.cosineWindowIn does not exist or it does not contain a boolean value.'));
         assert((isfield(params, 'cosineWindowOut')          && islogical(params.cosineWindowOut)),          sprintf('params.cosineWindowOut does not exist or it does not contain a boolean value.'));
         assert((isfield(params, 'cosineWindowDurationSecs') && isnumeric(params.cosineWindowDurationSecs)), sprintf('params.cosineWindowDurationSecs does not exist or it does not contain a numeric value.'));
-        assert((isfield(params, 'stepTimeSec')              && isnumeric(params.stepTimeSec)),              sprintf('params.stepTimeSec does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'contrast')                 && isnumeric(params.contrast)),                 sprintf('params.contrast does not exist or it does not contain a numeric value.'));
+        assert((isfield(params, 'coneNoise')                && isnumeric(params.coneNoise)),                sprintf('params.coneNoise does not exist or it does not contain a numeric value.'));
+        assert((isfield(params, 'coneNoiseFrequency')       && isnumeric(params.coneNoiseFrequency)),       sprintf('params.coneNoiseFrequency does not exist or it does not contain a numeric value.'));
+  case 'sinusoid'
+        assert((isfield(params, 'dictionaryType')           && ischar(params.dictionaryType)),              sprintf('params.dictionaryType does not exist or it does not contain a string value.'));
+        assert((isfield(params, 'type')                     && ischar(params.type)),                        sprintf('params.type does not exist or it does not contain a string value.'));
+        assert((isfield(params, 'name')                     && ischar(params.name)),                        sprintf('params.name does not exist or it does not contain a string value.'));
+        assert((isfield(params, 'trialDuration')            && isnumeric(params.trialDuration)),            sprintf('params.trialDuration does not exist or it does not contain a numeric value.'));
+        assert((isfield(params, 'timeStep')                 && isnumeric(params.timeStep)),                 sprintf('params.timeStep does not exist or it does not contain a numeric value.'));
+        assert((isfield(params, 'cosineWindowIn')           && islogical(params.cosineWindowIn)),           sprintf('params.cosineWindowIn does not exist or it does not contain a boolean value.'));
+        assert((isfield(params, 'cosineWindowOut')          && islogical(params.cosineWindowOut)),          sprintf('params.cosineWindowOut does not exist or it does not contain a boolean value.'));
+        assert((isfield(params, 'cosineWindowDurationSecs') && isnumeric(params.cosineWindowDurationSecs)), sprintf('params.cosineWindowDurationSecs does not exist or it does not contain a numeric value.'));
+        assert((isfield(params, 'contrast')                 && isnumeric(params.contrast)),                 sprintf('params.contrast does not exist or it does not contain a numeric value.'));
+        assert((isfield(params, 'frequency')                && isnumeric(params.frequency)),                sprintf('params.frequency does not exist or it does not contain a numeric value.'));
+        assert((isfield(params, 'phaseDegs')                && isnumeric(params.phaseDegs)),                sprintf('params.phaseDegs does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'coneNoise')                && isnumeric(params.coneNoise)),                sprintf('params.coneNoise does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'coneNoiseFrequency')       && isnumeric(params.coneNoiseFrequency)),       sprintf('params.coneNoiseFrequency does not exist or it does not contain a numeric value.'));
     otherwise
@@ -85,12 +98,10 @@ switch (type)
         
         
         % Pulse timing parameters
-        % MATCH THESE UP TO WAVEFORM GENERATOR CODE AND DECIDE IF WE NEED THEM ALL.
         params.cosineWindowIn = true;               % If true, have a cosine fade-in
         params.cosineWindowOut = true;              % If true, have a cosine fade-out
         params.trialDuration = 3;                   % Number of seconds to show each trial
         params.cosineWindowDurationSecs = 0.5;      % Duration (in secs) of the cosine fade-in/out
-        params.stepTimeSec = 2;
          
         % Contrast scaling
         params.contrast = 1;                         % Contrast scalars (as proportion of max specified in the direction)
@@ -100,9 +111,27 @@ switch (type)
         params.coneNoiseFrequency = -1;              % Frequency of cone noise
         
     case 'sinusoid'
-         error('Need to implement sinusoidal type in the dictionary before you may use it.')
-        % params.modulationFrequencyTrials = [];     % Sequence of modulation frequencies
-        % params.modulationPhase = -1;
+        % Sinusoidal flicker.
+        params.dictionaryType = 'Modulation';       % What type of dictionary is this?
+        params.timeStep = 1/64;                     % Number ms of each sample time
+        
+        
+        % Pulse timing parameters
+        params.cosineWindowIn = true;               % If true, have a cosine fade-in
+        params.cosineWindowOut = true;              % If true, have a cosine fade-out
+        params.trialDuration = 3;                   % Number of seconds to show each trial
+        params.cosineWindowDurationSecs = 0.5;      % Duration (in secs) of the cosine fade-in/out
+         
+        % Contrast scaling
+        params.contrast = 1;                        % Contrast scalars (as proportion of max specified in the direction)
+        
+        % Frequency and phase
+        params.frequency = 5;                       % Frequency in Hz
+        params.phaseDegs = 0;                       % Phase in degrees
+        
+        % Cone noise parameters. 
+        params.coneNoise = 0;                        % Set to 1 for cone noise
+        params.coneNoiseFrequency = -1;              % Frequency of cone noise
 
     case 'AM'
         error('Need to implement AM type in the dictionary before you may use it.')

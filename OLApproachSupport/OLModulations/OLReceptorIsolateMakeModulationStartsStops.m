@@ -137,7 +137,6 @@ switch (modulationParams.type)
     case 'pulse'
         % A unidirectional pulse
         % Frequency and phase parameters are meaningless here, and ignored.
-        waveformParams.stepTimeSec = modulationParams.stepTimeSec;
         waveformParams.contrast = modulationParams.contrast;
         waveformParams.duration = modulationParams.trialDuration;
         waveformParams.type = modulationParams.type;
@@ -146,13 +145,11 @@ switch (modulationParams.type)
         end
     case 'sinusoid'
         % A sinuloidal modulation
-        error('Not yet implemented.  Harmonize the dictionary, the protocolParams.trialTypeParams, and this code.');
-        waveformParams.thePhaseDeg = modulationParams.carrierPhase;
-        waveformParams.thePhaseRad = deg2rad(modulationParams.carrierPhase);
-        waveformParams.theFrequencyHz = modulationParams.carrierFrequency;
+        waveformParams.frequency = modulationParams.frequency;
+        waveformParams.phaseDegs = modulationParams.phaseDegs;
         waveformParams.contrast = modulationParams.contrast;
         if (p.Results.verbose)
-            fprintf('*   Calculating %0.f s of %s, %.2f Hz, %.2f deg, %.1f pct contrast (of max)\n', waveformParams.duration, waveformParams.direction, waveformParams.theFrequencyHz, waveformParams.thePhaseDeg, 100*waveformParams.contrast);
+            fprintf('*   Calculating %0.f s of %s, %.2f Hz, %.2f deg, %.1f pct contrast (of max)\n', waveformParams.duration, waveformParams.direction, waveformParams.frequency, waveformParams.phaseDeg, 100*waveformParams.contrast);
         end
     otherwise
         error('Unknown modulation type specified');
