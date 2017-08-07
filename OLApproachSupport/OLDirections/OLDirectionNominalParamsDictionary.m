@@ -151,6 +151,19 @@ params.backgroundType = 'lightfluxchrom';
 params.backgroundName = OLMakeApproachDirectionBackgroundName('LightFlux',params);
 params.cacheFile = ['Direction_' params.name '.mat'];
 d = paramsValidateAndAppendToDictionary(d, params);
+
+%% LightFlux_33_33_2.0
+baseName = 'LightFlux';
+type = 'lightfluxpulse';
+
+params = defaultParams(type);
+params.lightFluxDesiredXY = [0.33,0.33];
+params.lightFluxDownFactor = 2;
+params.name = OLMakeApproachDirectionName(baseName,params);
+params.backgroundType = 'lightfluxchrom';
+params.backgroundName = OLMakeApproachDirectionBackgroundName('LightFlux',params);
+params.cacheFile = ['Direction_' params.name '.mat'];
+d = paramsValidateAndAppendToDictionary(d, params);
 end
 
 function d = paramsValidateAndAppendToDictionary(d, params)

@@ -146,6 +146,20 @@ function d = OLBackgroundNominalParamsDictionary()
     params.name = OLMakeApproachBackgroundName(baseName,params); 
     params.cacheFile = ['Background_' params.name  '.mat'];
     d = paramsValidateAndAppendToDictionary(d, params);
+    
+    %% LightFlux_33_33_2.0
+    %
+    % Background at xy = [0.54,0.38] that allows light flux pulses to increase a factor of 5
+    % within gamut
+    baseName = 'LightFlux';
+    type = 'lightfluxchrom';
+    
+    params = defaultParams(type);
+    params.lightFluxDesiredXY = [0.33,0.33];
+    params.lightFluxDownFactor = 2;
+    params.name = OLMakeApproachBackgroundName(baseName,params); 
+    params.cacheFile = ['Background_' params.name  '.mat'];
+    d = paramsValidateAndAppendToDictionary(d, params);
 end
 
 function d = paramsValidateAndAppendToDictionary(d, params)
