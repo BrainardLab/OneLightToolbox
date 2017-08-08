@@ -100,8 +100,8 @@ switch waveformParams.type
         % Allocate memory
         modulation.starts = zeros(nSettings, cal.describe.numColMirrors);
         modulation.stops = zeros(nSettings, cal.describe.numColMirrors);
-        modulation.settings = zeros(nSettings, length(backgroundPrimary));
-        modulation.primaries = zeros(nSettings, length(backgroundPrimary));
+        modulation.settings = zeros(length(backgroundPrimary),nSettings);
+        modulation.primaries = zeros(length(backgroundPrimary),nSettings);
         
         % Figure out the weight of the background and modulation primary
         % Use a little matrix algebra to add the weighted difference primary
@@ -124,12 +124,12 @@ switch waveformParams.type
         % We allow for asymmetric positive and negative excursions.
         index = find(powerLevels >= 0);
         if (~isempty(index))
-         modulation.primaries(:,index) = [backgroundPrimary diffPrimaryPos]*w(:,index);
+            modulation.primaries(:,index) = [backgroundPrimary diffPrimaryPos]*w(:,index);
         end
         index = find(powerLevels < 0);
         if (~isempty(index))
             assert(~isempty(diffPrimaryNeg),'diffPrimaryNeg cannot be empty if there are negative power values');
-            modulation.primaries(:,index) = [backgroundPrimary diffPrimaryNeg]*w(:,index);
+            modulation.primaries(index,:) = [backgroundPrimary diffPrimaryNeg]*w(index,:);
         end
         
         % This next bit of code is designed to save us a little time.  For a pulse,

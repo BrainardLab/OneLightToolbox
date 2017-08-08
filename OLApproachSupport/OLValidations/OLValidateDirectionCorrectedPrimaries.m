@@ -88,7 +88,7 @@ for ii = 1:protocolParams.nValidationsPerDirection
         if (protocolParams.verbose), fprintf(' * Saving validation results ...'); end;
         outputFile = fullfile(outDir,sprintf('%s_%s_%d.mat', theDirectionCacheFileNames{d},prePost,ii));
         save(outputFile,'results');
-        if (protocolParams.verbose), fprintf('saved to %s\n', protocolParams.cacheFile); end
+        if (protocolParams.verbose), fprintf('saved to %s\n', outputFile); end
     end
 end
 

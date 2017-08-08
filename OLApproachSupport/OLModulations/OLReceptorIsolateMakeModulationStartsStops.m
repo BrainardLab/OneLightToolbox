@@ -132,7 +132,7 @@ switch (modulationParams.type)
         waveformParams.theFrequencyHz = modulationParams.carrierFrequency;
         waveformParams.contrast = modulationParams.contrast;
         if (p.Results.verbose)
-            fprintf('*   Calculating %0.f s of %s, %.2f Hz, %.2f deg, %.1f pct contrast (of max)\n', waveformParams.duration, waveformParams.direction, waveformParams.theFrequencyHz, waveformParams.thePhaseDeg, 100*waveformParams.contrast);
+            fprintf('*   Calculating %0.f s of %s, %.2f Hz, %.2f deg, %.1f pct contrast (of max)\n', waveformParams.duration, directionName, waveformParams.theFrequencyHz, waveformParams.thePhaseDeg, 100*waveformParams.contrast);
         end
     case 'pulse'
         % A unidirectional pulse
@@ -141,7 +141,7 @@ switch (modulationParams.type)
         waveformParams.duration = modulationParams.trialDuration;
         waveformParams.type = modulationParams.type;
         if (p.Results.verbose)
-            fprintf('*   Calculating pulse: %0.f s of %s, %.1f pct contrast (of max)\n', waveformParams.duration, waveformParams.direction, 100*waveformParams.contrast);
+            fprintf('*   Calculating pulse: %0.f s of %s, %.1f pct contrast (of max)\n', waveformParams.duration, directionName, 100*waveformParams.contrast);
         end
     case 'sinusoid'
         % A sinuloidal modulation
@@ -149,7 +149,7 @@ switch (modulationParams.type)
         waveformParams.phaseDegs = modulationParams.phaseDegs;
         waveformParams.contrast = modulationParams.contrast;
         if (p.Results.verbose)
-            fprintf('*   Calculating %0.f s of %s, %.2f Hz, %.2f deg, %.1f pct contrast (of max)\n', waveformParams.duration, waveformParams.direction, waveformParams.frequency, waveformParams.phaseDeg, 100*waveformParams.contrast);
+            fprintf('*   Calculating %0.f s of %s, %.2f Hz, %.2f deg, %.1f pct contrast (of max)\n', waveformParams.duration, directionName, waveformParams.frequency, waveformParams.phaseDeg, 100*waveformParams.contrast);
         end
     otherwise
         error('Unknown modulation type specified');
