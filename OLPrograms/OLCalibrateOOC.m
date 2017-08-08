@@ -49,13 +49,15 @@ function OLCalibrateOOC
 % 9/2/16   npc  Removed Take*Measurements() methods and assembled them in 
 %               static class @OLCalibrator
 % 9/29/16  npc  Optionally record temperature
-%
+% 8/7/17   npc  Get relevant cal.describe params from OLCalibrationParamsDictionary, indexed on the box name
+
 spectroRadiometerOBJ = [];
 
 try
     % Ask which type of calibration we're doing.
     selectedCalType = OLGetEnumeratedCalibrationType;
     
+    % Which box are we using?
     if strfind(selectedCalType.char, 'BoxA')
         whichBox = 'BoxA';
     elseif strfind(selectedCalType.char, 'BoxB')
@@ -66,75 +68,24 @@ try
         whichBox = 'BoxD';
     end
     
-    % Which box are we using?
-    %
-    % Some parameters need to be tuned for the box, particularly
-    % those related to skipped bands and handling of gamma functions.
-    % This is done with the box dependent switch here.
-    fprintf('Using %s configuration\n', whichBox');
-    switch (whichBox)
-        case 'BoxA'
-            cal.describe.gammaFitType = 'betacdfpiecelin';
-            cal.describe.useAverageGamma = false;
-            cal.describe.nShortPrimariesSkip = 7;
-            cal.describe.nLongPrimariesSkip = 3;
-            cal.describe.nGammaBands = 16;
-        case 'BoxB'
-            cal.describe.gammaFitType = 'betacdfpiecelin';
-            cal.describe.useAverageGamma = true;
-            cal.describe.nShortPrimariesSkip = 5;
-            cal.describe.nLongPrimariesSkip = 3;
-            cal.describe.nGammaBands = 16;
-        case 'BoxC'
-            cal.describe.gammaFitType = 'betacdfpiecelin';
-            cal.describe.useAverageGamma = false;
-            cal.describe.nShortPrimariesSkip = 8;
-            cal.describe.nLongPrimariesSkip = 8;
-            cal.describe.nGammaBands = 16;
-        case 'BoxD'
-            cal.describe.gammaFitType = 'betacdfpiecelin';
-            cal.describe.useAverageGamma = true;
-            cal.describe.nShortPrimariesSkip = 8;
-            cal.describe.nLongPrimariesSkip = 2;
-            cal.describe.nGammaBands = 16;
-        otherwise
-            error('Unknown OneLight box');
+    fprintf('Using %s configuration\n', whichBox);
+    
+    % Get calibration params from dictionary.
+    d = OLCalibrationParamsDictionary;
+    calibrationParams = d(whichBox);
+    
+    % Set all cal.describe.xx params to calibrationParams.xx
+    paramNames = fieldnames(calibrationParams);
+    
+    % Remove params that are not part of cal.describe.params
+    noCalDescribeParamNames = {'dictionaryType', 'type', 'boxName'};
+    paramNames = setdiff(paramNames, noCalDescribeParamNames);
+    
+    for k = 1:numel(paramNames)
+        cal.describe.(paramNames{k}) = calibrationParams.(paramNames{k});
     end
-    cal.describe.nGammaFitLevels = 1024;
     
-    % Levels at which to measure the gamma function
-    cal.describe.nGammaLevels = 24;
-    
-    % Randomize measurements. If this flag is set, the measurements
-    % will be done in random order. We do this to counter systematic device
-    % drift.
-    cal.describe.randomizeGammaLevels = 1;
-    cal.describe.randomizeGammaMeas = 1;
-    cal.describe.randomizePrimaryMeas = 1;
-    
-    % Scaling factor correction. If this flag is set, we will scale every
-    % measured spectrum according to the predicted decrease in power, given the
-    % time of measurement.
-    cal.describe.correctLinearDrift = 1;
-    
-    % Non-zero background for gamma and related measurments
-    cal.describe.specifiedBackground = false;
-    
-    % Some code for debugging and quick checks.  These should generally all
-    % be set to true.  If any are false, OLInitCal is not run.  You'll want
-    % cal.describe.extraSave set to true when you have any of these set to
-    % false.
-    cal.describe.doPrimaries = true;
-    cal.describe.doGamma = true;
-    cal.describe.doIndependence = true;
-    
-    % Call save
-    cal.describe.extraSave = false;
-    
-    % Don't use omni.
-    % First entry is PR-6xx and is always true.
-    % Second entry is omni is false.
-    cal.describe.useOmni = false;
+    % Omni stuff
     meterToggle = [1 cal.describe.useOmni];
     od = [];
     
@@ -167,7 +118,7 @@ try
     cal.describe.meterType = GetWithDefault('Enter PR-6XX radiometer type','PR-670');
     
     switch (cal.describe.meterType)
-        case 'PR-650',
+        case 'PR-650'
             cal.describe.meterTypeNum = 1;
             cal.describe.S = [380 4 101];
             nAverage = 1;
@@ -180,7 +131,7 @@ try
                 );
             spectroRadiometerOBJ.setOptions('syncMode', 'OFF');
             
-        case 'PR-670',
+        case 'PR-670'
             cal.describe.meterTypeNum = 5;
             cal.describe.S = [380 2 201];
             nAverage = 1;
@@ -202,7 +153,7 @@ try
                 'apertureSize',     '1 DEG' ...   % choose between '1 DEG', '1/2 DEG', '1/4 DEG', '1/8 DEG'
                 );
             
-        otherwise,
+        otherwise
             error('Unknown meter type');
     end
     
