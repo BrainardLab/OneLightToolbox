@@ -24,7 +24,7 @@ function name = OLMakeApproachDirectionName(baseName,params)
 switch (params.type)
     case 'pulse'
         name = sprintf('%s_%d_%d_%d',baseName,round(10*params.fieldSizeDegrees),round(10*params.pupilDiameterMm),round(1000*params.baseModulationContrast));
-    case 'lightfluxpulse'
+    case 'lightfluxchrom'
         name = sprintf('%s_%d_%d_%d',baseName,round(1000*params.lightFluxDesiredXY(1)),round(1000*params.lightFluxDesiredXY(2)),round(10*params.lightFluxDownFactor)); 
     otherwise
         error('Unknown direction type');

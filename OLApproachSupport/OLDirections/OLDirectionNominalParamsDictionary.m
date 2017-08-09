@@ -139,9 +139,9 @@ params.name = OLMakeApproachDirectionName(baseName,params);
 params.cacheFile = ['Direction_' params.name '.mat'];
 d = paramsValidateAndAppendToDictionary(d, params);
 
-%% LightFlux_54_38_5.0
+%% LightFlux_540_380_50
 baseName = 'LightFlux';
-type = 'lightfluxpulse';
+type = 'lightfluxchrom';
 
 params = defaultParams(type);
 params.lightFluxDesiredXY = [0.54,0.38];
@@ -152,9 +152,9 @@ params.backgroundName = OLMakeApproachDirectionBackgroundName('LightFlux',params
 params.cacheFile = ['Direction_' params.name '.mat'];
 d = paramsValidateAndAppendToDictionary(d, params);
 
-%% LightFlux_33_33_2.0
+%% LightFlux_330_330_20
 baseName = 'LightFlux';
-type = 'lightfluxpulse';
+type = 'lightfluxchrom';
 
 params = defaultParams(type);
 params.lightFluxDesiredXY = [0.33,0.33];
@@ -211,7 +211,7 @@ switch (params.type)
         assert((isfield(params, 'validationPowerLevels')      && isnumeric(params.validationPowerLevels)),  sprintf('params.validationPowerLevels does not exist or it does not contain a number.'));
         assert((isfield(params, 'cacheFile')                  && ischar(params.cacheFile)),                 sprintf('params.cacheFile does not exist or it does not contain a string value.'));
         
-    case 'lightfluxpulse'
+    case 'lightfluxchrom'
         assert((isfield(params, 'dictionaryType')             && ischar(params.dictionaryType)),            sprintf('params.dictionaryType does not exist or it does not contain a string value.'));
         assert((isfield(params, 'type')                       && ischar(params.type)),                      sprintf('params.type does not exist or it does not contain a string value.'));
         assert((isfield(params, 'name')                       && ischar(params.name)),                      sprintf('params.name does not exist or it does not contain a string value.'));
@@ -265,7 +265,7 @@ switch (type)
         params.validationPowerLevels = [0 1];                                    % Power levels to measure at during validation
         params.cacheFile = '';                                                   % Cache filename goes here
 
-    case 'lightfluxpulse'
+    case 'lightfluxchrom'
         params.dictionaryType = 'Direction';                                     % What type of dictionary is this?
         params.primaryHeadRoom = 0.01;                                           % How close to edge of [0-1] primary gamut do we want to get? (Check if actually used someday.) 
         params.lightFluxDesiredXY = [0.54 0.38];                                 % Background chromaticity.

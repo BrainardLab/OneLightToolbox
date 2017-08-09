@@ -23,7 +23,11 @@ function [cacheData, directionOlCache, wasRecomputed] = OLReceptorIsolateMakeDir
 %     This routine knows about different types of directions:
 %       modulation - symmetric modulation around a background.
 %       pulse - incremental positive pulse relative to low end of swing around background.
-%       lightflux -
+%       lightfluxchrom - light flux pulse around a background of specified chromaticiity.
+%
+%     [DHB NOTE: Think through pos/neg storing here and in correction.  Perhaps here we only
+%     ever want positive, since nominal direction primaries are always symmetric.  The correction
+%     routine would the produce the negative in cases where it was needed and being separately corrected.]
 %
 % Input:
 %     approach (string)          Name of whatever approach is invoking this.
@@ -49,6 +53,8 @@ function [cacheData, directionOlCache, wasRecomputed] = OLReceptorIsolateMakeDir
 % 02/25/14   ms          Modularized.
 % 06/15/17   dhb et al.  Handle isStale return from updated cache code.
 % 07/22/17   dhb         Enforce verbose
+% 08/09/17   dhb, mab    Comment out code that stores difference, just return background and max modulations.
+
 
 %% Parse input
 p = inputParser;
@@ -109,7 +115,7 @@ end
 %
 % The switch handles different types of modulations we might encounter.
 switch directionParams.type
-    case {'modulation', 'pulse'}
+    case {'pulse'}
         % Pupil diameter in mm.
         pupilDiameterMm = directionParams.pupilDiameterMm;
         
@@ -222,7 +228,7 @@ switch directionParams.type
             if (strcmp(directionParams.type,'pulse'))
                 backgroundPrimary = modulationPrimarySignedNegative;
                 backgroundSpd = modulationSpdSignedNegative;
-                differencePrimary = modulationPrimarySignedPositive-modulationPrimarySignedNegative;
+                %differencePrimary = modulationPrimarySignedPositive-modulationPrimarySignedNegative;
                 modulationPrimarySignedNegative = [];
                 modulationSpdSignedNegative = [];
             end
@@ -247,8 +253,8 @@ switch directionParams.type
             cacheData.data(observerAgeInYears).backgroundSpd = backgroundSpd;
             
             % Modulation (unsigned)
-            cacheData.data(observerAgeInYears).differencePrimary = differencePrimary;
-            cacheData.data(observerAgeInYears).differenceSpd = B_primary*differencePrimary;
+            %cacheData.data(observerAgeInYears).differencePrimary = differencePrimary;
+            %cacheData.data(observerAgeInYears).differenceSpd = B_primary*differencePrimary;
             
             % Modulation (signed)
             cacheData.data(observerAgeInYears).modulationPrimarySignedPositive = modulationPrimarySignedPositive;
@@ -257,8 +263,8 @@ switch directionParams.type
             cacheData.data(observerAgeInYears).modulationSpdSignedNegative = modulationSpdSignedNegative;
         end
         
-    case 'lightfluxpulse'
-        % A positive light flux pulse, computed given background.
+    case 'lightfluxchrom'
+        % A light flux pulse or modulation, computed given background.
         % 
         % Note: This has access to useAmbient and primaryHeadRoom parameters but does
         % not currently use them. That is because this counts on the background having
@@ -300,8 +306,8 @@ switch directionParams.type
         for observerAgeInYrs = 20:60
             cacheData.data(observerAgeInYrs).backgroundPrimary = backgroundPrimary;
             cacheData.data(observerAgeInYrs).backgroundSpd = backgroundSpd;
-            cacheData.data(observerAgeInYrs).differencePrimary = modulationPrimary-backgroundPrimary;
-            cacheData.data(observerAgeInYrs).differenceSpd = modulationSpd-backgroundSpd;
+            %cacheData.data(observerAgeInYrs).differencePrimary = modulationPrimary-backgroundPrimary;
+            %cacheData.data(observerAgeInYrs).differenceSpd = modulationSpd-backgroundSpd;
             cacheData.data(observerAgeInYrs).modulationPrimarySignedPositive = modulationPrimary;
             cacheData.data(observerAgeInYrs).modulationSpdSignedPositive = modulationSpd;
             cacheData.data(observerAgeInYrs).modulationPrimarySignedNegative = [];

@@ -133,7 +133,7 @@ function d = OLBackgroundNominalParamsDictionary()
     params.cacheFile = ['Background_' params.name  '.mat'];
     d = paramsValidateAndAppendToDictionary(d, params);
     
-    %% LightFlux_54_38_5.0
+    %% LightFlux_540_380_50
     %
     % Background at xy = [0.54,0.38] that allows light flux pulses to increase a factor of 5
     % within gamut
@@ -147,7 +147,7 @@ function d = OLBackgroundNominalParamsDictionary()
     params.cacheFile = ['Background_' params.name  '.mat'];
     d = paramsValidateAndAppendToDictionary(d, params);
     
-    %% LightFlux_33_33_2.0
+    %% LightFlux_330_330_20
     %
     % Background at xy = [0.54,0.38] that allows light flux pulses to increase a factor of 5
     % within gamut

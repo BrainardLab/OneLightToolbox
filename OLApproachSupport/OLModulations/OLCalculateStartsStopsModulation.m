@@ -23,7 +23,8 @@ function modulation = OLCalculateStartsStopsModulation(waveformParams, cal, back
 %
 % See also: OLMakeModulationsStartsStops, OLReceptorIsolateMakeModulationStartsStops, OLModulationParamsDictionary.
 
-% 7/21/17  dhb  Tried to improve comments.
+% 7/21/17  dhb        Tried to improve comments.
+% 8/09/17  dhb, mab   Compute pos/neg diff more flexibly. 
 
 % Figure out the power levels.  The power levels (essentially a synonym for the
 % contrast re max modulation given in the direction file) vary over time according
@@ -47,14 +48,6 @@ switch waveformParams.type
             powerLevels(end-waveformParams.window.nWindowed+1:end) = waveformParams.contrast*cosineWindowReverse;
         end
         
-    case 'AM'
-        error('Still need to update AM for modern code');
-        % Probably, when this was called in the old days, the modulationWaveform field was set to 'sin', although we didn't go check it explicitly.
-        % Hunt around in the modulation config files in the old OLFlickerSensitivity respository if you need to know.
-        waveModulation = 0.5+0.5*sin(2*pi*waveformParams.theEnvelopeFrequencyHz*waveformParams.t - waveformParams.thePhaseRad);
-        eval(['waveCarrier = waveformParams.contrast*' waveformParams.modulationWaveform '(2*pi*waveformParams.theFrequencyHz*waveformParams.t);']);
-        powerLevels = waveModulation .* waveCarrier;
-        
     case 'sinusoid'
         powerLevels = waveformParams.contrast*sin(2*pi*waveformParams.frequency*waveformParams.t + (pi/180)*waveformParams.phaseDeg);
         
@@ -70,6 +63,14 @@ switch waveformParams.type
             powerLevels(end-waveformParams.window.nWindowed+1:end) = powerLevels*cosineWindowReverse;
         end
         
+    case 'AM'
+        error('Still need to update AM for modern code');
+        % Probably, when this was called in the old days, the modulationWaveform field was set to 'sin', although we didn't go check it explicitly.
+        % Hunt around in the modulation config files in the old OLFlickerSensitivity respository if you need to know.
+        waveModulation = 0.5+0.5*sin(2*pi*waveformParams.theEnvelopeFrequencyHz*waveformParams.t - waveformParams.thePhaseRad);
+        eval(['waveCarrier = waveformParams.contrast*' waveformParams.modulationWaveform '(2*pi*waveformParams.theFrequencyHz*waveformParams.t);']);
+        powerLevels = waveModulation .* waveCarrier;
+        
     case 'asym_duty'
         error('asym_duty type is not implemented and may never be again');
         eval(['powerLevels = waveformParams.contrast*' waveformParams.modulationWaveform '(2*pi*waveformParams.theFrequencyHz*waveformParams.t - waveformParams.thePhaseRad);']);
@@ -78,7 +79,6 @@ switch waveformParams.type
     otherwise
         error('Unknown waveform type specified');
 end
-
 
 %% Once the temporal waveform is computed above, most types can follow with a common set of code
 %
@@ -130,6 +130,12 @@ switch waveformParams.type
         if (~isempty(index))
             assert(~isempty(diffPrimaryNeg),'diffPrimaryNeg cannot be empty if there are negative power values');
             modulation.primaries(index,:) = [backgroundPrimary diffPrimaryNeg]*w(index,:);
+        end
+        
+        % Make sure primaries are all within gamut.  If not, something has gone wrong and the
+        % user needs to think about and fix it.
+        if (any(modulation.primaries(:) < 0) | any(modulation.primaries(:) > 1))
+            error('Primary value out of gamut. You need to look into why and fix it.');
         end
         
         % This next bit of code is designed to save us a little time.  For a pulse,

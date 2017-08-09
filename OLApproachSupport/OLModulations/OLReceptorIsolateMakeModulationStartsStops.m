@@ -102,15 +102,26 @@ clear cacheData
 backgroundPrimary = directionData.backgroundPrimary;
 
 %% Put primary data for direction into canonical form
+%
+% In some cases, the postive or negative difference may take things out of gamut.
+% We don't check here. Rather, when the actual starts and stops get made, we check
+% whether things are OK.
 switch (directionParams.type)
-    case 'modulation'
+    case {'pulse' 'lightfluxchrom'}
+        % Sometimes, we only define the postive direction of the modulation, so that
+        % we have to compute the negative difference.  Other times, we have asymmetric
+        % positive and negative swings.  Whether we have both or not is determined by
+        % whether directionData.modulationPrimarySignedNegative is empty.  If it is
+        % empty, then we construct the negative by flipping the positve.  If it is explicitly
+        % specified, then we we use it.
         modulationPrimary = directionData.modulationPrimarySignedPositive;
         diffPrimaryPos = directionData.modulationPrimarySignedPositive-backgroundPrimary;
-        diffPrimaryNeg = directionData.modulationPrimarySignedNegative-backgroundPrimary;
-    case {'pulse' 'lightfluxpulse'}
-        modulationPrimary = directionData.modulationPrimarySignedPositive;
-        diffPrimaryPos = modulationPrimary-backgroundPrimary;
-        diffPrimaryNeg = [];
+        if (~isempty(directionData.modulationPrimarySignedNegative))
+            diffPrimaryNeg = directionData.modulationPrimarySignedNegative-backgroundPrimary;
+        else
+            diffPrimaryNeg = backgroundPrimary - diffPrimaryPos;
+        end
+        
     otherwise
         error('Unknown direction type specified')
 end
@@ -123,6 +134,26 @@ end
 % Construct the waverform parameters for the particular type of modulation we
 % are constructing.
 switch (modulationParams.type)
+
+    case 'pulse'
+        % A unidirectional pulse
+        % Frequency and phase parameters are meaningless here, and ignored.
+        waveformParams.contrast = modulationParams.contrast;
+        waveformParams.duration = modulationParams.trialDuration;
+        waveformParams.type = modulationParams.type;
+        if (p.Results.verbose)
+            fprintf('*   Calculating pulse: %0.f s of %s, %.1f pct contrast (of max)\n', waveformParams.duration, directionName, 100*waveformParams.contrast);
+        end
+        
+    case 'sinusoid'
+        % A sinuloidal modulation around a background
+        waveformParams.frequency = modulationParams.frequency;
+        waveformParams.phaseDegs = modulationParams.phaseDegs;
+        waveformParams.contrast = modulationParams.contrast;
+        if (p.Results.verbose)
+            fprintf('*   Calculating %0.f s of %s, %.2f Hz, %.2f deg, %.1f pct contrast (of max)\n', waveformParams.duration, directionName, waveformParams.frequency, waveformParams.phaseDeg, 100*waveformParams.contrast);
+        end
+        
     case 'AM'
         % Amplitude modulation of an underlying carrier frequency
         error('Not yet implemented.  Harmonize the dictionary, the protocolParams.trialTypeParams, and this code.');
@@ -134,23 +165,7 @@ switch (modulationParams.type)
         if (p.Results.verbose)
             fprintf('*   Calculating %0.f s of %s, %.2f Hz, %.2f deg, %.1f pct contrast (of max)\n', waveformParams.duration, directionName, waveformParams.theFrequencyHz, waveformParams.thePhaseDeg, 100*waveformParams.contrast);
         end
-    case 'pulse'
-        % A unidirectional pulse
-        % Frequency and phase parameters are meaningless here, and ignored.
-        waveformParams.contrast = modulationParams.contrast;
-        waveformParams.duration = modulationParams.trialDuration;
-        waveformParams.type = modulationParams.type;
-        if (p.Results.verbose)
-            fprintf('*   Calculating pulse: %0.f s of %s, %.1f pct contrast (of max)\n', waveformParams.duration, directionName, 100*waveformParams.contrast);
-        end
-    case 'sinusoid'
-        % A sinuloidal modulation
-        waveformParams.frequency = modulationParams.frequency;
-        waveformParams.phaseDegs = modulationParams.phaseDegs;
-        waveformParams.contrast = modulationParams.contrast;
-        if (p.Results.verbose)
-            fprintf('*   Calculating %0.f s of %s, %.2f Hz, %.2f deg, %.1f pct contrast (of max)\n', waveformParams.duration, directionName, waveformParams.frequency, waveformParams.phaseDeg, 100*waveformParams.contrast);
-        end
+        
     otherwise
         error('Unknown modulation type specified');
 end
@@ -173,10 +188,9 @@ waveformParams.window.nWindowed = modulationParams.cosineWindowDurationSecs/modu
 
 % Exactly how we call the underlying routine depends on the modulation type, so handle that here.
 switch (modulationParams.type)
-    case {'AM', 'sinusoid'}
+    case {'pulse', 'sinusoid'}
         modulation = OLCalculateStartsStopsModulation(waveformParams, modulationParams.oneLightCal, backgroundPrimary, diffPrimaryPos, diffPrimaryNeg);
-    case {'pulse'}
-        modulation = OLCalculateStartsStopsModulation(waveformParams, modulationParams.oneLightCal, backgroundPrimary, diffPrimaryPos, []);
+
     otherwise
         error('Unknown direction type specified.');
 end

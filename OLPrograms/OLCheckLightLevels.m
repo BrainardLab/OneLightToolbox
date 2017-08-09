@@ -2,7 +2,7 @@
 %
 % Figure out how much light is coming out of the OL device in terms
 % of retinal illuminance, so as to compare with light safety standards.
-%
+
 % 2/9/13   dhb  Started with the TsujimuraStimuli program and modified.
 % 5/2/13   dhb  This is now tidied up.  
 %               Compute MPE both with and without limiting cone angle flag 
@@ -10,6 +10,7 @@
 % 6/28/13  dhb  Move plots to PsychCalLocalData subfolder.
 %          dhb  Add a call through the ISO standard too.
 % 2/6/13   ms   Set to calculate statistics on the last full-on measured.
+% 08/9/17  dhb  Remove open of wiki at end.
 
 %% Clear and close
 clear; close all
@@ -375,7 +376,7 @@ radianceWattsPerM2Sr(radianceWattsPerM2Sr < 0) = 0;
 fullOn2PhotopicLuminanceCdM2 = T_xyz(2,:)*radianceWattsPerM2Sr;
 
 beep; beep; beep;
-fprintf('\n\n\n>>> Copy the following line to the calibration log on the Wiki:\n\n');
+fprintf('\n\n\n>>> You can copy the following line to the calibration log on the Wiki:\n\n');
 fprintf('|''''%s''''|''''%s''''|''''%s''''|%g|%g|%.2f|%.2f|\n\n', cal.describe.calType.char, cal.describe.date, cal.describe.calID, cal.describe.bulbNumber, photopicLuminanceCdM2, fullOn1PhotopicLuminanceCdM2, fullOn2PhotopicLuminanceCdM2);
 fprintf('>>> The Wiki URL is https://cfn.upenn.edu/aguirre/wiki/private:bluemechanism:experimental_apparatus:onelight:calibration:calibration_log\n');
-!open https://cfn.upenn.edu/aguirre/wiki/private:bluemechanism:experimental_apparatus:onelight:calibration:calibration_log
+%!open https://cfn.upenn.edu/aguirre/wiki/private:bluemechanism:experimental_apparatus:onelight:calibration:calibration_log

@@ -54,6 +54,8 @@ function [cacheData, adjustedCal] = OLCorrectCacheFileOOC(cacheFileNameFullPath,
 % 06/05/17  dhb      Remove old style verbose arg from calls to OLSettingsToStartsStops
 % 07/27/17  dhb      Massive interface redo.
 % 07/29/17  dhb      Pull out radiometer open to one level up.
+% 08/09/17  dhb, mab Comment out code that stores difference, just return background and max modulations.
+%                    Also, don't try to use the now non-extant difference when we get the input.
 
 % Parse the input
 p = inputParser;
@@ -146,18 +148,19 @@ try
     end
     for iter = 1:correctionDescribe.nIterations
         
-        % Only get the primaries from the cache file if it's the
-        % first iteration.  In this case we also store them for
-        % future reference, since they are replaced on every
-        % iteration.
+        % Only get the primaries from the cache file if it's the first
+        % iteration.  In this case we also store them for future reference,
+        % since they are replaced on every iteration.
         if iter == 1
             backgroundPrimaryUsed = cacheData.data(correctionDescribe.observerAgeInYrs).backgroundPrimary;
-            differencePrimaryUsed = cacheData.data(correctionDescribe.observerAgeInYrs).differencePrimary;
-            modulationPrimaryUsed = cacheData.data(correctionDescribe.observerAgeInYrs).backgroundPrimary+cacheData.data(correctionDescribe.observerAgeInYrs).differencePrimary;
-            
-            backgroundPrimaryInitial = cacheData.data(correctionDescribe.observerAgeInYrs).backgroundPrimary;
-            differencePrimaryInitial = cacheData.data(correctionDescribe.observerAgeInYrs).differencePrimary;
-            modulationPrimaryInitial = cacheData.data(correctionDescribe.observerAgeInYrs).backgroundPrimary+cacheData.data(correctionDescribe.observerAgeInYrs).differencePrimary;
+            modulationPrimaryUsed = cacheData.data(correctionDescribe.observerAgeInYrs).modulationPrimarySignedPositive;
+            differencePrimaryUsed = modulationPrimaryUsed-backgroundPrimaryUsed;
+            %cacheData.data(correctionDescribe.observerAgeInYrs).backgroundPrimary+cacheData.data(correctionDescribe.observerAgeInYrs).differencePrimary;
+            %differencePrimaryUsed = cacheData.data(correctionDescribe.observerAgeInYrs).differencePrimary;
+
+            backgroundPrimaryInitial = backgroundPrimaryUsed;
+            modulationPrimaryInitial = modulationPrimaryUsed;
+            differencePrimaryInitial = differencePrimaryUsed;
         else
             backgroundPrimaryUsed = backgroundNextPrimaryTruncatedLearningRate;
             modulationPrimaryUsed = modulationNextPrimaryTruncatedLearningRate;
@@ -283,7 +286,7 @@ try
             % that other code cares about.  
             cacheData.data(ii).backgroundPrimary = backgroundNextPrimaryTruncatedLearningRateAll(:, end);
             cacheData.data(ii).modulationPrimarySignedPositive = modulationNextPrimaryTruncatedLearningRateAll(:, end);
-            cacheData.data(ii).differencePrimary = modulationNextPrimaryTruncatedLearningRateAll(:, end)-backgroundNextPrimaryTruncatedLearningRateAll(:, end);
+            %cacheData.data(ii).differencePrimary = modulationNextPrimaryTruncatedLearningRateAll(:, end)-backgroundNextPrimaryTruncatedLearningRateAll(:, end);
             cacheData.data(ii).modulationPrimarySignedNegative = [];
             
             % Store target spectra and initial primaries used.  This information is useful
