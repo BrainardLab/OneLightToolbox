@@ -19,8 +19,15 @@ function d = OLModulationParamsDictionary
 d = containers.Map();
 
 %% MaxContrast3sSegment
-modulationName = 'MaxContrast3sSegment';
+modulationName = 'MaxContrast3sPulse';
 type = 'pulse';
+
+params = defaultParams(type);
+params.name = modulationName;
+d = paramsValidateAndAppendToDictionary(d, params);
+
+modulationName = 'MaxContrast3sSinusoid';
+type = 'sinusoid';
 
 params = defaultParams(type);
 params.name = modulationName;
@@ -126,7 +133,7 @@ switch (type)
         params.contrast = 1;                        % Contrast scalars (as proportion of max specified in the direction)
         
         % Frequency and phase
-        params.frequency = 5;                       % Frequency in Hz
+        params.frequency = 2;                       % Frequency in Hz
         params.phaseDegs = 0;                       % Phase in degrees
         
         % Cone noise parameters. 

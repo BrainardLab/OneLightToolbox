@@ -49,7 +49,7 @@ switch waveformParams.type
         end
         
     case 'sinusoid'
-        powerLevels = waveformParams.contrast*sin(2*pi*waveformParams.frequency*waveformParams.t + (pi/180)*waveformParams.phaseDeg);
+        powerLevels = waveformParams.contrast*sin(2*pi*waveformParams.frequency*waveformParams.t + (pi/180)*waveformParams.phaseDegs);
         
         % Then half-cosine window if specified
         if (waveformParams.window.cosineWindowIn | waveformParams.window.cosineWindowOut);
@@ -57,10 +57,10 @@ switch waveformParams.type
             cosineWindowReverse = cosineWindow(end:-1:1);
         end
         if (waveformParams.window.cosineWindowIn)
-            powerLevels(1:waveformParams.window.nWindowed) = powerLevels*cosineWindow;
+            powerLevels(1:waveformParams.window.nWindowed) = powerLevels(1:waveformParams.window.nWindowed).*cosineWindow;
         end
         if (waveformParams.window.cosineWindowOut)
-            powerLevels(end-waveformParams.window.nWindowed+1:end) = powerLevels*cosineWindowReverse;
+            powerLevels(end-waveformParams.window.nWindowed+1:end) = powerLevels(end-waveformParams.window.nWindowed+1:end).*cosineWindowReverse;
         end
         
     case 'AM'
@@ -129,15 +129,18 @@ switch waveformParams.type
         index = find(powerLevels < 0);
         if (~isempty(index))
             assert(~isempty(diffPrimaryNeg),'diffPrimaryNeg cannot be empty if there are negative power values');
-            modulation.primaries(index,:) = [backgroundPrimary diffPrimaryNeg]*w(index,:);
+            modulation.primaries(:,index) = [backgroundPrimary -diffPrimaryNeg]*w(:,index);
         end
         
         % Make sure primaries are all within gamut.  If not, something has gone wrong and the
         % user needs to think about and fix it.
-        if (any(modulation.primaries(:) < 0) | any(modulation.primaries(:) > 1))
+        tolerance = 1e-10;
+        if (any(modulation.primaries(:) < -tolerance) | any(modulation.primaries(:) > 1+tolerance))
             error('Primary value out of gamut. You need to look into why and fix it.');
         end
-        
+        modulation.primaries(modulation.primaries < 0) = 0;
+        modulation.primaries(modulation.primaries > 1) = 1;
+
         % This next bit of code is designed to save us a little time.  For a pulse,
         % there are many time points where the primaries are the same, and it is
         % a little slow to compute settings and starts/stops.  So, we find the
@@ -230,4 +233,5 @@ switch waveformParams.type
 end
 
 %% Make the starts/stops for the background
+modulation.background.primaries = backgroundPrimary;
 [modulation.background.starts, modulation.background.stops] = OLSettingsToStartsStops(cal, OLPrimaryToSettings(cal, backgroundPrimary));

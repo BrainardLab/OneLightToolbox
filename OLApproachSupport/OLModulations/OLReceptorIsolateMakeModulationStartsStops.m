@@ -119,7 +119,7 @@ switch (directionParams.type)
         if (~isempty(directionData.modulationPrimarySignedNegative))
             diffPrimaryNeg = directionData.modulationPrimarySignedNegative-backgroundPrimary;
         else
-            diffPrimaryNeg = backgroundPrimary - diffPrimaryPos;
+            diffPrimaryNeg = -diffPrimaryPos;
         end
         
     otherwise
@@ -132,17 +132,19 @@ end
 % We set these up here for all into OLCaclulateStartsStopsModulations.
 
 % Construct the waverform parameters for the particular type of modulation we
-% are constructing.
+% are constructing.  The structure waveformParams is pretty similar to modulationParams,
+% but has some calculated fields added and some field name diffferences that exist
+% for historical reasons.  We may eventually be able to merge the two.
+waveformParams.type = modulationParams.type;
 switch (modulationParams.type)
 
     case 'pulse'
         % A unidirectional pulse
         % Frequency and phase parameters are meaningless here, and ignored.
         waveformParams.contrast = modulationParams.contrast;
-        waveformParams.duration = modulationParams.stimulusDuration;
-        waveformParams.type = modulationParams.type;
+        waveformParams.stimulusDuration = modulationParams.stimulusDuration;
         if (p.Results.verbose)
-            fprintf('*   Calculating pulse: %0.f s of %s, %.1f pct contrast (of max)\n', waveformParams.duration, directionName, 100*waveformParams.contrast);
+            fprintf('*   Calculating pulse: %0.f s of %s, %.1f pct contrast (of max)\n', waveformParams.stimulusDuration, directionName, 100*waveformParams.contrast);
         end
         
     case 'sinusoid'
@@ -150,8 +152,9 @@ switch (modulationParams.type)
         waveformParams.frequency = modulationParams.frequency;
         waveformParams.phaseDegs = modulationParams.phaseDegs;
         waveformParams.contrast = modulationParams.contrast;
+        waveformParams.stimulusDuration = modulationParams.stimulusDuration;          
         if (p.Results.verbose)
-            fprintf('*   Calculating %0.f s of %s, %.2f Hz, %.2f deg, %.1f pct contrast (of max)\n', waveformParams.duration, directionName, waveformParams.frequency, waveformParams.phaseDeg, 100*waveformParams.contrast);
+            fprintf('*   Calculating %0.f s of %s, %.2f Hz, %.2f deg, %.1f pct contrast (of max)\n', waveformParams.stimulusDuration, directionName, waveformParams.frequency, waveformParams.phaseDegs, 100*waveformParams.contrast);
         end
         
     case 'AM'
@@ -163,7 +166,7 @@ switch (modulationParams.type)
         waveformParams.theFrequencyHz = modulationParams.carrierFrequency;
         waveformParams.contrast = modulationParams.contrast;
         if (p.Results.verbose)
-            fprintf('*   Calculating %0.f s of %s, %.2f Hz, %.2f deg, %.1f pct contrast (of max)\n', waveformParams.duration, directionName, waveformParams.theFrequencyHz, waveformParams.thePhaseDeg, 100*waveformParams.contrast);
+            fprintf('*   Calculating %0.f s of %s, %.2f Hz, %.2f deg, %.1f pct contrast (of max)\n', waveformParams.stimulusDuration, directionName, waveformParams.theFrequencyHz, waveformParams.thePhaseDeg, 100*waveformParams.contrast);
         end
         
     otherwise
@@ -171,7 +174,7 @@ switch (modulationParams.type)
 end
 
 % Waveform timebase
-waveformParams.t = 0:modulationParams.timeStep:waveformParams.duration-modulationParams.timeStep;
+waveformParams.t = 0:modulationParams.timeStep:waveformParams.stimulusDuration-modulationParams.timeStep;
 
 % Parameters common to all modulation types
 %
