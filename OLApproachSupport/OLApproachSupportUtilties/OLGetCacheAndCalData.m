@@ -83,6 +83,7 @@ if (params.useAverageGamma)
         fprintf('\tNot adjusting calibration.\n');
         %adjustedCal.describe.useAverageGamma = params.useAverageGamma;
     end
+end
 
 % Clean up cal file primaries by zeroing out light we don't think is really there.
 if (params.zeroPrimariesAwayFromPeak)

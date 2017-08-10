@@ -13,13 +13,15 @@ clear; close all;
 %% Get some data to analyze
 %
 % THIS WILL NEED UPDATING TO POINT AT THE RIGHT PLACE, WHEN WE DEBUG IT.
-cachePath = getpref('OneLight', 'materialsPath');
+cachePath = fullfile(getpref('OLApproach_Psychophysics', 'DataPath'),'Experiments','OLApproach_Psychophysics','MaxMelPulsePsychophysics','DirectionCorrectedPrimaries');
 
 %load(fullfile(cachePath, 'MaxMelPulsePsychophysics', '060217',  'Cache-LMSDirectedSuperMaxLMS_HERO_test_OldVers_060217'));
-load(fullfile(cachePath, 'MaxMelPulsePsychophysics', '060217',  'Cache-MelanopsinDirectedSuperMaxMel_HERO_test_OldVers_060217.mat'));
+%load(fullfile(cachePath, 'MaxMelPulsePsychophysics', '060217',  'Cache-MelanopsinDirectedSuperMaxMel_HERO_test_OldVers_060217.mat'));
+load(fullfile(cachePath, 'testJR', '081017', 'session_1', 'Direction_MaxMel_275_80_667.mat'));
 
 %theBox = 'BoxBRandomizedLongCableBStubby1_ND02';
-theBox = 'BoxDRandomizedLongCableAStubby1_ND02';
+%theBox = 'BoxDRandomizedLongCableAStubby1_ND02';
+theBox = 'BoxARandomizedLongCableAEyePiece1_ND03_NoReticle';
 
 % Convert data to standardized naming for here
 eval(['theData = ' theBox ';  clear ' theBox ';']);
@@ -63,7 +65,7 @@ zeroItWLRangePlus = 100;
 cal = OLZeroCalPrimariesAwayFromPeak(cal,zeroItWLRangeMinus,zeroItWLRangePlus);
 
 %% Get correction parameters
-correctDescribe = theData{1}.data(theObserverAge).correctDescribe;
+correctDescribe = theData{1}.data(theObserverAge).correctionDescribe;
 
 %% Plot what we got
 %
@@ -258,6 +260,11 @@ for ii = 1:nIterations
     title('Delta primary for next iteration');
     
     %% Contrast figure
+    % Instead of indexing each contrast type by looking in a different row,
+    % just ask for the values as specifically named in the
+    % Direction_yaddayadda.mat file. ASK DHB WHICH VALUES WE PLOT HERE AND
+    % WHAT VALUES WE WANT TO PLOT LATER.
+    
     figure(contrastPlot);
     subplot(1,2,1);
     hold off;

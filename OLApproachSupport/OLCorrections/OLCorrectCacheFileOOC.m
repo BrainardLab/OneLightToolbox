@@ -128,9 +128,9 @@ try
     if (correctionDescribe.verbose), fprintf('- Performing radiometer measurements.\n'); end;    
     
     % State and temperature measurements
-    if (~correctionDescribe.simulate & correctionDescribe.calStateMeas)
+    if (~correctionDescribe.simulate & correctionDescribe.takeCalStateMeasurements)
         if (correctionDescribe.verbose), fprintf('- State measurements \n'); end;
-        [~, results.calStateMeas] = OLCalibrator.TakeStateMeasurements(adjustedCal, ol, od, spectroRadiometerOBJ, meterToggle, correctDescribe.nAverage, theLJdev, 'standAlone',true);
+        [~, results.calStateMeas] = OLCalibrator.takeCalStateMeasurements(adjustedCal, ol, od, spectroRadiometerOBJ, meterToggle, correctionDescribe.nAverage, theLJdev, 'standAlone',true);
     else
         results.calStateMeas = [];
     end
@@ -192,7 +192,7 @@ try
             
             % Take the measurements.  Simulate with OLPrimaryToSpd when not measuring.
             if (~correctionDescribe.simulate)
-                results.directionMeas(iter,i).meas = OLTakeMeasurementOOC(ol, [], spectroRadiometerOBJ, starts, stops, S, meterToggle, correctDescribe.nAverage);
+                results.directionMeas(iter,i).meas = OLTakeMeasurementOOC(ol, [], spectroRadiometerOBJ, starts, stops, S, meterToggle, correctionDescribe.nAverage);
             else
                 results.directionMeas(iter,i).meas.pr650.spectrum = OLPrimaryToSpd(adjustedCal,primariesThisIter);
                 results.directionMeas(iter,i).meas.pr650.time = [mglGetSecs mglGetSecs];
