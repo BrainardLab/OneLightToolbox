@@ -54,6 +54,7 @@ function [cacheData, directionOlCache, wasRecomputed] = OLReceptorIsolateMakeDir
 % 06/15/17   dhb et al.  Handle isStale return from updated cache code.
 % 07/22/17   dhb         Enforce verbose
 % 08/09/17   dhb, mab    Comment out code that stores difference, just return background and max modulations.
+% 08/10/17   dhb         Return only postiive swing.  Because this is a nominal calculation, the negative swing is redundant.
 
 
 %% Parse input
@@ -115,7 +116,7 @@ end
 %
 % The switch handles different types of modulations we might encounter.
 switch directionParams.type
-    case {'pulse'}
+    case {'modulation', 'pulse'}
         % Pupil diameter in mm.
         pupilDiameterMm = directionParams.pupilDiameterMm;
         
@@ -190,48 +191,41 @@ switch directionParams.type
             
             % Isolate the receptors by calling the ReceptorIsolate
             initialPrimary = backgroundPrimary;
-            modulationPrimary = ReceptorIsolate(T_receptors, whichReceptorsToIsolate, ...
+            modulationPrimarySignedPositive = ReceptorIsolate(T_receptors, whichReceptorsToIsolate, ...
                 whichReceptorsToIgnore,whichReceptorsToMinimize,B_primary,backgroundPrimary,...
                 initialPrimary,whichPrimariesToPin,directionParams.primaryHeadRoom,directionParams.maxPowerDiff,...
                 desiredContrasts,ambientSpd);
-            modulationSpd = OLPrimaryToSpd(cal, modulationPrimary);
-            modulationReceptors = T_receptors*modulationSpd;
             
             % Look at both negative and positive swing and double check that we're within gamut
-            differencePrimary = modulationPrimary - backgroundPrimary;
+            differencePrimary = modulationPrimarySignedPositive - backgroundPrimary;
             modulationPrimarySignedPositive = backgroundPrimary+differencePrimary;
             modulationPrimarySignedNegative = backgroundPrimary-differencePrimary;
             if any(modulationPrimarySignedNegative > 1) | any(modulationPrimarySignedNegative < 0)  | any(modulationPrimarySignedPositive > 1)  | any(modulationPrimarySignedPositive < 0)
                 error('Out of bounds.')
             end
             
-            % Compute and report constrasts
+            % Compute spds, constrasts
             differenceSpdSignedPositive = B_primary*differencePrimary;
             differenceReceptorsPositive = T_receptors*differenceSpdSignedPositive;
             isolateContrastsSignedPositive = differenceReceptorsPositive ./ backgroundReceptors;
             modulationSpdSignedPositive = backgroundSpd+differenceSpdSignedPositive;
             
             differenceSpdSignedNegative = B_primary*(-differencePrimary);
-            differenceReceptorsNegative = T_receptors*differenceSpdSignedNegative;
-            isolateContrastsSignedNegative = differenceReceptorsNegative ./ backgroundReceptors;
             modulationSpdSignedNegative = backgroundSpd+differenceSpdSignedNegative;
             
             % Print out contrasts. This routine is in the Silent Substitution Toolbox.
-            if (p.Results.verbose), ComputeAndReportContrastsFromSpds(sprintf('\n> Observer age: %g',observerAgeInYears),photoreceptorClasses,T_receptors,backgroundSpd,modulationSpd,[],[]); end;
+            if (p.Results.verbose), ComputeAndReportContrastsFromSpds(sprintf('\n> Observer age: %g',observerAgeInYears),photoreceptorClasses,T_receptors,backgroundSpd,modulationSpdSignedPositive,[],[]); end;
             
-            %% MIGHT WANT TO SAVE THE VALUES HERE AND PHOTOPIC LUMINANCE TOO.
+            %% [DHB NOTE: MIGHT WANT TO SAVE THE VALUES HERE AND PHOTOPIC LUMINANCE TOO.]
             % Print out luminance info.  This routine is also in the Silent Substitution Toolbox
             if (p.Results.verbose), GetLuminanceAndTrolandsFromSpd(S, backgroundSpd, pupilDiameterMm, true); end
             
-            % If it is a pulse rather than a modulation, we replace the background with the low end, and the difference
-            % with the swing between low and high.
+            % If it is a pulse rather than a modulation, we replace the background with the low end.
             if (strcmp(directionParams.type,'pulse'))
                 backgroundPrimary = modulationPrimarySignedNegative;
                 backgroundSpd = modulationSpdSignedNegative;
-                %differencePrimary = modulationPrimarySignedPositive-modulationPrimarySignedNegative;
-                modulationPrimarySignedNegative = [];
-                modulationSpdSignedNegative = [];
             end
+            clear modulationPrimarySignedNegative modulationSpdSignedNegative
             
             %% Assign all the cache fields
             %
@@ -246,21 +240,14 @@ switch directionParams.type
             cacheData.data(observerAgeInYears).describe.S_receptors = S;
             cacheData.data(observerAgeInYears).describe.contrast = isolateContrastsSignedPositive;
             cacheData.data(observerAgeInYears).describe.contrastSignedPositive = isolateContrastsSignedPositive;
-            cacheData.data(observerAgeInYears).describe.contrastSignedNegative = isolateContrastsSignedNegative;
             
             % Background
             cacheData.data(observerAgeInYears).backgroundPrimary = backgroundPrimary;
             cacheData.data(observerAgeInYears).backgroundSpd = backgroundSpd;
             
-            % Modulation (unsigned)
-            %cacheData.data(observerAgeInYears).differencePrimary = differencePrimary;
-            %cacheData.data(observerAgeInYears).differenceSpd = B_primary*differencePrimary;
-            
-            % Modulation (signed)
+            % Modulation (positive)
             cacheData.data(observerAgeInYears).modulationPrimarySignedPositive = modulationPrimarySignedPositive;
-            cacheData.data(observerAgeInYears).modulationPrimarySignedNegative = modulationPrimarySignedNegative;
             cacheData.data(observerAgeInYears).modulationSpdSignedPositive = modulationSpdSignedPositive;
-            cacheData.data(observerAgeInYears).modulationSpdSignedNegative = modulationSpdSignedNegative;
         end
         
     case 'lightfluxchrom'
@@ -269,10 +256,6 @@ switch directionParams.type
         % Note: This has access to useAmbient and primaryHeadRoom parameters but does
         % not currently use them. That is because this counts on the background having
         % been set up to accommodate the desired modulation.
-        
-        % Get desired chromaticity from parameters;
-        x = directionParams.lightFluxDesiredXY(1);
-        y = directionParams.lightFluxDesiredXY(2);
         
         % Grab the background from the cache file
         backgroundCacheFile = ['Background_' directionParams.backgroundName '.mat'];
@@ -294,11 +277,11 @@ switch directionParams.type
 
         % Modulation.  This is the background scaled up by the factor that the background
         % was originally scaled down by.
-        modulationPrimary = backgroundPrimary*directionParams.lightFluxDownFactor;
-        modulationSpd = OLPrimaryToSpd(cal, modulationPrimary);
+        modulationPrimarySignedPositive = backgroundPrimary*directionParams.lightFluxDownFactor;
+        modulationSpdSignedPositive = OLPrimaryToSpd(cal, modulationPrimarySignedPositive);
         
         % Check gamut
-        if (any(modulationPrimary > 1) | any(modulationPrimary < 0))
+        if (any(modulationPrimarySignedPositive > 1) | any(modulationPrimarySignedPositive < 0))
             error('Out of gamut error for the modulation');
         end
         
@@ -306,12 +289,8 @@ switch directionParams.type
         for observerAgeInYrs = 20:60
             cacheData.data(observerAgeInYrs).backgroundPrimary = backgroundPrimary;
             cacheData.data(observerAgeInYrs).backgroundSpd = backgroundSpd;
-            %cacheData.data(observerAgeInYrs).differencePrimary = modulationPrimary-backgroundPrimary;
-            %cacheData.data(observerAgeInYrs).differenceSpd = modulationSpd-backgroundSpd;
-            cacheData.data(observerAgeInYrs).modulationPrimarySignedPositive = modulationPrimary;
-            cacheData.data(observerAgeInYrs).modulationSpdSignedPositive = modulationSpd;
-            cacheData.data(observerAgeInYrs).modulationPrimarySignedNegative = [];
-            cacheData.data(observerAgeInYrs).modulationSpdSignedNegative = [];
+            cacheData.data(observerAgeInYrs).modulationPrimarySignedPositive = modulationPrimarySignedPositive;
+            cacheData.data(observerAgeInYrs).modulationSpdSignedPositive = modulationSpdSignedPositive;
         end
 
     otherwise
