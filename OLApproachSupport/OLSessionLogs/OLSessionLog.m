@@ -113,9 +113,9 @@ switch theStep
         fileID = fopen(protocolParams.fullFileName,'a');
         switch p.StartEnd
             case 'start'
-                fprintf(fileID,'\n%s%s: Started @ %s.\n',p.PrePost,theStep,datestr(now,'HH:MM:SS'));
+                fprintf(fileID,'\n%s%s: %s -- Scan # %s started @ %s.\n',p.PrePost,theStep,protocolParams.protocolOutputName, num2str(protocolParams.scanNumber), datestr(now,'HH:MM:SS'));
             case 'end'
-                fprintf(fileID,'%s%s: Finished @ %s.\n',p.PrePost, theStep,datestr(now,'HH:MM:SS'));
+                fprintf(fileID,'%s%s: %s -- Scan # %s finished @ %s.\n',p.PrePost,theStep,protocolParams.protocolOutputName, num2str(protocolParams.scanNumber), datestr(now,'HH:MM:SS'));
         end
         
     otherwise
