@@ -139,7 +139,7 @@ switch (modulationParams.type)
         % A unidirectional pulse
         % Frequency and phase parameters are meaningless here, and ignored.
         waveformParams.contrast = modulationParams.contrast;
-        waveformParams.duration = modulationParams.trialDuration;
+        waveformParams.duration = modulationParams.stimulusDuration;
         waveformParams.type = modulationParams.type;
         if (p.Results.verbose)
             fprintf('*   Calculating pulse: %0.f s of %s, %.1f pct contrast (of max)\n', waveformParams.duration, directionName, 100*waveformParams.contrast);

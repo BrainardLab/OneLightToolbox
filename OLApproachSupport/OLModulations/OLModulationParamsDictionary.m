@@ -53,7 +53,7 @@ switch (params.type)
         assert((isfield(params, 'dictionaryType')           && ischar(params.dictionaryType)),              sprintf('params.dictionaryType does not exist or it does not contain a string value.'));
         assert((isfield(params, 'type')                     && ischar(params.type)),                        sprintf('params.type does not exist or it does not contain a string value.'));
         assert((isfield(params, 'name')                     && ischar(params.name)),                        sprintf('params.name does not exist or it does not contain a string value.'));
-        assert((isfield(params, 'trialDuration')            && isnumeric(params.trialDuration)),            sprintf('params.trialDuration does not exist or it does not contain a numeric value.'));
+        assert((isfield(params, 'stimulusDuration')            && isnumeric(params.stimulusDuration)),            sprintf('params.stimulusDuration does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'timeStep')                 && isnumeric(params.timeStep)),                 sprintf('params.timeStep does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'cosineWindowIn')           && islogical(params.cosineWindowIn)),           sprintf('params.cosineWindowIn does not exist or it does not contain a boolean value.'));
         assert((isfield(params, 'cosineWindowOut')          && islogical(params.cosineWindowOut)),          sprintf('params.cosineWindowOut does not exist or it does not contain a boolean value.'));
@@ -65,7 +65,7 @@ switch (params.type)
         assert((isfield(params, 'dictionaryType')           && ischar(params.dictionaryType)),              sprintf('params.dictionaryType does not exist or it does not contain a string value.'));
         assert((isfield(params, 'type')                     && ischar(params.type)),                        sprintf('params.type does not exist or it does not contain a string value.'));
         assert((isfield(params, 'name')                     && ischar(params.name)),                        sprintf('params.name does not exist or it does not contain a string value.'));
-        assert((isfield(params, 'trialDuration')            && isnumeric(params.trialDuration)),            sprintf('params.trialDuration does not exist or it does not contain a numeric value.'));
+        assert((isfield(params, 'stimulusDuration')            && isnumeric(params.stimulusDuration)),            sprintf('params.stimulusDuration does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'timeStep')                 && isnumeric(params.timeStep)),                 sprintf('params.timeStep does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'cosineWindowIn')           && islogical(params.cosineWindowIn)),           sprintf('params.cosineWindowIn does not exist or it does not contain a boolean value.'));
         assert((isfield(params, 'cosineWindowOut')          && islogical(params.cosineWindowOut)),          sprintf('params.cosineWindowOut does not exist or it does not contain a boolean value.'));
@@ -100,7 +100,7 @@ switch (type)
         % Pulse timing parameters
         params.cosineWindowIn = true;               % If true, have a cosine fade-in
         params.cosineWindowOut = true;              % If true, have a cosine fade-out
-        params.trialDuration = 3;                   % Number of seconds to show each trial
+        params.stimulusDuration = 3;                   % Number of seconds to show each trial
         params.cosineWindowDurationSecs = 0.5;      % Duration (in secs) of the cosine fade-in/out
          
         % Contrast scaling
@@ -119,7 +119,7 @@ switch (type)
         % Pulse timing parameters
         params.cosineWindowIn = true;               % If true, have a cosine fade-in
         params.cosineWindowOut = true;              % If true, have a cosine fade-out
-        params.trialDuration = 3;                   % Number of seconds to show each trial
+        params.stimulusDuration = 3;                   % Number of seconds to show each trial
         params.cosineWindowDurationSecs = 0.5;      % Duration (in secs) of the cosine fade-in/out
          
         % Contrast scaling
