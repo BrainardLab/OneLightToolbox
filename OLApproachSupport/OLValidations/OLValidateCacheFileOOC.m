@@ -19,19 +19,20 @@ function results = OLValidateCacheFileOOC(cacheFileName, ol, spectroRadiometerOB
 %     results (struct)                - Results structure
 %
 % Optional key/value pairs:
-%      Keyword                         Default                          Behavior
+%      Keyword                         Default           Behavior
 %
-%     'approach'                       ''                               What approach is calling us?
-%     'simulate'                       false                            Run in simulation mode.
-%     'observerAgeInYrs'               32                               Observer age to correct for.
-%     'noRadiometerAdjustment '        true                             Does not pause to allow aiming of radiometer.
-%     'pauseDuration'                  0                                How long to pause (in secs) after radiometer is aimed by user.
-%     'calibrationType'                ''                               Calibration type
-%     'takeTemperatureMeasurements'    false                            Take temperature measurements? (Requires a connected LabJack dev with a temperature probe.)
-%     'takeCalStateMeasurements'       true                             Take OneLight state measurements
-%     'useAverageGamma'                false                            Force the useAverageGamma mode in the calibration?
-%     'zeroPrimariesAwayFromPeak'      false                            Zero out calibrated primaries well away from their peaks.
-%     'verbose'                        false                            Print out things in progress.
+%     'approach'                       ''                What approach is calling us?
+%     'simulate'                       false             Run in simulation mode.
+%     'observerAgeInYrs'               32                Observer age to correct for.
+%     'noRadiometerAdjustment '        true              Does not pause to allow aiming of radiometer.
+%     'pauseDuration'                  0                 How long to pause (in secs) after radiometer is aimed by user.
+%     'nAverage'                       1                 Number of times to average when taking measurements.
+%     'calibrationType'                ''                Calibration type
+%     'takeTemperatureMeasurements'    false             Take temperature measurements? (Requires a connected LabJack dev with a temperature probe.)
+%     'takeCalStateMeasurements'       true              Take OneLight state measurements
+%     'useAverageGamma'                false             Force the useAverageGamma mode in the calibration?
+%     'zeroPrimariesAwayFromPeak'      false             Zero out calibrated primaries well away from their peaks.
+%     'verbose'                        false             Print out things in progress.
 %
 % See also: OLValidateDirectionCorrectedPrimaries, OLGetCacheAndCalData
 
@@ -50,6 +51,7 @@ p.addParameter('approach','', @isstr);
 p.addParameter('simulate',false,@islogical);
 p.addParameter('noRadiometerAdjustment', true, @islogical);
 p.addParameter('pauseDuration',0,@inumeric);
+p.addParameter('nAverage',1,@isnumeric);
 p.addParameter('observerAgeInYrs', 32, @isscalar);
 p.addParameter('calibrationType','', @isstr);
 p.addParameter('takeCalStateMeasurements', false, @islogical);
@@ -99,7 +101,8 @@ try
     % State and temperature measurements
     if (~validationDescribe.simulate & validationDescribe.takeCalStateMeasurements)
         if (validationDescribe.verbose), fprintf('- State measurements \n'); end;
-        [~, results.calStateMeas] = OLCalibrator.TakeStateMeasurements(adjustedCal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, 'standAlone',true);
+        [~, results.calStateMeas] = OLCalibrator.TakeStateMeasurements(adjustedCal, ol, od, spectroRadiometerOBJ, ...
+            meterToggle, validationDescribe.nAverage, theLJdev, 'standAlone',true);
     else
         results.calStateMeas = [];
     end
@@ -128,7 +131,7 @@ try
         
         % Take the measurements.  Simulate with OLPrimaryToSpd when not measuring.
         if (~validationDescribe.simulate)
-            results.directionMeas(i).meas = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
+            results.directionMeas(i).meas = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, validationDescribe.nAverage);
         else
             results.directionMeas(i).meas.pr650.spectrum = OLPrimaryToSpd(adjustedCal,primaries);
             results.directionMeas(i).meas.pr650.time = [mglGetSecs mglGetSecs];
@@ -149,13 +152,6 @@ try
     
     % Turn the OneLight mirrors off.
     ol.setAll(false);
-    
-    % Close the radiometer
-    if (~validationDescribe.simulate)
-        if (~isempty(spectroRadiometerOBJ))
-            spectroRadiometerOBJ.shutDown();
-        end
-    end
     
     % Save out useful information
     [calID, calIDTitle] = OLGetCalID(adjustedCal);
