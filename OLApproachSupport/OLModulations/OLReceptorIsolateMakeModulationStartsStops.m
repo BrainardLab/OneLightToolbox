@@ -89,7 +89,7 @@ modulationParams.oneLightCal = LoadCalFile(cType.CalFileName, [], fullfile(getpr
 %
 % Setup the cache object for read, and do the read.
 directionOLCache = OLCache(directionCacheDir, modulationParams.oneLightCal);
-[directionCacheFile, startsStopsFileName, modulationParams.direction] = OLAssembleDirectionCacheAndStartsStopFileNames(protocolParams, modulationParams, directionName);
+[directionCacheFile, startsStopsFileName, modulationParams.direction] = OLAssembleDirectionCacheAndStartsStopFileNames(protocolParams, modulationParams, directionName,trialType);
 
 % Load direciton data, check for staleness, and pull out what we want
 [cacheData,isStale] = directionOLCache.load(directionCacheFile);
@@ -205,6 +205,9 @@ modulationData.params = modulationParams;
 modulationData.modulation = modulation;
 
 %% Save out the modulation
+%
+% Add trial type to the out file name
+startsStopsFileName = strcat(startsStopsFileName, sprintf('_trialType_%s',num2str(trialType)));
 if (p.Results.verbose); fprintf(['* Saving modulation to ' startsStopsFileName '\n']); end;
 save(startsStopsFileName, 'modulationData', '-v7.3');
 if (p.Results.verbose); fprintf('  - Done.\n'); end;
@@ -214,7 +217,7 @@ end
 %
 % Put together the modulation file name from the modulation name and the direction name, and also
 % get the name of the cache file where we'll read the direction.
-function [directionCacheFileName, startsStopsFileName, directionName] = OLAssembleDirectionCacheAndStartsStopFileNames(protocolParams, modulationParams, directionName)
+function [directionCacheFileName, startsStopsFileName, directionName] = OLAssembleDirectionCacheAndStartsStopFileNames(protocolParams, modulationParams, directionName,trialType)
 
 % Hack to get the direction type
 % for k = 1:numel(protocolParams.directionNames)
