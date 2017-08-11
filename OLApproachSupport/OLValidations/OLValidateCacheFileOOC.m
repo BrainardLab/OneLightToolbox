@@ -97,7 +97,7 @@ try
     if (validationDescribe.verbose), fprintf('- Performing radiometer measurements.\n'); end;
     
     % State and temperature measurements
-    if (~validationDescribe.simulate & validationDescribe.calStateMeas)
+    if (~validationDescribe.simulate & validationDescribe.takeCalStateMeasurements)
         if (validationDescribe.verbose), fprintf('- State measurements \n'); end;
         [~, results.calStateMeas] = OLCalibrator.TakeStateMeasurements(adjustedCal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, 'standAlone',true);
     else
