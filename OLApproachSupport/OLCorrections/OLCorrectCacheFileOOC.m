@@ -94,11 +94,16 @@ end
 
 %% We might not want to seek
 %
-% If we aren't seeking just return now.  The reason we might do this is to
+% If we aren't seeking just return now, filling in necessary fields.  The reason we might do this is to
 % get an uncorrected cache file with all the same naming conventions as a
 % corrected one, so that we can run with uncorrected modulations using the
 % same downstream naming conventions as code as if we had corrected.
 if ~(correctionDescribe.doCorrection)
+    for ii = 1:length(cacheData.data)
+        if ii == correctionDescribe.observerAgeInYrs;
+            cacheData.data(ii).modulationPrimarySignedNegative = [];
+        end
+    end
     return;
 end
 
