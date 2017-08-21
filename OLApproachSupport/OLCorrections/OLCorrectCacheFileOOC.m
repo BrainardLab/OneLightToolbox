@@ -34,8 +34,6 @@ function [cacheData, adjustedCal] = OLCorrectCacheFileOOC(cacheFileNameFullPath,
 %     'calibrationType'                ''                               Calibration type
 %     'takeTemperatureMeasurements'    false                            Take temperature measurements? (Requires a connected LabJack dev with a temperature probe.)
 %     'takeCalStateMeasurements'       true                             Take OneLight state measurements
-%     'useAverageGamma'                false                            Force the useAverageGamma mode in the calibration?
-%     'zeroPrimariesAwayFromPeak'      false                            Zero out calibrated primaries well away from their peaks.
 %     'verbose'                        false                            Print out things in progress.
 %     'nIterations'                    20                               Number of iterations
 %     'learningRate'                   0.8                              Learning rate
@@ -56,6 +54,7 @@ function [cacheData, adjustedCal] = OLCorrectCacheFileOOC(cacheFileNameFullPath,
 % 07/29/17  dhb      Pull out radiometer open to one level up.
 % 08/09/17  dhb, mab Comment out code that stores difference, just return background and max modulations.
 %                    Also, don't try to use the now non-extant difference when we get the input.
+% 08/21/17  dhb      Remove useAverageGamma, zeroPrimariesAwayFromPeak parameters.  These should be set in the calibration file and not monkey'd with.
 
 % Parse the input
 p = inputParser;
@@ -68,8 +67,6 @@ p.addParameter('observerAgeInYrs', 32, @isscalar);
 p.addParameter('calibrationType','', @isstr);
 p.addParameter('takeCalStateMeasurements', false, @islogical);
 p.addParameter('takeTemperatureMeasurements', false, @islogical);
-p.addParameter('useAverageGamma', false, @islogical);
-p.addParameter('zeroPrimariesAwayFromPeak', false, @islogical);
 p.addParameter('verbose',false,@islogical);
 p.addParameter('nIterations', 20, @isscalar);
 p.addParameter('learningRate', 0.8, @isscalar);
@@ -100,7 +97,7 @@ end
 % same downstream naming conventions as code as if we had corrected.
 if ~(correctionDescribe.doCorrection)
     for ii = 1:length(cacheData.data)
-        if ii == correctionDescribe.observerAgeInYrs;
+        if ii == correctionDescribe.observerAgeInYrs
             cacheData.data(ii).modulationPrimarySignedNegative = [];
         end
     end

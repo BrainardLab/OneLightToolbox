@@ -73,8 +73,6 @@ params.nGammaBands = 16;
 d = paramsValidateAndAppendToDictionary(d, params);
 end
 
-
-
 function d = paramsValidateAndAppendToDictionary(d, params)
 % Get all the expected field names for this type
 allFieldNames = fieldnames(defaultParams(params.type));
@@ -109,6 +107,9 @@ switch (params.type)
         assert((isfield(params, 'randomizePrimaryMeas')       && islogical(params.randomizePrimaryMeas)),   sprintf('params.randomizePrimaryMeas does not exist or it does not contain a logical value.'));
         assert((isfield(params, 'correctLinearDrift')         && islogical(params.correctLinearDrift)),     sprintf('params.correctLinearDrift does not exist or it does not contain a logical value.'));
         assert((isfield(params, 'specifiedBackground')        && islogical(params.specifiedBackground)),    sprintf('params.specifiedBackground does not exist or it does not contain a logical value.'));
+        assert((isfield(params, 'zeroPrimariesAwayFromPeak')  && islogical(params.zeroPrimariesAwayFromPeak)), sprintf('params.zeroPrimariesAwayFromPeak does not exist or it does not contain a logical value.'));
+        assert((isfield(params, 'zeroItWLRangeMinus')         && isnumeric(params.zeroItWLRangeMinus)),     sprintf('params.zeroItWLRangeMinus does not exist or it does not contain a numeric value.'));
+        assert((isfield(params, 'zeroItWLRangePlus')          && isnumeric(params.zeroItWLRangePlus)),      sprintf('params.zeroItWLRangePlus does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'doPrimaries')                && islogical(params.doPrimaries)),            sprintf('params.doPrimaries does not exist or it does not contain a logical value.'));
         assert((isfield(params, 'doGamma')                    && islogical(params.doGamma)),                sprintf('params.doGamma does not exist or it does not contain a logical value.'));
         assert((isfield(params, 'doIndependence')             && islogical(params.doIndependence)),         sprintf('params.doIndependence does not exist or it does not contain a logical value.'));
@@ -117,10 +118,10 @@ switch (params.type)
     otherwise
             error('Unknown direction type specified: ''%s''.\n', params.type);
 end % switch
+
 % All validations OK. Add entry to the dictionary.
 d(params.boxName) = params;
 end
-
 
 function params = defaultParams(type)
 params = struct();
@@ -147,6 +148,10 @@ switch (type)
     
     	params.correctLinearDrift = true;               % Whether to correct (scale) for device linear drift according to the fluctuation in power at the time of measurement
         params.specifiedBackground = false;             % Whether to use non-zero background for gamma and related measurments
+        
+        params.zeroPrimariesAwayFromPeak = false;       % Whether to zero primaries away from their peak
+        params.zeroItWLRangeMinus = 100;                % How far to go from the peak towards the short before zeroing.
+        params.zeroItWlRangePlus = 100;                 % How far to go from the peak towards the long before zeroing.
     
         % Some code for debugging and quick checks.  These should generally all
         % be set to true.  If any are false, OLInitCal is not run.  You'll want

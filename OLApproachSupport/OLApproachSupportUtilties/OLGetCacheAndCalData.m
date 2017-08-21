@@ -17,9 +17,6 @@ function [cacheData,adjustedCal] = OLGetCacheAndCalData(cacheFileNameFullPath, p
 %     params                          - Parameter struct with the following fields:
 %                                         approach - Name of approach
 %                                         calibrationType - Type of calibration. 
-%                                         useAverageGamma - Force cal file to use average gamma?
-%                                         zeroPrimariesAwayFromPeak - Force cal to zero primaries away from peak?  The range used
-%                                                                     is hard coded here.
 % 
 % Output:
 %    cacheData                        - The nominal direction cache data structure.
@@ -72,28 +69,6 @@ end
 
 %% Load the calibration file associated with this calibration type, and adjust.
 adjustedCal = LoadCalFile(OLCalibrationTypes.(selectedCalType).CalFileName, [], fullfile(getpref(params.approach, 'OneLightCalDataPath')));
-
-% Force useAverageGamma?
-if (params.useAverageGamma)
-    if (adjustedCal.describe.useAverageGamma ~= params.useAverageGamma)
-        fprintf('OLGetCacheAndCalData: Mismatch between box calibration useAverageGamma and correction params useAverageGamma.\n');
-        fprintf('\tFix one or the other to be the way you want.  These cannot be inconsistent in the long run.\n');
-        fprintf('\tOnce we get the box calibration files set up right, we should delete this parameter from the correction parameters\n');
-        fprintf('\tand get rid of this block of code\n');
-        fprintf('\tNot adjusting calibration.\n');
-        %adjustedCal.describe.useAverageGamma = params.useAverageGamma;
-    end
-end
-
-% Clean up cal file primaries by zeroing out light we don't think is really there.
-if (params.zeroPrimariesAwayFromPeak)
-    fprintf('OLGetCacheAndCalData: Correction params has zeroPrimariesAwayFromPeak set.\n');
-    fprintf('\tThis should be handled as a parameter of the calibration.\n');
-    fprintf('\tNot adjusting calibration.\n');
-    % zeroItWLRangeMinus = 100;
-    % zeroItWLRangePlus = 100;
-    % adjustedCal = OLZeroCalPrimariesAwayFromPeak(adjustedCal,zeroItWLRangeMinus,zeroItWLRangePlus);
-end
 
 %% Setup the OLCache object.
 olCache = OLCache(cacheDir,adjustedCal);

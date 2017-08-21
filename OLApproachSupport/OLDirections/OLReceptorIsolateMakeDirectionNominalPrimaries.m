@@ -25,10 +25,6 @@ function [cacheData, directionOlCache, wasRecomputed] = OLReceptorIsolateMakeDir
 %       pulse - incremental positive pulse relative to low end of swing around background.
 %       lightfluxchrom - light flux pulse around a background of specified chromaticiity.
 %
-%     [DHB NOTE: Think through pos/neg storing here and in correction.  Perhaps here we only
-%     ever want positive, since nominal direction primaries are always symmetric.  The correction
-%     routine would the produce the negative in cases where it was needed and being separately corrected.]
-%
 % Input:
 %     approach (string)          Name of whatever approach is invoking this.
 %
