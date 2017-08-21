@@ -21,8 +21,9 @@ function protocolParams = OLSessionLog(protocolParams,theStep,varargin)
 % Optional key/value pairs:
 %     [DHB NOTE: PLEASE SAY WHAT THESE ARE]
 
-% 06/23/17 mab,jar created file and green text.
-% 06/26/17 mab,jar added switch
+% 06/23/17 mab,jar  Created file and green text.
+% 06/26/17 mab,jar  Added switch.
+% 08/21/17 dhb      Save currentSessionNumber as field in returned protocol params on init.
 
 %% Set up vars
 p = inputParser;
@@ -43,15 +44,15 @@ switch theStep
         if exist(sessionDir,'dir') && ~isempty(dirStatus)
             dirString = ls(sessionDir);
             priorSessionNumber = str2double(regexp(dirString, '(?<=session_[^0-9]*)[0-9]*\.?[0-9]+', 'match'));
-            currentSessionNumber = max(priorSessionNumber) + 1;
-            protocolParams.sessionName =['session_' num2str(currentSessionNumber)];
+            protocolParams.currentSessionNumber = max(priorSessionNumber) + 1;
+            protocolParams.sessionName =['session_' num2str(protocolParams.currentSessionNumber)];
             protocolParams.sessionLogOutDir = fullfile(getpref(protocolParams.protocol,'SessionRecordsBasePath'),protocolParams.observerID,protocolParams.todayDate,protocolParams.sessionName);
             if ~exist(protocolParams.sessionLogOutDir,'dir')
                 mkdir(protocolParams.sessionLogOutDir);
             end
         else
-            currentSessionNumber = 1;
-            protocolParams.sessionName =['session_' num2str(currentSessionNumber)];
+            protocolParams.currentSessionNumber = 1;
+            protocolParams.sessionName =['session_' num2str(protocolParams.currentSessionNumber)];
             protocolParams.sessionLogOutDir = fullfile(getpref(protocolParams.protocol,'SessionRecordsBasePath'),protocolParams.observerID,protocolParams.todayDate,protocolParams.sessionName);
             if ~exist(protocolParams.sessionLogOutDir,'dir')
                 mkdir(protocolParams.sessionLogOutDir);
@@ -66,7 +67,7 @@ switch theStep
         fileID = fopen(protocolParams.fullFileName,'w');
         fprintf(fileID,'Experiment Started: %s.\n',protocolParams.protocol);
         fprintf(fileID,'Observer ID: %s.\n',protocolParams.observerID);
-        fprintf(fileID,'Session Number: %s.\n',num2str(currentSessionNumber));
+        fprintf(fileID,'Session Number: %s.\n',num2str(protocolParams.currentSessionNumber));
         fprintf(fileID,'Session Date: %s\n',datestr(now,'mm-dd-yyyy'));
         fprintf(fileID,'Session Start Time: %s.\n',datestr(now,'HH:MM:SS'));
         fclose(fileID);
