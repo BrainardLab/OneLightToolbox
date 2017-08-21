@@ -38,6 +38,7 @@ function OLReceptorIsolateMakeModulationStartsStops(trialType, modulationName, d
 % 06/17/17   dhb         Merge with mab version and expand comments.
 % 06/23/17   npc         No more config files, get modulation properties from OLModulationParamsDictionary
 % 08/21/17   dhb         Save protocolParams in output.  Also, save modulationParams in field modulationParams, rather than just params.
+%                        Delete some commented out code, and don't pass trialType to OLAssembleDirectionCacheAndStartsStopFileNames because it was not being used.
 
 %% Parse input to get key/value pairs
 p = inputParser;
@@ -90,7 +91,7 @@ modulationParams.oneLightCal = LoadCalFile(cType.CalFileName, [], fullfile(getpr
 %
 % Setup the cache object for read, and do the read.
 directionOLCache = OLCache(directionCacheDir, modulationParams.oneLightCal);
-[directionCacheFile, startsStopsFileName, modulationParams.direction] = OLAssembleDirectionCacheAndStartsStopFileNames(protocolParams, modulationParams, directionName,trialType);
+[directionCacheFile, startsStopsFileName, modulationParams.direction] = OLAssembleDirectionCacheAndStartsStopFileNames(protocolParams, modulationParams, directionName);
 
 % Load direciton data, check for staleness, and pull out what we want
 [cacheData,isStale] = directionOLCache.load(directionCacheFile);
@@ -219,14 +220,7 @@ end
 %
 % Put together the modulation file name from the modulation name and the direction name, and also
 % get the name of the cache file where we'll read the direction.
-function [directionCacheFileName, startsStopsFileName, directionName] = OLAssembleDirectionCacheAndStartsStopFileNames(protocolParams, modulationParams, directionName,trialType)
-
-% Hack to get the direction type
-% for k = 1:numel(protocolParams.directionNames)
-%     if (strcmp(protocolParams.directionNames{k}, directionName))
-%         protocolParams.type = protocolParams.directionTypes{k};
-%     end
-% end
+function [directionCacheFileName, startsStopsFileName, directionName] = OLAssembleDirectionCacheAndStartsStopFileNames(protocolParams, modulationParams, directionName)
 
 fullDirectionName = sprintf('Direction_%s', directionName);
 fullStartsStopsName = sprintf('ModulationStartsStops_%s_%s', modulationParams.name, directionName);
