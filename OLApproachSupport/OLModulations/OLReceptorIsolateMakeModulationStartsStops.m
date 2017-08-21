@@ -34,9 +34,10 @@ function OLReceptorIsolateMakeModulationStartsStops(trialType, modulationName, d
 %
 % See also: OLMakeModulationsStartsStops, OLCacluateStartsStopsModulation, OLModulationParamsDictionary.
 
-% 4/19/13   dhb, ms     Update for new convention for desired contrasts in routine ReceptorIsolate.
-% 6/17/17   dhb         Merge with mab version and expand comments.
-% 6/23/17   npc         No more config files, get modulation properties from OLModulationParamsDictionary
+% 04/19/13   dhb, ms     Update for new convention for desired contrasts in routine ReceptorIsolate.
+% 06/17/17   dhb         Merge with mab version and expand comments.
+% 06/23/17   npc         No more config files, get modulation properties from OLModulationParamsDictionary
+% 08/21/17   dhb         Save protocolParams in output.  Also, save modulationParams in field modulationParams, rather than just params.
 
 %% Parse input to get key/value pairs
 p = inputParser;
@@ -201,7 +202,8 @@ if (p.Results.verbose); fprintf('  - Done.\n'); end;
 
 
 %% Put everything into a return strucure
-modulationData.params = modulationParams;
+modulationData.modulationParams = modulationParams;
+modulationData.protocolParams = protocolParams;
 modulationData.modulation = modulation;
 
 %% Save out the modulation

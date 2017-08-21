@@ -25,7 +25,8 @@ function protocolParams = OLValidateDirectionCorrectedPrimaries(ol,protocolParam
 %
 % See also: OLValidateCacheFileOOC.
 
-% 6/18/17  dhb  Added header comment.
+% 06/18/17  dhb  Added header comment.
+% 08/21/17  dhb  Save out protocolParams as part of results structure. May be useful for later analysis.
 
 %% Update session log file
 OLSessionLog(protocolParams,mfilename,'StartEnd','start','PrePost',prePost);
@@ -85,8 +86,9 @@ for ii = 1:protocolParams.nValidationsPerDirection
             'verbose',                      protocolParams.verbose);
           
         % Save the validation information in an ordinary .mat file.  Append prePost and iteration number in name.
-        if (protocolParams.verbose), fprintf(' * Saving validation results ...'); end;
+        if (protocolParams.verbose), fprintf(' * Saving validation results ...'); end
         outputFile = fullfile(outDir,sprintf('%s_%s_%d.mat', theDirectionCacheFileNames{d},prePost,ii));
+        results.protocolParams = protocolParams;
         save(outputFile,'results');
         if (protocolParams.verbose), fprintf('saved to %s\n', outputFile); end
     end

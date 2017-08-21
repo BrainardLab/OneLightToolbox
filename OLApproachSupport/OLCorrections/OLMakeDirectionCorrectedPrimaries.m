@@ -28,6 +28,7 @@ function OLMakeDirectionCorrectedPrimaries(ol,protocolParams,varargin)
 
 % 6/18/17  dhb       Added header comments.  Renamed.
 % 6/19/17  mab, jr   Added saving the cache data to the outDir location specified in OLCorrectCacheFileOOC.m 
+% 8/21/17  dhb       Add protocol params to what is save out. We may want this later for analysis.
 
 %% Parse input to get key/value pairs
 p = inputParser;
@@ -115,6 +116,7 @@ for corrD = 1:length(theDirections)
     olCache = OLCache(correctedPrimariesDir,cal);
     protocolParams.modulationDirection = theDirections{corrD};
     protocolParams.cacheFile = fullfile(nominalPrimariesDir, directionCacheFileNames{corrD});
+    cacheData.protocolParams = protocolParams;
     if (p.Results.verbose), fprintf('Cache saved to %s\n', protocolParams.cacheFile); end
     olCache.save(protocolParams.cacheFile, cacheData);
     if (p.Results.verbose), fprintf('Cache saved to %s\n', protocolParams.cacheFile); end
