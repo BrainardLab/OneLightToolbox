@@ -230,6 +230,7 @@ switch directionParams.type
             cacheData.data(observerAgeInYears).describe.B_primary = B_primary;
             cacheData.data(observerAgeInYears).describe.ambientSpd = ambientSpd;
             cacheData.data(observerAgeInYears).describe.photoreceptors = photoreceptorClasses;
+            cacheData.data(observerAgeInYears).describe.lambdaMaxShift = lambdaMaxShift;
             cacheData.data(observerAgeInYears).describe.fractionBleached = fractionBleached;
             cacheData.data(observerAgeInYears).describe.S = S;
             cacheData.data(observerAgeInYears).describe.T_receptors = T_receptors;

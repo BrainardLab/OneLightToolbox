@@ -68,12 +68,17 @@ for dd = 1:length(theDirectionCacheFileNames)
             
             % Grab cell array of photoreceptor classes.  Use what was in the direction file
             % if it is there, otherwise standard L, M, S and Mel.
+            %
+            % This might not be the most perfect check for what is stored with the nominal direction primaries,
+            % but until it breaks we'll go with it.
             if isfield(directionCacheData.directionParams,'photoreceptorClasses')
-                photoreceptorClasses = directionCacheData.directionParams.photoreceptorClasses;
+                photoreceptorClasses = directionCacheData.data(protocolParams.observerAgeInYrs).describe.photoreceptors;
+                T_receptors = directionCacheData.data(protocolParams.observerAgeInYrs).describe.T_receptors;      
             else
                 photoreceptorClasses = {'LConeTabulatedAbsorbance'  'MConeTabulatedAbsorbance'  'SConeTabulatedAbsorbance'  'Melanopsin'};
+                T_receptors = GetHumanPhotoreceptorSS(S,photoreceptorClasses,directionParams.fieldSizeDegrees,protocolParams.observerAgeInYears,directionParams.pupilDiameterMm,lambdaMaxShift,directionParams.fractionBleached);
             end
-            
+                        
             % XYZ
             load T_xyz1931
             T_xyz = SplineCmf(S_xyz1931,683*T_xyz1931,S);
@@ -96,6 +101,7 @@ for dd = 1:length(theDirectionCacheFileNames)
         end
         backgroundSpd = spectrum(:,bgIndex);
         backgroundXYZ = T_xyz*backgroundSpd;
+        backgroundReceptors = T_receptors*backgroundSpd;
         fprintf('\nDirection %d, measurement %d\n',dd,ii);
         fprintf('\tBackground luminance: %0.1f cd/m2\n',backgroundXYZ(2));
         
@@ -104,6 +110,7 @@ for dd = 1:length(theDirectionCacheFileNames)
         for mm = 1:length(validateIndices)
             XYZ{ii,dd} = T_xyz*spectrum(:,validateIndices(mm));
             fprintf('\tPower level %g, luminance %0.1f cd/m2\n',powerLevels(mm),XYZ{ii,dd}(2));
+            receptors{ii,dd} = T_receptors*spectrum(:,validateIndices(mm));
             
         end
     end
