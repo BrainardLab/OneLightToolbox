@@ -44,6 +44,7 @@ function results = OLValidateCacheFileOOC(cacheFileName, ol, spectroRadiometerOB
 % 12/21/16 npc      Updated for new class @LJTemperatureProbe
 % 06/05/17 dhb      Remove old verbose arg to OLSettingsToStartsStops
 % 07/27/17 dhb      Massive interface redo.
+% 08/22/17 dhb      Return a reasonable value for measurment S when simulating.
 
 % Parse the input
 p = inputParser;
@@ -135,6 +136,7 @@ try
         else
             results.directionMeas(i).meas.pr650.spectrum = OLPrimaryToSpd(adjustedCal,primaries);
             results.directionMeas(i).meas.pr650.time = [mglGetSecs mglGetSecs];
+            results.directionMeas(i).meas.pr650.S = adjustedCal.describe.S;
             results.directionMeas(i).meas.omni = [];
         end
         

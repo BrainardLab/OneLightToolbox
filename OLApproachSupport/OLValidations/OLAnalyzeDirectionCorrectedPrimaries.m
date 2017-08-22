@@ -1,37 +1,35 @@
-function photopicLuminanceCdM2 = OLAnalyzeDirectionCorrectedPrimaries(protocolParams,prePost)
+function OLAnalyzeDirectionCorrectedPrimaries(protocolParams,prePost)
 % OLAnalyzeDirectionCorrectedPrimaries  Compute photoreceptor contrasts for spectra in a validation file and report
 %
 % Usage:
-%     photopicLuminanceCdM2 = OLAnalyzeValidationReceptorIsolate(valFileNameFull)
+%     OLAnalyzeValidationReceptorIsolate(protocolParams,prePost)
 %
 % Description:
-%     This is basically a wrapper for the descriptive function SilentSubstitutionToolbox/ComputeAndReportContrastsFromSpds.
-%     It provides a printout to the command wndow of some basic facts about the contrasts produced by the modulation specified
-%     in a validation file.
+%     This computes and reports luminance and photoreceptor contrasts for validated spectra.
 %
-%     Also writes its output into a text file that lives in the same place as the file being analyzed.
+%     It obtains the necessary parameters and information from the protocol parameters and the
+%     nominal and corrected primary files.
 %
-%     This has some crufty things in it.
-%       a) Why is it using LoadCalFile rather than just load?
-%       b) It special cases substrings in the input filename to control its behavior.
-%       c) It is very difficult to understand, primarily because the underlying ComputeAndReportContrastsFromSpds is
-%          not well commented, and because what values postreceptoralCombinations may take on and what these values
-%          mean is opaque.
+%     [DHB NOTE: Still need to write output to text files and report median over measurements.
+%     There is some commented-out code at the bottom which might be a useful point of departure.]
+%     [DHB NOTE: Could consider adding report of post-receptoral contrasts.]
+%     [DHB NOTE: Could integrate with new splatter calculation code in SST.]
 %
 % Input:
-%      valFileNameFull (string)              Name of validation file to be analyzed.
+%      protocolParams (struct)               Parameters of the current protocol.
 %
-%      postreceptoralCombinations (what)     Presumably controls what this produces.
+%      prePost (string)                      'Pre' or 'Post' experiment validation?
 %
 % Output:
-%      photopicLuminanceCdM2 (number         Photopic luminance of background in cd/m2.
+%      None.
 %
 % Optional key/value pairs:
 %    None.
 %
 % See also: OLCorrectCacheFileOOC, OLValidateCacheFileOOC, ComputeAndReportContrastsFromSpds.
 
-% 7/21/17  dhb   Put in comment placeholders and did my best.
+% 07/21/17 dhb   Put in comment placeholders and did my best.
+% 08/22/17 dhb   Made it work again.
 
 %% Cache files to validate
 theDirectionCacheFileNames = OLMakeDirectionCacheFileNames(protocolParams);
@@ -47,7 +45,12 @@ end
 
 
 %% Get validation results
+%
+% Loop over directions
 for dd = 1:length(theDirectionCacheFileNames)
+    fprintf('\nDirection %d, %s, %s\n',dd,theDirectionCacheFileNames{dd},prePost);
+
+    % Loop over validations within direction
     for ii = 1:protocolParams.nValidationsPerDirection
    
         % Load the validation information
@@ -72,11 +75,17 @@ for dd = 1:length(theDirectionCacheFileNames)
             % This might not be the most perfect check for what is stored with the nominal direction primaries,
             % but until it breaks we'll go with it.
             if isfield(directionCacheData.directionParams,'photoreceptorClasses')
+                if (directionCacheData.data(protocolParams.observerAgeInYrs).describe.params.fieldSizeDegrees ~=  protocolParams.fieldSizeDegrees)
+                    error('Field size used for direction does not match that specified in protocolPrams.');
+                end
+                if (directionCacheData.data(protocolParams.observerAgeInYrs).describe.params.pupilDiameterMm ~=  protocolParams.pupilDiameterMm)
+                    error('Pupil diameter used for direction does not match that specified in protocolPrams.');
+                end
                 photoreceptorClasses = directionCacheData.data(protocolParams.observerAgeInYrs).describe.photoreceptors;
                 T_receptors = directionCacheData.data(protocolParams.observerAgeInYrs).describe.T_receptors;      
             else
                 photoreceptorClasses = {'LConeTabulatedAbsorbance'  'MConeTabulatedAbsorbance'  'SConeTabulatedAbsorbance'  'Melanopsin'};
-                T_receptors = GetHumanPhotoreceptorSS(S,photoreceptorClasses,directionParams.fieldSizeDegrees,protocolParams.observerAgeInYears,directionParams.pupilDiameterMm,lambdaMaxShift,directionParams.fractionBleached);
+                T_receptors = GetHumanPhotoreceptorSS(S,photoreceptorClasses,protocolParams.fieldSizeDegrees,protocolParams.observerAgeInYrs,protocolParams.pupilDiameterMm,[],[]);
             end
                         
             % XYZ
@@ -102,24 +111,28 @@ for dd = 1:length(theDirectionCacheFileNames)
         backgroundSpd = spectrum(:,bgIndex);
         backgroundXYZ = T_xyz*backgroundSpd;
         backgroundReceptors = T_receptors*backgroundSpd;
-        fprintf('\nDirection %d, measurement %d\n',dd,ii);
-        fprintf('\tBackground luminance: %0.1f cd/m2\n',backgroundXYZ(2));
+        fprintf('\tMeasurement %d\n',ii);
+        fprintf('\t\tBackground luminance: %0.1f cd/m2\n',backgroundXYZ(2));
         
         % Loop over other spectra and report luminance and receptor contrasts
         validateIndices = setdiff(1:nValidationMeas,bgIndex);
         for mm = 1:length(validateIndices)
             XYZ{ii,dd} = T_xyz*spectrum(:,validateIndices(mm));
-            fprintf('\tPower level %g, luminance %0.1f cd/m2\n',powerLevels(mm),XYZ{ii,dd}(2));
+            fprintf('\t\tPower level %g, luminance %0.1f cd/m2\n',powerLevels(validateIndices(mm)),XYZ{ii,dd}(2));
             receptors{ii,dd} = T_receptors*spectrum(:,validateIndices(mm));
-            
+            contrasts{ii,dd} = (receptors{ii,dd}-backgroundReceptors) ./ backgroundReceptors;
+            fprintf('\t\t\tContrasts: ');
+            for cc = 1:length(photoreceptorClasses)
+                fprintf('%s: %0.2g',photoreceptorClasses{cc},contrasts{ii,dd}(cc))
+                if (cc ~= length(photoreceptorClasses))
+                    fprintf('; ');
+                else
+                    fprintf('\n');
+                end
+            end
         end
     end
 end
-
-theReceptors = data(val.describe.OBSERVER_AGE).describe.photoreceptors;
-T_receptors = data(val.describe.OBSERVER_AGE).describe.T_receptors;
-
-
 
 % fid = fopen(fullfile(validationDir, [valFileName '.txt']), 'w');
 % fprintf(fid, 'Background luminance [cd/m2]: %.2f cd/m2\n', photopicLuminanceCdM2);
