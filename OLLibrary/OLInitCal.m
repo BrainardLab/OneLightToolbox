@@ -18,12 +18,16 @@ function cal = OLInitCal(calFileName, varargin)
 % initOpts (varargin) - Options list consisting of parameters described in
 %     the Options section below.
 % 
-% Options as string/value pairs.
+% Options as key/value pairs.
 % 'FactorsMethods' (scalar) - FactorsMethod sets the method that finds factors
 %     at each common wavelength to bring OmniDriver measurements into alignment with PR-650 measurements.
 %     Allowable values are 0, 1, and 2.  Defaults to 2.  [Note: We are not currently using the OmniDriver
 %     in the calibration, so this doesn't do anything right now.]
-% 'UseAverageGamma' (logical) - Sets cal.describe.useAverageGamma.  Default is to leave this unchanged.
+% 'UseAverageGamma' (empty or logical) - Sets cal.describe.useAverageGamma.  Default (empty) is to leave this unchanged.
+% 'WhichAverageGamma' (empty or string) - If UseAverageGamma is true, then what type of averaging to use.  Default (empty)
+%     is to leave this unchanged.
+%        'median'           - Use median across measured primaries.
+%        'middle'           - Use gamma function of primary in the middle.
 % 'GammaFitType' (string or scalar) - Sets cal.describe.gammaFitType.  Default is to leave this unchanged.
 %     See OLFitGamma for types and what they do.
 % 'CorrectLinearDrift' (logical) - Correct for linear drift.  Default is to leave this unchanged.
@@ -36,7 +40,6 @@ function cal = OLInitCal(calFileName, varargin)
 % oneLightCal = OLInitCal('OneLight', 'FactorsMethod', 1);
 % oneLightCal = OLInitCal('OneLight', 'GammaFitType', 'betacdfquad');
 
-%
 % 7/4/13  dhb  Took out low light level kluge for one particular calibration.
 % 1/19/14 dhb, ms Variable name cleaning.
 %              Generalize gamma/independence measurements to arbitrary number of bands.
@@ -53,6 +56,7 @@ function cal = OLInitCal(calFileName, varargin)
 % 8/22/16 npc  Added spectral shift correction for for calfiles that
 %              contain state tracking data (i.e., measured via
 %              OLCalibrateWithStateTrackingOOC.m)
+% 8/22/17 dhb  Add 'middle' option for useAverage gamma case.
 
     % Check for the number of arguments.
     narginchk(1, Inf);
@@ -76,6 +80,7 @@ function cal = OLInitCal(calFileName, varargin)
     parser = inputParser;
     parser.addParameter('FactorsMethod', 2, @isnumeric);
     parser.addParameter('UseAverageGamma',[],@(x)isnumeric(x) || islogical(x));
+    parser.addParameter('WhichAverageGamma',[],@(x) (isnumeric(x) || ischar(x)));
     parser.addParameter('GammaFitType',[],@(x) ischar(x) || isnumeric(x));
     parser.addParameter('CorrectLinearDrift',[],@(x)isnumeric(x) || islogical(x));
 
@@ -87,6 +92,12 @@ function cal = OLInitCal(calFileName, varargin)
     % Override use average gamma if passed
     if (~isempty(parser.Results.UseAverageGamma))
         cal.describe.useAverageGamma = parser.Results.UseAverageGamma;
+    end
+    if (~isfield(cal.describe,'whichAverageGamma'))
+        cal.describe.whichAverageGamma = 'median';
+    end
+    if (~isempty(parser.Results.WhichAverageGamma))
+        cal.describe.whichAverageGamma = parser.Results.WhichAverageGamma;
     end
 
     % Override gammaFitType if passsed.
@@ -264,7 +275,17 @@ function cal = OLInitCal(calFileName, varargin)
     end
 
     % Average gamma measurements over bands
-    cal.computed.gammaTableAvg = median(cal.computed.gammaTableMeasuredBandsFit,2);
+    switch (cal.describe.whichAverageGamma)
+        case 'median'
+            cal.computed.gammaTableAvg = median(cal.computed.gammaTableMeasuredBandsFit,2);
+        case 'middle'
+            nMeasuredBands = size(cal.computed.gammaTableMeasuredBandsFit,2);
+            middleIndex = round(nMeasuredBands/2);
+            cal.computed.gammaTableAvg = cal.computed.gammaTableMeasuredBandsFit(:,middleIndex);
+        otherwise
+            error('Unknown value for whichAverage gamma provided.')
+    end
+    cal.computed.gammaTableAvg = MakeMonotonic(cal.computed.gammaTableAvg);
 
     % Compute drift corrected fullON, halfON and wiggly
     cal.computed.wigglyMeas.measSpd = bsxfun(@times, cal.raw.wigglyMeas.measSpd, returnScaleFactor(cal.raw.t.wigglyMeas.t));

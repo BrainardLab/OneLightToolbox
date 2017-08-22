@@ -39,6 +39,7 @@ params.boxName = boxName;
 % Update box-specific calibration params
 params.gammaFitType = 'betacdfpiecelin';
 params.useAverageGamma = true;
+params.whichAverageGamma = 'middle';
 params.nShortPrimariesSkip = 5;
 params.nLongPrimariesSkip = 3;
 params.nGammaBands = 16;        
@@ -97,6 +98,7 @@ switch (params.type)
         assert((isfield(params, 'boxName')                    && ischar(params.boxName)),                   sprintf('params.boxName does not exist or it does not contain a string value.'));
         assert((isfield(params, 'gammaFitType')               && ischar(params.gammaFitType)),              sprintf('params.gammaFitType does not exist or it does not contain a string value.'));
         assert((isfield(params, 'useAverageGamma')            && islogical(params.useAverageGamma)),        sprintf('params.useAverageGamma does not exist or it does not contain a logical value.'));
+        assert((isfield(params, 'whichAverageGamma')          && ischar(params.whichAverageGamma)),         sprintf('params.whichAverageGamma) does not exist or it does not contain a string value.'));
         assert((isfield(params, 'nShortPrimariesSkip')        && isnumeric(params.nShortPrimariesSkip)),    sprintf('params.nShortPrimariesSkip does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'nLongPrimariesSkip')         && isnumeric(params.nLongPrimariesSkip)),     sprintf('params.nLongPrimariesSkip does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'nGammaBands')                && isnumeric(params.nGammaBands)),            sprintf('params.nGammaBands does not exist or it does not contain a numeric value.'));
@@ -134,6 +136,7 @@ switch (type)
         params.boxName = '';                            % Name of the OL box.
         params.gammaFitType = '';                       % Method to use for fitting the gamma function
         params.useAverageGamma = [];                    % Whether to use the average (across all primaries) gamma function
+        params.whichAverageGamma = 'median';            % What type of average gamma function to use, if using one ('median' or 'middle')
         params.nShortPrimariesSkip = [];                % Skip this many primaries at the short end of the spectrum
         params.nLongPrimariesSkip = [];                 % Skip this many primaries at the long end of the spectrum
         params.nGammaBands = [];                        % How many primaries to measure the gamma function on

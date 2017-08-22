@@ -1,37 +1,48 @@
-% MaxPulsePsychophysics_CheckPrimaryCorrection - Check how well correction of primaries worked.
+function OLCheckPrimaryCorrection(protocolParams)
+%%OLCheckPrimaryCorrection  Check how well correction of primaries worked.
+%
+% Syntax:
+%    OLCheckPrimaryCorrection(protocolParams)
 %
 % Description:
 %    This script analyzes the output of the procedure that tunes up the primaries based on 
 %    a measurement/update loop.  Its main purpose in life is to help us debug the procedure,
 %    running it would not be a normal part of operation, as long as the validations come out well.
+%
+% Input:
+%      protocolParams (struct)               Parameters of the current protocol.
+%
+%      prePost (string)                      'Pre' or 'Post' experiment validation?
+%
+% Output:
+%      None.
+%
+% Optional key/value pairs:
+%    None.
 
 % 06/18/17  dhb  Update header comment.  Rename.
 
 %% Clear
-clear; close all;
+close all;
 
 %% Get some data to analyze
 %
-% THIS WILL NEED UPDATING TO POINT AT THE RIGHT PLACE, WHEN WE DEBUG IT.
-cachePath = fullfile(getpref('OLApproach_Psychophysics', 'DataPath'),'Experiments','OLApproach_Psychophysics','MaxMelPulsePsychophysics','DirectionCorrectedPrimaries');
+% This is hard coded in right now, until we mind-meld this code with our new approach approach.
+cacheBasePath = getpref(protocolParams.protocol, 'DirectionCorrectedPrimariesBasePath');
+load(fullfile(cacheBasePath, 'michael', '082117', 'session_1', 'Direction_LightFlux_330_330_20.mat'));
 
-%load(fullfile(cachePath, 'MaxMelPulsePsychophysics', '060217',  'Cache-LMSDirectedSuperMaxLMS_HERO_test_OldVers_060217'));
-%load(fullfile(cachePath, 'MaxMelPulsePsychophysics', '060217',  'Cache-MelanopsinDirectedSuperMaxMel_HERO_test_OldVers_060217.mat'));
-load(fullfile(cachePath, 'testJR', '081017', 'session_1', 'Direction_MaxMel_275_80_667.mat'));
-
-%theBox = 'BoxBRandomizedLongCableBStubby1_ND02';
-%theBox = 'BoxDRandomizedLongCableAStubby1_ND02';
-theBox = 'BoxARandomizedLongCableAEyePiece1_ND03_NoReticle';
+% Identify the box
+theBox = protocolParams.calibrationType;
 
 % Convert data to standardized naming for here
 eval(['theData = ' theBox ';  clear ' theBox ';']);
 
 %% Discover the observer age
-theObserverAge = find(~(cellfun(@isempty, {theData{1}.data.correction})));
+theObserverAgeIndex = find(~(cellfun(@isempty, {theData{1}.data.correction})));
 
 %% How many iterations were run?  And how many primaries were there?
-nIterations = size(theData{1}.data(theObserverAge).correction.backgroundSpdMeasuredAll, 2);
-nPrimaries = size(theData{1}.data(theObserverAge).correction.modulationPrimaryUsedAll, 1);
+nIterations = size(theData{1}.data(theObserverAgeIndex).correction.backgroundSpdMeasuredAll, 2);
+nPrimaries = size(theData{1}.data(theObserverAgeIndex).correction.modulationPrimaryUsedAll, 1);
 
 %% What's the wavelength sampling?
 wls = SToWls([380 2 201]);
@@ -45,10 +56,10 @@ nLongPrimariesSkip = theData{1}.cal.describe.nLongPrimariesSkip;
 %% Determine some axis limits
 %
 % Spectral power
-ylimMax = 1.1*max(max([theData{1}.data(theObserverAge).correction.modulationSpdMeasuredAll theData{1}.data(theObserverAge).correction.backgroundSpdMeasuredAll]));
+ylimMax = 1.1*max(max([theData{1}.data(theObserverAgeIndex).correction.modulationSpdMeasuredAll theData{1}.data(theObserverAgeIndex).correction.backgroundSpdMeasuredAll]));
 
 %% Print some diagnostic information
-kScale = theData{1}.data(theObserverAge).correction.kScale;
+kScale = theData{1}.data(theObserverAgeIndex).correction.kScale;
 fprintf('Value of kScale: %0.2f\n',kScale);
 
 %% Start a diagnositic plot
@@ -57,7 +68,7 @@ backgroundPlot = figure; clf; set(backgroundPlot,'Position',[220 600 1150 725]);
 modulationPlot = figure; clf; set(modulationPlot,'Position',[220 600 1150 725]);
 
 %% Get the calibration file, for some checks
-cal = theData{1}.data(theObserverAge).cal;
+cal = theData{1}.data(theObserverAgeIndex).cal;
 
 %% Clean up cal file primaries by zeroing out light we don't think is really there.    
 zeroItWLRangeMinus = 100;
@@ -65,25 +76,25 @@ zeroItWLRangePlus = 100;
 cal = OLZeroCalPrimariesAwayFromPeak(cal,zeroItWLRangeMinus,zeroItWLRangePlus);
 
 %% Get correction parameters
-correctDescribe = theData{1}.data(theObserverAge).correctionDescribe;
+correctDescribe = theData{1}.data(theObserverAgeIndex).correctionDescribe;
 
 %% Plot what we got
 %
 % We multiply measurements by kScale to bring everything into a consistent space
-backgroundPrimaryInitial = theData{1}.data(theObserverAge).correction.backgroundPrimaryInitial;
-backgroundSpectrumDesired = theData{1}.data(theObserverAge).correction.backgroundSpdDesired;
+backgroundPrimaryInitial = theData{1}.data(theObserverAgeIndex).correction.backgroundPrimaryInitial;
+backgroundSpectrumDesired = theData{1}.data(theObserverAgeIndex).correction.backgroundSpdDesired;
 
-modulationSpectrumDesired = theData{1}.data(theObserverAge).correction.modulationSpdDesired;
-modulationPrimaryInitial = theData{1}.data(theObserverAge).correction.modulationPrimaryInitial;
+modulationSpectrumDesired = theData{1}.data(theObserverAgeIndex).correction.modulationSpdDesired;
+modulationPrimaryInitial = theData{1}.data(theObserverAgeIndex).correction.modulationPrimaryInitial;
 spectraMeasured = [];
 primariesUsed = [];
 primaryFig = figure;
 for ii = 1:nIterations
     % Pull out some data for convenience
-    backgroundSpectrumMeasuredScaled = kScale*theData{1}.data(theObserverAge).correction.backgroundSpdMeasuredAll(:,ii);
-    backgroundPrimaryUsed = theData{1}.data(theObserverAge).correction.backgroundPrimaryUsedAll(:,ii);
-    backgroundNextPrimaryTruncatedLearningRate = theData{1}.data(theObserverAge).correction.backgroundNextPrimaryTruncatedLearningRateAll(:,ii);
-    backgroundDeltaPrimaryTruncatedLearningRate  = theData{1}.data(theObserverAge).correction.backgroundDeltaPrimaryTruncatedLearningRateAll(:,ii);
+    backgroundSpectrumMeasuredScaled = kScale*theData{1}.data(theObserverAgeIndex).correction.backgroundSpdMeasuredAll(:,ii);
+    backgroundPrimaryUsed = theData{1}.data(theObserverAgeIndex).correction.backgroundPrimaryUsedAll(:,ii);
+    backgroundNextPrimaryTruncatedLearningRate = theData{1}.data(theObserverAgeIndex).correction.backgroundNextPrimaryTruncatedLearningRateAll(:,ii);
+    backgroundDeltaPrimaryTruncatedLearningRate  = theData{1}.data(theObserverAgeIndex).correction.backgroundDeltaPrimaryTruncatedLearningRateAll(:,ii);
     if (any(backgroundNextPrimaryTruncatedLearningRate ~= backgroundPrimaryUsed + backgroundDeltaPrimaryTruncatedLearningRate))
         error('Background Hmmm.');
     end
@@ -93,7 +104,7 @@ for ii = 1:nIterations
     % verify that we know how we did it, so that we can then explore other
     % methods of doing so.
     if (correctDescribe.learningRateDecrease)
-        learningRateThisIter = correctDescribe.learningRate*(1-(ii-1)*0.75/(correctDescribe.NIter-1));
+        learningRateThisIter = correctDescribe.learningRate*(1-(ii-1)*0.75/(correctDescribe.nIterations-1));
     else
         learningRateThisIter = correctDescribe.learningRate;
     end
@@ -105,10 +116,10 @@ for ii = 1:nIterations
     [backgroundDeltaPrimaryTruncatedLearningRateAgain1,backgroundNextSpectrumPredictedTruncatedLearningRateAgain1] = ...
             OLIterativeDeltaPrimaries(backgroundPrimaryInitial-backgroundPrimaryUsed,backgroundPrimaryUsed,backgroundSpectrumMeasuredScaled,backgroundSpectrumDesired,learningRateThisIter,cal);         
     
-    modulationSpectrumMeasuredScaled = kScale*theData{1}.data(theObserverAge).correction.modulationSpdMeasuredAll(:,ii);
-    modulationPrimaryUsed = theData{1}.data(theObserverAge).correction.modulationPrimaryUsedAll(:,ii);
-    modulationNextPrimaryTruncatedLearningRate = theData{1}.data(theObserverAge).correction.modulationNextPrimaryTruncatedLearningRateAll(:,ii);
-    modulationDeltaPrimaryTruncatedLearningRate  = theData{1}.data(theObserverAge).correction.modulationDeltaPrimaryTruncatedLearningRateAll(:,ii);
+    modulationSpectrumMeasuredScaled = kScale*theData{1}.data(theObserverAgeIndex).correction.modulationSpdMeasuredAll(:,ii);
+    modulationPrimaryUsed = theData{1}.data(theObserverAgeIndex).correction.modulationPrimaryUsedAll(:,ii);
+    modulationNextPrimaryTruncatedLearningRate = theData{1}.data(theObserverAgeIndex).correction.modulationNextPrimaryTruncatedLearningRateAll(:,ii);
+    modulationDeltaPrimaryTruncatedLearningRate  = theData{1}.data(theObserverAgeIndex).correction.modulationDeltaPrimaryTruncatedLearningRateAll(:,ii);
     if (any(modulationNextPrimaryTruncatedLearningRate ~= modulationPrimaryUsed + modulationDeltaPrimaryTruncatedLearningRate))
         error('Nodulation Hmmm.');
     end
@@ -265,28 +276,28 @@ for ii = 1:nIterations
     % Direction_yaddayadda.mat file. ASK DHB WHICH VALUES WE PLOT HERE AND
     % WHAT VALUES WE WANT TO PLOT LATER.
     
-    figure(contrastPlot);
-    subplot(1,2,1);
-    hold off;
-    plot(1:ii, 100*theData{1}.data(theObserverAge).correction.contrasts(1, 1:ii), '-sr', 'MarkerFaceColor', 'r'); hold on
-    plot(1:ii, 100*theData{1}.data(theObserverAge).correction.contrasts(2, 1:ii), '-sg', 'MarkerFaceColor', 'g');
-    plot(1:ii, 100*theData{1}.data(theObserverAge).correction.contrasts(3, 1:ii), '-sb', 'MarkerFaceColor', 'b');
-    xlabel('Iteration #'); xlim([0 nIterations+1]);
-    ylabel('LMS Contrast'); %ylim(]);
-    subplot(1,2,2);
-    hold off;
-    plot(1:ii, 100*theData{1}.data(theObserverAge).correction.contrasts(4, 1:ii), '-sc', 'MarkerFaceColor', 'c'); hold on
-    xlabel('Iteration #'); xlim([0 nIterations+1]);
-    ylabel('Mel Contrast');
+%     figure(contrastPlot);
+%     subplot(1,2,1);
+%     hold off;
+%     plot(1:ii, 100*theData{1}.data(theObserverAgeIndex).correction.contrasts(1, 1:ii), '-sr', 'MarkerFaceColor', 'r'); hold on
+%     plot(1:ii, 100*theData{1}.data(theObserverAgeIndex).correction.contrasts(2, 1:ii), '-sg', 'MarkerFaceColor', 'g');
+%     plot(1:ii, 100*theData{1}.data(theObserverAgeIndex).correction.contrasts(3, 1:ii), '-sb', 'MarkerFaceColor', 'b');
+%     xlabel('Iteration #'); xlim([0 nIterations+1]);
+%     ylabel('LMS Contrast'); %ylim(]);
+%     subplot(1,2,2);
+%     hold off;
+%     plot(1:ii, 100*theData{1}.data(theObserverAgeIndex).correction.contrasts(4, 1:ii), '-sc', 'MarkerFaceColor', 'c'); hold on
+%     xlabel('Iteration #'); xlim([0 nIterations+1]);
+%     ylabel('Mel Contrast');
     
     %% Force draw
     drawnow;
     
     % Report some things we might want to know
-    nZeroBgSettings(ii) = length(find(theData{1}.data(theObserverAge).correction.backgroundPrimaryUsedAll(:,ii) == 0));
-    nOneBgSettings(ii) = length(find(theData{1}.data(theObserverAge).correction.backgroundPrimaryUsedAll(:,ii) == 1));
-    nZeroModSettings(ii) = length(find(theData{1}.data(theObserverAge).correction.modulationPrimaryUsedAll(:,ii) == 0));
-    nOneModSettings(ii) = length(find(theData{1}.data(theObserverAge).correction.modulationPrimaryUsedAll(:,ii) == 1));
+    nZeroBgSettings(ii) = length(find(theData{1}.data(theObserverAgeIndex).correction.backgroundPrimaryUsedAll(:,ii) == 0));
+    nOneBgSettings(ii) = length(find(theData{1}.data(theObserverAgeIndex).correction.backgroundPrimaryUsedAll(:,ii) == 1));
+    nZeroModSettings(ii) = length(find(theData{1}.data(theObserverAgeIndex).correction.modulationPrimaryUsedAll(:,ii) == 0));
+    nOneModSettings(ii) = length(find(theData{1}.data(theObserverAgeIndex).correction.modulationPrimaryUsedAll(:,ii) == 1));
     fprintf('Iteration %d\n',ii);
     fprintf('\tNumber zero bg primaries: %d, one bg primaries: %d, zero mod primaries: %d, one mod primaries: %d\n',nZeroBgSettings(ii),nOneBgSettings(ii),nZeroModSettings(ii),nOneModSettings(ii));
     

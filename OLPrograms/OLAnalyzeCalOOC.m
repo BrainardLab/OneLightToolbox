@@ -38,7 +38,7 @@ function OLAnalyzeCalOOC
     plotPredictions = true;
     
     % 8. Results from the primary additivity tests
-    plotAdditivityCheck = true;
+    plotAdditivityCheck = false;
   
     % Action !
     if (plotTemperatureMeasurements)
