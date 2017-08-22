@@ -128,7 +128,7 @@ end
 
 % Call into lsqlin
 options = optimset('lsqlin');
-options = optimset(options,'Diagnostics','off','Display','off','LargeScale','off');
+options = optimset(options,'Diagnostics','off','Display','off');
 effectivePrimary = lsqlin(C,d,[],[],[],[],vlb,vub,[],options);
 if params.verbose
     fprintf('Lsqlin effective primaries: min = %g, max = %g\n', min(effectivePrimary(:)), max(effectivePrimary(:)));
