@@ -2,6 +2,8 @@ function OLAnalyzeCalOOC
 
     cal = OLGetCalibrationStructure;
     
+    % It would be nice if this respected what's being plotted and ran
+    % faster in cases where some info is not needed for the requested plots.
     calAnalyzer = OLCalAnalyzer(...
         'refitGammaTablesUsingLinearInterpolation', false, ...
         'forceOLInitCal', true, ...
@@ -11,7 +13,15 @@ function OLAnalyzeCalOOC
     describe = calAnalyzer.cal.describe;
     describe
     
-    % Select what to plot
+    % Select what to plot.
+    %
+    % Some specific plots are also
+    % commented out below and in some of the underlying
+    % routines, just to make what comes out more comprehensible
+    % for mere mortals.
+    
+    % Plot raw as well as computed measurements?
+    plotRawToo = false;
     
     % 0. Plot temperature during the course of the calibration
     plotTemperatureMeasurements = false;
@@ -52,11 +62,13 @@ function OLAnalyzeCalOOC
     
     if (plotCompositeMeasurents)
         % Plot dark, half-on, and full-on raw measurements
-        spdType = 'raw';
-        calAnalyzer.plotSPD(spdType, 'darkMeas'); 
-        calAnalyzer.plotSPD(spdType, 'halfOnMeas');
-        calAnalyzer.plotSPD(spdType, 'fullOn');
-        calAnalyzer.plotSPD(spdType, 'wigglyMeas');
+        if (plotRawToo)
+            spdType = 'raw';
+            calAnalyzer.plotSPD(spdType, 'darkMeas');
+            calAnalyzer.plotSPD(spdType, 'halfOnMeas');
+            calAnalyzer.plotSPD(spdType, 'fullOn');
+            calAnalyzer.plotSPD(spdType, 'wigglyMeas');
+        end
         
         spdType = 'computed';
         calAnalyzer.plotSPD(spdType, 'halfOnMeas');
@@ -74,24 +86,31 @@ function OLAnalyzeCalOOC
         calAnalyzer.plotSPD(spdType, 'pr650M', 'bandIndicesToPlot', whichBandIndicesToPlot);
 
         % Raw spectra
-        spdType = 'raw';
-        calAnalyzer.plotSPD(spdType, 'lightMeas', 'bandIndicesToPlot', whichBandIndicesToPlot);
-        if (calAnalyzer.cal.describe.specifiedBackground)
-            calAnalyzer.plotSPD(spdType, 'effectiveBgMeas', 'bandIndicesToPlot', whichBandIndicesToPlot);
+        if (plotRawToo)
+            spdType = 'raw';
+            calAnalyzer.plotSPD(spdType, 'lightMeas', 'bandIndicesToPlot', whichBandIndicesToPlot);
+            if (calAnalyzer.cal.describe.specifiedBackground)
+                calAnalyzer.plotSPD(spdType, 'effectiveBgMeas', 'bandIndicesToPlot', whichBandIndicesToPlot);
+            end
         end
     end
     
     if (plotFullSpectra)
         spdType = 'computed';
         calAnalyzer.plotSPD(spdType, 'pr650M', 'bandIndicesToPlot', []);
-        spdType = 'raw';
-        calAnalyzer.plotSPD(spdType, 'lightMeas', 'bandIndicesToPlot', []);
+        
+        if (plotRawToo)
+            spdType = 'raw';
+            calAnalyzer.plotSPD(spdType, 'lightMeas', 'bandIndicesToPlot', []);
+        end
     end
     
     if (plotGammaSPDs)
         % SPDs at different gamma values
-        gammaSPDType = 'raw';
-        calAnalyzer.plotGammaSPD(gammaSPDType, 'rad');
+        if (plotRawToo)
+            gammaSPDType = 'raw';
+            calAnalyzer.plotGammaSPD(gammaSPDType, 'rad');
+        end
     end
     
     if (plotGammaTables)
@@ -101,16 +120,18 @@ function OLAnalyzeCalOOC
     end
     
     if (plotPredictions)
-        spdType = 'raw';
-        calAnalyzer.plotPredictions(spdType, 'darkMeas');
-        calAnalyzer.plotPredictions(spdType, 'halfOnMeas');
-        calAnalyzer.plotPredictions(spdType, 'fullOn');
-        calAnalyzer.plotPredictions(spdType, 'wigglyMeas');
+        if (plotRawToo)
+            spdType = 'raw';
+            calAnalyzer.plotPredictions(spdType, 'darkMeas');
+            calAnalyzer.plotPredictions(spdType, 'halfOnMeas');
+            calAnalyzer.plotPredictions(spdType, 'fullOn');
+            calAnalyzer.plotPredictions(spdType, 'wigglyMeas');
+        end
         
         spdType = 'computed';
-        calAnalyzer.plotPredictions(spdType, 'halfOnMeas');
+        %calAnalyzer.plotPredictions(spdType, 'halfOnMeas');
         calAnalyzer.plotPredictions(spdType, 'fullOn');
-        calAnalyzer.plotPredictions(spdType, 'wigglyMeas');
+        %calAnalyzer.plotPredictions(spdType, 'wigglyMeas');
     end
     
     if (plotAdditivityCheck)
