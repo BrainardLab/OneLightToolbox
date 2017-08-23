@@ -270,25 +270,49 @@ for ii = 1:nIterations
     xlabel('Primary Number'); ylabel('Primary Value');
     title('Delta primary for next iteration');
     
-    %% Contrast figure
-    % Instead of indexing each contrast type by looking in a different row,
-    % just ask for the values as specifically named in the
-    % Direction_yaddayadda.mat file. ASK DHB WHICH VALUES WE PLOT HERE AND
-    % WHAT VALUES WE WANT TO PLOT LATER.
+    % Compute contrasts
+
+    % NEED TO GET PHOTORECEPTORS FROM DIRECTION CACHE FILE AND/OR GENERATE THEM.  SEE
+    % OLAnalyzeDirectionCorrectedPrimaries for the basic way this looks.  THEN SHOULD
+    % BE ABLE TO PLOT CONTRASTS PRETTY EASILY.
+    %
+    % Grab cell array of photoreceptor classes.  Use what was in the direction file
+    % if it is there, otherwise standard L, M, S and Mel.
+    %
+    % This might not be the most perfect check for what is stored with the nominal direction primaries,
+    % but until it breaks we'll go with it.
+    % if isfield(directionCacheData.directionParams,'photoreceptorClasses')
+    %     if (directionCacheData.data(protocolParams.observerAgeInYrs).describe.params.fieldSizeDegrees ~=  protocolParams.fieldSizeDegrees)
+    %         error('Field size used for direction does not match that specified in protocolPrams.');
+    %     end
+    %     if (directionCacheData.data(protocolParams.observerAgeInYrs).describe.params.pupilDiameterMm ~=  protocolParams.pupilDiameterMm)
+    %         error('Pupil diameter used for direction does not match that specified in protocolPrams.');
+    %     end
+    %     photoreceptorClasses = directionCacheData.data(protocolParams.observerAgeInYrs).describe.photoreceptors;
+    %     T_receptors = directionCacheData.data(protocolParams.observerAgeInYrs).describe.T_receptors;
+    % else
+    %     photoreceptorClasses = {'LConeTabulatedAbsorbance'  'MConeTabulatedAbsorbance'  'SConeTabulatedAbsorbance'  'Melanopsin'};
+    %     T_receptors = GetHumanPhotoreceptorSS(S,photoreceptorClasses,protocolParams.fieldSizeDegrees,protocolParams.observerAgeInYrs,protocolParams.pupilDiameterMm,[],[]);
+    % end
+
+    % backgroundReceptors = T_receptors*backgroundSpectrumMeasuredScaled;
+    % modulationReceptors = T_receptors*modulationSpectrumMeasuredScaled;
+    % contrasts(:,ii) = (modulationReceptors-backgroundReceptors) ./ backgroundReceptors;
     
-%     figure(contrastPlot);
-%     subplot(1,2,1);
-%     hold off;
-%     plot(1:ii, 100*theData{1}.data(theObserverAgeIndex).correction.contrasts(1, 1:ii), '-sr', 'MarkerFaceColor', 'r'); hold on
-%     plot(1:ii, 100*theData{1}.data(theObserverAgeIndex).correction.contrasts(2, 1:ii), '-sg', 'MarkerFaceColor', 'g');
-%     plot(1:ii, 100*theData{1}.data(theObserverAgeIndex).correction.contrasts(3, 1:ii), '-sb', 'MarkerFaceColor', 'b');
-%     xlabel('Iteration #'); xlim([0 nIterations+1]);
-%     ylabel('LMS Contrast'); %ylim(]);
-%     subplot(1,2,2);
-%     hold off;
-%     plot(1:ii, 100*theData{1}.data(theObserverAgeIndex).correction.contrasts(4, 1:ii), '-sc', 'MarkerFaceColor', 'c'); hold on
-%     xlabel('Iteration #'); xlim([0 nIterations+1]);
-%     ylabel('Mel Contrast');
+    %% Contrast figure
+    % figure(contrastPlot);
+    % subplot(1,2,1);
+    % hold off;
+    % plot(1:ii, 100*contrasts(1, 1:ii), '-sr', 'MarkerFaceColor', 'r'); hold on
+    % plot(1:ii, 100*contrasts(2, 1:ii), '-sg', 'MarkerFaceColor', 'g');
+    % plot(1:ii, 100*contrasts(3, 1:ii), '-sb', 'MarkerFaceColor', 'b');
+    % xlabel('Iteration #'); xlim([0 nIterations+1]);
+    % ylabel('LMS Contrast'); %ylim(]);
+    % subplot(1,2,2);
+    % hold off;
+    % plot(1:ii,contrasts(4, 1:ii), '-sc', 'MarkerFaceColor', 'c'); hold on
+    % xlabel('Iteration #'); xlim([0 nIterations+1]);
+    % ylabel('Mel Contrast');
     
     %% Force draw
     drawnow;
