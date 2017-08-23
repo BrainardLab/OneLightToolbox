@@ -111,7 +111,7 @@ switch (params.type)
         assert((isfield(params, 'specifiedBackground')        && islogical(params.specifiedBackground)),    sprintf('params.specifiedBackground does not exist or it does not contain a logical value.'));
         assert((isfield(params, 'zeroPrimariesAwayFromPeak')  && islogical(params.zeroPrimariesAwayFromPeak)), sprintf('params.zeroPrimariesAwayFromPeak does not exist or it does not contain a logical value.'));
         assert((isfield(params, 'zeroItWLRangeMinus')         && isnumeric(params.zeroItWLRangeMinus)),     sprintf('params.zeroItWLRangeMinus does not exist or it does not contain a numeric value.'));
-        assert((isfield(params, 'zeroItWLRangePlus')          && isnumeric(params.zeroItWLRangePlus)),      sprintf('params.zeroItWLRangePlus does not exist or it does not contain a numeric value.'));
+        assert((isfield(params, 'zeroItWlRangePlus')          && isnumeric(params.zeroItWlRangePlus)),      sprintf('params.zeroItWlRangePlus does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'doPrimaries')                && islogical(params.doPrimaries)),            sprintf('params.doPrimaries does not exist or it does not contain a logical value.'));
         assert((isfield(params, 'doGamma')                    && islogical(params.doGamma)),                sprintf('params.doGamma does not exist or it does not contain a logical value.'));
         assert((isfield(params, 'doIndependence')             && islogical(params.doIndependence)),         sprintf('params.doIndependence does not exist or it does not contain a logical value.'));
