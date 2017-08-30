@@ -29,7 +29,7 @@ close all;
 %
 % This is hard coded in right now, until we mind-meld this code with our new approach approach.
 cacheBasePath = getpref(protocolParams.protocol, 'DirectionCorrectedPrimariesBasePath');
-load(fullfile(cacheBasePath, 'michael', '082117', 'session_1', 'Direction_LightFlux_330_330_20.mat'));
+load(fullfile(cacheBasePath, protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName, 'Direction_LightFlux_330_330_20.mat'));
 
 % Identify the box
 theBox = protocolParams.calibrationType;

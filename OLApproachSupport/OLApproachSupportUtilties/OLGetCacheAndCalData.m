@@ -61,6 +61,9 @@ assert(any(typeExists), 'InvalidCacheFile', 'File contains does not contain at l
 assert(isfield(params, 'calibrationType'),'No calibration type','Must provide params.calibraitionType'); 
 
 %% Get the calibration type 
+%
+% If it is crashing here,  make sure you have deleted the current nominal
+% primaries and run SetupTrialSequenceMRApproach.m
 if (any(strcmp(foundCalTypes, params.calibrationType)))
     selectedCalType = params.calibrationType;
 else
