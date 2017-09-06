@@ -12,8 +12,6 @@ function OLCheckPrimaryCorrection(protocolParams)
 % Input:
 %      protocolParams (struct)               Parameters of the current protocol.
 %
-%      prePost (string)                      'Pre' or 'Post' experiment validation?
-%
 % Output:
 %      None.
 %
@@ -21,9 +19,7 @@ function OLCheckPrimaryCorrection(protocolParams)
 %    None.
 
 % 06/18/17  dhb  Update header comment.  Rename.
-
-%% Clear
-close all;
+% 09/01/17  mab  Start generalizing by having it read protocol params.
 
 %% Get some data to analyze
 %
@@ -36,6 +32,15 @@ theBox = protocolParams.calibrationType;
 
 % Convert data to standardized naming for here
 eval(['theData = ' theBox ';  clear ' theBox ';']);
+
+%% Correction actually run?
+%
+% If not, we can't really do a full analysis
+if (~isfield(theData{1}.data,'correction'))
+    fprintf('Correction not actually run.  Not analyzing.\n');
+    fprintf('Could add a plot of primaries and nominal spectra here if desired.\n');
+    return;
+end
 
 %% Discover the observer age
 theObserverAgeIndex = find(~(cellfun(@isempty, {theData{1}.data.correction})));
