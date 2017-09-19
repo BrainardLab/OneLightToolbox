@@ -22,23 +22,29 @@ d = containers.Map();
 modulationName = 'MaxContrast3sPulse';
 type = 'pulse';
 
-params = defaultParams(type);
+params = defaultParams(type,modulationName);
 params.name = modulationName;
 d = paramsValidateAndAppendToDictionary(d, params);
 
 modulationName = 'MaxContrast3sSinusoid';
 type = 'sinusoid';
 
-params = defaultParams(type);
+params = defaultParams(type,modulationName);
 params.name = modulationName;
 d = paramsValidateAndAppendToDictionary(d, params);
 
+modulationName = 'MaxContrast12sSinusoid';
+type = 'sinusoid';
+
+params = defaultParams(type,modulationName);
+params.name = modulationName;
+d = paramsValidateAndAppendToDictionary(d, params);
 end
 
 function d = paramsValidateAndAppendToDictionary(d, params)
 
 % Get all the expected field names for this type
-allFieldNames = fieldnames(defaultParams(params.type));
+allFieldNames = fieldnames(defaultParams(params.type,params.name));
 
 % Test that there are no extra params
 if (~all(ismember(fieldnames(params),allFieldNames)))
@@ -91,7 +97,7 @@ d(params.name) = params;
 end
 
 
-function params = defaultParams(type)
+function params = defaultParams(type,modulationName)
 
 params = struct();
 params.type = type;
@@ -124,11 +130,18 @@ switch (type)
         
         
         % Pulse timing parameters
-        params.cosineWindowIn = true;               % If true, have a cosine fade-in
-        params.cosineWindowOut = true;              % If true, have a cosine fade-out
-        params.stimulusDuration = 3;                   % Number of seconds to show each trial
-        params.cosineWindowDurationSecs = 0.5;      % Duration (in secs) of the cosine fade-in/out
-         
+        switch (modulationName)
+            case 'MaxContrast3sSinusoid'
+                params.cosineWindowIn = true;               % If true, have a cosine fade-in
+                params.cosineWindowOut = true;              % If true, have a cosine fade-out
+                params.stimulusDuration = 3;                   % Number of seconds to show each trial
+                params.cosineWindowDurationSecs = 0.5;      % Duration (in secs) of the cosine fade-in/out
+            case 'MaxContrast12sSinusoid'
+                params.cosineWindowIn = true;               % If true, have a cosine fade-in
+                params.cosineWindowOut = true;              % If true, have a cosine fade-out
+                params.stimulusDuration = 12;                   % Number of seconds to show each trial
+                params.cosineWindowDurationSecs = 3;      % Duration (in secs) of the cosine fade-in/out
+        end
         % Contrast scaling
         params.contrast = 1;                        % Contrast scalars (as proportion of max specified in the direction)
         
