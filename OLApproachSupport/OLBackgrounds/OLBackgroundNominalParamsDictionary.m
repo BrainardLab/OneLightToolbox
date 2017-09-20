@@ -149,7 +149,7 @@ function d = OLBackgroundNominalParamsDictionary()
     
     %% LightFlux_330_330_20
     %
-    % Background at xy = [0.54,0.38] that allows light flux pulses to increase a factor of 5
+    % Background at xy = [0.33,0.33] that allows light flux pulses to increase a factor of  2
     % within gamut
     baseName = 'LightFlux';
     type = 'lightfluxchrom';

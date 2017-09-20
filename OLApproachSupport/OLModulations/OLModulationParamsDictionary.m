@@ -26,6 +26,7 @@ params = defaultParams(type,modulationName);
 params.name = modulationName;
 d = paramsValidateAndAppendToDictionary(d, params);
 
+%% MaxContrast3sSinusoid
 modulationName = 'MaxContrast3sSinusoid';
 type = 'sinusoid';
 
@@ -33,6 +34,7 @@ params = defaultParams(type,modulationName);
 params.name = modulationName;
 d = paramsValidateAndAppendToDictionary(d, params);
 
+%% MaxContrast12sSinusoid
 modulationName = 'MaxContrast12sSinusoid';
 type = 'sinusoid';
 
@@ -113,7 +115,7 @@ switch (type)
         % Pulse timing parameters
         params.cosineWindowIn = true;               % If true, have a cosine fade-in
         params.cosineWindowOut = true;              % If true, have a cosine fade-out
-        params.stimulusDuration = 3;                   % Number of seconds to show each trial
+        params.stimulusDuration = 3;                % Number of seconds to show each trial
         params.cosineWindowDurationSecs = 0.5;      % Duration (in secs) of the cosine fade-in/out
          
         % Contrast scaling
