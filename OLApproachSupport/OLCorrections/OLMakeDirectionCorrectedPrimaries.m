@@ -86,7 +86,7 @@ end
 %% Loop through and do correction for each desired direction.
 
 for corrD = 1:length(theDirections)
-    if protocolParams.doCorrectionFlag{corrD} == true
+    if (protocolParams.doCorrectionFlag{corrD})
         % Print out some information
         if (p.Results.verbose), fprintf(' * Direction:\t<strong>%s</strong>\n', theDirections{corrD}); end
         if (p.Results.verbose), fprintf(' * Observer:\t<strong>%s</strong>\n', protocolParams.observerID); end

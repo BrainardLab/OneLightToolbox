@@ -95,7 +95,7 @@ end
 % get an uncorrected cache file with all the same naming conventions as a
 % corrected one, so that we can run with uncorrected modulations using the
 % same downstream naming conventions as code as if we had corrected.
-if ~(correctionDescribe.doCorrection)
+if (~correctionDescribe.doCorrection)
     for ii = 1:length(cacheData.data)
         if ii == correctionDescribe.observerAgeInYrs
             cacheData.data(ii).modulationPrimarySignedNegative = [];
