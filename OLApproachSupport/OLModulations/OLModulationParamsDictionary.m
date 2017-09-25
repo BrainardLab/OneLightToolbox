@@ -14,6 +14,8 @@ function d = OLModulationParamsDictionary
 % 7/19/17  npc  Added a type for each modulation. For now, there is only one type: 'basic'. 
 %               Defaults and checking are done according to type.
 %               Isomorphic direction name and cache filename.
+% 09/25/17 dhb  Cleaned up Michael Barnett's method of adding new modulation to dictionary. 
+%               (Don't modify the defaults to do this, add a new entry and override the defaults explicitly.)
 
 %% Initialize dictionary
 d = containers.Map();
