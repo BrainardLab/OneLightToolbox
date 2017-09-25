@@ -80,7 +80,7 @@ meterToggle = [true false]; od = [];
 if (~validationDescribe.noRadiometerAdjustment)
     ol.setAll(true);
     commandwindow;
-    fprintf('- Focus the radiometer and press enter to pause %d seconds and start measuring.\n', validationDescribe.pauseDuration);
+    fprintf('\tFocus the radiometer and press enter to pause %d seconds and start measuring.\n', validationDescribe.pauseDuration);
     input('');
     ol.setAll(false);
     pause(validationDescribe.pauseDuration);
@@ -96,11 +96,11 @@ try
     startMeas = GetSecs;
     
     % Say hello
-    if (validationDescribe.verbose), fprintf('- Performing radiometer measurements.\n'); end;
+    if (validationDescribe.verbose), fprintf('\tPerforming radiometer measurements.\n'); end;
     
     % State and temperature measurements
     if (~validationDescribe.simulate & validationDescribe.takeCalStateMeasurements)
-        if (validationDescribe.verbose), fprintf('- State measurements \n'); end;
+        if (validationDescribe.verbose), fprintf('\tState measurements \n'); end;
         [~, results.calStateMeas] = OLCalibrator.TakeStateMeasurements(adjustedCal, ol, od, spectroRadiometerOBJ, ...
             meterToggle, validationDescribe.nAverage, theLJdev, 'standAlone',true);
     else
@@ -120,7 +120,7 @@ try
     validationDescribe.powerLevels = cacheData.directionParams.validationPowerLevels;
     nPowerLevels = length(validationDescribe.powerLevels);
     for i = 1:nPowerLevels
-        if (validationDescribe.verbose), fprintf('- Measuring spectrum %d, level %g...\n', i, validationDescribe.powerLevels(i)); end;
+        if (validationDescribe.verbose), fprintf('\tMeasuring power leve %d, the level is %g\n', i, validationDescribe.powerLevels(i)); end
         
         % Get primaries for this power level
         primaries = backgroundPrimary+validationDescribe.powerLevels(i).*differencePrimary;

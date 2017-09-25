@@ -45,8 +45,8 @@ end
 %
 % These are box specific, according to the boxName specified in
 % protocolParams.boxName
-d = OLCorrectionParamsDictionary();
-correctionParams = d(protocolParams.boxName);
+dd = OLCorrectionParamsDictionary();
+correctionParams = dd(protocolParams.boxName);
 
 %% Open up a radiometer object
 if (~protocolParams.simulate)
@@ -70,28 +70,32 @@ else
 end
 
 %% Validate each direction
+%
+% Respect the flag, as when the protocol contains multiple trial types
+% that use the same direction file, we only need to validate once per
+% direction.
 for ii = 1:protocolParams.nValidationsPerDirection
-    for d = 1:length(theDirectionCacheFileNames)
-        if protocolParams.doCorrectionAndValidationFlag{d} == true
+    for dd = 1:length(theDirectionCacheFileNames)
+        
+        % Do the validation if the flag is true.
+        if (protocolParams.doCorrectionAndValidationFlag{dd})
+            fprintf('\nValidation measurements, direction %d, %s, %s, measurement %d of %d, \n',dd,theDirectionCacheFileNames{dd},prePost,ii,protocolParams.nValidationsPerDirection);
 
-        % Take the measurement
-        results = OLValidateCacheFileOOC(fullfile(cacheDir,[theDirectionCacheFileNames{d} '.mat']), ol, spectroRadiometerOBJ, S, theLJdev, ...
-            'approach',                     protocolParams.approach, ...
-            'simulate',                     protocolParams.simulate, ...
-            'observerAgeInYrs',             protocolParams.observerAgeInYrs, ...
-            'calibrationType',              protocolParams.calibrationType, ...
-            'takeCalStateMeasurements',     protocolParams.takeCalStateMeasurements, ...
-            'takeTemperatureMeasurements',  protocolParams.takeTemperatureMeasurements, ...
-            'useAverageGamma',              correctionParams.useAverageGamma, ...
-            'zeroPrimariesAwayFromPeak',    correctionParams.zeroPrimariesAwayFromPeak, ...
-            'verbose',                      protocolParams.verbose);
-          
-        % Save the validation information in an ordinary .mat file.  Append prePost and iteration number in name.
-        if (protocolParams.verbose), fprintf(' * Saving validation results ...'); end
-        outputFile = fullfile(outDir,sprintf('%s_%s_%d.mat', theDirectionCacheFileNames{d},prePost,ii));
-        results.protocolParams = protocolParams;
-        save(outputFile,'results');
-        if (protocolParams.verbose), fprintf('saved to %s\n', outputFile); end
+            % Take the measurement
+            results = OLValidateCacheFileOOC(fullfile(cacheDir,[theDirectionCacheFileNames{dd} '.mat']), ol, spectroRadiometerOBJ, S, theLJdev, ...
+                'approach',                     protocolParams.approach, ...
+                'simulate',                     protocolParams.simulate, ...
+                'observerAgeInYrs',             protocolParams.observerAgeInYrs, ...
+                'calibrationType',              protocolParams.calibrationType, ...
+                'takeCalStateMeasurements',     protocolParams.takeCalStateMeasurements, ...
+                'takeTemperatureMeasurements',  protocolParams.takeTemperatureMeasurements, ...
+                'verbose',                      protocolParams.verbose);
+            
+            % Save the validation information in an ordinary .mat file.  Append prePost and iteration number in name.
+            outputFile = fullfile(outDir,sprintf('%s_%s_%d.mat', theDirectionCacheFileNames{dd},prePost,ii));
+            results.protocolParams = protocolParams;
+            save(outputFile,'results');
+            if (protocolParams.verbose), fprintf('\tSaved validation results to %s\n', outputFile); end
         end
     end
 end

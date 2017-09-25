@@ -86,7 +86,7 @@ classdef OneLight < hgsetget
             p = inputParser;
             p.addParameter('deviceID', 0, @isscalar);
             p.addParameter('simulate', false, @islogical);
-            p.addParameter('plotWhenSimulating', true, @islogical');
+            p.addParameter('plotWhenSimulating', true, @islogical);
             p.parse(varargin{:});
             params = p.Results;
 			

@@ -13,7 +13,11 @@
 %
 % See also: OLCheckCacheParamsAgainstCurrentParams.
 
-% 7/24/17  npc  Wrote it.
+% 07/24/17  npc  Wrote it.
+% 09/25/17  dhb  Remove useAverageGamma and zeroPrimariesAwayFromPeak fields.
+%                Now, these should only be set in the calibration dictionary.
+%           dhb  Also remove postreceptorCombinations field, at a cost in generality
+%                but a gain in simplicity.
 
 function d = OLCorrectionParamsDictionary()
 
@@ -40,8 +44,6 @@ params.learningRate = 0.5;
 params.learningRateDecrease = true;
 params.smoothness = 0.001;
 params.iterativeSearch = true;
-params.useAverageGamma = true;
-params.zeroPrimariesAwayFromPeak = true;
 d = paramsValidateAndAppendToDictionary(d, params);
 
 boxName = 'BoxC';
@@ -52,8 +54,6 @@ params.learningRate = 0.5;
 params.learningRateDecrease = true;
 params.smoothness = 0.001;
 params.iterativeSearch = true;
-params.useAverageGamma = true;
-params.zeroPrimariesAwayFromPeak = true;
 d = paramsValidateAndAppendToDictionary(d, params);
 
 end
@@ -88,9 +88,6 @@ switch (params.type)
         assert((isfield(params, 'asympLearningRateFactor')    && isnumeric(params.asympLearningRateFactor)),sprintf('params.asympLearningRateFactor does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'smoothness')                 && isnumeric(params.smoothness)),             sprintf('params.smoothness does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'nIterations')                && isnumeric(params.nIterations)),            sprintf('params.nIterations does not exist or it does not contain a numeric value.'));
-        assert((isfield(params, 'postreceptoralCombinations') && isnumeric(params.postreceptoralCombinations)), sprintf('params.postreceptoralCombinations does not exist or it does not contain a numeric value.'));
-        assert((isfield(params, 'useAverageGamma')            && islogical(params.useAverageGamma)),        sprintf('params.useAverageGamma does not exist or it does not contain a logical value.'));
-        assert((isfield(params, 'zeroPrimariesAwayFromPeak')  && islogical(params.zeroPrimariesAwayFromPeak)),  sprintf('params.zeroPrimariesAwayFromPeak does not exist or it does not contain a logical value.'));
 
     otherwise
         error('Unknown direction type specified: ''%s''.\n', params.type);
@@ -116,9 +113,6 @@ switch (type)
         params.asympLearningRateFactor = 0.5;                                               % If learningRateDecrease is true, this affects how fast it decreases.
         params.smoothness = 0.1;                                                            % Smoothness parameter for OLSpdToPrimary
         params.nIterations = 10;                                                            % Number of iterations to do before declaring victory.
-        params.postreceptoralCombinations = [1 1 1 0 ; 1 -1 0 0 ; 0 0 1 0 ; 0 0 0 1];       % Report contrasts with respect to these post-receptoral contrast directions (L,M,S, Mel).
-        params.useAverageGamma = false;                                                     % Whether to use the average (across channels) gamma, independent of what is in calibration file.
-        params.zeroPrimariesAwayFromPeak = false;                                           % Force spd of OL primaries to be zero away from their peaks.
         
     otherwise
         error('Unknown correction type specified: ''%s''.\n', type);
