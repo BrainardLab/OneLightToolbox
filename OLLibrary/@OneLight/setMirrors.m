@@ -27,8 +27,10 @@ function setMirrors(obj, starts, stops)
 % stops (1xNumCols) - Vector defining the stop row for each column.
 % 
 % See also OLSettingsToStartsStops.
-%
-% 1/17/14  dhb, ms  Comment tuning.
+
+% 01/17/14  dhb, ms  Comment tuning.
+% 09/25/17  dhb      Add option not to plot when simulating, based on object property
+%                    PlotWhenSimulating.
 
 assert(nargin == 3, 'OneLight:setMirrors:NumInputs', 'Invalid number of inputs.');
 
@@ -42,10 +44,12 @@ assert(length(stops) == obj.NumCols, 'OneLight:setMirrors:OutOfBounds', ...
 if (~obj.Simulate)
     OneLightEngine(OneLightFunctions.SendPattern.UInt32, obj.DeviceID, uint16(starts), uint16(stops));
 else
-    figure(obj.SimFig); clf;
-    hold on;
-    plot(stops-starts,'ko','MarkerSize',2);
-    drawnow;
-    hold off;
+    if (obj.PlotWhenSimulating)
+        figure(obj.SimFig); clf;
+        hold on;
+        plot(stops-starts,'ko','MarkerSize',2);
+        drawnow;
+        hold off;
+    end
 end
     
