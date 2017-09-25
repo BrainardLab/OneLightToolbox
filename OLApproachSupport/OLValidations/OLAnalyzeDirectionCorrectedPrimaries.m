@@ -42,9 +42,6 @@ if(~exist(validationDir,'dir'))
     mkdir(validationDir)
 end
 
-%% Compute receptors against which to report contrasts
-
-
 %% Get validation results
 %
 % Loop over directions. Respect the flag, as when the protocol contains

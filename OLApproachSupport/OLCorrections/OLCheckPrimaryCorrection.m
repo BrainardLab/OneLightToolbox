@@ -21,6 +21,9 @@ function OLCheckPrimaryCorrection(protocolParams)
 % 06/18/17  dhb  Update header comment.  Rename.
 % 09/01/17  mab  Start generalizing by having it read protocol params.
 
+%% THIS NEEDS UPDATING TO WORK THROUGH MULTIPLE CORRECTED DIRECTIONS, ETC.
+%% IT IS CURRENTLY A QUICK UPDATE OF AN OLD ROUTINE.
+
 %% Get some data to analyze
 %
 % This is hard coded in right now, until we mind-meld this code with our new approach approach.
