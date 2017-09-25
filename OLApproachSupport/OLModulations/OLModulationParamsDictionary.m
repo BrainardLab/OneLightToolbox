@@ -5,8 +5,9 @@ function d = OLModulationParamsDictionary
 %     Generate dictionary with modulation params.
 %
 % Note:
-%     When you add a new type, you need to add that type to the corresponding switch statment
-%     in OLCheckCacheParamsAgainstCurrentParams.
+%     When you add a new type (e.g., 'pulse', 'sinusoid'), you need to add
+%     that type to the corresponding switch statment in
+%     OLCheckCacheParamsAgainstCurrentParams.
 %
 % See also: OLCheckCacheParamsAgainstCurrentParams.
 
