@@ -41,7 +41,7 @@ if(~exist(validationDir,'dir'))
     mkdir(validationDir)
 end
 
-%% Compute receptors against which to report contrasts;
+%% Compute receptors against which to report contrasts
 
 
 %% Get validation results

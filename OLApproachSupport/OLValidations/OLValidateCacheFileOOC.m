@@ -30,8 +30,6 @@ function results = OLValidateCacheFileOOC(cacheFileName, ol, spectroRadiometerOB
 %     'calibrationType'                ''                Calibration type
 %     'takeTemperatureMeasurements'    false             Take temperature measurements? (Requires a connected LabJack dev with a temperature probe.)
 %     'takeCalStateMeasurements'       true              Take OneLight state measurements
-%     'useAverageGamma'                false             Force the useAverageGamma mode in the calibration?
-%     'zeroPrimariesAwayFromPeak'      false             Zero out calibrated primaries well away from their peaks.
 %     'verbose'                        false             Print out things in progress.
 %
 % See also: OLValidateDirectionCorrectedPrimaries, OLGetCacheAndCalData
@@ -45,6 +43,9 @@ function results = OLValidateCacheFileOOC(cacheFileName, ol, spectroRadiometerOB
 % 06/05/17 dhb      Remove old verbose arg to OLSettingsToStartsStops
 % 07/27/17 dhb      Massive interface redo.
 % 08/22/17 dhb      Return a reasonable value for measurment S when simulating.
+% 09/25/17 dhb      Get rid of 'useAverageGamma' and 'zeroPrimariesAwayFromPeak' key/value pairs.
+%                   I don't think these were used any longer, and in any case they should be set in 
+%                   the calibration structure and then not mucked with.
 
 % Parse the input
 p = inputParser;
@@ -57,8 +58,6 @@ p.addParameter('observerAgeInYrs', 32, @isscalar);
 p.addParameter('calibrationType','', @isstr);
 p.addParameter('takeCalStateMeasurements', false, @islogical);
 p.addParameter('takeTemperatureMeasurements', false, @islogical);
-p.addParameter('useAverageGamma', false, @islogical);
-p.addParameter('zeroPrimariesAwayFromPeak', false, @islogical);
 p.addParameter('verbose',false,@islogical);
 p.parse(varargin{:});
 validationDescribe = p.Results;

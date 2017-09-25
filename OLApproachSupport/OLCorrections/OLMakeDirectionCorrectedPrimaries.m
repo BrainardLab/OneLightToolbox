@@ -29,6 +29,9 @@ function OLMakeDirectionCorrectedPrimaries(ol,protocolParams,varargin)
 % 6/18/17  dhb       Added header comments.  Renamed.
 % 6/19/17  mab, jr   Added saving the cache data to the outDir location specified in OLCorrectCacheFileOOC.m
 % 8/21/17  dhb       Add protocol params to what is save out. We may want this later for analysis.
+% 09/25/17 dhb       Change name of the flag that determines whether corrections get done to correctBySimulation.
+%                    The sense of this is flipped from the old name, and this flip was implemented in the call to
+%                    OLCorrectCacheFileOOC, where a ~ was added to the value for the 'doCorretion' flag.
 
 %% Parse input to get key/value pairs
 p = inputParser;
@@ -43,8 +46,8 @@ theDirections = protocolParams.directionNames;
 directionCacheFileNames = OLMakeDirectionCacheFileNames(protocolParams);
 
 %% Make sure we have booleans for all of the passed directions
-assert(numel(protocolParams.directionNames) == numel(protocolParams.directionsCorrect), 'protocolParams.directionsCorrect does not have the same length protocolParams.directionNames');
-theDirectionsCorrect = protocolParams.directionsCorrect;
+assert(numel(protocolParams.directionNames) == numel(protocolParams.correctBySimulation), 'protocolParams.correctBySimulation does not have the same length protocolParams.directionNames');
+theCorrectBySimulation = protocolParams.correctBySimulation;
 
 %% Get dir where the nominal and corrected primaries live
 %
@@ -86,7 +89,7 @@ end
 %% Loop through and do correction for each desired direction.
 
 for corrD = 1:length(theDirections)
-    if (protocolParams.doCorrectionFlag{corrD})
+    if (protocolParams.doCorrectionAndValidationFlag{corrD})
         % Print out some information
         if (p.Results.verbose), fprintf(' * Direction:\t<strong>%s</strong>\n', theDirections{corrD}); end
         if (p.Results.verbose), fprintf(' * Observer:\t<strong>%s</strong>\n', protocolParams.observerID); end
@@ -97,7 +100,7 @@ for corrD = 1:length(theDirections)
         [cacheData, cal] = OLCorrectCacheFileOOC(sprintf('%s.mat', fullfile(nominalPrimariesDir, directionCacheFileNames{corrD})), ol, spectroRadiometerOBJ, S, theLJdev, ...
             'approach',                     protocolParams.approach, ...
             'simulate',                     protocolParams.simulate, ...
-            'doCorrection',                 theDirectionsCorrect(corrD), ...
+            'doCorrection',                 ~theCorrectBySimulation(corrD), ...
             'observerAgeInYrs',             protocolParams.observerAgeInYrs, ...
             'calibrationType',              protocolParams.calibrationType, ...
             'takeTemperatureMeasurements',  protocolParams.takeTemperatureMeasurements, ...

@@ -72,7 +72,7 @@ end
 %% Validate each direction
 for ii = 1:protocolParams.nValidationsPerDirection
     for d = 1:length(theDirectionCacheFileNames)
-        if protocolParams.doCorrectionFlag{d} == true
+        if protocolParams.doCorrectionAndValidationFlag{d} == true
 
         % Take the measurement
         results = OLValidateCacheFileOOC(fullfile(cacheDir,[theDirectionCacheFileNames{d} '.mat']), ol, spectroRadiometerOBJ, S, theLJdev, ...
