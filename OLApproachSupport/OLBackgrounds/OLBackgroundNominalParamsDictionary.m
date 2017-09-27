@@ -56,10 +56,37 @@ function d = OLBackgroundNominalParamsDictionary()
     params.cacheFile = ['Background_' params.name  '.mat'];
     d = paramsValidateAndAppendToDictionary(d, params);
     
+    %% MelanopsinDirected_600_80_667
+    %
+    % Background to allow maximum melanopsin pulse contrast
+    %   Field size: 60.0 deg
+    %   Pupil diameter: 8 mm
+    %   Modulation contrast: 66.7%
+    % 
+    % Note modulation contrast is typically 2/3 for 400% pulse contrast <=> 66.66% sinusoidal contrast
+    baseName = 'MelanopsinDirected';
+    type = 'optimized';
+    
+    params = defaultParams(type);
+    params.baseModulationContrast = 4/6;
+    params.primaryHeadRoom = 0.01;
+    params.fieldSizeDegrees = 60;
+    params.pupilDiameterMm = 8;
+    params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
+    params.modulationContrast = [params.baseModulationContrast];
+    params.whichReceptorsToIsolate = {[4]};
+    params.whichReceptorsToIgnore = {[]};
+    params.whichReceptorsToMinimize = {[]};
+    params.directionsYoked = [0];
+    params.directionsYokedAbs = [0];
+    params.name = OLMakeApproachBackgroundName(baseName,params);
+    params.cacheFile = ['Background_' params.name  '.mat'];
+    d = paramsValidateAndAppendToDictionary(d, params);
+    
     %% LMSDirected_LMS_275_80_667
     % 
     % Background to allow maximum LMS pulse contrast
-    %   Field size: 27.5 deg
+    %   Field size: 27,5 deg
     %   Pupil diameter: 8 mm
     %   Modulation contrast: 66.7%
     % 
@@ -70,6 +97,35 @@ function d = OLBackgroundNominalParamsDictionary()
     params = defaultParams(type);
     params.baseModulationContrast = 4/6;
     params.primaryHeadRoom = 0.005;
+    params.fieldSizeDegrees = 27.5; 
+    params.pupilDiameterMm = 8;
+    params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
+    params.modulationContrast = {[params.baseModulationContrast params.baseModulationContrast params.baseModulationContrast]};
+    params.whichReceptorsToIsolate = {[1 2 3]};
+    params.whichReceptorsToIgnore = {[]};
+    params.whichReceptorsToMinimize = {[]};
+    params.directionsYoked = [1];
+    params.directionsYokedAbs = [0];
+    params.name = OLMakeApproachBackgroundName(baseName,params);
+    params.cacheFile = ['Background_' params.name  '.mat'];
+    d = paramsValidateAndAppendToDictionary(d, params);
+    
+    %% LMSDirected_LMS_600_80_667
+    % 
+    % Background to allow maximum LMS pulse contrast
+    %   Field size: 60 deg
+    %   Pupil diameter: 8 mm
+    %   Modulation contrast: 66.7%
+    % 
+    % Note modulation contrast is typically 2/3 for 400% pulse contrast <=> 66.66% sinusoidal contrast
+    baseName = 'LMSDirected';
+    type = 'optimized';
+    
+    params = defaultParams(type);
+    params.baseModulationContrast = 4/6;
+    params.primaryHeadRoom = 0.005;
+    params.fieldSizeDegrees = 60; 
+    params.pupilDiameterMm = 8;
     params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
     params.modulationContrast = {[params.baseModulationContrast params.baseModulationContrast params.baseModulationContrast]};
     params.whichReceptorsToIsolate = {[1 2 3]};
