@@ -118,6 +118,20 @@ for dd = 1:length(theDirectionCacheFileNames)
             
             % Loop over other spectra and report luminance, receptor contrasts and
             % post-receptoral contrasts.
+            %
+            % Need to check that the first three photoreceptor classes are L, M and S
+            % cones, otherwise the post-receptoral contrasts will not come out in a
+            % meaningful manner.
+            if (strcmp(~photoreceptorClasses{1}(1:5),'Lcone'))
+                error('First row of T_receptors is not an L cone sensitivity');
+            end
+            if (strcmp(~photoreceptorClasses{2}(1:5),'Mcone'))
+                error('Second row of T_receptors is not an M cone sensitivity');
+            end
+            if (strcmp(~photoreceptorClasses{3}(1:5),'Scone'))
+                error('Third row of T_receptors is not an S cone sensitivity');
+            end
+            
             validateIndices = setdiff(1:nValidationMeas,bgIndex);
             for mm = 1:length(validateIndices)
                 % Luminance
@@ -137,7 +151,18 @@ for dd = 1:length(theDirectionCacheFileNames)
                     end
                 end
                 
-                % Post-receptoral contrasts
+                % Post-receptoral contrasts.  Pass the first three contrasts, as just above we verified
+                % that these are for L, M and S cones.
+                [postreceptoralContrasts{ii,dd}, postreceptoralStrings] = ComputePostreceptoralContrastsFromLMSContrasts(contrasts{ii,dd}(1:3));
+                fprintf('\t\t\tPost-receptoral contrasts: ');
+                for cc = 1:length(postreceptoralStrings)
+                    fprintf('%s: %0.2g',postreceptoralStrings{cc},postreceptoralContrasts{ii,dd}(cc))
+                    if (cc ~= length(postreceptoralStrings))
+                        fprintf('; ');
+                    else
+                        fprintf('\n');
+                    end
+                end
             end
         end
     end
