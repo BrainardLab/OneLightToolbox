@@ -23,12 +23,13 @@ classdef OneLight < hgsetget
 	%    closeAll - Closes any detected devices.
 	%    setMirrors - Sets the mirrors on the device.
 	%    shutdown - Shuts down the device.
-    %
-    % 1/2/14  dhb  Made this a hgsetget object, which seems to make the
-    %              get/set features work.
-    % 6/5/17  dhb  Add simulation mode.  Made up a lot of return values for
-    %              features we don't generally use, so this may not be
-    %              totally robust.
+    
+    % 1/2/14   dhb  Made this a hgsetget object, which seems to make the
+    %               get/set features work.
+    % 6/5/17   dhb  Add simulation mode.  Made up a lot of return values for
+    %               features we don't generally use, so this may not be
+    %               totally robust.
+    % 09/25/17 dhb  Add 'plotWhenSimulating' key/value pair.
 	
 	properties (Dependent = true)
         LampStatus;
@@ -51,6 +52,7 @@ classdef OneLight < hgsetget
 		NumCols;
 		NumRows;
         Simulate;
+        PlotWhenSimulating;
         SimFig;
 	end
 	
@@ -65,28 +67,33 @@ classdef OneLight < hgsetget
 			%
 			% Syntax:
 			% obj = OneLight
-			% obj = OneLight(deviceID)
+			% obj = OneLight('deviceID',0)
 			%
 			% Description:
 			% Creates a hardware abstraction to a OneLight device.  When
 			% created, the constructor attempts to open the device.
 			%
-			% Input:
-			% deviceID (scalar) - Integer device ID number in the range of
-			%   [0,n-1] where n is the number of attached OneLight devices.
-			%   Defaults to 0.
-            % simulate (logical) - Run in simulation mode.  Default false.
+			% Optional key/value pairs:
+			% 'deviceID' (scalar)             - Integer device ID number in the range of
+			%                                   [0,n-1] where n is the number of attached OneLight devices.
+			%                                   Defaults to 0.
+            % 'simulate' (logical)           -  Run in simulation mode.  Default false.
+            % 'plotWhenSimulating' (logical) - When simulating, make a plot to show what the
+            %                                  mirrors are doing?  Default true.  Turn off to
+            %                                  get more realistic timing in simulation.
             
             % Parse key/value pairs
             p = inputParser;
             p.addParameter('deviceID', 0, @isscalar);
             p.addParameter('simulate', false, @islogical);
+            p.addParameter('plotWhenSimulating', true, @islogical);
             p.parse(varargin{:});
             params = p.Results;
 			
             % Check if we're simulating
             if (params.simulate)
                 obj.Simulate = true;
+                obj.PlotWhenSimulating = params.plotWhenSimulating;
                 obj.DeviceID = params.deviceID;
                 obj.LampCurrent = 240;
                 obj.NumPatternBuffers = 4;
@@ -98,6 +105,7 @@ classdef OneLight < hgsetget
                 return;
             else
                 obj.Simulate = false;
+                obj.PlotWhenSimulating = true;
             end
             
 			% Get the number of attached devices.  This call throws an

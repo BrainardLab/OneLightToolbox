@@ -58,6 +58,34 @@ params.name = OLMakeApproachDirectionName(baseName,params);
 params.cacheFile = ['Direction_' params.name '.mat'];
 d = paramsValidateAndAppendToDictionary(d, params);
 
+%% MaxMel_600_80_667
+%
+% Direction for maximum contrast melanopsin pulse
+%   Field size: 60.0 deg
+%   Pupil diameter: 8 mm
+%   Modulation contrast: 66.7%
+%
+% Modulation contrast is used to generate, but the result is a 400%
+% contrast step up relative to the background.
+baseName = 'MaxMel';
+type = 'pulse';
+
+params = defaultParams(type);
+params.primaryHeadRoom = 0.01;
+params.baseModulationContrast = 4/6;
+params.fieldSizeDegrees = 60.0;
+params.pupilDiameterMm = 8.0;
+params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
+params.modulationContrast = [params.baseModulationContrast];
+params.whichReceptorsToIsolate = [4];
+params.whichReceptorsToIgnore = [];
+params.whichReceptorsToMinimize = [];
+params.backgroundType = 'optimized';
+params.backgroundName = OLMakeApproachDirectionBackgroundName('MelanopsinDirected',params);
+params.name = OLMakeApproachDirectionName(baseName,params);
+params.cacheFile = ['Direction_' params.name '.mat'];
+d = paramsValidateAndAppendToDictionary(d, params);
+
 %% MaxLMS_275_80_667
 %
 % Direction for maximum contrast LMS pulse
@@ -84,6 +112,35 @@ params.backgroundName = OLMakeApproachDirectionBackgroundName('LMSDirected',para
 params.name = OLMakeApproachDirectionName(baseName,params);
 params.cacheFile = ['Direction_' params.name '.mat'];
 d = paramsValidateAndAppendToDictionary(d, params);
+
+%% MaxLMS_600_80_667
+%
+% Direction for maximum contrast LMS pulse
+%   Field size: 60.0 deg
+%   Pupil diameter: 8 mm
+%   Modulation contrast: 66.7%
+%
+% Modulation contrast is used to generate, but the result is a 400%
+% contrast step up relative to the background.
+baseName = 'MaxLMS';
+type = 'pulse';
+
+params = defaultParams(type);
+params.primaryHeadRoom = 0.01;
+params.baseModulationContrast = 4/6;
+params.fieldSizeDegrees = 60.0;
+params.pupilDiameterMm = 8.0;
+params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
+params.modulationContrast = [params.baseModulationContrast params.baseModulationContrast params.baseModulationContrast];
+params.whichReceptorsToIsolate = [1 2 3];
+params.whichReceptorsToIgnore = [];
+params.whichReceptorsToMinimize = [];
+params.backgroundType = 'optimized';
+params.backgroundName = OLMakeApproachDirectionBackgroundName('LMSDirected',params);
+params.name = OLMakeApproachDirectionName(baseName,params);
+params.cacheFile = ['Direction_' params.name '.mat'];
+d = paramsValidateAndAppendToDictionary(d, params);
+
 
 %% MaxMel_275_60_667
 %
@@ -246,7 +303,7 @@ switch (type)
         params.primaryHeadRoom = 0.005;                                          % How close to edge of [0-1] primary gamut do we want to get?
         params.photoreceptorClasses = ...                                        % Names of photoreceptor classes being considered.
             {'LConeTabulatedAbsorbance', 'MConeTabulatedAbsorbance', 'SConeTabulatedAbsorbance', 'Melanopsin'};
-        params.fieldSizeDegrees = 27.5;                                          % Field size used in background seeking. Affects fundamentals.
+        params.fieldSizeDegrees = 27.5;                                          % Field size. Affects fundamentals.
         params.pupilDiameterMm = 8.0;                                            % Pupil diameter used in background seeking. Affects fundamentals.
         params.maxPowerDiff = 0.1;                                               % Smoothing parameter for routine that finds backgrounds.
         params.modulationContrast = [params.baseModulationContrast];             % Vector of constrasts sought in isolation.

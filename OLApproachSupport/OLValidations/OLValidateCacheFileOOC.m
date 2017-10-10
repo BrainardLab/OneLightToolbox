@@ -30,8 +30,6 @@ function results = OLValidateCacheFileOOC(cacheFileName, ol, spectroRadiometerOB
 %     'calibrationType'                ''                Calibration type
 %     'takeTemperatureMeasurements'    false             Take temperature measurements? (Requires a connected LabJack dev with a temperature probe.)
 %     'takeCalStateMeasurements'       true              Take OneLight state measurements
-%     'useAverageGamma'                false             Force the useAverageGamma mode in the calibration?
-%     'zeroPrimariesAwayFromPeak'      false             Zero out calibrated primaries well away from their peaks.
 %     'verbose'                        false             Print out things in progress.
 %
 % See also: OLValidateDirectionCorrectedPrimaries, OLGetCacheAndCalData
@@ -45,6 +43,9 @@ function results = OLValidateCacheFileOOC(cacheFileName, ol, spectroRadiometerOB
 % 06/05/17 dhb      Remove old verbose arg to OLSettingsToStartsStops
 % 07/27/17 dhb      Massive interface redo.
 % 08/22/17 dhb      Return a reasonable value for measurment S when simulating.
+% 09/25/17 dhb      Get rid of 'useAverageGamma' and 'zeroPrimariesAwayFromPeak' key/value pairs.
+%                   I don't think these were used any longer, and in any case they should be set in 
+%                   the calibration structure and then not mucked with.
 
 % Parse the input
 p = inputParser;
@@ -57,8 +58,6 @@ p.addParameter('observerAgeInYrs', 32, @isscalar);
 p.addParameter('calibrationType','', @isstr);
 p.addParameter('takeCalStateMeasurements', false, @islogical);
 p.addParameter('takeTemperatureMeasurements', false, @islogical);
-p.addParameter('useAverageGamma', false, @islogical);
-p.addParameter('zeroPrimariesAwayFromPeak', false, @islogical);
 p.addParameter('verbose',false,@islogical);
 p.parse(varargin{:});
 validationDescribe = p.Results;
@@ -81,7 +80,7 @@ meterToggle = [true false]; od = [];
 if (~validationDescribe.noRadiometerAdjustment)
     ol.setAll(true);
     commandwindow;
-    fprintf('- Focus the radiometer and press enter to pause %d seconds and start measuring.\n', validationDescribe.pauseDuration);
+    fprintf('\tFocus the radiometer and press enter to pause %d seconds and start measuring.\n', validationDescribe.pauseDuration);
     input('');
     ol.setAll(false);
     pause(validationDescribe.pauseDuration);
@@ -97,11 +96,11 @@ try
     startMeas = GetSecs;
     
     % Say hello
-    if (validationDescribe.verbose), fprintf('- Performing radiometer measurements.\n'); end;
+    if (validationDescribe.verbose), fprintf('\tPerforming radiometer measurements.\n'); end;
     
     % State and temperature measurements
     if (~validationDescribe.simulate & validationDescribe.takeCalStateMeasurements)
-        if (validationDescribe.verbose), fprintf('- State measurements \n'); end;
+        if (validationDescribe.verbose), fprintf('\tState measurements \n'); end;
         [~, results.calStateMeas] = OLCalibrator.TakeStateMeasurements(adjustedCal, ol, od, spectroRadiometerOBJ, ...
             meterToggle, validationDescribe.nAverage, theLJdev, 'standAlone',true);
     else
@@ -121,7 +120,7 @@ try
     validationDescribe.powerLevels = cacheData.directionParams.validationPowerLevels;
     nPowerLevels = length(validationDescribe.powerLevels);
     for i = 1:nPowerLevels
-        if (validationDescribe.verbose), fprintf('- Measuring spectrum %d, level %g...\n', i, validationDescribe.powerLevels(i)); end;
+        if (validationDescribe.verbose), fprintf('\tMeasuring power leve %d, the level is %g\n', i, validationDescribe.powerLevels(i)); end
         
         % Get primaries for this power level
         primaries = backgroundPrimary+validationDescribe.powerLevels(i).*differencePrimary;

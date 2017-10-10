@@ -111,7 +111,7 @@ meterToggle = [true false]; od = [];
 if (~correctionDescribe.noRadiometerAdjustment)
     ol.setAll(true);
     commandwindow;
-    fprintf('- Focus the radiometer and press enter to pause %d seconds and start measuring.\n', correctionDescribe.pauseDuration);
+    fprintf('\tFocus the radiometer and press enter to pause %d seconds and start measuring.\n', correctionDescribe.pauseDuration);
     input('');
     ol.setAll(false);
     pause(correctionDescribe.pauseDuration);
@@ -127,11 +127,11 @@ try
     startMeas = GetSecs;
     
     % Say hello
-    if (correctionDescribe.verbose), fprintf('- Performing radiometer measurements.\n'); end;    
+    if (correctionDescribe.verbose), fprintf('\tPerforming radiometer measurements\n'); end;    
     
     % State and temperature measurements
     if (~correctionDescribe.simulate & correctionDescribe.takeCalStateMeasurements)
-        if (correctionDescribe.verbose), fprintf('- State measurements \n'); end;
+        if (correctionDescribe.verbose), fprintf('\tState measurements\n'); end;
         [~, results.calStateMeas] = OLCalibrator.takeCalStateMeasurements(adjustedCal, ol, od, spectroRadiometerOBJ, meterToggle, correctionDescribe.nAverage, theLJdev, 'standAlone',true);
     else
         results.calStateMeas = [];
@@ -181,7 +181,7 @@ try
         
         % Get the desired primaries for each power level and make a measurement for each one.
         for i = 1:nPowerLevels
-            if (correctionDescribe.verbose), fprintf('- Measuring spectrum %d, level %g...\n', i, correctionDescribe.powerLevels(i)); end
+            if (correctionDescribe.verbose), fprintf('\t\tMeasuring spectrum %d, level %g\n', i, correctionDescribe.powerLevels(i)); end
             
             % Get primary values for this power level, adding the
             % modulation difference to the background, after

@@ -29,6 +29,9 @@ function OLMakeDirectionCorrectedPrimaries(ol,protocolParams,varargin)
 % 6/18/17  dhb       Added header comments.  Renamed.
 % 6/19/17  mab, jr   Added saving the cache data to the outDir location specified in OLCorrectCacheFileOOC.m
 % 8/21/17  dhb       Add protocol params to what is save out. We may want this later for analysis.
+% 09/25/17 dhb       Change name of the flag that determines whether corrections get done to correctBySimulation.
+%                    The sense of this is flipped from the old name, and this flip was implemented in the call to
+%                    OLCorrectCacheFileOOC, where a ~ was added to the value for the 'doCorretion' flag.
 
 %% Parse input to get key/value pairs
 p = inputParser;
@@ -43,8 +46,8 @@ theDirections = protocolParams.directionNames;
 directionCacheFileNames = OLMakeDirectionCacheFileNames(protocolParams);
 
 %% Make sure we have booleans for all of the passed directions
-assert(numel(protocolParams.directionNames) == numel(protocolParams.directionsCorrect), 'protocolParams.directionsCorrect does not have the same length protocolParams.directionNames');
-theDirectionsCorrect = protocolParams.directionsCorrect;
+assert(numel(protocolParams.directionNames) == numel(protocolParams.correctBySimulation), 'protocolParams.correctBySimulation does not have the same length protocolParams.directionNames');
+theCorrectBySimulation = protocolParams.correctBySimulation;
 
 %% Get dir where the nominal and corrected primaries live
 %
@@ -59,7 +62,7 @@ end
 %
 % This is box specific, and specified as protocolParams.boxName
 corrD = OLCorrectionParamsDictionary();
-if (p.Results.verbose), fprintf('* Getting correction params for <strong>%s</strong>\n', protocolParams.boxName); end
+if (p.Results.verbose), fprintf('\nSpectrum seeking\n\tGetting correction params for %s\n', protocolParams.boxName); end
 correctionParams = corrD(protocolParams.boxName);
 
 %% Open up a radiometer object
@@ -86,18 +89,17 @@ end
 %% Loop through and do correction for each desired direction.
 
 for corrD = 1:length(theDirections)
-    if (protocolParams.doCorrectionFlag{corrD})
+    if (protocolParams.doCorrectionAndValidationFlag{corrD})
         % Print out some information
-        if (p.Results.verbose), fprintf(' * Direction:\t<strong>%s</strong>\n', theDirections{corrD}); end
-        if (p.Results.verbose), fprintf(' * Observer:\t<strong>%s</strong>\n', protocolParams.observerID); end
-        if (p.Results.verbose), fprintf(' * Date:\t<strong>%s</strong>\n', protocolParams.todayDate); end
+        if (p.Results.verbose), fprintf('\n\tDirection: %s\n', theDirections{corrD}); end
+        if (p.Results.verbose), fprintf('\tObserver: %s\n', protocolParams.observerID); end
         
         % Correct the cache
-        if (p.Results.verbose), fprintf(' * Starting spectrum-seeking loop...\n'); end
+        if (p.Results.verbose), fprintf('\tStarting spectrum-seeking loop\n'); end
         [cacheData, cal] = OLCorrectCacheFileOOC(sprintf('%s.mat', fullfile(nominalPrimariesDir, directionCacheFileNames{corrD})), ol, spectroRadiometerOBJ, S, theLJdev, ...
             'approach',                     protocolParams.approach, ...
             'simulate',                     protocolParams.simulate, ...
-            'doCorrection',                 theDirectionsCorrect(corrD), ...
+            'doCorrection',                 ~theCorrectBySimulation(corrD), ...
             'observerAgeInYrs',             protocolParams.observerAgeInYrs, ...
             'calibrationType',              protocolParams.calibrationType, ...
             'takeTemperatureMeasurements',  protocolParams.takeTemperatureMeasurements, ...
@@ -108,17 +110,15 @@ for corrD = 1:length(theDirections)
             'iterativeSearch',              correctionParams.iterativeSearch, ...
             'nIterations',                  correctionParams.nIterations, ...
             'verbose',                      p.Results.verbose);
-        if (p.Results.verbose), fprintf(' * Spectrum seeking finished!\n'); end
+        if (p.Results.verbose), fprintf('\tSpectrum seeking loop finished!\n'); end
         
         % Save the cache
-        if (p.Results.verbose), fprintf(' * Saving cache ...'); end
         olCache = OLCache(correctedPrimariesDir,cal);
         protocolParams.modulationDirection = theDirections{corrD};
         protocolParams.cacheFile = fullfile(nominalPrimariesDir, directionCacheFileNames{corrD});
         cacheData.protocolParams = protocolParams;
-        if (p.Results.verbose), fprintf('Cache saved to %s\n', protocolParams.cacheFile); end
         olCache.save(protocolParams.cacheFile, cacheData);
-        if (p.Results.verbose), fprintf('Cache saved to %s\n', protocolParams.cacheFile); end
+        if (p.Results.verbose), fprintf('\tCache saved to %s\n', protocolParams.cacheFile); end
     end
 end
 %% Close the radiometer object

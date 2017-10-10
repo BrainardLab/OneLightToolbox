@@ -10,10 +10,17 @@ function close(obj)
 % briefly.  Don't try connecting until 10 seconds after the device sounds
 % powered up again or the connection will fail.
 
+% 09/25/17 dhb  Respect new PlotWhenSimulating property.
+
 if (~obj.Simulate)
     if obj.IsOpen
         OneLightEngine(OneLightFunctions.Close.UInt32, obj.DeviceID);
     end
 else
-    close(obj.SimFig);
+    if (obj.PlotWhenSimulating)
+        try
+            close(obj.SimFig);
+        catch
+        end
+    end
 end

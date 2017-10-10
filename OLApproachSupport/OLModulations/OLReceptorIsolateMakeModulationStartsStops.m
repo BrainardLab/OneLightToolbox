@@ -49,7 +49,7 @@ p.addParameter('verbose',true,@islogical);
 p.parse(modulationName, directionName, protocolParams, varargin{:});
 
 %% Say hello
-if (p.Results.verbose); fprintf('\n* Computing modulation %s+%s\n',modulationName,directionName); end;
+if (p.Results.verbose); fprintf('\nComputing modulation %s+%s\n',modulationName,directionName); end;
 
 %% Get modulation params from modulation params dictionary
 d = OLModulationParamsDictionary;
@@ -146,7 +146,7 @@ switch (modulationParams.type)
         waveformParams.contrast = modulationParams.contrast;
         waveformParams.stimulusDuration = modulationParams.stimulusDuration;
         if (p.Results.verbose)
-            fprintf('*   Calculating pulse: %0.f s of %s, %.1f pct contrast (of max)\n', waveformParams.stimulusDuration, directionName, 100*waveformParams.contrast);
+            fprintf('\tCalculating pulse: %0.f s of %s, %.1f pct contrast (of max)\n', waveformParams.stimulusDuration, directionName, 100*waveformParams.contrast);
         end
         
     case 'sinusoid'
@@ -156,7 +156,7 @@ switch (modulationParams.type)
         waveformParams.contrast = modulationParams.contrast;
         waveformParams.stimulusDuration = modulationParams.stimulusDuration;          
         if (p.Results.verbose)
-            fprintf('*   Calculating %0.f s of %s, %.2f Hz, %.2f deg, %.1f pct contrast (of max)\n', waveformParams.stimulusDuration, directionName, waveformParams.frequency, waveformParams.phaseDegs, 100*waveformParams.contrast);
+            fprintf('\tCalculating %0.f s of %s, %.2f Hz, %.2f deg, %.1f pct contrast (of max)\n', waveformParams.stimulusDuration, directionName, waveformParams.frequency, waveformParams.phaseDegs, 100*waveformParams.contrast);
         end
         
     case 'AM'
@@ -168,7 +168,7 @@ switch (modulationParams.type)
         waveformParams.theFrequencyHz = modulationParams.carrierFrequency;
         waveformParams.contrast = modulationParams.contrast;
         if (p.Results.verbose)
-            fprintf('*   Calculating %0.f s of %s, %.2f Hz, %.2f deg, %.1f pct contrast (of max)\n', waveformParams.stimulusDuration, directionName, waveformParams.theFrequencyHz, waveformParams.thePhaseDeg, 100*waveformParams.contrast);
+            fprintf('\tCalculating %0.f s of %s, %.2f Hz, %.2f deg, %.1f pct contrast (of max)\n', waveformParams.stimulusDuration, directionName, waveformParams.theFrequencyHz, waveformParams.thePhaseDeg, 100*waveformParams.contrast);
         end
         
     otherwise
@@ -199,8 +199,6 @@ switch (modulationParams.type)
     otherwise
         error('Unknown direction type specified.');
 end
-if (p.Results.verbose); fprintf('  - Done.\n'); end;
-
 
 %% Put everything into a return strucure
 modulationData.modulationParams = modulationParams;
@@ -211,9 +209,8 @@ modulationData.modulation = modulation;
 %
 % Add trial type to the out file name
 startsStopsFileName = strcat(startsStopsFileName, sprintf('_trialType_%s',num2str(trialType)));
-if (p.Results.verbose); fprintf(['* Saving modulation to ' startsStopsFileName '\n']); end;
 save(startsStopsFileName, 'modulationData', '-v7.3');
-if (p.Results.verbose); fprintf('  - Done.\n'); end;
+if (p.Results.verbose); fprintf(['\tSaved modulation to ' startsStopsFileName '\n']); end;
 end
 
 %%OLAssembleDirectionCacheAndStartsStopFileNames
