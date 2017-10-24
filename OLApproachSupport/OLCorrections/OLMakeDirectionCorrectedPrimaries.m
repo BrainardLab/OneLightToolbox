@@ -66,7 +66,7 @@ if (p.Results.verbose), fprintf('\nSpectrum seeking\n\tGetting correction params
 correctionParams = corrD(protocolParams.boxName);
 
 %% Open up a radiometer object
-if (~protocolParams.simulate)
+if (~protocolParams.simulate.oneLight)
     [spectroRadiometerOBJ,S] = OLOpenSpectroRadiometerObj('PR-670');
 else
     spectroRadiometerOBJ = [];
@@ -74,7 +74,7 @@ else
 end
 
 %% Open up lab jack for temperature measurements
-if (~protocolParams.simulate & protocolParams.takeTemperatureMeasurements)
+if (~protocolParams.simulate.oneLight & protocolParams.takeTemperatureMeasurements)
     % Gracefully attempt to open the LabJack.  If it doesn't work and the user OK's the
     % change, then the takeTemperature measurements flag is set to false and we proceed.
     % Otherwise it either worked (good) or we give up and throw an error.
@@ -98,7 +98,7 @@ for corrD = 1:length(theDirections)
         if (p.Results.verbose), fprintf('\tStarting spectrum-seeking loop\n'); end
         [cacheData, cal] = OLCorrectCacheFileOOC(sprintf('%s.mat', fullfile(nominalPrimariesDir, directionCacheFileNames{corrD})), ol, spectroRadiometerOBJ, S, theLJdev, ...
             'approach',                     protocolParams.approach, ...
-            'simulate',                     protocolParams.simulate, ...
+            'simulate',                     protocolParams.simulate.oneLight, ...
             'doCorrection',                 ~theCorrectBySimulation(corrD), ...
             'observerAgeInYrs',             protocolParams.observerAgeInYrs, ...
             'calibrationType',              protocolParams.calibrationType, ...
@@ -122,7 +122,7 @@ for corrD = 1:length(theDirections)
     end
 end
 %% Close the radiometer object
-if (~protocolParams.simulate)
+if (~protocolParams.simulate.oneLight)
     if (~isempty(spectroRadiometerOBJ))
         spectroRadiometerOBJ.shutDown();
     end
