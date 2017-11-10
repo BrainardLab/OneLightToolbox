@@ -52,7 +52,11 @@ end
 end
 
 function generateAndSaveDirectionPrimaries(approachParams, paramsDictionary, directionName)
-% Get background primaries
+
+% Get direction parameters.
+%
+% The approach parameters structure specifies some direction independent
+% information, such as the calibration names to be used.
 directionParams = OLMergeBaseParamsWithParamsFromDictionaryEntry(approachParams, paramsDictionary, directionName);
 
 % The called routine checks whether the cacheFile exists, and if so and

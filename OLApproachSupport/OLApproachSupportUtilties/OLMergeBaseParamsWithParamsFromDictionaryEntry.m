@@ -1,4 +1,5 @@
 function dParams = OLMergeBaseParamsWithParamsFromDictionaryEntry(baseParams, paramsDictionary, dictionaryKey)
+
     % Check that requested directionName is valid and print available directions if it is not
     if (~paramsDictionary.isKey(dictionaryKey))
         availableKeys = keys(paramsDictionary);
@@ -8,9 +9,14 @@ function dParams = OLMergeBaseParamsWithParamsFromDictionaryEntry(baseParams, pa
         end
         error('''%s'' is not a valid modulation direction', dictionaryKey);
     end
+    
     % Get the direction specific params
     specificParams = paramsDictionary(dictionaryKey);
-    % Update the params
+    
+    % Add direction specific parameters to those in the bassed base params
+    % structure.  Would be good to check here that there is no overlap in
+    % parameter names between baseParams and specificParams, and throw an
+    % error if there is.
     dParams = baseParams;
     for fn = fieldnames(specificParams)'
         dParams.(fn{1}) = specificParams.(fn{1});

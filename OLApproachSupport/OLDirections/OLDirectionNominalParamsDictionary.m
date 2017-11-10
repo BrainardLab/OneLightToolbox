@@ -25,6 +25,7 @@
 % 7/22/17  dhb  No more modulationDirection field.
 % 7/23/17  dhb  Comment field meanings.
 % 7/27/17  dhb  Light flux entry
+% 11/10/17 dhb, jv  Add field for receptor generator type.
 
 function d = OLDirectionNominalParamsDictionary()
 
@@ -248,6 +249,7 @@ switch (params.type)
         assert((isfield(params, 'name')                       && ischar(params.name)),                      sprintf('params.name does not exist or it does not contain a string value.'));
         assert((isfield(params, 'baseModulationContrast')     && isnumeric(params.baseModulationContrast)), sprintf('params.baseModulationContrast does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'primaryHeadRoom')            && isnumeric(params.primaryHeadRoom)),        sprintf('params.primaryHeadRoom does not exist or it does not contain a numeric value.'));
+        assert((isfield(params, 'whichReceptorGenerator')     && ischar(params.whichReceptorGenerator)),     sprintf('params.whichReceptorGenerator does not exist or it does not contain a string value.'));
         assert((isfield(params, 'photoreceptorClasses')       && iscell(params.photoreceptorClasses)),      sprintf('params.photoreceptorClasses does not exist or it does not contain a cell value.'));
         assert((isfield(params, 'fieldSizeDegrees')           && isnumeric(params.fieldSizeDegrees)),       sprintf('params.ieldSizeDegrees does not exist or it does not contain a number.'));
         assert((isfield(params, 'pupilDiameterMm')            && isnumeric(params.pupilDiameterMm)),        sprintf('params.pupilDiameterMm does not exist or it does not contain a number.'));
@@ -297,11 +299,12 @@ params.type = type;
 params.name = '';
 
 switch (type)
-    case 'pulse'
+    case {'pulse', 'flicker'}
         params.dictionaryType = 'Direction';                                     % What type of dictionary is this?
         params.baseModulationContrast = 4/6;                                     % How much symmetric modulation contrast do we want to enable?  Used to generate background name.    
         params.primaryHeadRoom = 0.005;                                          % How close to edge of [0-1] primary gamut do we want to get?
-        params.photoreceptorClasses = ...                                        % Names of photoreceptor classes being considered.
+         = 'SSTPhotoreceptorSensitivity';                                        % How will receptor fundamentals be generated: 'SSTPhotoreceptorSensitivity', 'SSTReceptorHuman'
+        params.photoreceptorClasses = ...                                        % Names of photoreceptor classes being considered, must make sense to the specified receptor generator.
             {'LConeTabulatedAbsorbance', 'MConeTabulatedAbsorbance', 'SConeTabulatedAbsorbance', 'Melanopsin'};
         params.fieldSizeDegrees = 27.5;                                          % Field size. Affects fundamentals.
         params.pupilDiameterMm = 8.0;                                            % Pupil diameter used in background seeking. Affects fundamentals.

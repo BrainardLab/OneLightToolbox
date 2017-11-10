@@ -48,7 +48,10 @@ end
 
 function generateAndSaveBackgroundPrimaries(approachParams, paramsDictionary, backgroundName)
 
-% Get background primaries
+% Get background parameters out of the dictionary.
+%
+% The approach parameters structure specifies some background independent
+% information, such as the calibration names to be used.
 backgroundParams = OLMergeBaseParamsWithParamsFromDictionaryEntry(approachParams, paramsDictionary, backgroundName);
 
 % The called routine checks whether the cacheFile exists, and if so and
