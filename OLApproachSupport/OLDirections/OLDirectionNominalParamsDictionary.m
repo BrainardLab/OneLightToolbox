@@ -58,7 +58,10 @@ params.backgroundType = 'optimized';
 params.backgroundName = OLMakeApproachDirectionBackgroundName('MelanopsinDirected',params);
 params.name = OLMakeApproachDirectionName(baseName,params);
 params.cacheFile = ['Direction_' params.name '.mat'];
-d = OLDirectionNominalDictionaryValidate(d, params);
+if OLDirectionNominalDictionaryValidate(params)
+    % All validations OK. Add entry to the dictionary.
+    d(params.name) = params;
+end
 
 %% MaxMel_600_80_667
 %
@@ -86,7 +89,10 @@ params.backgroundType = 'optimized';
 params.backgroundName = OLMakeApproachDirectionBackgroundName('MelanopsinDirected',params);
 params.name = OLMakeApproachDirectionName(baseName,params);
 params.cacheFile = ['Direction_' params.name '.mat'];
-d = OLDirectionNominalDictionaryValidate(d, params);
+if OLDirectionNominalDictionaryValidate(params)
+    % All validations OK. Add entry to the dictionary.
+    d(params.name) = params;
+end
 
 %% MaxLMS_275_80_667
 %
@@ -113,7 +119,10 @@ params.backgroundType = 'optimized';
 params.backgroundName = OLMakeApproachDirectionBackgroundName('LMSDirected',params);
 params.name = OLMakeApproachDirectionName(baseName,params);
 params.cacheFile = ['Direction_' params.name '.mat'];
-d = OLDirectionNominalDictionaryValidate(d, params);
+if OLDirectionNominalDictionaryValidate(params)
+    % All validations OK. Add entry to the dictionary.
+    d(params.name) = params;
+end
 
 %% MaxLMS_600_80_667
 %
@@ -141,8 +150,10 @@ params.backgroundType = 'optimized';
 params.backgroundName = OLMakeApproachDirectionBackgroundName('LMSDirected',params);
 params.name = OLMakeApproachDirectionName(baseName,params);
 params.cacheFile = ['Direction_' params.name '.mat'];
-d = OLDirectionNominalDictionaryValidate(d, params);
-
+if OLDirectionNominalDictionaryValidate(params)
+    % All validations OK. Add entry to the dictionary.
+    d(params.name) = params;
+end
 %% MaxMel_275_60_667
 %
 % Direction for maximum contrast melanopsin pulse
@@ -168,7 +179,10 @@ params.backgroundType = 'optimized';
 params.backgroundName = OLMakeApproachDirectionBackgroundName('MelanopsinDirected',params);
 params.name = OLMakeApproachDirectionName(baseName,params);
 params.cacheFile = ['Direction_' params.name '.mat'];
-d = OLDirectionNominalDictionaryValidate(d, params);
+if OLDirectionNominalDictionaryValidate(params)
+    % All validations OK. Add entry to the dictionary.
+    d(params.name) = params;
+end
 
 %% MaxLMS_275_60_667
 %
@@ -195,7 +209,10 @@ params.backgroundType = 'optimized';
 params.backgroundName = OLMakeApproachDirectionBackgroundName('LMSDirected',params);
 params.name = OLMakeApproachDirectionName(baseName,params);
 params.cacheFile = ['Direction_' params.name '.mat'];
-d = OLDirectionNominalDictionaryValidate(d, params);
+if OLDirectionNominalDictionaryValidate(params)
+    % All validations OK. Add entry to the dictionary.
+    d(params.name) = params;
+end
 
 %% LightFlux_540_380_50
 baseName = 'LightFlux';
@@ -208,7 +225,10 @@ params.name = OLMakeApproachDirectionName(baseName,params);
 params.backgroundType = 'lightfluxchrom';
 params.backgroundName = OLMakeApproachDirectionBackgroundName('LightFlux',params);
 params.cacheFile = ['Direction_' params.name '.mat'];
-d = OLDirectionNominalDictionaryValidate(d, params);
+if OLDirectionNominalDictionaryValidate(params)
+    % All validations OK. Add entry to the dictionary.
+    d(params.name) = params;
+end
 
 %% LightFlux_330_330_20
 baseName = 'LightFlux';
@@ -221,7 +241,10 @@ params.name = OLMakeApproachDirectionName(baseName,params);
 params.backgroundType = 'lightfluxchrom';
 params.backgroundName = OLMakeApproachDirectionBackgroundName('LightFlux',params);
 params.cacheFile = ['Direction_' params.name '.mat'];
-d = OLDirectionNominalDictionaryValidate(d, params);
+if OLDirectionNominalDictionaryValidate(params)
+    % All validations OK. Add entry to the dictionary.
+    d(params.name) = params;
+end
 end
 
 

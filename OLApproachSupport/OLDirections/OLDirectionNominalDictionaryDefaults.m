@@ -1,7 +1,7 @@
 function entry = OLDirectionNominalDictionaryDefaults(type)
 %OLDIRECTIONNOMINALDICTIONARYDEFAULTS Generates a nominal direction
 %dictionary entry with all the default values for all the parameters.
-%   Detailed explanation goes here
+
 entry = struct();
 entry.type = type;
 entry.name = '';
