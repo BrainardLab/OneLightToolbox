@@ -25,6 +25,7 @@ switch (entry.type)
         assert((isfield(entry, 'dictionaryType')             && ischar(entry.dictionaryType)),            sprintf('params.dictionaryType does not exist or it does not contain a string value.'));
         assert((isfield(entry, 'type')                       && ischar(entry.type)),                      sprintf('params.type does not exist or it does not contain a string value.'));
         assert((isfield(entry, 'name')                       && ischar(entry.name)),                      sprintf('params.name does not exist or it does not contain a string value.'));
+        assert((isfield(entry, 'whichReceptorGenerator')     && ischar(entry.whichReceptorGenerator)),    sprintf('params.whichReceptorGenerator does not exist or it does not contain a string.'));
         assert((isfield(entry, 'baseModulationContrast')     && isnumeric(entry.baseModulationContrast)), sprintf('params.baseModulationContrast does not exist or it does not contain a numeric value.'));
         assert((isfield(entry, 'primaryHeadRoom')            && isnumeric(entry.primaryHeadRoom)),        sprintf('params.primaryHeadRoom does not exist or it does not contain a numeric value.'));
         assert((isfield(entry, 'whichReceptorGenerator')     && ischar(entry.whichReceptorGenerator)),     sprintf('params.whichReceptorGenerator does not exist or it does not contain a string value.'));
@@ -52,6 +53,7 @@ switch (entry.type)
         assert((isfield(entry, 'dictionaryType')             && ischar(entry.dictionaryType)),            sprintf('params.dictionaryType does not exist or it does not contain a string value.'));
         assert((isfield(entry, 'type')                       && ischar(entry.type)),                      sprintf('params.type does not exist or it does not contain a string value.'));
         assert((isfield(entry, 'name')                       && ischar(entry.name)),                      sprintf('params.name does not exist or it does not contain a string value.'));
+        assert((isfield(entry, 'whichReceptorGenerator')     && ischar(entry.whichReceptorGenerator)),    sprintf('params.whichReceptorGenerator does not exist or it does not contain a string.'));
         assert((isfield(entry, 'primaryHeadRoom')            && isnumeric(entry.primaryHeadRoom)),        sprintf('params.primaryHeadRoom does not exist or it does not contain a numeric value.'));
         assert((isfield(entry, 'lightFluxDesiredXY')         && isnumeric(entry.lightFluxDesiredXY)),     sprintf('params.lightFluxDesiredXY does not exit or it does not contain numeric values.'));
         assert((isfield(entry, 'lightFluxDownFactor')        && isnumeric(entry.lightFluxDownFactor)),    sprintf('params.lightFluxDownFactor does not exit or it is not numeric.'));
