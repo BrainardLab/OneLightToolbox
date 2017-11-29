@@ -29,7 +29,7 @@ function [results, elapsedTime] = OLValidatePrimary(primary,oneLight,calibration
     
     %% Measure
     startTime = GetSecs;
-    measurement = [];
+    measurement = struct();
     if ~simulate
         try % since we're working with hardware, things can go wrong
             for p = size(predictedSPDs,2):-1:1
