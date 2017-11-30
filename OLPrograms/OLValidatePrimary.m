@@ -1,11 +1,38 @@
-function [results, elapsedTime] = OLValidatePrimary(primary,oneLight,calibration,radiometer,powerLevels,simulate)
-%OLVALIDATEPRIMARY validates that a given primary produces the
-%expected spectral power distribution.
-% 
-% results = OLValidatePrimary(primary)
+function [results, elapsedTime] = OLValidatePrimary(primary,oneLight,calibration,radiometer,varargin)
+%OLVALIDATEPRIMARY validates the spectral power distribution of a primary
+%Send a primary to a OneLight, measures the SPD and compares that to the
+%SPD that would be predicted from calibration information.
 %
+% Syntax:  results = OLValidatePrimary(primary, oneLight, calibration, radiometer)
+%
+% Inputs:
+%    primary - the primary to validate
+%    oneLight - a oneLight object to control the device
+%    calibration - struct containing calibration information for oneLight
+%    radiometer - radiometer object to control a spectroradiometer
+%
+%    Key/Value pairs:
+%    'powerLevels'   array of levels ([-1, 1])    of primary to validate
+%
+%    'simulate'      true/false      whether to actually measure the SPD, or
+%    predict using calibration information. 
+%
+% Outputs:
+%    results - struct containing measurement information (as returned by
+%    radiometer), predictedSPD, error between the two, and descriptive
+%    metadata
+%
+%
+% See also: 
 
     % Input validation
+    parser = inputParser;
+    parser.addParameter('powerLevels',[1],@isnumeric);
+    parser.addParameter('simulate',false,@islogical);
+    parser.parse(varargin{:});
+    simulate = parser.Results.simulate;
+    powerLevels = parser.Results.powerLevels;
+    
     if simulate
         assert(oneLight.Simulate,'Trying to simulate with an actual OneLight!')
     else
