@@ -1,9 +1,12 @@
 function [results, elapsedTime] = OLValidatePrimary(primary,oneLight,calibration,radiometer,varargin)
-%OLVALIDATEPRIMARY validates the spectral power distribution of a primary
-%Send a primary to a OneLight, measures the SPD and compares that to the
-%SPD that would be predicted from calibration information.
+% Validates the spectral power distribution of a primary
 %
-% Syntax:  results = OLValidatePrimary(primary, oneLight, calibration, radiometer)
+% Description:
+%   Send a primary to a OneLight, measures the SPD and compares that to the
+%   SPD that would be predicted from calibration information.
+%
+% Syntax:
+%   results = OLValidatePrimary(primary, oneLight, calibration, radiometer)
 %
 % Inputs:
 %    primary - the primary to validate
@@ -11,23 +14,24 @@ function [results, elapsedTime] = OLValidatePrimary(primary,oneLight,calibration
 %    calibration - struct containing calibration information for oneLight
 %    radiometer - radiometer object to control a spectroradiometer
 %
-%    Key/Value pairs:
-%    'powerLevels'   array of levels ([-1, 1])    of primary to validate
+% Optional key/value pairs:
+%    'powerLevels'   array of levels ([0, 1]) of primary to validate
+%                    (default 1)
 %
-%    'simulate'      true/false      whether to actually measure the SPD, or
-%    predict using calibration information. 
+%    'simulate'      true/false whether to actually measure the SPD, or
+%                    predict using calibration information (default false).
 %
 % Outputs:
 %    results - struct containing measurement information (as returned by
 %    radiometer), predictedSPD, error between the two, and descriptive
 %    metadata
 %
-%
 % See also: 
+
 
     % Input validation
     parser = inputParser;
-    parser.addParameter('powerLevels',[1],@isnumeric);
+    parser.addParameter('powerLevels',[1],@isnumeric,@(x)(isnumeric() & all(x >= 0) & all(x <= 1)));
     parser.addParameter('simulate',false,@islogical);
     parser.parse(varargin{:});
     simulate = parser.Results.simulate;
