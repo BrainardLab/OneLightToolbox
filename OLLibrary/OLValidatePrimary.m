@@ -17,15 +17,15 @@ function [results, timing] = OLValidatePrimary(primary,oneLight,calibration,radi
 %    calibration - struct containing calibration information for oneLight
 %    radiometer  - radiometer object to control a spectroradiometer
 %
-% Optional key/value pairs:
-%    'simulate'  - true/false whether to actually measure the SPD, or
-%                  predict using calibration information (default false).
-%
 % Outputs:
 %    results     - 1xN struct-array containing measurement information (as
 %                  returned by radiometer), predictedSPD, error between
 %                  the two, and descriptive metadata, for all N spectra
 %    timing      - total time the entire validation took
+%
+% Optional key/value pairs:
+%    'simulate'  - true/false whether to actually measure the SPD, or
+%                  predict using calibration information (default false).
 %
 % See also: OLVALIDATEDIRECTIONPRIMARY,
 
