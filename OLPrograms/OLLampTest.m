@@ -119,12 +119,12 @@ try
             od.IntegrationTime = round(0.85*od.IntegrationTime);
             fprintf('- Using integration time of %d microseconds.\n', od.IntegrationTime);
             ol.setAll(false);
-            
-            % Initial state measurement
+                      
+            % Initial half-on state measurement
             fprintf('- Taking initial half on measurement\n');
-            starts = zeros(1, ol.NumCols);
-            stops = round(ones(1, ol.NumCols) * (ol.NumRows - 1));
-            [measTemp, omniSpectrumSaturated] = OLTakeMeasurementOOC(ol, od, [], starts, stops, S, meterToggle, 1);
+            halfOnStarts = zeros(1, ol.NumCols);
+            halfOnStops = round(ones(1, ol.NumCols) * (ol.NumRows - 1));
+            [measTemp, omniSpectrumSaturated] = OLTakeMeasurementOOC(ol, od, [], halfOnStarts, halfOnStops, S, meterToggle, 1);
             if omniSpectrumSaturated
                 beep; commandwindow;
                 fprintf('*** OMNI SPECTRUM SATURATED. RESTART PROGRAM.\n');
@@ -139,18 +139,48 @@ try
             halfOnCurrentSum = halfOnInitialSum;
             halfOnMaxSum = halfOnInitialSum;
             
+            % Define a comb of mirrors
+            combColsLogical = false(1,ol.NumCols);
+            combColsLogical([177:193,305:321,433:449,561:577,689:705,817:833,945:961]) = true;
+            
+            % Convert comb to starts/stops
+            combStarts = round(ones(1,ol.NumCols)*(ol.NumRows-1));
+            combStarts(combColsLogical) = 0;
+            combStops = zeros(1, ol.NumCols);
+            combStops(combColsLogical) = ol.NumRows-1;  
+            
+            % Initial spectral comb state measurement
+            fprintf('- Taking initial spectral comb measurement\n');
+            [measTemp, omniSpectrumSaturated] = OLTakeMeasurementOOC(ol, od, [], combStarts, combStops, S, meterToggle, 1);
+            if omniSpectrumSaturated
+                beep; commandwindow;
+                fprintf('*** OMNI SPECTRUM SATURATED. RESTART PROGRAM.\n');
+                return;
+            end
+            combInitialOmni = measTemp.omni.spectrum;
+            combCurrent = combInitialOmni;         
+            
             % Adjustment loop
             fprintf('- Adjustment loop, hit any key to exit\n');
-            figure; clf; set(gcf,'Position',[50   200   700   525]);
+            figure(1); clf; set(gcf,'Position',[50   200   700   525]);
+            figure(2); clf; set(gcf,'Position',[250   400   900   725]);            
             while (CharAvail)
                 GetChar;
             end
             while (1)
-                % Update plot
+                % Update power plot
+                figure(1);
                 bar([1 2 3],[halfOnInitialSum halfOnCurrentSum halfOnMaxSum]); hold on;
                 %ylim([0 2000]);
                 plot([0 4], [halfOnMaxSum halfOnMaxSum], '--k');
                 set(gca, 'XTickLabel', {num2str(halfOnInitialSum) ; num2str(halfOnCurrentSum) ; num2str(halfOnMaxSum)});
+                drawnow;
+                hold off;
+                
+                % Update spectral plot
+                figure(2);
+                plot(S,combInitialOmni,'r'); hold on;
+                plot(S,combCurrent,'g');
                 drawnow;
                 hold off;
                 
@@ -160,18 +190,20 @@ try
                 end
                 
                 % Measure
-                measTemp = OLTakeMeasurementOOC(ol, od, [], starts, stops, S, meterToggle, 1);
+                measTemp = OLTakeMeasurementOOC(ol, od, [], halfOnStarts, halfOnStops, S, meterToggle, 1);
                 halfOnCurrentOmni = measTemp.omni.spectrum;
                 halfOnCurrentSum = sum(halfOnCurrentOmni);
                 if (halfOnCurrentSum > halfOnMaxSum)
                     halfOnMaxSum = halfOnCurrentSum;
                 end
+                measTemp = OLTakeMeasurementOOC(ol, od, [], combStarts, combStops, S, meterToggle, 1);
+                combCurrent = measTemp.omni.spectrum;
             end
             GetChar;
             
             % Final state measurement
             fprintf('- Taking final half on measurement\n');
-            measTemp = OLTakeMeasurement(ol, od, starts, stops, S, meterToggle, meterType, 1);
+            measTemp = OLTakeMeasurement(ol, od, halfOnStarts, halfOnStops, S, meterToggle, meterType, 1);
             if (usePR6XX)
                 halfOnFinal = measTemp.pr650.spectrum;
                 lumFinal = T_xyz(2,:)*halfOnFinal;
