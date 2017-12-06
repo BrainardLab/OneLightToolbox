@@ -226,9 +226,10 @@ try
                 while (CharAvail)
                     switch GetChar
                         case ' '
-                            combInitial = combCurrent;
+                            combInitialOmni = combCurrent;
                         case {'esc','q','return'}
                             adjustLamp = false;
+                            break;
                     end
                 end
             end
