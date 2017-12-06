@@ -139,16 +139,24 @@ try
             halfOnCurrentSum = halfOnInitialSum;
             halfOnMaxSum = halfOnInitialSum;
             
-            % Define a comb of mirrors
-            combColsLogical = false(1,ol.NumCols);
-            combColsLogical([177:193,305:321,433:449,561:577,689:705,817:833,945:961]) = true;
+            % Define a comb of mirror columns
+            combBandwidth = 8; % number of mirror columns per tooth
+            combNTeeth = 8; % number of evenly spaced teeth in comb
+            combDropTeeth = 3; % number of possible teeth to drop from each end of the spectrum
+            
+            % Generate comb
+            combAllTeeth = 1:combBandwidth:ol.NumCols;
+            combAllTeeth = combAllTeeth(combDropTeeth:(numel(combAllTeeth)-combDropTeeth));
+            comb = combAllTeeth(round(linspace(1,numel(combAllTeeth),combNTeeth)));
             
             % Convert comb to starts/stops
-            combStarts = round(ones(1,ol.NumCols)*(ol.NumRows-1));
-            combStarts(combColsLogical) = 0;
+            combStarts = round(ones(1,ol.NumCols)*(ol.NumRows+1));
             combStops = zeros(1, ol.NumCols);
-            combStops(combColsLogical) = ol.NumRows-1;  
-            
+            for i = 1:numel(comb)
+                combStarts(comb(i):(comb(i)+combBandwidth)) = 0;
+                combStops(comb(i):(comb(i)+combBandwidth)) = ol.NumRows-1;
+            end
+
             % Initial spectral comb state measurement
             fprintf('- Taking initial spectral comb measurement\n');
             [measTemp, omniSpectrumSaturated] = OLTakeMeasurementOOC(ol, od, [], combStarts, combStops, S, meterToggle, 1);
@@ -162,42 +170,64 @@ try
             
             % Adjustment loop
             fprintf('- Adjustment loop, hit any key to exit\n');
-            figure(1); clf; set(gcf,'Position',[50   200   700   525]);
-            figure(2); clf; set(gcf,'Position',[250   400   900   725]);            
+            figure(1); clf; set(gcf,'Position',[50   200  350  525]);
+            figure(2); clf; set(gcf,'Position',[400  200  350  525]);
+            figure(3); clf; set(gcf,'Position',[750  200  350  525]);            
             while (CharAvail)
                 GetChar;
             end
             while (1)
-                % Update power plot
+                % Update mirror matrix
                 figure(1);
-                bar([1 2 3],[halfOnInitialSum halfOnCurrentSum halfOnMaxSum]); hold on;
-                %ylim([0 2000]);
-                plot([0 4], [halfOnMaxSum halfOnMaxSum], '--k');
-                set(gca, 'XTickLabel', {num2str(halfOnInitialSum) ; num2str(halfOnCurrentSum) ; num2str(halfOnMaxSum)});
-                drawnow;
-                hold off;
-                
-                % Update spectral plot
-                figure(2);
-                plot(S,combInitialOmni,'r'); hold on;
-                plot(S,combCurrent,'g');
-                drawnow;
-                hold off;
-                
-                % Check for exit
-                if (CharAvail)
-                    break;
+                for i = 1:ol.NumCols
+                    mirrorMatrix = zeros(ol.NumRows,ol.NumCols);
+                    mirrorMatrix(halfOnStarts(i)+1:halfOnStops(i)+1,i) = 1;
                 end
+                imagesc(mirrorMatrix);
+                drawnow;
                 
-                % Measure
+                % Measure full on
                 measTemp = OLTakeMeasurementOOC(ol, od, [], halfOnStarts, halfOnStops, S, meterToggle, 1);
                 halfOnCurrentOmni = measTemp.omni.spectrum;
                 halfOnCurrentSum = sum(halfOnCurrentOmni);
                 if (halfOnCurrentSum > halfOnMaxSum)
                     halfOnMaxSum = halfOnCurrentSum;
                 end
+                
+                % Update power plot
+                figure(2);
+                bar([1 2 3],[halfOnInitialSum halfOnCurrentSum halfOnMaxSum]); hold on;
+                %ylim([0 2000]);
+                plot([0 4], [halfOnMaxSum halfOnMaxSum], '--k');
+                set(gca, 'XTickLabel', {num2str(halfOnInitialSum) ; num2str(halfOnCurrentSum) ; num2str(halfOnMaxSum)});
+                hold off;
+                drawnow;
+                
+                % Update mirror matrix
+                figure(1);
+                for i = 1:ol.NumCols
+                    mirrorMatrix = zeros(ol.NumRows,ol.NumCols);
+                    mirrorMatrix(combStarts(i)+1:combStops(i)+1,i) = true;
+                end
+                imagesc(mirrorMatrix);
+                drawnow;
+                
+                % measure comb
                 measTemp = OLTakeMeasurementOOC(ol, od, [], combStarts, combStops, S, meterToggle, 1);
                 combCurrent = measTemp.omni.spectrum;
+                
+                % Update spectral plot
+                figure(3);
+                %plot(halfOnInitialOmni,'k'); hold on;
+                plot(combInitialOmni,'r'); hold on;
+                plot(combCurrent,'g');
+                hold off;
+                drawnow;
+                
+                % Check for exit
+                if (CharAvail)
+                    break;
+                end
             end
             GetChar;
             
