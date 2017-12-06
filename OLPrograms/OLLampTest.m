@@ -176,15 +176,14 @@ try
             while (CharAvail)
                 GetChar;
             end
-            while (1)
+            while (adjustLamp)
                 % Update mirror matrix
                 figure(1);
+                mirrorMatrix = zeros(ol.NumRows,ol.NumCols);
                 for i = 1:ol.NumCols
-                    mirrorMatrix = zeros(ol.NumRows,ol.NumCols);
                     mirrorMatrix(halfOnStarts(i)+1:halfOnStops(i)+1,i) = 1;
                 end
                 imagesc(mirrorMatrix);
-                drawnow;
                 
                 % Measure full on
                 measTemp = OLTakeMeasurementOOC(ol, od, [], halfOnStarts, halfOnStops, S, meterToggle, 1);
@@ -205,12 +204,11 @@ try
                 
                 % Update mirror matrix
                 figure(1);
+                mirrorMatrix = zeros(ol.NumRows,ol.NumCols);
                 for i = 1:ol.NumCols
-                    mirrorMatrix = zeros(ol.NumRows,ol.NumCols);
-                    mirrorMatrix(combStarts(i)+1:combStops(i)+1,i) = true;
+                    mirrorMatrix(combStarts(i)+1:combStops(i)+1,i) = 1;
                 end
                 imagesc(mirrorMatrix);
-                drawnow;
                 
                 % measure comb
                 measTemp = OLTakeMeasurementOOC(ol, od, [], combStarts, combStops, S, meterToggle, 1);
@@ -225,8 +223,13 @@ try
                 drawnow;
                 
                 % Check for exit
-                if (CharAvail)
-                    break;
+                while (CharAvail)
+                    switch GetChar
+                        case ' '
+                            combInitial = combCurrent;
+                        case {'esc','q','return'}
+                            adjustLamp = false;
+                    end
                 end
             end
             GetChar;
