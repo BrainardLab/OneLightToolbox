@@ -106,6 +106,7 @@ if meterToggle(1)
         radMeasAvg = radMeasAvg + radMeas;
     end
     radMeasAvg = radMeasAvg/nAverage;
+    radMeasAvg = reshape(radMeasAvg,[numel(radMeasAvg),1]);
     meas.pr650.spectrum = radMeasAvg;
     meas.pr650.time(2) = theTime;
     meas.pr650.S = S;
