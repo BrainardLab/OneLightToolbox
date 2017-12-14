@@ -27,6 +27,10 @@ function [results, actualContrasts, nominalContrasts] = OLValidatePrimary(primar
 %                      (as returned by radiometer), predictedSPD, error
 %                      between the two, and descriptive metadata, for all N
 %                      spectra
+%    actualContrast  - NxNxR array of contrasts between N measured SPDs on 
+%                      R receptors.
+%    nominalContrast - NxNxR array of contrasts between N predicted SPDs on 
+%                      R receptors.
 %
 % Optional key/value pairs:
 %    'receptors'    - SSTReceptor object defining a set of receptors. If
@@ -46,12 +50,17 @@ parser.addRequired('primaryValues',@isnumeric);
 parser.addRequired('calibration',@isstruct);
 parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
 parser.addOptional('radiometer',[],@(x) isa(x,'Radiometer'));
+parser.addParameter('receptors',[],@(x) isa(x,'SSTReceptor'));
 parser.parse(primaryValues,calibration,oneLight,varargin{:});
 
 primaryValues = parser.Results.primaryValues;
 calibration = parser.Results.calibration;
 radiometer = parser.Results.radiometer;
+receptors = parser.Results.receptors;
 
+if nargout > 1
+    assert(~isempty(receptors),'OneLightToolbox:OLValidatePrimary:InvalidReceptors',...
+        'No receptors specified for which to calculate contrasts');
 end
 
 %% Predict SPD(s)
@@ -75,5 +84,9 @@ for p = size(primaryValues,2):-1:1
     results(p).primaries = primaryValues(:,p);
 end
 
+%% Calculate nominal and actual contrasts
+if ~isempty(receptors)
+    nominalContrasts = SPDToReceptorContrast([results.predictedSpd],receptors);
+    actualContrasts = SPDToReceptorContrast([results.measuredSpd],receptors);
 end
 end
