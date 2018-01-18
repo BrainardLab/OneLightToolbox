@@ -33,7 +33,7 @@ function [results, timing] = OLValidatePrimary(primaryValues, calibration, oneLi
 %                  or actually measure the SPD (default false).
 %
 % See also:
-%    OLVALIDATEDIRECTIONPRIMARY
+%    OLValidateDirectionPrimary
 
 % History:
 %    11/29/17  jv  created. based on OLValidateCacheFileOOC
