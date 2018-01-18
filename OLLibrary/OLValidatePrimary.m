@@ -2,14 +2,16 @@ function [results, actualContrasts, nominalContrasts] = OLValidatePrimary(primar
 % Validates SPD that OneLight puts out for given primary values vector(s)
 %
 % Syntax:
-%   results = OLValidatePrimary(primaryValues, oneLight, calibration, radiometer)
-%   results = OLValidatePrimary(primaryValues, oneLight, calibration, [])
+%   results = OLValidatePrimary(primaryValues, calibration, OneLight, radiometer)
+%   results = OLValidatePrimary(primaryValues, calibration, SimulatedOneLight)
 %   [results, actualContrast, nominalContrasts] = OLValidatePrimary(..., 'receptors',SSTReceptor)
 %
 % Description:
 %    Sends a vector of primary values to a OneLight, measures the SPD and
 %    compares that to the SPD that would be predicted from calibration
-%    information. Can handle any number of vectors.
+%    information. Can handle any number of vectors. Can optionally also
+%    calculate the actual and nominal contrasts for a given set of
+%    photoreceptors.
 %
 % Inputs:
 %    primaryValues   - PxN array of primary values, where P is the number 
@@ -49,7 +51,7 @@ parser = inputParser;
 parser.addRequired('primaryValues',@isnumeric);
 parser.addRequired('calibration',@isstruct);
 parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
-parser.addOptional('radiometer',[],@(x) isa(x,'Radiometer'));
+parser.addOptional('radiometer',[],@(x) isempty(x) || isa(x,'Radiometer'));
 parser.addParameter('receptors',[],@(x) isa(x,'SSTReceptor'));
 parser.parse(primaryValues,calibration,oneLight,varargin{:});
 
