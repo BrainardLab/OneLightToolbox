@@ -30,6 +30,15 @@ params.name = modulationName;
 
 d = paramsValidateAndAppendToDictionary(d, params);
 
+%% MaxContrast4sPulse
+modulationName = 'MaxContrast4sPulse';
+type = 'pulse';
+
+params.stimulusDuration = 4;                
+params = defaultParams(type,modulationName);
+params.name = modulationName;
+
+d = paramsValidateAndAppendToDictionary(d, params);
 %% MaxContrast3sSinusoid
 modulationName = 'MaxContrast3sSinusoid';
 type = 'sinusoid';
