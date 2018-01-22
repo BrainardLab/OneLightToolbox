@@ -34,8 +34,9 @@ d = paramsValidateAndAppendToDictionary(d, params);
 modulationName = 'MaxContrast4sPulse';
 type = 'pulse';
 
-params.stimulusDuration = 4;                
+              
 params = defaultParams(type,modulationName);
+params.stimulusDuration = 4;
 params.name = modulationName;
 
 d = paramsValidateAndAppendToDictionary(d, params);
