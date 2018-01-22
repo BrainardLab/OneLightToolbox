@@ -58,6 +58,34 @@ params.name = OLMakeApproachDirectionName(baseName,params);
 params.cacheFile = ['Direction_' params.name '.mat'];
 d = paramsValidateAndAppendToDictionary(d, params);
 
+%% MaxMel_275_60_667
+%
+% Direction for maximum contrast melanopsin pulse
+%   Field size: 27.5 deg
+%   Pupil diameter: 6 mm -- for use with 6 mm artificial pupil as part of
+%   pupillometry
+%   Modulation contrast: 66.7%
+%
+% Modulation contrast is used to generate, but the result is a 400%
+% contrast step up relative to the background.
+baseName = 'MaxMel';
+type = 'pulse';
+
+params = defaultParams(type);
+params.primaryHeadRoom = 0.01;
+params.baseModulationContrast = 4/6;
+params.pupilDiameterMm = 6.0;
+params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
+params.modulationContrast = [params.baseModulationContrast];
+params.whichReceptorsToIsolate = [4];
+params.whichReceptorsToIgnore = [];
+params.whichReceptorsToMinimize = [];
+params.backgroundType = 'optimized';
+params.backgroundName = OLMakeApproachDirectionBackgroundName('MelanopsinDirected',params);
+params.name = OLMakeApproachDirectionName(baseName,params);
+params.cacheFile = ['Direction_' params.name '.mat'];
+d = paramsValidateAndAppendToDictionary(d, params);
+
 %% MaxMel_600_80_667
 %
 % Direction for maximum contrast melanopsin pulse
@@ -102,6 +130,33 @@ params = defaultParams(type);
 params.primaryHeadRoom = 0.01;
 params.baseModulationContrast = 4/6;
 params.pupilDiameterMm = 8.0;
+params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
+params.modulationContrast = [params.baseModulationContrast params.baseModulationContrast params.baseModulationContrast];
+params.whichReceptorsToIsolate = [1 2 3];
+params.whichReceptorsToIgnore = [];
+params.whichReceptorsToMinimize = [];
+params.backgroundType = 'optimized';
+params.backgroundName = OLMakeApproachDirectionBackgroundName('LMSDirected',params);
+params.name = OLMakeApproachDirectionName(baseName,params);
+params.cacheFile = ['Direction_' params.name '.mat'];
+d = paramsValidateAndAppendToDictionary(d, params);
+%% MaxLMS_275_60_667
+%
+% Direction for maximum contrast LMS pulse
+%   Field size: 27.5 deg
+%   Pupil diameter: 6 mm -- for use with 6 mm artificial pupil with
+%   pupillometry
+%   Modulation contrast: 66.7%
+%
+% Modulation contrast is used to generate, but the result is a 400%
+% contrast step up relative to the background.
+baseName = 'MaxLMS';
+type = 'pulse';
+
+params = defaultParams(type);
+params.primaryHeadRoom = 0.01;
+params.baseModulationContrast = 4/6;
+params.pupilDiameterMm = 6.0;
 params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
 params.modulationContrast = [params.baseModulationContrast params.baseModulationContrast params.baseModulationContrast];
 params.whichReceptorsToIsolate = [1 2 3];
