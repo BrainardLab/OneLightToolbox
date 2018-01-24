@@ -21,8 +21,8 @@ function [cacheData, directionOlCache, wasRecomputed] = OLReceptorIsolateMakeDir
 %     associated with a direction name.
 %
 %     This routine knows about different types of directions:
-%       modulation - symmetric modulation around a background.
-%       pulse - incremental positive pulse relative to low end of swing around background.
+%       bipolar - symmetric bipolar around a background.
+%       unipolar - incremental positive unipolar relative to low end of swing around background.
 %       lightfluxchrom - light flux pulse around a background of specified chromaticiity.
 %
 % Input:
@@ -112,7 +112,7 @@ end
 %
 % The switch handles different types of modulations we might encounter.
 switch directionParams.type
-    case {'modulation', 'pulse'}
+    case {'bipolar', 'unipolar'}
         % Pupil diameter in mm.
         pupilDiameterMm = directionParams.pupilDiameterMm;
         
@@ -216,8 +216,7 @@ switch directionParams.type
             % Print out luminance info.  This routine is also in the Silent Substitution Toolbox
             if (p.Results.verbose), GetLuminanceAndTrolandsFromSpd(S, backgroundSpd, pupilDiameterMm, true); end
             
-            % If it is a pulse rather than a modulation, we replace the background with the low end.
-            if (strcmp(directionParams.type,'pulse'))
+            if (strcmp(directionParams.type,'unipolar'))
                 backgroundPrimary = modulationPrimarySignedNegative;
                 backgroundSpd = modulationSpdSignedNegative;
             end

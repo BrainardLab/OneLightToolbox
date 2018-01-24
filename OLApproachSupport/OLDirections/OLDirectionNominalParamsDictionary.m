@@ -36,12 +36,12 @@ d = containers.Map();
 % Direction for maximum contrast melanopsin pulse
 %   Field size: 27.5 deg
 %   Pupil diameter: 8 mm
-%   Modulation contrast: 66.7%
+%   bipolar contrast: 66.7%
 %
-% Modulation contrast is used to generate, but the result is a 400%
+% bipolar contrast is used to generate, but the result is a 400%
 % contrast step up relative to the background.
 baseName = 'MaxMel';
-type = 'pulse';
+type = 'unipolar';
 
 params = defaultParams(type);
 params.primaryHeadRoom = 0.01;
@@ -63,12 +63,12 @@ d = paramsValidateAndAppendToDictionary(d, params);
 % Direction for maximum contrast melanopsin pulse
 %   Field size: 27.5 deg
 %   Pupil diameter: 8 mm
-%   Modulation contrast: 66.7%
+%   bipolar contrast: 66.7%
 %
-% Modulation contrast is used to generate, but the result is a 400%
+% bipolar contrast is used to generate, but the result is a 400%
 % contrast step up relative to the background.
 baseName = 'MaxMel';
-type = 'modulation';
+type = 'bipolar';
 
 params = defaultParams(type);
 params.primaryHeadRoom = 0.01;
@@ -91,12 +91,12 @@ d = paramsValidateAndAppendToDictionary(d, params);
 %   Field size: 27.5 deg
 %   Pupil diameter: 6 mm -- for use with 6 mm artificial pupil as part of
 %   pupillometry
-%   Modulation contrast: 66.7%
+%   bipolar contrast: 66.7%
 %
-% Modulation contrast is used to generate, but the result is a 400%
+% bipolar contrast is used to generate, but the result is a 400%
 % contrast step up relative to the background.
 baseName = 'MaxMel';
-type = 'pulse';
+type = 'unipolar';
 
 params = defaultParams(type);
 params.primaryHeadRoom = 0.01;
@@ -118,12 +118,12 @@ d = paramsValidateAndAppendToDictionary(d, params);
 % Direction for maximum contrast melanopsin pulse
 %   Field size: 60.0 deg
 %   Pupil diameter: 8 mm
-%   Modulation contrast: 66.7%
+%   bipolar contrast: 66.7%
 %
-% Modulation contrast is used to generate, but the result is a 400%
+% bipolar contrast is used to generate, but the result is a 400%
 % contrast step up relative to the background.
 baseName = 'MaxMel';
-type = 'pulse';
+type = 'unipolar';
 
 params = defaultParams(type);
 params.primaryHeadRoom = 0.01;
@@ -146,12 +146,12 @@ d = paramsValidateAndAppendToDictionary(d, params);
 % Direction for maximum contrast LMS pulse
 %   Field size: 27.5 deg
 %   Pupil diameter: 8 mm
-%   Modulation contrast: 66.7%
+%   bipolar contrast: 66.7%
 %
-% Modulation contrast is used to generate, but the result is a 400%
+% bipolar contrast is used to generate, but the result is a 400%
 % contrast step up relative to the background.
 baseName = 'MaxLMS';
-type = 'pulse';
+type = 'unipolar';
 
 params = defaultParams(type);
 params.primaryHeadRoom = 0.01;
@@ -176,12 +176,12 @@ d = paramsValidateAndAppendToDictionary(d, params);
 %   Field size: 27.5 deg
 %   Pupil diameter: 6 mm -- for use with 6 mm artificial pupil with
 %   pupillometry
-%   Modulation contrast: 66.7%
+%   bipolar contrast: 66.7%
 %
-% Modulation contrast is used to generate, but the result is a 400%
+% bipolar contrast is used to generate, but the result is a 400%
 % contrast step up relative to the background.
 baseName = 'MaxLMS';
-type = 'pulse';
+type = 'unipolar';
 
 params = defaultParams(type);
 params.primaryHeadRoom = 0.01;
@@ -203,12 +203,12 @@ d = paramsValidateAndAppendToDictionary(d, params);
 % Direction for maximum contrast LMS pulse
 %   Field size: 60.0 deg
 %   Pupil diameter: 8 mm
-%   Modulation contrast: 66.7%
+%   bipolar contrast: 66.7%
 %
-% Modulation contrast is used to generate, but the result is a 400%
+% bipolar contrast is used to generate, but the result is a 400%
 % contrast step up relative to the background.
 baseName = 'MaxLMS';
-type = 'pulse';
+type = 'unipolar';
 
 params = defaultParams(type);
 params.primaryHeadRoom = 0.01;
@@ -232,12 +232,12 @@ d = paramsValidateAndAppendToDictionary(d, params);
 % Direction for maximum contrast melanopsin pulse
 %   Field size: 27.5 deg
 %   Pupil diameter: 6 mm
-%   Modulation contrast: 66.7%
+%   bipolar contrast: 66.7%
 %
-% Modulation contrast is used to generate, but the result is a 400%
+% bipolar contrast is used to generate, but the result is a 400%
 % contrast step up relative to the background.
 baseName = 'MaxMel';
-type = 'pulse';
+type = 'unipolar';
 
 params = defaultParams(type);
 params.primaryHeadRoom = 0.005;
@@ -259,12 +259,12 @@ d = paramsValidateAndAppendToDictionary(d, params);
 % Direction for maximum contrast LMS pulse
 %   Field size: 27.5 deg
 %   Pupil diameter: 6 mm
-%   Modulation contrast: 66.7%
+%   bipolar contrast: 66.7%
 %
-% Modulation contrast is used to generate, but the result is a 400%
+% bipolar contrast is used to generate, but the result is a 400%
 % contrast step up relative to the background.
 baseName = 'MaxLMS';
-type = 'pulse';
+type = 'unipolar';
 
 params = defaultParams(type);
 params.primaryHeadRoom = 0.005;
@@ -327,7 +327,7 @@ end
 
 % Test that all expected params exist and that they have the expected type
 switch (params.type)
-    case {'pulse', 'modulation'}
+    case {'unipolar', 'bipolar'}
         assert((isfield(params, 'dictionaryType')             && ischar(params.dictionaryType)),            sprintf('params.dictionaryType does not exist or it does not contain a string value.'));
         assert((isfield(params, 'type')                       && ischar(params.type)),                      sprintf('params.type does not exist or it does not contain a string value.'));
         assert((isfield(params, 'name')                       && ischar(params.name)),                      sprintf('params.name does not exist or it does not contain a string value.'));
@@ -382,9 +382,9 @@ params.type = type;
 params.name = '';
 
 switch (type)
-    case {'modulation', 'pulse'}
+    case {'bipolar', 'unipolar'}
         params.dictionaryType = 'Direction';                                     % What type of dictionary is this?
-        params.baseModulationContrast = 4/6;                                     % How much symmetric modulation contrast do we want to enable?  Used to generate background name.    
+        params.baseModulationContrast = 4/6;                                     % How much symmetric bipolar contrast do we want to enable?  Used to generate background name.    
         params.primaryHeadRoom = 0.005;                                          % How close to edge of [0-1] primary gamut do we want to get?
         params.photoreceptorClasses = ...                                        % Names of photoreceptor classes being considered.
             {'LConeTabulatedAbsorbance', 'MConeTabulatedAbsorbance', 'SConeTabulatedAbsorbance', 'Melanopsin'};

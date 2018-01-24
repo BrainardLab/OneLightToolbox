@@ -33,12 +33,12 @@ function d = OLBackgroundNominalParamsDictionary()
     
     %% MelanopsinDirected_275_80_667
     %
-    % Background to allow maximum melanopsin pulse contrast
+    % Background to allow maximum melanopsin unipolar contrast
     %   Field size: 27.5 deg
     %   Pupil diameter: 8 mm
     %   Modulation contrast: 66.7%
     % 
-    % Note modulation contrast is typically 2/3 for 400% pulse contrast <=> 66.66% sinusoidal contrast
+    % Note modulation contrast is typically 2/3 for 400% unipolar contrast <=> 66.66% sinusoidal contrast
     baseName = 'MelanopsinDirected';
     type = 'optimized';
     
@@ -58,12 +58,12 @@ function d = OLBackgroundNominalParamsDictionary()
     
     %% MelanopsinDirected_600_80_667
     %
-    % Background to allow maximum melanopsin pulse contrast
+    % Background to allow maximum melanopsin unipolar contrast
     %   Field size: 60.0 deg
     %   Pupil diameter: 8 mm
     %   Modulation contrast: 66.7%
     % 
-    % Note modulation contrast is typically 2/3 for 400% pulse contrast <=> 66.66% sinusoidal contrast
+    % Note modulation contrast is typically 2/3 for 400% unipolar contrast <=> 66.66% sinusoidal contrast
     baseName = 'MelanopsinDirected';
     type = 'optimized';
     
@@ -85,12 +85,12 @@ function d = OLBackgroundNominalParamsDictionary()
     
     %% LMSDirected_LMS_275_80_667
     % 
-    % Background to allow maximum LMS pulse contrast
+    % Background to allow maximum LMS unipolar contrast
     %   Field size: 27,5 deg
     %   Pupil diameter: 8 mm
     %   Modulation contrast: 66.7%
     % 
-    % Note modulation contrast is typically 2/3 for 400% pulse contrast <=> 66.66% sinusoidal contrast
+    % Note modulation contrast is typically 2/3 for 400% unipolar contrast <=> 66.66% sinusoidal contrast
     baseName = 'LMSDirected';
     type = 'optimized';
     
@@ -112,12 +112,12 @@ function d = OLBackgroundNominalParamsDictionary()
     
     %% LMSDirected_LMS_600_80_667
     % 
-    % Background to allow maximum LMS pulse contrast
+    % Background to allow maximum LMS unipolar contrast
     %   Field size: 60 deg
     %   Pupil diameter: 8 mm
     %   Modulation contrast: 66.7%
     % 
-    % Note modulation contrast is typically 2/3 for 400% pulse contrast <=> 66.66% sinusoidal contrast
+    % Note modulation contrast is typically 2/3 for 400% unipolar contrast <=> 66.66% sinusoidal contrast
     baseName = 'LMSDirected';
     type = 'optimized';
     
@@ -139,12 +139,12 @@ function d = OLBackgroundNominalParamsDictionary()
     
      %% MelanopsinDirected_275_60_667
     %
-    % Background to allow maximum melanopsin pulse contrast
+    % Background to allow maximum melanopsin unipolar contrast
     %   Field size: 27.5 deg
     %   Pupil diameter: 6 mm
     %   Modulation contrast: 66.7%
     % 
-    % Note modulation contrast is typically 2/3 for 400% pulse contrast <=> 66.66% sinusoidal contrast
+    % Note modulation contrast is typically 2/3 for 400% unipolar contrast <=> 66.66% sinusoidal contrast
     baseName = 'MelanopsinDirected';
     type = 'optimized';
     
@@ -165,12 +165,12 @@ function d = OLBackgroundNominalParamsDictionary()
     
     %% LMSDirected_LMS_275_60_667
     % 
-    % Background to allow maximum LMS pulse contrast
+    % Background to allow maximum LMS unipolar contrast
     %   Field size: 27.5 deg
     %   Pupil diameter: 6 mm
     %   Modulation contrast: 66.7%
     % 
-    % Note modulation contrast is typically 2/3 for 400% pulse contrast <=> 66.66% sinusoidal contrast
+    % Note modulation contrast is typically 2/3 for 400% unipolar contrast <=> 66.66% sinusoidal contrast
     baseName = 'LMSDirected';
     type = 'optimized';
     
