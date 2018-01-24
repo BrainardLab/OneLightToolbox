@@ -33,15 +33,19 @@ function settings = OLPrimaryToSettings(cal, primary, varargin)
 %                                     NSpectra is the number of spectra to process.
 % Optional Key-Value Pairs:
 %  'verbose' - true/false (default false). Provide more diagnostic output.
+%  'checkoutofrange' - true/false (default true). Throw error if any passed
+%                      primaries are out of the [0-1] range.
 
 % 1/17/14  dhb, ms   Improved comments.
 % 1/20/14  dhb, ms   Optimistically think that we've fixed this for full gamma table.
 % 2/16/14  dhb       Convert to take input and output for each primery, not for each mirror.
-% 06/05/17 dhb       Convert to input parser key/value pair
+% 06/05/17 dhb       Convert to input parser key/value pair.
+% 01/24/18 dhb, jv   Add 'checkoutofrange' key and make default true.
 
 %% Parse the input
 p = inputParser;
 p.addParameter('verbose', false, @islogical);
+p.addParameter('checkoutofrange', true, @islogical);
 p.parse(varargin{:});
 params = p.Results;
 
@@ -54,6 +58,11 @@ assert(isfield(cal, 'computed'), 'OLSpdToPrimary:InvalidCalFile', ...
 % as defined in the calibration file.
 if (size(primary,1) ~= cal.describe.numWavelengthBands)
     error('Passed number of primaries does not match calibration data');
+end
+
+%% Check input range
+if (p.Results.checkoutofrange && (any(primary > 1) || any(primary < 0) ))
+    error('At least primary value is out of range [0,1]');
 end
 
 %% Gamma correct
