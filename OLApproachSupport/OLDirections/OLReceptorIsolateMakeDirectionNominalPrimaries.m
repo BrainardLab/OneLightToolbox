@@ -28,7 +28,7 @@ function [cacheData, directionOlCache, wasRecomputed] = OLReceptorIsolateMakeDir
 % Input:
 %     approach (string)          Name of whatever approach is invoking this.
 %
-%     directionParams (struct)            Parameters struct for the direction.  See
+%     directionParams (struct)   Parameters struct for the direction.  See
 %                                OLDirectionNominalParamsDictionary.
 %
 %     forceRecompute (logical)   If true, forces a recompute of the data found in the config file.z

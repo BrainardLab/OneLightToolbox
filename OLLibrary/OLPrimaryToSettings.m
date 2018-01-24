@@ -61,7 +61,7 @@ if (size(primary,1) ~= cal.describe.numWavelengthBands)
 end
 
 %% Check input range
-if (p.Results.checkoutofrange && (any(primary > 1) || any(primary < 0) ))
+if (p.Results.checkoutofrange && (any(primary(:) > 1) || any(primary(:) < 0) ))
     error('At least primary value is out of range [0,1]');
 end
 

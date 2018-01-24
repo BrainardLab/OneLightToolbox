@@ -58,6 +58,33 @@ params.name = OLMakeApproachDirectionName(baseName,params);
 params.cacheFile = ['Direction_' params.name '.mat'];
 d = paramsValidateAndAppendToDictionary(d, params);
 
+%% MaxMel_275_80_667_modulation
+%
+% Direction for maximum contrast melanopsin pulse
+%   Field size: 27.5 deg
+%   Pupil diameter: 8 mm
+%   Modulation contrast: 66.7%
+%
+% Modulation contrast is used to generate, but the result is a 400%
+% contrast step up relative to the background.
+baseName = 'MaxMel';
+type = 'modulation';
+
+params = defaultParams(type);
+params.primaryHeadRoom = 0.01;
+params.baseModulationContrast = 4/6;
+params.pupilDiameterMm = 8.0;
+params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
+params.modulationContrast = [params.baseModulationContrast];
+params.whichReceptorsToIsolate = [4];
+params.whichReceptorsToIgnore = [];
+params.whichReceptorsToMinimize = [];
+params.backgroundType = 'optimized';
+params.backgroundName = OLMakeApproachDirectionBackgroundName('MelanopsinDirected',params);
+params.name = OLMakeApproachDirectionName(baseName,params);
+params.cacheFile = ['Direction_' params.name '.mat'];
+d = paramsValidateAndAppendToDictionary(d, params);
+
 %% MaxMel_275_60_667
 %
 % Direction for maximum contrast melanopsin pulse
@@ -140,6 +167,9 @@ params.backgroundName = OLMakeApproachDirectionBackgroundName('LMSDirected',para
 params.name = OLMakeApproachDirectionName(baseName,params);
 params.cacheFile = ['Direction_' params.name '.mat'];
 d = paramsValidateAndAppendToDictionary(d, params);
+
+
+
 %% MaxLMS_275_60_667
 %
 % Direction for maximum contrast LMS pulse
@@ -297,7 +327,7 @@ end
 
 % Test that all expected params exist and that they have the expected type
 switch (params.type)
-    case 'pulse'
+    case {'pulse', 'modulation'}
         assert((isfield(params, 'dictionaryType')             && ischar(params.dictionaryType)),            sprintf('params.dictionaryType does not exist or it does not contain a string value.'));
         assert((isfield(params, 'type')                       && ischar(params.type)),                      sprintf('params.type does not exist or it does not contain a string value.'));
         assert((isfield(params, 'name')                       && ischar(params.name)),                      sprintf('params.name does not exist or it does not contain a string value.'));
@@ -352,7 +382,7 @@ params.type = type;
 params.name = '';
 
 switch (type)
-    case 'pulse'
+    case {'modulation', 'pulse'}
         params.dictionaryType = 'Direction';                                     % What type of dictionary is this?
         params.baseModulationContrast = 4/6;                                     % How much symmetric modulation contrast do we want to enable?  Used to generate background name.    
         params.primaryHeadRoom = 0.005;                                          % How close to edge of [0-1] primary gamut do we want to get?

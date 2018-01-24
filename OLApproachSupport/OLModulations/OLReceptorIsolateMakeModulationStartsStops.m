@@ -109,7 +109,7 @@ backgroundPrimary = directionData.backgroundPrimary;
 % We don't check here. Rather, when the actual starts and stops get made, we check
 % whether things are OK.
 switch (directionParams.type)
-    case {'pulse' 'lightfluxchrom'}
+    case {'pulse' 'modulation' 'lightfluxchrom'}
         % Sometimes, we only define the postive direction of the modulation, so that
         % we have to compute the negative difference.  Other times, we have asymmetric
         % positive and negative swings.  Whether we have both or not is determined by

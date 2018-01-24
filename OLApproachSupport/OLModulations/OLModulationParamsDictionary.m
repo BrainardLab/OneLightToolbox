@@ -88,7 +88,7 @@ switch (params.type)
         assert((isfield(params, 'dictionaryType')           && ischar(params.dictionaryType)),              sprintf('params.dictionaryType does not exist or it does not contain a string value.'));
         assert((isfield(params, 'type')                     && ischar(params.type)),                        sprintf('params.type does not exist or it does not contain a string value.'));
         assert((isfield(params, 'name')                     && ischar(params.name)),                        sprintf('params.name does not exist or it does not contain a string value.'));
-        assert((isfield(params, 'stimulusDuration')            && isnumeric(params.stimulusDuration)),            sprintf('params.stimulusDuration does not exist or it does not contain a numeric value.'));
+        assert((isfield(params, 'stimulusDuration')         && isnumeric(params.stimulusDuration)),         sprintf('params.stimulusDuration does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'timeStep')                 && isnumeric(params.timeStep)),                 sprintf('params.timeStep does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'cosineWindowIn')           && islogical(params.cosineWindowIn)),           sprintf('params.cosineWindowIn does not exist or it does not contain a boolean value.'));
         assert((isfield(params, 'cosineWindowOut')          && islogical(params.cosineWindowOut)),          sprintf('params.cosineWindowOut does not exist or it does not contain a boolean value.'));
@@ -100,7 +100,7 @@ switch (params.type)
         assert((isfield(params, 'dictionaryType')           && ischar(params.dictionaryType)),              sprintf('params.dictionaryType does not exist or it does not contain a string value.'));
         assert((isfield(params, 'type')                     && ischar(params.type)),                        sprintf('params.type does not exist or it does not contain a string value.'));
         assert((isfield(params, 'name')                     && ischar(params.name)),                        sprintf('params.name does not exist or it does not contain a string value.'));
-        assert((isfield(params, 'stimulusDuration')            && isnumeric(params.stimulusDuration)),            sprintf('params.stimulusDuration does not exist or it does not contain a numeric value.'));
+        assert((isfield(params, 'stimulusDuration')         && isnumeric(params.stimulusDuration)),         sprintf('params.stimulusDuration does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'timeStep')                 && isnumeric(params.timeStep)),                 sprintf('params.timeStep does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'cosineWindowIn')           && islogical(params.cosineWindowIn)),           sprintf('params.cosineWindowIn does not exist or it does not contain a boolean value.'));
         assert((isfield(params, 'cosineWindowOut')          && islogical(params.cosineWindowOut)),          sprintf('params.cosineWindowOut does not exist or it does not contain a boolean value.'));
