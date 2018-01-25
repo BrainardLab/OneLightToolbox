@@ -57,8 +57,8 @@ function dictionary = OLDirectionNominalParamsDictionary()
 % Initialize dictionary
 dictionary = containers.Map();
 
-%% MaxMel_275_80_667
-% Direction for maximum unipolar contrast melanopsin pulse
+%% MaxMel_unipolar_275_80_667
+% Direction for maximum unipolar contrast melanopsin step
 %   Field size: 27.5 deg
 %   Pupil diameter: 8 mm
 %   bipolar contrast: 66.7%
@@ -83,8 +83,8 @@ params.name = OLMakeApproachDirectionName(baseName,params);
 params.cacheFile = ['Direction_' params.name '.mat'];
 dictionary = paramsValidateAndAppendToDictionary(dictionary, params);
 
-%% MaxMel_275_80_667_modulation
-% Direction for maximum contrast melanopsin pulse
+%% MaxMel_bipolar_275_80_667=
+% Direction for maximum bipolar contrast melanopsin modulation
 %   Field size: 27.5 deg
 %   Pupil diameter: 8 mm
 %   Bipolar contrast: 66.7%
@@ -106,8 +106,8 @@ params.name = OLMakeApproachDirectionName(baseName,params);
 params.cacheFile = ['Direction_' params.name '.mat'];
 dictionary = paramsValidateAndAppendToDictionary(dictionary, params);
 
-%% MaxMel_275_60_667
-% Direction for maximum contrast melanopsin pulse
+%% MaxMel_unipolar_275_60_667
+% Direction for maximum unipolar contrast melanopsin step
 %   Field size: 27.5 deg
 %   Pupil diameter: 6 mm -- for use with 6 mm artificial pupil as part of
 %   pupillometry
@@ -133,8 +133,8 @@ params.name = OLMakeApproachDirectionName(baseName,params);
 params.cacheFile = ['Direction_' params.name '.mat'];
 dictionary = paramsValidateAndAppendToDictionary(dictionary, params);
 
-%% MaxMel_600_80_667
-% Direction for maximum contrast melanopsin pulse
+%% MaxMel_unipolar_600_80_667
+% Direction for maximum unipolar contrast melanopsin step
 %   Field size: 60.0 deg
 %   Pupil diameter: 8 mm
 %   bipolar contrast: 66.7%
@@ -160,8 +160,8 @@ params.name = OLMakeApproachDirectionName(baseName,params);
 params.cacheFile = ['Direction_' params.name '.mat'];
 dictionary = paramsValidateAndAppendToDictionary(dictionary, params);
 
-%% MaxLMS_275_80_667
-% Direction for maximum contrast LMS pulse
+%% MaxLMS_unipolar_275_80_667
+% Direction for maximum unipolar contrast LMS step
 %   Field size: 27.5 deg
 %   Pupil diameter: 8 mm
 %   bipolar contrast: 66.7%
@@ -186,8 +186,8 @@ params.name = OLMakeApproachDirectionName(baseName,params);
 params.cacheFile = ['Direction_' params.name '.mat'];
 dictionary = paramsValidateAndAppendToDictionary(dictionary, params);
 
-%% MaxLMS_275_60_667
-% Direction for maximum contrast LMS pulse
+%% MaxLMS_unipolar_275_60_667
+% Direction for maximum unipolar contrast LMS step
 %   Field size: 27.5 deg
 %   Pupil diameter: 6 mm -- for use with 6 mm artificial pupil with
 %   pupillometry
@@ -213,8 +213,8 @@ params.name = OLMakeApproachDirectionName(baseName,params);
 params.cacheFile = ['Direction_' params.name '.mat'];
 dictionary = paramsValidateAndAppendToDictionary(dictionary, params);
 
-%% MaxLMS_600_80_667
-% Direction for maximum contrast LMS pulse
+%% MaxLMS_unipolar_600_80_667
+% Direction for maximum unipolar contrast LMS step
 %   Field size: 60.0 deg
 %   Pupil diameter: 8 mm
 %   bipolar contrast: 66.7%
@@ -240,8 +240,8 @@ params.name = OLMakeApproachDirectionName(baseName,params);
 params.cacheFile = ['Direction_' params.name '.mat'];
 dictionary = paramsValidateAndAppendToDictionary(dictionary, params);
 
-%% MaxMel_275_60_667
-% Direction for maximum contrast melanopsin pulse
+%% MaxMel_unipolar_275_60_667
+% Direction for maximum unipolar contrast melanopsin step
 %   Field size: 27.5 deg
 %   Pupil diameter: 6 mm
 %   bipolar contrast: 66.7%
@@ -266,8 +266,8 @@ params.name = OLMakeApproachDirectionName(baseName,params);
 params.cacheFile = ['Direction_' params.name '.mat'];
 dictionary = paramsValidateAndAppendToDictionary(dictionary, params);
 
-%% MaxLMS_275_60_667
-% Direction for maximum contrast LMS pulse
+%% MaxLMS_unipolar_275_60_667
+% Direction for maximum unipolar contrast LMS step
 %   Field size: 27.5 deg
 %   Pupil diameter: 6 mm
 %   bipolar contrast: 66.7%
@@ -293,7 +293,7 @@ params.cacheFile = ['Direction_' params.name '.mat'];
 dictionary = paramsValidateAndAppendToDictionary(dictionary, params);
 
 %% LightFlux_540_380_50
-% Direction for maximum light flux pulse
+% Direction for maximum light flux step
 %   CIE x = .54, y = .38
 %   Flux factor = 5
 
@@ -310,7 +310,7 @@ params.cacheFile = ['Direction_' params.name '.mat'];
 dictionary = paramsValidateAndAppendToDictionary(dictionary, params);
 
 %% LightFlux_330_330_20
-% Direction for maximum light flux pulse
+% Direction for maximum light flux step
 %   CIE x = .33, y = .33
 %   Flux factor = 2
 
@@ -485,7 +485,7 @@ switch (type)
         params.dictionaryType = 'Direction';                                     % What type of dictionary is this?
         params.primaryHeadRoom = 0.01;                                           % How close to edge of [0-1] primary gamut do we want to get? (Check if actually used someday.) 
         params.lightFluxDesiredXY = [0.54 0.38];                                 % Background chromaticity.
-        params.lightFluxDownFactor = 5;                                          % Factor to decrease background after initial values found.  Determines how big a pulse we can put on it.
+        params.lightFluxDownFactor = 5;                                          % Factor to decrease background after initial values found.  Determines how big a step we can put on it.
         params.useAmbient = true;                                                % Use measured ambient in calculations if true. If false, set ambient to zero.
         params.backgroundType = 'lightfluxchrom';                                % Type of background
         params.backgroundName = '';                                              % Name of background 
