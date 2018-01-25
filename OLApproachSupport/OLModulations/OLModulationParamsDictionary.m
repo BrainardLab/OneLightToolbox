@@ -1,180 +1,102 @@
-function d = OLModulationParamsDictionary
-%ModulationParamsDictionary  Generate dictionary with modulation params.
+function dictionary = OLModulationParamsDictionary
+% Defines a dictionary with parameters for named modulations
+%
+% Syntax:
+%   dictionary = OLModulationParamsDictionary()
 %
 % Description:
-%     Generate dictionary with modulation params.
+%    Define a dictionary of named timeseries of modulation, with
+%    corresponding nominal parameters. Types of modulations, and their
+%    corresponding fields, are defined in OLModulationParamsDefaults
+%    and validated by OLModulationParamsValidate.
 %
-% Note:
-%     When you add a new type (e.g., 'pulse', 'sinusoid'), you need to add
-%     that type to the corresponding switch statment in
-%     OLCheckCacheParamsAgainstCurrentParams.
+% Inputs:
+%    None.
 %
-% See also: OLCheckCacheParamsAgainstCurrentParams.
+% Outputs:
+%    dictionary - dictionary with all parameters for all desired
+%                 backgrounds
+%
+% Optional key/value pairs:
+%    None.
+%
+% Notes:
+%    * When you add a new type, you need to add that type to the 
+%      corresponding switch statement in 
+%      OLCheckCacheParamsAgainstCurrentParams.
+%
+% See also: 
+%    OLModulationParamsDefaults, OLModulationParamsValidate,
+%    OLMakeModulationPrimaries, 
 
-% 6/23/17  npc  Wrote it.
-% 7/19/17  npc  Added a type for each modulation. For now, there is only one type: 'basic'. 
-%               Defaults and checking are done according to type.
-%               Isomorphic direction name and cache filename.
-% 09/25/17 dhb  Cleaned up Michael Barnett's method of adding new modulation to dictionary. 
-%               (Don't modify the defaults to do this, add a new entry and override the defaults explicitly.)
+%    OLDirectionNominalParamsDictionary, OLMakeDirectionNominalPrimaries,
+%
+%    OLCheckCacheParamsAgainstCurrentParams
+
+% History:
+%    06/23/17  npc  Wrote it.
+%    07/19/17  npc  Added a type for each modulation. For now, there is only one type: 'basic'. 
+%                   Defaults and checking are done according to type.
+%                   Isomorphic direction name and cache filename.
+%    09/25/17  dhb  Cleaned up Michael Barnett's method of adding new modulation to dictionary. 
+%                   (Don't modify the defaults to do this, add a new entry and override the defaults explicitly.)
+%    01/25/18  jv   Extract default params generation, validation.
 
 %% Initialize dictionary
-d = containers.Map();
+dictionary = containers.Map();
 
 %% MaxContrast3sPulse
 modulationName = 'MaxContrast3sPulse';
 type = 'pulse';
 
-params = defaultParams(type,modulationName);
+params = OLModulationParamsDefaults(type);
 params.name = modulationName;
+params.stimulusDuration = 3;
 
-d = paramsValidateAndAppendToDictionary(d, params);
+if OLModulationParamsValidate(params)
+    % All validations OK. Add entry to the dictionary.
+    dictionary(params.name) = params;
+end
 
 %% MaxContrast4sPulse
 modulationName = 'MaxContrast4sPulse';
 type = 'pulse';
 
-              
-params = defaultParams(type,modulationName);
-params.stimulusDuration = 4;
+params = OLModulationParamsDefaults(type);
 params.name = modulationName;
+params.stimulusDuration = 4;
 
-d = paramsValidateAndAppendToDictionary(d, params);
+if OLModulationParamsValidate(params)
+    % All validations OK. Add entry to the dictionary.
+    dictionary(params.name) = params;
+end
+
 %% MaxContrast3sSinusoid
 modulationName = 'MaxContrast3sSinusoid';
 type = 'sinusoid';
 
-params = defaultParams(type,modulationName);
+params = OLModulationParamsDefaults(type);
 params.name = modulationName;
 params.stimulusDuration = 3;                
 params.cosineWindowDurationSecs = 0.5;      
 
-d = paramsValidateAndAppendToDictionary(d, params);
+if OLModulationParamsValidate(params)
+    % All validations OK. Add entry to the dictionary.
+    dictionary(params.name) = params;
+end
 
 %% MaxContrast12sSinusoid
 modulationName = 'MaxContrast12sSinusoid';
 type = 'sinusoid';
 
-params = defaultParams(type,modulationName);
+params = OLModulationParamsDefaults(type);
 params.name = modulationName;
-       params.stimulusDuration = 12;                  
+params.stimulusDuration = 12;                  
 params.cosineWindowDurationSecs = 3;            
                 
-d = paramsValidateAndAppendToDictionary(d, params);
+if OLModulationParamsValidate(params)
+    % All validations OK. Add entry to the dictionary.
+    dictionary(params.name) = params;
 end
 
-function d = paramsValidateAndAppendToDictionary(d, params)
-
-% Get all the expected field names for this type
-allFieldNames = fieldnames(defaultParams(params.type,params.name));
-
-% Test that there are no extra params
-if (~all(ismember(fieldnames(params),allFieldNames)))
-    fprintf(2,'\nParams struct contain extra params\n');
-    fNames = fieldnames(params);
-    idx = ismember(fieldnames(params),allFieldNames);
-    idx = find(idx == 0);
-    for k = 1:numel(idx)
-        fprintf(2,'- ''%s'' \n', fNames{idx(k)});
-    end
-    error('Remove extra params or update defaultParams\n');
 end
-
-% Test that all expected params exist and that they have the expected type
-% We know about several types:
-%   'pulse'  Unidirectional pulse.  Frequency and phase have no meaning.
-switch (params.type)
-    case 'pulse'
-        assert((isfield(params, 'dictionaryType')           && ischar(params.dictionaryType)),              sprintf('params.dictionaryType does not exist or it does not contain a string value.'));
-        assert((isfield(params, 'type')                     && ischar(params.type)),                        sprintf('params.type does not exist or it does not contain a string value.'));
-        assert((isfield(params, 'name')                     && ischar(params.name)),                        sprintf('params.name does not exist or it does not contain a string value.'));
-        assert((isfield(params, 'stimulusDuration')         && isnumeric(params.stimulusDuration)),         sprintf('params.stimulusDuration does not exist or it does not contain a numeric value.'));
-        assert((isfield(params, 'timeStep')                 && isnumeric(params.timeStep)),                 sprintf('params.timeStep does not exist or it does not contain a numeric value.'));
-        assert((isfield(params, 'cosineWindowIn')           && islogical(params.cosineWindowIn)),           sprintf('params.cosineWindowIn does not exist or it does not contain a boolean value.'));
-        assert((isfield(params, 'cosineWindowOut')          && islogical(params.cosineWindowOut)),          sprintf('params.cosineWindowOut does not exist or it does not contain a boolean value.'));
-        assert((isfield(params, 'cosineWindowDurationSecs') && isnumeric(params.cosineWindowDurationSecs)), sprintf('params.cosineWindowDurationSecs does not exist or it does not contain a numeric value.'));
-        assert((isfield(params, 'contrast')                 && isnumeric(params.contrast)),                 sprintf('params.contrast does not exist or it does not contain a numeric value.'));
-        assert((isfield(params, 'coneNoise')                && isnumeric(params.coneNoise)),                sprintf('params.coneNoise does not exist or it does not contain a numeric value.'));
-        assert((isfield(params, 'coneNoiseFrequency')       && isnumeric(params.coneNoiseFrequency)),       sprintf('params.coneNoiseFrequency does not exist or it does not contain a numeric value.'));
-  case 'sinusoid'
-        assert((isfield(params, 'dictionaryType')           && ischar(params.dictionaryType)),              sprintf('params.dictionaryType does not exist or it does not contain a string value.'));
-        assert((isfield(params, 'type')                     && ischar(params.type)),                        sprintf('params.type does not exist or it does not contain a string value.'));
-        assert((isfield(params, 'name')                     && ischar(params.name)),                        sprintf('params.name does not exist or it does not contain a string value.'));
-        assert((isfield(params, 'stimulusDuration')         && isnumeric(params.stimulusDuration)),         sprintf('params.stimulusDuration does not exist or it does not contain a numeric value.'));
-        assert((isfield(params, 'timeStep')                 && isnumeric(params.timeStep)),                 sprintf('params.timeStep does not exist or it does not contain a numeric value.'));
-        assert((isfield(params, 'cosineWindowIn')           && islogical(params.cosineWindowIn)),           sprintf('params.cosineWindowIn does not exist or it does not contain a boolean value.'));
-        assert((isfield(params, 'cosineWindowOut')          && islogical(params.cosineWindowOut)),          sprintf('params.cosineWindowOut does not exist or it does not contain a boolean value.'));
-        assert((isfield(params, 'cosineWindowDurationSecs') && isnumeric(params.cosineWindowDurationSecs)), sprintf('params.cosineWindowDurationSecs does not exist or it does not contain a numeric value.'));
-        assert((isfield(params, 'contrast')                 && isnumeric(params.contrast)),                 sprintf('params.contrast does not exist or it does not contain a numeric value.'));
-        assert((isfield(params, 'frequency')                && isnumeric(params.frequency)),                sprintf('params.frequency does not exist or it does not contain a numeric value.'));
-        assert((isfield(params, 'phaseDegs')                && isnumeric(params.phaseDegs)),                sprintf('params.phaseDegs does not exist or it does not contain a numeric value.'));
-        assert((isfield(params, 'coneNoise')                && isnumeric(params.coneNoise)),                sprintf('params.coneNoise does not exist or it does not contain a numeric value.'));
-        assert((isfield(params, 'coneNoiseFrequency')       && isnumeric(params.coneNoiseFrequency)),       sprintf('params.coneNoiseFrequency does not exist or it does not contain a numeric value.'));
-    otherwise
-        error('Unknown modulation starts/stops type');
-end
-
-% All validations OK. Add entry to the dictionary.
-d(params.name) = params;
-end
-
-
-function params = defaultParams(type,modulationName)
-
-params = struct();
-params.type = type;
-params.name = '';
-
-switch (type)
-    case 'pulse'
-        % Unipolar pulse.  Frequency and phase have no meaning.
-        params.dictionaryType = 'Modulation';       % What type of dictionary is this?
-        params.timeStep = 1/64;                     % Number ms of each sample time
-        
-        % Pulse timing parameters
-        params.cosineWindowIn = true;               % If true, have a cosine fade-in
-        params.cosineWindowOut = true;              % If true, have a cosine fade-out
-        params.stimulusDuration = 3;                % Number of seconds to show each trial
-        params.cosineWindowDurationSecs = 0.5;      % Duration (in secs) of the cosine fade-in/out
-         
-        % Contrast scaling
-        params.contrast = 1;                         % Contrast scalars (as proportion of max specified in the direction)
-        
-        % Cone noise parameters. 
-        params.coneNoise = 0;                        % Set to 1 for cone noise
-        params.coneNoiseFrequency = -1;              % Frequency of cone noise
-        
-    case 'sinusoid'
-        % Sinusoidal flicker.
-        params.dictionaryType = 'Modulation';       % What type of dictionary is this?
-        params.timeStep = 1/64;                     % Number ms of each sample time        
-        
-        % Pulse timing parameters
-        params.cosineWindowIn = true;               % If true, have a cosine fade-in
-        params.cosineWindowOut = true;              % If true, have a cosine fade-out
-        params.stimulusDuration = 3;                % Number of seconds to show each trial
-        params.cosineWindowDurationSecs = 0.5;      % Duration (in secs) of the cosine fade-in/out
-
-        % Contrast scaling
-        params.contrast = 1;                        % Contrast scalars (as proportion of max specified in the direction)
-        
-        % Frequency and phase
-        params.frequency = 2;                       % Frequency in Hz
-        params.phaseDegs = 0;                       % Phase in degrees
-        
-        % Cone noise parameters. 
-        params.coneNoise = 0;                        % Set to 1 for cone noise
-        params.coneNoiseFrequency = -1;              % Frequency of cone noise
-
-    case 'AM'
-        error('Need to implement AM type in the dictionary before you may use it.')
-        % % Carrier frequency parameters
-        % params.carrierFrequency = [-1];            % Sequence of carrier frequencies
-        % params.carrierPhase = [-1];
-        
-    otherwise
-        error('Unknown modulation starts/stops type: ''%s''.\n', type);
-end
-end
-
-
