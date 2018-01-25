@@ -1,4 +1,4 @@
-function [results, actualContrasts, nominalContrasts] = OLValidatePrimary(primaryValues, calibration, oneLight, varargin)
+function [results, actualContrasts, nominalContrasts] = OLValidatePrimaryValues(primaryValues, calibration, oneLight, varargin)
 % Validates SPD that OneLight puts out for given primary values vector(s)
 %
 % Syntax:
