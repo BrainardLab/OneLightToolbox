@@ -38,7 +38,7 @@ params.boxName = boxName;
 
 % Update box-specific calibration params
 params.gammaFitType = 'betacdfpiecelin';
-params.useAverageGamma = true;
+params.useAverageGamma = false;
 params.whichAverageGamma = 'middle';
 params.nShortPrimariesSkip = 5;
 params.nLongPrimariesSkip = 3;
