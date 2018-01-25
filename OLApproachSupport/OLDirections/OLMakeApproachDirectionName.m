@@ -28,9 +28,9 @@ function name = OLMakeApproachDirectionName(baseName,params)
 %% Make the name, according to the type of thing we're naming
 switch (params.type)
     case 'unipolar'
-        name = sprintf('%s_%d_%d_%d',baseName,round(10*params.fieldSizeDegrees),round(10*params.pupilDiameterMm),round(1000*params.baseModulationContrast));
+        name = sprintf('%s_unipolar_%d_%d_%d',baseName,round(10*params.fieldSizeDegrees),round(10*params.pupilDiameterMm),round(1000*params.baseModulationContrast));
     case 'bipolar'
-        name = sprintf('%s_%d_%d_%d_modulation',baseName,round(10*params.fieldSizeDegrees),round(10*params.pupilDiameterMm),round(1000*params.baseModulationContrast));
+        name = sprintf('%s_bipolar_%d_%d_%d',baseName,round(10*params.fieldSizeDegrees),round(10*params.pupilDiameterMm),round(1000*params.baseModulationContrast));
     case 'lightfluxchrom'
         name = sprintf('%s_%d_%d_%d',baseName,round(1000*params.lightFluxDesiredXY(1)),round(1000*params.lightFluxDesiredXY(2)),round(10*params.lightFluxDownFactor)); 
     otherwise
