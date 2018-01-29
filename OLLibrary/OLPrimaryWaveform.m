@@ -7,26 +7,26 @@ function primaryWaveform = OLPrimaryWaveform(primaryValues, waveform)
 % Description:
 %
 % Inputs:
-%    primaryValues   - The primary values to apply to a waveform, in a Px1
+%    primaryValues   - The primary values to apply to a waveform, in a PxN
 %                      column vector, where P is the number of primaries on
-%                      the device.
-%                      Can also be a PxN matrix, of N such vectors of
-%                      primary values. In this case, N waveforms have to
-%                      be specified as well (see below).
-%    waveform        - The waveform of temporal modulation, in a 1xt row
-%                      vector of power levels of the primary, at each
+%                      the device N is the number of primary basis
+%                      functions that can be combined at each timepoint.
+%                      Note that N = 1 is a useful special case.
+%    waveform        - The waveform of temporal modulation, in a Nxt matrix
+%                      power levels for each of the N basis functions at each
 %                      timepoint t. Powerlevels must be in the range [0-1].
-%                      Can also be a Nxt matrix, of N such waveforms. N
-%                      must match N of primaryValues.
 %
 % Outputs:
 %    primaryWaveform - The primary values at each timepoint t, in a Pxt
-%                      matrix. If multiple vectors of primary values and
-%                      corresponding waveforms were passed in, these have
-%                      been combined into a single waveform-matrix.
+%                      matrix. If multiple primary basis vectors were and
+%                      corresponding waveforms were passed in (i.e. N > 1),
+%                      these have been combined into a single
+%                      waveform-matrix.
 %
 % Optional key/value pairs:
 %    None.
+%
+% Examples are provided in the source code.
 %
 % Notes:
 %    None.
@@ -49,7 +49,6 @@ function primaryWaveform = OLPrimaryWaveform(primaryValues, waveform)
     primaryValues = ones(54,1);     % 54 primaries, all full-on
     primaryWaveform = OLPrimaryWaveform(primaryValues, waveform);
 %}
-
 %{
     %% Add sinusoidal flicker to a steady background
     % Shared timebase
@@ -70,10 +69,9 @@ function primaryWaveform = OLPrimaryWaveform(primaryValues, waveform)
     primaryWaveform = OLPrimaryWaveform(primaryValues, waveforms)
 %}
 
-
 %% Input validation
 parser = inputParser();
-parser.addRequired('primaryValues',isnumeric(x));
+parser.addRequired('primaryValues',@isnumeric);
 parser.addRequired('waveform',@(x) isnumeric(x) && all(x(:)>=0) && all(x(:)<=1));
 parser.parse(primaryValues,waveform);
 
