@@ -68,9 +68,9 @@ function primaryWaveform = OLPrimaryWaveform(primaryValues, waveform, varargin)
     flickerWaveform = abs(sinewave);     % rectify, powerlevels are [0-1]
 
     % Create primary waveform
-    primaryValues = [backgroundPrimary, examplePrimary] % horizontal cat
-    waveforms = [backgroundWaveform; flickerWaveform]   % vertical cat
-    primaryWaveform = OLPrimaryWaveform(primaryValues, waveforms)
+    primaryValues = [backgroundPrimary, examplePrimary]; % horizontal cat
+    waveforms = [backgroundWaveform; flickerWaveform];  % vertical cat
+    primaryWaveform = OLPrimaryWaveform(primaryValues, waveforms,'truncateGamut',true);
 %}
 
 %% Input validation

@@ -48,6 +48,8 @@ function [starts, stops] = OLPrimaryToStartsStops(primaryValues, calibration, va
 %    'tolerance'       - The tolerance for uniqueness of primary values.
 %                        Default 1e-6.
 %
+% Examples are provided in the source code.
+%
 % Notes:
 %
 % See also:
@@ -56,19 +58,19 @@ function [starts, stops] = OLPrimaryToStartsStops(primaryValues, calibration, va
 % History:
 %    01/29/18  jv  wrote it.
 
-% Example:
+% Examples:
 %{
-    calibration = OLGetCalibrationStructure('CalibrationType','OLDemoCal')
+    calibration = OLGetCalibrationStructure('CalibrationFolder',fileparts(which('OLDemoCal.mat')),'CalibrationType','OLDemoCal');
     P = calibration.describe.numWavelengthBands;  % number of effective device primaries
     primaryValues = .5 * ones(P,1); % all primaries half-on
 
     %% Use OLPrimaryToStartsStops
-    [starts,stops] = OLPrimaryToStartsStops(primaryValues,calibraition);
+    [starts,stops] = OLPrimaryToStartsStops(primaryValues,calibration);
 %}
 %{
     %% Compare the speed of this routine vs. OLPrimaryTosettings ->
     %   OLSettingsToStartsStops for a  steady signal.
-    calibration = OLGetCalibrationStructure('CalibrationType','OLDemoCal');
+    calibration = OLGetCalibrationStructure('CalibrationFolder',fileparts(which('OLDemoCal.mat')),'CalibrationType','OLDemoCal');
     P = calibration.describe.numWavelengthBands;  % number of effective device primaries
     
     % Sinusoidal flicker
@@ -97,7 +99,7 @@ function [starts, stops] = OLPrimaryToStartsStops(primaryValues, calibration, va
 %{
     %% Compare the speed of this routine vs. OLPrimaryTosettings ->
     %   OLSettingsToStartsStops for a periodic signal.
-    calibration = OLGetCalibrationStructure('CalibrationType','OLDemoCal');
+    calibration = OLGetCalibrationStructure('CalibrationFolder',fileparts(which('OLDemoCal.mat')),'CalibrationType','OLDemoCal');
     P = calibration.describe.numWavelengthBands;  % number of effective device primaries
     
     % Sinusoidal flicker
