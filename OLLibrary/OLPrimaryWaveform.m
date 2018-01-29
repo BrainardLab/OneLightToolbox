@@ -14,7 +14,7 @@ function primaryWaveform = OLPrimaryWaveform(primaryValues, waveform)
 %                      Note that N = 1 is a useful special case.
 %    waveform        - The waveform of temporal modulation, in a Nxt matrix
 %                      power levels for each of the N basis functions at each
-%                      timepoint t. Powerlevels must be in the range [0-1].
+%                      timepoint t.
 %
 % Outputs:
 %    primaryWaveform - The primary values at each timepoint t, in a Pxt
