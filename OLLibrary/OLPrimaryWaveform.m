@@ -73,8 +73,8 @@ function primaryWaveform = OLPrimaryWaveform(primaryValues, waveform)
 
 %% Input validation
 parser = inputParser();
-parser.addRequired('primaryValues',@(x) isnumeric(x) && all(x(:)>=0) && all(x(:)<=1))
-parser.addRequired('waveform',@(x) isnumeric(x) && all(x(:)>=0) && all(x(:)<=1))
+parser.addRequired('primaryValues',isnumeric(x));
+parser.addRequired('waveform',@(x) isnumeric(x) && all(x(:)>=0) && all(x(:)<=1));
 parser.parse(primaryValues,waveform);
 
 %% Matrix multiplication
