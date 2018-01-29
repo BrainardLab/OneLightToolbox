@@ -1,4 +1,4 @@
-function OLReceptorIsolateMakeModulationStartsStops(trialType, modulationName, directionName, protocolParams, varargin)
+function OLReceptorIsolateMakeModulationStartsStops(trialType, waveformParams, directionName, protocolParams, varargin)
 %%OLReceptorIsolateMakeModulationStartsStops  Creates the starts/stops cache data for a given config file
 %
 % Usage:
@@ -36,48 +36,17 @@ function OLReceptorIsolateMakeModulationStartsStops(trialType, modulationName, d
 
 % 04/19/13   dhb, ms     Update for new convention for desired contrasts in routine ReceptorIsolate.
 % 06/17/17   dhb         Merge with mab version and expand comments.
+% 06/23/17   npc         No more config files, get modulation properties from OLModulationParamsDictionary
+% 08/21/17   dhb         Save protocolParams in output.  Also, save modulationParams in field modulationParams, rather than just params.
 %                        Delete some commented out code, and don't pass trialType to OLAssembleDirectionCacheAndStartsStopFileNames because it was not being used.
 
 %% Parse input to get key/value pairs
 p = inputParser;
-p.addRequired('modulationName',@isstr);
+p.addRequired('waveformParams',@isstruct);
 p.addRequired('directionName',@isstr);
 p.addRequired('protocolParams',@isstruct);
 p.addParameter('verbose',true,@islogical);
-p.parse(modulationName, directionName, protocolParams, varargin{:});
-
-%% Say hello
-if (p.Results.verbose); fprintf('\nComputing modulation %s+%s\n',modulationName,directionName); end;
-
-%% Get modulation params from modulation params dictionary
-d = OLWaveformParamsDictionary;
-waveformParams = d(modulationName);
-
-% Override with trialTypeParams passed by the current protocol
-waveformParams = UpdateStructWithStruct(waveformParams,protocolParams.trialTypeParams(trialType));
-
-%% Set up the input and output directories
-% We count on the standard relative directory structure that we always use
-% in our (Aguirre/Brainard Lab) experiments.
-%
-% Get where the input corrected direction files live.  This had better exist.
-directionCacheDir = fullfile(getpref(protocolParams.protocol,'DirectionCorrectedPrimariesBasePath'), protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
-if (~exist(directionCacheDir,'dir'))
-    error('Corrected direction primaries directory does not exist');
-end
-
-% Output for starts/stops. Create if it doesn't exist.
-waveformParams.modulationDir = fullfile(getpref(protocolParams.protocol, 'ModulationStartsStopsBasePath'),protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
-if(~exist(waveformParams.modulationDir,'dir'))
-    mkdir(waveformParams.modulationDir)
-end
-
-%% Load the calibration file and tack it onto the waveformParams structure.
-%
-% Not entirely sure whether that structure is the right place for the calibration information
-% but leaving it be for now.
-cType = OLCalibrationTypes.(protocolParams.calibrationType);
-waveformParams.oneLightCal = LoadCalFile(cType.CalFileName, [], fullfile(getpref(protocolParams.approach, 'OneLightCalDataPath')));
+p.parse(waveformParams, directionName, protocolParams, varargin{:});
 
 %% Get the corrected direction primaries
 %
@@ -88,6 +57,7 @@ waveformParams.oneLightCal = LoadCalFile(cType.CalFileName, [], fullfile(getpref
 % and multiple cal files are both unlikely.
 %
 % Setup the cache object for read, and do the read.
+directionCacheDir = fullfile(getpref(protocolParams.protocol,'DirectionCorrectedPrimariesBasePath'), protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
 directionOLCache = OLCache(directionCacheDir, waveformParams.oneLightCal);
 [directionCacheFile, startsStopsFileName, waveformParams.direction] = OLAssembleDirectionCacheAndStartsStopFileNames(protocolParams, waveformParams, directionName);
 
@@ -102,6 +72,7 @@ clear cacheData
 backgroundPrimary = directionData.backgroundPrimary;
 
 %% Put primary data for direction into canonical form
+%
 % In some cases, the postive or negative difference may take things out of gamut.
 % We don't check here. Rather, when the actual starts and stops get made, we check
 % whether things are OK.

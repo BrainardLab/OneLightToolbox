@@ -46,9 +46,49 @@ p.parse(modulationNames,directionNames,protocolParams,varargin{:});
 %% Update session log file
 OLSessionLog(protocolParams,mfilename,'StartEnd','start');
 
+%% Set up the input and output directories
+% We count on the standard relative directory structure that we always use
+% in our (Aguirre/Brainard Lab) experiments.
+%
+% Get where the input corrected direction files live.  This had better exist.
+directionCacheDir = fullfile(getpref(protocolParams.protocol,'DirectionCorrectedPrimariesBasePath'), protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
+if (~exist(directionCacheDir,'dir'))
+    error('Corrected direction primaries directory does not exist');
+end
+
+% Output for starts/stops. Create if it doesn't exist.
+protocolParams.modulationDir = fullfile(getpref(protocolParams.protocol, 'ModulationStartsStopsBasePath'),protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
+if(~exist(protocolParams.modulationDir,'dir'))
+    mkdir(protocolParams.modulationDir)
+end
+
+%% Load the calibration file and tack it onto the modulationParams structure.
+% Not entirely sure whether that structure is the right place for the calibration information
+% but leaving it be for now.
+cType = OLCalibrationTypes.(protocolParams.calibrationType);
+oneLightCal = LoadCalFile(cType.CalFileName, [], fullfile(getpref(protocolParams.approach, 'OneLightCalDataPath')));
+
+%% Populate waveformParamsDictionary
+waveformParamsDictionary = OLWaveformParamsDictionary;
+
 %% Do each modulation
 for ii = 1:length(modulationNames)
-    OLReceptorIsolateMakeModulationStartsStops(ii,modulationNames{ii}, directionNames{ii}, protocolParams,'verbose',p.Results.verbose);
+    modulationName = modulationNames{ii};
+    directionName = directionNames{ii};
+    
+    % Say hello
+    if (p.Results.verbose); fprintf('\nComputing modulation %s+%s\n',modulationName,directionName); end
+    
+    % Get modulation params
+    modulationParams = waveformParamsDictionary(modulationName);
+    
+    % Override with trialTypeParams passed by the current protocol
+    modulationParams = UpdateStructWithStruct(modulationParams,protocolParams.trialTypeParams(ii));
+    modulationParams.modulationDir = protocolParams.modulationDir;
+    modulationParams.oneLightCal = oneLightCal;
+    
+    % Create modulation
+    OLReceptorIsolateMakeModulationStartsStops(ii,modulationParams, directionName, protocolParams,'verbose',p.Results.verbose);
 end
 
 %% Update session log file
