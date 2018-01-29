@@ -1,4 +1,4 @@
-function primaryWaveform = OLPrimaryWaveform(primaryValues, waveform)
+function primaryWaveform = OLPrimaryWaveform(primaryValues, waveform, varargin)
 % Combine primary values and waveform into waveform-matrix of primaries
 %
 % Syntax:
@@ -13,8 +13,8 @@ function primaryWaveform = OLPrimaryWaveform(primaryValues, waveform)
 %                      functions that can be combined at each timepoint.
 %                      Note that N = 1 is a useful special case.
 %    waveform        - The waveform of temporal modulation, in a Nxt matrix
-%                      power levels for each of the N basis functions at each
-%                      timepoint t.
+%                      power levels for each of the N basis functions at
+%                      each timepoint t.
 %
 % Outputs:
 %    primaryWaveform - The primary values at each timepoint t, in a Pxt
@@ -24,7 +24,11 @@ function primaryWaveform = OLPrimaryWaveform(primaryValues, waveform)
 %                      waveform-matrix.
 %
 % Optional key/value pairs:
-%    None.
+%    truncateGamut   - Boolean flag for truncating the output to be within
+%                      gamut (i.e outside range [0,1]. If false, and output
+%                      is out of gamut, will throw an error. If true, and
+%                      output is out of gamut, will throw a warning, and
+%                      proceed to truncate output to be in gamut.
 %
 % Examples are provided in the source code.
 %
@@ -72,10 +76,22 @@ function primaryWaveform = OLPrimaryWaveform(primaryValues, waveform)
 %% Input validation
 parser = inputParser();
 parser.addRequired('primaryValues',@isnumeric);
-parser.addRequired('waveform',@(x) isnumeric(x) && all(x(:)>=0) && all(x(:)<=1));
-parser.parse(primaryValues,waveform);
+parser.addRequired('waveform',@isnumeric);
+parser.addOptional('truncateGamut',false,@islogical);
+parser.parse(primaryValues,waveform,varargin{:});
 
 %% Matrix multiplication
 primaryWaveform = primaryValues * waveform;
+
+%% Check gamut
+if any(any(primaryWaveform < 0 | primaryWaveform > 1))
+    if parser.Results.truncateGamut
+        warning('OneLightToolbox:OLPrimaryWaveform:OutOfGamut','Primary waveform is out of gamut somewhere. This will be truncated');
+        primaryWaveform(primaryWaveform < 0) = 0;
+        primaryWaveform(primaryWaveform > 1) = 1;
+    else
+        error('OneLightToolbox:OLPrimaryWaveform:OutOfGamut','Primary waveform is out of gamut somewhere.');
+    end
+end
 
 end
