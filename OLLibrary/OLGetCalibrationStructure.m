@@ -47,10 +47,11 @@ function cal = OLGetCalibrationStructure(varargin)
 % See also: OLCalibrationTypes.
 
 %
-% 4/4/13  dhb, ms  Pulled out of a calling program as separate function.
-% 6/4/17  dhb      Add key/value pair options.
-% 6/6/17  dhb      Greatly expanded comments.
-%         dhb      Added 'CalibrationFolder' key/value pair.
+% 4/4/13    dhb, ms  Pulled out of a calling program as separate function.
+% 6/4/17    dhb      Add key/value pair options.
+% 6/6/17    dhb      Greatly expanded comments.
+%           dhb      Added 'CalibrationFolder' key/value pair.
+% 01/29/18  dhb, jv  Respect calFolder set at start.
 
 %% Parse key/value pairs
 p = inputParser;
@@ -123,7 +124,7 @@ end
 calIndex = 0;
 if ischar(cal)
     % Get all the calibration data.
-    [~, cals] = LoadCalFile(cal, [], getpref('OneLightToolbox', 'OneLightCalData'));
+    [~, cals] = LoadCalFile(cal, [], calFolder);
     
     % Have the user select a calibration if there is more than 1 and we
     % didn't pass which one we wanted.
