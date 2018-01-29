@@ -14,7 +14,14 @@ function [starts, stops] = OLPrimaryToStartsStops(primaryValues, calibration, va
 %    The starts/stops are in the range [0,NumRows-1], where NumRows is the
 %    number of rows in the DLP mirror.  Starts/stops of [0,0] turns on the
 %    first mirror, stats/stops of [0,NumRows-1] turns on all the mirrors.
-%    You can set any consecutive range of mirrors.
+%    You can set any consecutive range of mirrors. A primary value of 0 is
+%    a special case, for which start = NumRows+1, stop = 0. This is handled
+%    by the underlying OLSettingsToStartsStops.
+%
+%    This routine uses an 'optimized' algorithm, where it only converts
+%    unique primary values. This is probably correct, but the underlying
+%    OLPrimaryToSettings and OLSettingsToStartsStops don't use this.
+%
 %
 % Inputs:
 %    primaryValues - The primary values, i.e., the normalized gamma
@@ -42,11 +49,6 @@ function [starts, stops] = OLPrimaryToStartsStops(primaryValues, calibration, va
 %                        Default 1e-6.
 %
 % Notes:
-%    * This routine uses an 'optimized' algorithm, where it only converts
-%      unique primary values. This is probably correct, but the underlying
-%      OLPrimaryToSettings and OLSettingsToStartsStops don't use this.
-%    * A primary value of 0 is a special case, for which start = NumRows+1,
-%      stop = 0. This is handled by the underlying OLSettingsToStartsStops.
 %
 % See also:
 %    OLPrimaryToSettings, OLSettingsToStartsStops
