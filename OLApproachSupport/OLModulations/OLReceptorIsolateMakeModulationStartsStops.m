@@ -95,17 +95,17 @@ switch (directionParams.type)
         error('Unknown direction type specified')
 end
 
-%% Here compute the modulation and waveform as specified in the modulation file.
-% Construct the waverform parameters for the particular type of modulation we
-% are constructing.
+%% Construct the waverform from parameters
+[directionWaveform, timestep, waveformDuration] = OLWaveformFromParams(modulationParams);
 
-% Exactly how we call the underlying routine depends on the modulation type, so handle that here.
-switch (waveformParams.type)
-    case {'pulse', 'sinusoid'}
-        modulation = OLCalculateStartsStopsModulation(waveformParams, waveformParams.oneLightCal, backgroundPrimary, diffPrimaryPos, diffPrimaryNeg);
-    otherwise
-        error('Unknown direction type specified.');
-end
+%% Assemble modulation
+modulation = OLCalculateStartsStopsModulation(directionWaveform, modulationParams.oneLightCal, backgroundPrimary, diffPrimaryPos, diffPrimaryNeg);
+modulation.timestep = timestep;
+modulation.stimulusDuration = waveformDuration;
+
+% We're treating the background real special here.
+modulation.background.primaries = backgroundPrimary;
+[modulation.background.starts, modulation.background.stops] = OLPrimaryToStartsStops(backgroundPrimary,calibration);
 
 %% Put everything into a return strucure
 modulationData.modulationParams = waveformParams;

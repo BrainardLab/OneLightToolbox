@@ -1,16 +1,17 @@
-function modulation = OLCalculateStartsStopsModulation(waveformParams, calibration, backgroundPrimary, diffPrimaryPos, varargin)
+function modulation = OLCalculateStartsStopsModulation(directionWaveform, calibration, backgroundPrimary, diffPrimaryPos, varargin)
 % Calculate various modulations given background and pos/neg primary differences.
 %
 % Usage:
-%   modulation = OLCalculateStartsStopsModulation(waveformParams, calibration, backgroundPrimary, diffPrimaryPos, diffPrimaryNeg)
-%   modulation = OLCalculateStartsStopsModulation(waveformParams, calibration, backgroundPrimary, diffPrimaryPos)
+%   modulation = OLCalculateStartsStopsModulation(directionWaveform, calibration, backgroundPrimary, diffPrimaryPos, diffPrimaryNeg)
+%   modulation = OLCalculateStartsStopsModulation(directionWaveform, calibration, backgroundPrimary, diffPrimaryPos)
 %
 % Description:
 %    This function takes waveform parameters and turns them into
 %    modulations.
 %
 % Input:
-%    waveformParams    - Parameter struct to generate waveform from
+%    directionWaveform - A 1xT vector of contrast (in range [-1,1]) on 
+%                        direction at each timepoint t.
 %    calibration       - OneLight calibration struct
 %    backgroundPrimary - primary values for the background
 %    diffPrimaryPos    - Primary values for the positive differential of
@@ -21,17 +22,37 @@ function modulation = OLCalculateStartsStopsModulation(waveformParams, calibrati
 %                        a pulse.
 %
 % Output:
-%    modulation        - Structure containing (among other things) the 
-%                        starts/stops matrices that produce the modulation.
+%    modulation        - Structure with all the information necessary to 
+%                        run the modulation in these fields:
+%                          * waveformMatrix : NxT matrix of temporal 
+%                                             waveforms, where each row
+%                                             corresponds to a different
+%                                             the waveform for a different
+%                                             vector of primary values.
+%                                             First row is background (all
+%                                             ones), other rows are paired:
+%                                             positive differential
+%                                             direction primary, followed
+%                                             by negative differential.
+%                          * primaryValues  : PxN matrix of primary values
+%                                             for all the primary basis
+%                                             vectors used. First column is
+%                                             background, other columns are
+%                                             paired similar to
+%                                             waveformMatrix.
+%                          * primaryWaveform: PxT matrix of combined of
+%                                             device primary power at each
+%                                             timepoint
+%                          * nominalSPDs    : Nominal SPD at each timepoint
+%                          * starts, stops  : starts and stops to put this
+%                                             primaryWaveform on the device
 %
 % Optional key/value pairs.
 %    None.
 %
 % See also: 
 %    OLMakeModulationsStartsStops, 
-%    OLReceptorIsolateMakeModulationStartsStops, 
-%    OLModulationParamsDefaults, OLModulationParamsValidate,
-%    OLModulationParamsDictioanry
+%    OLReceptorIsolateMakeModulationStartsStops
 
 % History:
 %    07/21/17  dhb       Tried to improve comments.
@@ -39,19 +60,17 @@ function modulation = OLCalculateStartsStopsModulation(waveformParams, calibrati
 %    01/29/18  dhb, jv   Moved waveform generation to OLWaveformFromParams.
 %    01/30/18  jv        Updated to use the new OLPrimaryWaveform and
 %                        OLPrimaryStartsStops machinery.
+%                        Takes in a waveform vector, rather than params.
 
 %% Input validation, initialization
 parser = inputParser();
-parser.addRequired('waveformParams',@isstruct);
+parser.addRequired('directionWaveform',@isnumeric);
 parser.addRequired('calibration',@isstruct);
 parser.addRequired('backgroundPrimary',@isnumeric);
 parser.addRequired('diffPrimaryPos',@isnumeric);
 parser.addOptional('diffPrimaryNeg',[],@isnumeric);
-parser.parse(waveformParams,calibration,backgroundPrimary,diffPrimaryPos,varargin{:});
+parser.parse(directionWaveform,calibration,backgroundPrimary,diffPrimaryPos,varargin{:});
 diffPrimaryNeg = parser.Results.diffPrimaryNeg;
-
-%% Generate the direction waveform from parameters
-[waveformDirection, timestep, waveformDuration] = OLWaveformFromParams(waveformParams);
 
 %% Assemble waveforms matrix
 % To generate the primary waveform, we need to combine the background, and
@@ -63,9 +82,9 @@ diffPrimaryNeg = parser.Results.diffPrimaryNeg;
 % this, we add them to the background separately, and we also have to put
 % in the corresponding parts of the waveform separately. Thus, we break the
 % direction waveform into a positive and negative component.
-waveformBackground = ones(1, length(waveformDirection));
-waveformPos = (waveformDirection >= 0) .* waveformDirection;
-waveformNeg = (waveformDirection < 0) .* -waveformDirection;
+waveformBackground = ones(1, length(directionWaveform));
+waveformPos = (directionWaveform >= 0) .* directionWaveform;
+waveformNeg = (directionWaveform < 0) .* -directionWaveform;
 waveformMatrix = [waveformBackground; waveformPos; waveformNeg];
 
 %% Assemble primary values matrix
@@ -94,5 +113,3 @@ modulation.primaryWaveform = primaryWaveform;
 modulation.nominalSPDs = nominalSPDs;
 modulation.starts = starts;
 modulation.stops = stops;
-modulation.background.primaries = backgroundPrimary;
-[modulation.background.starts, modulation.background.stops] = OLPrimaryToStartsStops(backgroundPrimary,calibration);
