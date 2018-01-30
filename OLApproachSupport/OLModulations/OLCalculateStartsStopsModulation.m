@@ -1,4 +1,4 @@
-function modulation = OLCalculateStartsStopsModulation(waveformParams, cal, backgroundPrimary, diffPrimaryPos, diffPrimaryNeg)
+function modulation = OLCalculateStartsStopsModulation(waveformParams, cal, backgroundPrimary, diffPrimaryPos, varargin)
 %%OLCalculateStartsStopsModulation  Calculate various modulations given background and pos/neg primary differences.
 %
 % Usage:
@@ -26,6 +26,19 @@ function modulation = OLCalculateStartsStopsModulation(waveformParams, cal, back
 % 7/21/17  dhb        Tried to improve comments.
 % 8/09/17  dhb, mab   Compute pos/neg diff more flexibly.
 % 01/28/18  dhb, jv  Moved waveform generation to OLWaveformFromParams. 
+
+%% Input validation, initialization
+parser = inputParser();
+parser.addRequired('waveformParams',@isstruct);
+parser.addRequired('calibration',@isstruct);
+parser.addRequired('backgroundPrimary',@isnumeric);
+parser.addRequired('diffPrimaryPos',@isnumeric);
+parser.addOptional('diffPrimaryNeg',[],@isnumeric);
+parser.parse(waveformParams,cal,backgroundPrimary,diffPrimaryPos,varargin{:});
+
+diffPrimaryNeg = parser.Results.diffPrimaryNeg;
+
+modulation = struct(); % what we'll return
 
 %% Generate the waveform
 [waveform, timestep, waveformDuration] = OLWaveformFromParams(waveformParams);
