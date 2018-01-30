@@ -10,7 +10,7 @@ function OLReceptorIsolateMakeModulationStartsStops(trialType, waveformParams, d
 %     intermediate contrasts, as the input primaries are generally for the
 %     modulation extrema.
 %
-%     Calls OLCalculateStartsStopsModulation to do most of the work -- this is primarily
+%     Calls OLAssembleModulation to do most of the work -- this is primarily
 %     a wrapper for that routine that handles parameter massaging as well as multiple
 %     frequencies, phases and contrasts.
 %
@@ -99,13 +99,13 @@ end
 [directionWaveform, timestep, waveformDuration] = OLWaveformFromParams(modulationParams);
 
 %% Assemble modulation
-modulation = OLCalculateStartsStopsModulation(directionWaveform, modulationParams.oneLightCal, backgroundPrimary, diffPrimaryPos, diffPrimaryNeg);
+modulation = OLAssembleModulation(directionWaveform, modulationParams.oneLightCal, backgroundPrimary, diffPrimaryPos, diffPrimaryNeg);
 modulation.timestep = timestep;
 modulation.stimulusDuration = waveformDuration;
 
 % We're treating the background real special here.
 modulation.background.primaries = backgroundPrimary;
-[modulation.background.starts, modulation.background.stops] = OLPrimaryToStartsStops(backgroundPrimary,calibration);
+[modulation.background.starts, modulation.background.stops] = OLPrimaryToStartsStops(backgroundPrimary,modulationParams.oneLightCal);
 
 %% Put everything into a return strucure
 modulationData.modulationParams = waveformParams;

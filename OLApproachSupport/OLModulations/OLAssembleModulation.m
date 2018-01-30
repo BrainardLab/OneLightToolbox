@@ -1,13 +1,16 @@
-function modulation = OLCalculateStartsStopsModulation(directionWaveform, calibration, backgroundPrimary, diffPrimaryPos, varargin)
-% Calculate various modulations given background and pos/neg primary differences.
+function modulation = OLAssembleModulation(directionWaveform, calibration, backgroundPrimary, diffPrimaryPos, varargin)
+% Assemble background and direction primaries, and waveform into modulation 
 %
 % Usage:
-%   modulation = OLCalculateStartsStopsModulation(directionWaveform, calibration, backgroundPrimary, diffPrimaryPos, diffPrimaryNeg)
-%   modulation = OLCalculateStartsStopsModulation(directionWaveform, calibration, backgroundPrimary, diffPrimaryPos)
+%   modulation = OLAssembleModulation(directionWaveform, calibration, backgroundPrimary, diffPrimaryPos, diffPrimaryNeg)
+%   modulation = OLAssembleModulation(directionWaveform, calibration, backgroundPrimary, diffPrimaryPos)
 %
 % Description:
-%    This function takes waveform parameters and turns them into
-%    modulations.
+%    A modulation is a temporal variation of the device primaries, from a
+%    background in a certain direction. This function takes in a temporal
+%    waveform for this variation, a vector of background primary values,
+%    and the vector(s) of differential direction primary(s) to assemble
+%    such a modulation.
 %
 % Input:
 %    directionWaveform - A 1xT vector of contrast (in range [-1,1]) on 
