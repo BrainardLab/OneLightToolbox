@@ -1,9 +1,9 @@
-function [waveform,waveformParams] = OLWaveformFromParams(waveformParams)
+function [waveform, timestep, waveformDuration] = OLWaveformFromParams(waveformParams)
 % Generate a named waveform from the given parameters
 %
 % Syntax:
 %   waveform = OLWaveformFromParams(waveformParameters)
-%   [waveform, waveformParameters] = OLWaveformFromParams(waveformParameters)
+%   [waveform, timestep, waveformDuration] = OLWaveformFromParams(waveformParameters)  
 %
 % Description:
 %    For several common types of waveforms, this function can generate the
@@ -18,13 +18,16 @@ function [waveform,waveformParams] = OLWaveformFromParams(waveformParams)
 %    parameters are predefined in OLModulationParamsDictionary.
 %
 % Inputs:
-%    waveformParams - struct defining the parameters for a type of
-%                     waveform. Can be generated using
-%                     OLModulationParamsDefaults
+%    waveformParams   - struct defining the parameters for a type of
+%                       waveform. Can be generated using
+%                       OLModulationParamsDefaults
 %
 % Outputs:
-%    waveform       - a 1xt rowvector of powerlevel in range [0,1] at each 
-%                     timepoint.
+%    waveform         - a 1xt rowvector of powerlevel in range [0,1] at each 
+%                       timepoint.
+%    timestep         - Timestep used to generate waveform
+%    waveformDuration - Duration of the total waveform in seconds, at the
+%                       given timestep (see above)
 %
 % Optional key/value pairs:
 %    None.
@@ -43,7 +46,9 @@ function [waveform,waveformParams] = OLWaveformFromParams(waveformParams)
 % Examples:
 
 %% Generate timebase
-timebase= 0:waveformParams.timeStep:waveformParams.stimulusDuration-waveformParams.timeStep;
+timestep = waveformParams.timeStep;
+waveformDuration = waveformParams.stimulusDuration;
+timebase = 0:waveformParams.timeStep:waveformParams.stimulusDuration-waveformParams.timeStep;
 
 switch waveformParams.type
     case 'pulse'
