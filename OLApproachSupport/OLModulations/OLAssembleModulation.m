@@ -43,9 +43,8 @@ function modulation = OLAssembleModulation(directionWaveform, calibration, backg
 %                                             background, other columns are
 %                                             paired similar to
 %                                             waveformMatrix.
-%                          * primaryWaveform: PxT matrix of combined of
-%                                             device primary power at each
-%                                             timepoint
+%                          * primaryWaveform: PxT matrix of device primary 
+%                                             value power at each timepoint
 %                          * nominalSPDs    : Nominal SPD at each timepoint
 %                          * starts, stops  : starts and stops to put this
 %                                             primaryWaveform on the device
