@@ -56,6 +56,12 @@ function modulation = OLAssembleModulation(directionWaveform, calibration, backg
 %    OLMakeModulationsStartsStops, 
 %    OLReceptorIsolateMakeModulationStartsStops
 
+% NOTES:
+%    * [01/30/18  jv  TODO: Currently can only deal with one direction. 
+%       Underlying architecture can deal with multiple, so that should be
+%       implement here. Will require some clever thinking to deal with
+%       gamut limitations.]
+% 
 % History:
 %    07/21/17  dhb       Tried to improve comments.
 %    08/09/17  dhb, mab  Compute pos/neg diff more flexibly.
