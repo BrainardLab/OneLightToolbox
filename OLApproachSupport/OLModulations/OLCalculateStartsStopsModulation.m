@@ -88,11 +88,9 @@ nominalSPDs = OLPrimaryToSpd(calibration,primaryWaveform);
 
 %% Creature return struct
 modulation = struct();
-modulation.timestep = timestep;
-modulation.duration = waveformDuration;
-modulation.waveformMatrix;
+modulation.waveformMatrix = waveformMatrix;
 modulation.primaryValues = primaryValues;
-modulation.primaryWaveform = primaryWaveforms;
+modulation.primaryWaveform = primaryWaveform;
 modulation.nominalSPDs = nominalSPDs;
 modulation.starts = starts;
 modulation.stops = stops;
