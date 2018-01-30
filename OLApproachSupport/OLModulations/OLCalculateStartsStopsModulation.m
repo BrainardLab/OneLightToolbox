@@ -46,6 +46,7 @@ modulation = struct(); % what we'll return
 %% Convert waveform to starts/stops
 % Store parameters for return
 modulation.waveformParams = waveformParams;
+modulation.waveform = waveform;
 
 % Grab number of settings and the power levels over time.
 % Note that nSettings is the same thing as the number of time
