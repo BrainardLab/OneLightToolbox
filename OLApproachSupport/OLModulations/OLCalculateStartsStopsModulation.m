@@ -78,11 +78,10 @@ else
 end
 primaryValues = [backgroundPrimary, diffPrimaryPos, diffPrimaryNeg];
 
-
 %% Create primary waveform matrix, predict SPDs
 % OLPrimaryWaveform will do the matrix multiplication for us.
 primaryWaveform = OLPrimaryWaveform(primaryValues,waveformMatrix,'truncateGamut',false);
-nominalSpd = OLPrimaryToSpd(calibration,primaryWaveform);
+nominalSPDs = OLPrimaryToSpd(calibration,primaryWaveform);
 
 %% Convert to starts/stops
 [starts, stops] = OLPrimaryToStartsStops(primaryWaveform,calibration);
@@ -94,6 +93,7 @@ modulation.duration = waveformDuration;
 modulation.waveformMatrix;
 modulation.primaryValues = primaryValues;
 modulation.primaryWaveform = primaryWaveforms;
+modulation.nominalSPDs = nominalSPDs;
 modulation.starts = starts;
 modulation.stops = stops;
 modulation.background.primaries = backgroundPrimary;
