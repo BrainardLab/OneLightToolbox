@@ -287,6 +287,7 @@ switch directionParams.type
             cacheData.data(observerAgeInYrs).backgroundSpd = backgroundSpd;
             cacheData.data(observerAgeInYrs).modulationPrimarySignedPositive = modulationPrimarySignedPositive;
             cacheData.data(observerAgeInYrs).modulationSpdSignedPositive = modulationSpdSignedPositive;
+            cacheData.data(observerAgeInYrs).describe.params = directionParams;
         end
 
     otherwise
