@@ -109,7 +109,13 @@ if (~forceRecompute)
 end
 
 %% OK, if we're here we need to compute.
-cacheData.data = OLDirectionNominalFromParams(directionParams,cal,backgroundOlCache);
+% Grab the background from the cache file
+backgroundCacheFile = ['Background_' directionParams.backgroundName '.mat'];
+[backgroundCacheData,isStale] = backgroundOlCache.load(backgroundCacheFile);
+assert(~isStale,'Background cache file is stale, aborting.');
+backgroundPrimary = backgroundCacheData.data(directionParams.backgroundObserverAge).backgroundPrimary;
+
+cacheData.data = OLDirectionNominalFromParams(directionParams,backgroundPrimary,cal);
 
 %% Tuck in the calibration structure for return
 cacheData.cal = cal;

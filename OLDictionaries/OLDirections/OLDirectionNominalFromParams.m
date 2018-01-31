@@ -1,4 +1,4 @@
-function direction = OLDirectionNominalFromParams(directionParams,calibration,backgroundOlCache,varargin)
+function direction = OLDirectionNominalFromParams(directionParams,backgroundPrimary,calibration,varargin)
 % Generate a parameterized direction from the given parameters
 %
 % Syntax:
@@ -48,10 +48,10 @@ function direction = OLDirectionNominalFromParams(directionParams,calibration,ba
 %% Input validation
 parser = inputParser();
 parser.addRequired('directionParams',@isstruct);
+parser.addRequired('backgroundPrimary');
 parser.addRequired('calibration',@isstruct);
-parser.addRequired('backgroundOlCache',@(x) isa(x,'OLCache'));
 parser.addParameter('verbose',false,@islogical);
-parser.parse(directionParams,calibration,backgroundOlCache,varargin{:});
+parser.parse(directionParams,backgroundPrimary,calibration,varargin{:});
 
 S = calibration.describe.S;
 
@@ -104,10 +104,10 @@ switch directionParams.type
             if (parser.Results.verbose), fprintf('\nObserver age: %g\n',observerAgeInYears); end
             
             % Grab the background from the cache file
-            backgroundCacheFile = ['Background_' directionParams.backgroundName '.mat'];
-            [backgroundCacheData,isStale] = backgroundOlCache.load(backgroundCacheFile);
-            assert(~isStale,'Background cache file is stale, aborting.');
-            backgroundPrimary = backgroundCacheData.data(directionParams.backgroundObserverAge).backgroundPrimary;
+%             backgroundCacheFile = ['Background_' directionParams.backgroundName '.mat'];
+%             [backgroundCacheData,isStale] = backgroundOlCache.load(backgroundCacheFile);
+%             assert(~isStale,'Background cache file is stale, aborting.');
+%             backgroundPrimary = backgroundCacheData.data(directionParams.backgroundObserverAge).backgroundPrimary;
             backgroundSpd = OLPrimaryToSpd(calibration, backgroundPrimary);
             
             % Get fraction bleached for background we're actually using
@@ -153,15 +153,9 @@ switch directionParams.type
             % Print out contrasts. This routine is in the Silent Substitution Toolbox.
             if (parser.Results.verbose), ComputeAndReportContrastsFromSpds(sprintf('\n> Observer age: %g',observerAgeInYears),photoreceptorClasses,T_receptors,backgroundSpd,modulationSpdSignedPositive,[],[]); end
             
-            %% [DHB NOTE: MIGHT WANT TO SAVE THE VALUES HERE AND PHOTOPIC LUMINANCE TOO.]
+            % [DHB NOTE: MIGHT WANT TO SAVE THE VALUES HERE AND PHOTOPIC LUMINANCE TOO.]
             % Print out luminance info.  This routine is also in the Silent Substitution Toolbox
             if (parser.Results.verbose), GetLuminanceAndTrolandsFromSpd(S, backgroundSpd, pupilDiameterMm, true); end
-            
-            if (strcmp(directionParams.type,'unipolar'))
-                backgroundPrimary = modulationPrimarySignedNegative;
-                backgroundSpd = modulationSpdSignedNegative;
-            end
-            clear modulationPrimarySignedNegative modulationSpdSignedNegative
             
             %% Assign all the cache fields
             %
@@ -177,14 +171,20 @@ switch directionParams.type
             direction(observerAgeInYears).describe.S_receptors = S;
             direction(observerAgeInYears).describe.contrast = isolateContrastsSignedPositive;
             direction(observerAgeInYears).describe.contrastSignedPositive = isolateContrastsSignedPositive;
-            
-            % Background
-            direction(observerAgeInYears).backgroundPrimary = backgroundPrimary;
-            direction(observerAgeInYears).backgroundSpd = backgroundSpd;
-            
+                      
             % Modulation (positive)
             direction(observerAgeInYears).modulationPrimarySignedPositive = modulationPrimarySignedPositive;
             direction(observerAgeInYears).modulationSpdSignedPositive = modulationSpdSignedPositive;
+            
+            % Background
+            if (strcmp(directionParams.type,'unipolar'))
+                direction(observerAgeInYears).backgroundPrimary = modulationPrimarySignedNegative;
+                direction(observerAgeInYears).backgroundSpd = modulationSpdSignedNegative;
+            else
+                direction(observerAgeInYears).backgroundPrimary = backgroundPrimary;
+                direction(observerAgeInYears).backgroundSpd = backgroundSpd;
+            end
+            clear modulationPrimarySignedNegative modulationSpdSignedNegative
         end
         
     case 'lightfluxchrom'
@@ -194,23 +194,7 @@ switch directionParams.type
         % not currently use them. That is because this counts on the background having
         % been set up to accommodate the desired modulation.
         
-        % Grab the background from the cache file
-        backgroundCacheFile = ['Background_' directionParams.backgroundName '.mat'];
-        [backgroundCacheData,isStale] = backgroundOlCache.load(backgroundCacheFile);
-        assert(~isStale,'Background cache file is stale, aborting.');
-        backgroundPrimary = backgroundCacheData.data(directionParams.backgroundObserverAge).backgroundPrimary;
         backgroundSpd = OLPrimaryToSpd(calibration, backgroundPrimary);
-        
-        % Check that the universe is consistent
-        if (~strcmp(backgroundCacheData.params.type,'lightfluxchrom'))
-            error('Background type is not lightfluxchrom');
-        end
-        if (~all(backgroundCacheData.params.lightFluxDesiredXY == directionParams.lightFluxDesiredXY))
-            error('Background and direction chromaticities not the same');
-        end
-        if (backgroundCacheData.params.lightFluxDownFactor ~= directionParams.lightFluxDownFactor)
-            error('Background and direction lightFluxDownFactors not the same');
-        end
 
         % Modulation.  This is the background scaled up by the factor that the background
         % was originally scaled down by.
