@@ -108,7 +108,7 @@ backgroundCacheFile = ['Background_' directionParams.backgroundName '.mat'];
 assert(~isStale,'Background cache file is stale, aborting.');
 backgroundPrimary = backgroundCacheData.data(directionParams.backgroundObserverAge).backgroundPrimary;
 
-cacheData.data = OLDirectionNominalFromParams(directionParams,backgroundPrimary,cal);
+cacheData.data = OLDirectionNominalStructFromParams(directionParams,backgroundPrimary,cal);
 
 %% Tuck in the calibration structure for return
 cacheData.cal = cal;

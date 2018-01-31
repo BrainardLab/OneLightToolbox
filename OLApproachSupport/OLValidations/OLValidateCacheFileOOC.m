@@ -114,7 +114,7 @@ try
         
     % Get background primary and max positive difference primary
     backgroundPrimary = cacheData.data(validationDescribe.observerAgeInYrs).backgroundPrimary;
-    differencePrimary = cacheData.data(validationDescribe.observerAgeInYrs).modulationPrimarySignedPositive-backgroundPrimary;
+    differencePrimary = cacheData.data(validationDescribe.observerAgeInYrs).differentialPositive;
     
     % Make measurements for each power level
     validationDescribe.powerLevels = cacheData.directionParams.validationPowerLevels;

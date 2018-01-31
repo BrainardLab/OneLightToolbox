@@ -1,4 +1,4 @@
-function direction = OLDirectionNominalFromParams(directionParams,backgroundPrimary,calibration,varargin)
+function directionStruct = OLDirectionNominalStructFromParams(directionParams,backgroundPrimary,calibration,varargin)
 % Generate a parameterized direction from the given parameters
 %
 % Syntax:
@@ -25,11 +25,21 @@ function direction = OLDirectionNominalFromParams(directionParams,backgroundPrim
 % Outputs:
 %    direction       - a 1x60 struct array (one struct per observer age
 %                      1:60 yrs), with the following fields:
-%                         * backgroundPrimary
-%                         * backgroundSpd
-%                         * modulationPrimarySignedPositive
-%                         * modulationSpdSignedPositive
-%                         * describe
+%                         * backgroundPrimary   : the primary values for
+%                                                  the background.
+%                         * differentialPositive: the difference in primary
+%                                                 values to be added to the
+%                                                 background primary to
+%                                                 create the positive
+%                                                 direction
+%                         * differentialNegative: the difference in primary
+%                                                 values to be added to the
+%                                                 background primary to
+%                                                 create the negative
+%                                                 direction
+%                         * describe            : Any additional
+%                                                 (meta)-information that
+%                                                 might be stored
 %
 % Optional key/value pairs:
 %    'verbose'        - boolean flag to print output. Default false.
@@ -104,6 +114,9 @@ switch directionParams.type
             % Say hello
             if (parser.Results.verbose), fprintf('\nObserver age: %g\n',observerAgeInYears); end
             
+            % Get original backgroundPrimary
+            backgroundPrimary = parser.Results.backgroundPrimary;
+            
             % Get fraction bleached for background we're actually using
             if (directionParams.doSelfScreening)
                 fractionBleached = OLEstimateConePhotopigmentFractionBleached(S,backgroundSpd,pupilDiameterMm,directionParams.fieldSizeDegrees,observerAgeInYears,photoreceptorClasses);
@@ -116,10 +129,7 @@ switch directionParams.type
             
             % Construct the receptor matrix based on the bleaching fraction to this background.
             T_receptors = GetHumanPhotoreceptorSS(S,photoreceptorClasses,directionParams.fieldSizeDegrees,observerAgeInYears,pupilDiameterMm,lambdaMaxShift,fractionBleached);
-            
-            % Calculate the receptor coordinates of the background
-            backgroundReceptors = T_receptors*backgroundSpd;
-            
+                      
             % Isolate the receptors by calling the ReceptorIsolate
             initialPrimary = backgroundPrimary;
             modulationPrimarySignedPositive = ReceptorIsolate(T_receptors, whichReceptorsToIsolate, ...
@@ -127,21 +137,32 @@ switch directionParams.type
                 initialPrimary,whichPrimariesToPin,directionParams.primaryHeadRoom,directionParams.maxPowerDiff,...
                 desiredContrasts,ambientSpd);
             
+            differentialPositive = modulationPrimarySignedPositive - backgroundPrimary;
+            differentialNegative = -1 * differentialPositive;
+            
+            % IF UNIPOLAR, REPLACE BACKGROUND WITH NEGATIVE MAX EXCURSION
+            if (strcmp(directionParams.type,'unipolar'))
+                backgroundPrimary = backgroundPrimary + differentialNegative;
+                differentialPositive = modulationPrimarySignedPositive - backgroundPrimary;
+                differentialNegative = 0 * differentialPositive;
+            end
+            
             % Look at both negative and positive swing and double check that we're within gamut
-            differencePrimary = modulationPrimarySignedPositive - backgroundPrimary;
-            modulationPrimarySignedPositive = backgroundPrimary+differencePrimary;
-            modulationPrimarySignedNegative = backgroundPrimary-differencePrimary;
+            modulationPrimarySignedPositive = backgroundPrimary+differentialPositive;
+            modulationPrimarySignedNegative = backgroundPrimary+differentialNegative;
             if any(modulationPrimarySignedNegative > 1) || any(modulationPrimarySignedNegative < 0)  || any(modulationPrimarySignedPositive > 1)  || any(modulationPrimarySignedPositive < 0)
                 error('Out of bounds.')
             end
             
             % Compute spds, constrasts
-            differenceSpdSignedPositive = B_primary*differencePrimary;
+            backgroundSpd = OLPrimaryToSpd(calibration,backgroundPrimary);
+            backgroundReceptors = T_receptors*backgroundSpd;
+            differenceSpdSignedPositive = B_primary*differentialPositive;
             differenceReceptorsPositive = T_receptors*differenceSpdSignedPositive;
             isolateContrastsSignedPositive = differenceReceptorsPositive ./ backgroundReceptors;
             modulationSpdSignedPositive = backgroundSpd+differenceSpdSignedPositive;
             
-            differenceSpdSignedNegative = B_primary*(-differencePrimary);
+            differenceSpdSignedNegative = B_primary*(-differentialPositive);
             modulationSpdSignedNegative = backgroundSpd+differenceSpdSignedNegative;
             
             % Print out contrasts. This routine is in the Silent Substitution Toolbox.
@@ -152,32 +173,29 @@ switch directionParams.type
             if (parser.Results.verbose), GetLuminanceAndTrolandsFromSpd(S, backgroundSpd, pupilDiameterMm, true); end
             
             %% Assign all the cache fields
-            %
-            % Description
-            direction(observerAgeInYears).describe.params = directionParams;
-            direction(observerAgeInYears).describe.B_primary = B_primary;
-            direction(observerAgeInYears).describe.ambientSpd = ambientSpd;
-            direction(observerAgeInYears).describe.photoreceptors = photoreceptorClasses;
-            direction(observerAgeInYears).describe.lambdaMaxShift = lambdaMaxShift;
-            direction(observerAgeInYears).describe.fractionBleached = fractionBleached;
-            direction(observerAgeInYears).describe.S = S;
-            direction(observerAgeInYears).describe.T_receptors = T_receptors;
-            direction(observerAgeInYears).describe.S_receptors = S;
-            direction(observerAgeInYears).describe.contrast = isolateContrastsSignedPositive;
-            direction(observerAgeInYears).describe.contrastSignedPositive = isolateContrastsSignedPositive;
-                      
-            % Modulation (positive)
-            direction(observerAgeInYears).modulationPrimarySignedPositive = modulationPrimarySignedPositive;
-            direction(observerAgeInYears).modulationSpdSignedPositive = modulationSpdSignedPositive;
+            % Business end
+            directionStruct(observerAgeInYears).backgroundPrimary = backgroundPrimary;              
+            directionStruct(observerAgeInYears).differentialPositive = differentialPositive;                            
+            directionStruct(observerAgeInYears).differentialNegative = differentialNegative;            
             
-            % Background
-            if (strcmp(directionParams.type,'unipolar'))
-                direction(observerAgeInYears).backgroundPrimary = modulationPrimarySignedNegative;
-                direction(observerAgeInYears).backgroundSpd = modulationSpdSignedNegative;
-            else
-                direction(observerAgeInYears).backgroundPrimary = backgroundPrimary;
-                direction(observerAgeInYears).backgroundSpd = backgroundSpd;
-            end
+            % Description
+            directionStruct(observerAgeInYears).describe.params = directionParams;
+            directionStruct(observerAgeInYears).describe.modulationPrimarySignedPositive = modulationPrimarySignedPositive;
+            directionStruct(observerAgeInYears).describe.modulationPrimarySignedNegative = modulationPrimarySignedNegative;
+            directionStruct(observerAgeInYears).describe.B_primary = B_primary;
+            directionStruct(observerAgeInYears).describe.ambientSpd = ambientSpd;
+            directionStruct(observerAgeInYears).describe.backgroundSpd = backgroundSpd;
+            directionStruct(observerAgeInYears).describe.modulationSpdSignedPositive = modulationSpdSignedPositive;
+            directionStruct(observerAgeInYears).describe.modulationSpdSignedNegative = modulationSpdSignedNegative;
+            directionStruct(observerAgeInYears).describe.photoreceptors = photoreceptorClasses;
+            directionStruct(observerAgeInYears).describe.lambdaMaxShift = lambdaMaxShift;
+            directionStruct(observerAgeInYears).describe.fractionBleached = fractionBleached;
+            directionStruct(observerAgeInYears).describe.S = S;
+            directionStruct(observerAgeInYears).describe.T_receptors = T_receptors;
+            directionStruct(observerAgeInYears).describe.S_receptors = S;
+            directionStruct(observerAgeInYears).describe.contrast = isolateContrastsSignedPositive;
+            directionStruct(observerAgeInYears).describe.contrastSignedPositive = isolateContrastsSignedPositive;
+                   
             clear modulationPrimarySignedNegative modulationSpdSignedNegative
         end
         
@@ -192,6 +210,8 @@ switch directionParams.type
         % was originally scaled down by.
         modulationPrimarySignedPositive = backgroundPrimary*directionParams.lightFluxDownFactor;
         modulationSpdSignedPositive = OLPrimaryToSpd(calibration, modulationPrimarySignedPositive);
+        differentialPositive = modulationPrimarySignedPositive - backgroundPrimary;
+        differentialNegative = -1 * differentialPositive;
         
         % Check gamut
         if (any(modulationPrimarySignedPositive > 1) || any(modulationPrimarySignedPositive < 0))
@@ -200,11 +220,13 @@ switch directionParams.type
         
         % Replace the values
         for observerAgeInYrs = 20:60
-            direction(observerAgeInYrs).backgroundPrimary = backgroundPrimary;
-            direction(observerAgeInYrs).backgroundSpd = backgroundSpd;
-            direction(observerAgeInYrs).modulationPrimarySignedPositive = modulationPrimarySignedPositive;
-            direction(observerAgeInYrs).modulationSpdSignedPositive = modulationSpdSignedPositive;
-            direction(observerAgeInYrs).describe.params = directionParams;
+            directionStruct(observerAgeInYrs).differentialPositive = differentialPositive;
+            directionStruct(observerAgeInYrs).differentialNegative = differentialNegative;     
+            directionStruct(observerAgeInYrs).backgroundPrimary = backgroundPrimary;
+            directionStruct(observerAgeInYrs).describe.backgroundSpd = backgroundSpd;
+            directionStruct(observerAgeInYrs).describe.modulationPrimarySignedPositive = modulationPrimarySignedPositive;
+            directionStruct(observerAgeInYrs).describe.modulationSpdSignedPositive = modulationSpdSignedPositive;      
+            directionStruct(observerAgeInYrs).describe.params = directionParams;
         end
 
     otherwise
