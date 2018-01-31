@@ -67,23 +67,14 @@ if ~isdir(cacheDir)
     mkdir(cacheDir);
 end
 
-% Background cache files, which we use here, have their own happy home.
-backgroundCacheDir = fullfile(getpref(approach, 'BackgroundNominalPrimariesPath'));
-
 %% Load the calibration file
 cal = LoadCalFile(OLCalibrationTypes.(directionParams.calibrationType).CalFileName, [], fullfile(getpref(approach, 'OneLightCalDataPath')));
 assert(~isempty(cal), 'OLFlickerComputeModulationSpectra:NoCalFile', 'Could not load calibration file: %s', ...
     OLCalibrationTypes.(directionParams.calibrationType).CalFileName);
 
-%% Pull out S
-S = cal.describe.S;
-
 %% Create the direction cache object and filename
 directionOlCache = OLCache(cacheDir, cal);
 [~, directionCacheFileName] = fileparts(directionParams.cacheFile);
-
-%% Create the background cache object
-backgroundOlCache = OLCache(backgroundCacheDir, cal);
 
 %% Need to check here whether we can just use the current cached data and do so if possible.
 %
@@ -110,6 +101,8 @@ end
 
 %% OK, if we're here we need to compute.
 % Grab the background from the cache file
+backgroundCacheDir = fullfile(getpref(approach, 'BackgroundNominalPrimariesPath'));
+backgroundOlCache = OLCache(backgroundCacheDir, cal);
 backgroundCacheFile = ['Background_' directionParams.backgroundName '.mat'];
 [backgroundCacheData,isStale] = backgroundOlCache.load(backgroundCacheFile);
 assert(~isStale,'Background cache file is stale, aborting.');
@@ -121,6 +114,5 @@ cacheData.data = OLDirectionNominalFromParams(directionParams,backgroundPrimary,
 cacheData.cal = cal;
 cacheData.directionParams = directionParams;
 wasRecomputed = true;
-
 
 end

@@ -54,6 +54,7 @@ parser.addParameter('verbose',false,@islogical);
 parser.parse(directionParams,backgroundPrimary,calibration,varargin{:});
 
 S = calibration.describe.S;
+backgroundSpd = OLPrimaryToSpd(calibration, backgroundPrimary);
 
 %% Generate direction
 switch directionParams.type
@@ -102,13 +103,6 @@ switch directionParams.type
         for observerAgeInYears = 20:60
             % Say hello
             if (parser.Results.verbose), fprintf('\nObserver age: %g\n',observerAgeInYears); end
-            
-            % Grab the background from the cache file
-%             backgroundCacheFile = ['Background_' directionParams.backgroundName '.mat'];
-%             [backgroundCacheData,isStale] = backgroundOlCache.load(backgroundCacheFile);
-%             assert(~isStale,'Background cache file is stale, aborting.');
-%             backgroundPrimary = backgroundCacheData.data(directionParams.backgroundObserverAge).backgroundPrimary;
-            backgroundSpd = OLPrimaryToSpd(calibration, backgroundPrimary);
             
             % Get fraction bleached for background we're actually using
             if (directionParams.doSelfScreening)
@@ -194,8 +188,6 @@ switch directionParams.type
         % not currently use them. That is because this counts on the background having
         % been set up to accommodate the desired modulation.
         
-        backgroundSpd = OLPrimaryToSpd(calibration, backgroundPrimary);
-
         % Modulation.  This is the background scaled up by the factor that the background
         % was originally scaled down by.
         modulationPrimarySignedPositive = backgroundPrimary*directionParams.lightFluxDownFactor;
