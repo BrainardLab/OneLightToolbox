@@ -1,6 +1,6 @@
 function [waveform, timestep, waveformDuration] = OLWaveformFromName(waveformName)
 % Generate a parameterized waveform from the parameter name
-
+%
 % Syntax:
 %   waveform = OLWaveformFromName(waveformName)
 %   [waveform, timestep, waveformDuration] = OLWaveformFromName(waveformName)
