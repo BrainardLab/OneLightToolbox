@@ -37,6 +37,17 @@ p.addOptional('verbose',false,@islogical);
 p.parse(approachParams,varargin{:});
 approachParams.verbose = p.Results.verbose;
 
+%% Setup the directories we'll use. 
+% Backgrounds go in their special place under the materials path approach
+% directory.
+cacheDir = fullfile(getpref(approachParams.approach, 'BackgroundNominalPrimariesPath'));
+if ~isdir(cacheDir)
+    mkdir(cacheDir);
+end
+
+%% Load the calibration file
+cal = OLGetCalibrationStructure('CalibrationType',approachParams.calibrationType,'CalibrationDate','latest');
+
 %% Make dictionary with direction-specific params for all directions
 paramsDictionary = OLBackgroundParamsDictionary();
 
@@ -49,13 +60,32 @@ for ii = 1:length(approachParams.backgroundNames)
     % information, such as the calibration names to be used.
     backgroundParams = OLMergeBaseParamsWithParamsFromDictionaryEntry(approachParams, paramsDictionary, backgroundName);
 
-    % The called routine checks whether the cacheFile exists, and if so and
-    % it isnt' stale, just returns the data.
-    [cacheDataBackground, olCacheBackground, wasRecomputed] = OLReceptorIsolateMakeBackgroundNominalPrimaries(approachParams.approach,backgroundParams, false, 'verbose', approachParams.verbose);
+    % Create the cache object and filename
+    olCache = OLCache(cacheDir, cal);
+    [~, cacheFileName] = fileparts(backgroundParams.cacheFile);
 
-    % Save the background primaries in a cache file, if it was recomputed.
-    if (wasRecomputed)
-        [~, cacheFileName] = fileparts(backgroundParams.cacheFile);
-        olCacheBackground.save(cacheFileName, cacheDataBackground);
+    % Check if exist && if stale
+    if (olCache.exist(cacheFileName))
+        [cacheData,isStale] = olCache.load(cacheFileName);
+        % Compare cacheData.describe.params against currently passed
+        % parameters to determine if cache is stale.   Could recompute, but
+        % we want the user to think about this case and make sure it wasn't
+        % just an error.
+        OLCheckCacheParamsAgainstCurrentParams(cacheData, backgroundParams);
     end
+    
+    % If not, recompute
+    if ~exist('isStale','var') || isStale
+        backgroundPrimary = OLBackgroundNominalPrimaryFromParams(backgroundParams, cal, 'verbose', p.Results.verbose);
+
+        % Fill in for all observer ages based on the nominal calculation.
+        for observerAgeInYears = 20:60     
+            cacheDataBackground.data(observerAgeInYears).backgroundPrimary = backgroundPrimary;
+        end
+        cacheDataBackground.params = backgroundParams;
+        cacheDataBackground.cal = cal;
+    end
+    
+    % Save out
+    olCache.save(cacheFileName, cacheDataBackground);
 end
