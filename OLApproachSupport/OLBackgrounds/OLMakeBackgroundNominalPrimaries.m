@@ -42,27 +42,20 @@ paramsDictionary = OLBackgroundParamsDictionary();
 
 %% Loop over directions
 for ii = 1:length(approachParams.backgroundNames)
-    generateAndSaveBackgroundPrimaries(approachParams,paramsDictionary,approachParams.backgroundNames{ii});
+    backgroundName = approachParams.backgroundNames{ii};
+    % Get background parameters out of the dictionary.
+    %
+    % The approach parameters structure specifies some background independent
+    % information, such as the calibration names to be used.
+    backgroundParams = OLMergeBaseParamsWithParamsFromDictionaryEntry(approachParams, paramsDictionary, backgroundName);
+
+    % The called routine checks whether the cacheFile exists, and if so and
+    % it isnt' stale, just returns the data.
+    [cacheDataBackground, olCacheBackground, wasRecomputed] = OLReceptorIsolateMakeBackgroundNominalPrimaries(approachParams.approach,backgroundParams, false, 'verbose', approachParams.verbose);
+
+    % Save the background primaries in a cache file, if it was recomputed.
+    if (wasRecomputed)
+        [~, cacheFileName] = fileparts(backgroundParams.cacheFile);
+        olCacheBackground.save(cacheFileName, cacheDataBackground);
+    end
 end
-end
-
-function generateAndSaveBackgroundPrimaries(approachParams, paramsDictionary, backgroundName)
-
-% Get background parameters out of the dictionary.
-%
-% The approach parameters structure specifies some background independent
-% information, such as the calibration names to be used.
-backgroundParams = OLMergeBaseParamsWithParamsFromDictionaryEntry(approachParams, paramsDictionary, backgroundName);
-
-% The called routine checks whether the cacheFile exists, and if so and
-% it isnt' stale, just returns the data.
-[cacheDataBackground, olCacheBackground, wasRecomputed] = OLReceptorIsolateMakeBackgroundNominalPrimaries(approachParams.approach,backgroundParams, false, 'verbose', approachParams.verbose);
-
-% Save the background primaries in a cache file, if it was recomputed.
-if (wasRecomputed)
-    [~, cacheFileName] = fileparts(backgroundParams.cacheFile);
-    olCacheBackground.save(cacheFileName, cacheDataBackground);
-end
-end
-
-
