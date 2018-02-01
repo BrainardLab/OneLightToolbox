@@ -38,7 +38,7 @@ p.parse(approachParams,varargin{:});
 approachParams.verbose = p.Results.verbose;
 
 %% Make dictionary with direction-specific params for all directions
-paramsDictionary = OLBackgroundNominalParamsDictionary();
+paramsDictionary = OLBackgroundParamsDictionary();
 
 %% Loop over directions
 for ii = 1:length(approachParams.backgroundNames)

@@ -20,7 +20,7 @@ function OLCheckCacheParamsAgainstCurrentParams(cacheParams, currentParams)
 %% Farm out check based on dictionary type
 switch (currentParams.dictionaryType)
     case 'Background'
-        checkBackgroundNominalParams(cacheParams.params, currentParams);
+        checkBackgroundParams(cacheParams.params, currentParams);
     case 'Direction'
         checkDirectionNominalParams(cacheParams.directionParams, currentParams);
     otherwise
@@ -28,7 +28,7 @@ switch (currentParams.dictionaryType)
 end
 end
 
-function checkBackgroundNominalParams(cacheParams, currentParams)
+function checkBackgroundParams(cacheParams, currentParams)
 
 if (~strcmp(cacheParams.dictionaryType,currentParams.dictionaryType))
     error('Cached and current Background params are not of same dictionary type.');

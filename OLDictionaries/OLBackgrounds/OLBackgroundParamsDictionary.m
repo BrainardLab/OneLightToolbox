@@ -1,14 +1,14 @@
-function dictionary = OLBackgroundNominalParamsDictionary()
+function dictionary = OLBackgroundParamsDictionary()
 % Defines a dictionary with parameters for named nominal backgrounds
 %
 % Syntax:
-%   dictionary = OLBackgroundNominalParamsDictionary()
+%   dictionary = OLBackgroundParamsDictionary()
 %
 % Description:
 %    Define a dictionary of named backgrounds of modulation, with
 %    corresponding nominal parameters. Types of backgrounds, and their
-%    corresponding fields, are defined in OLBackgroundNominalParamsDefaults
-%    and validated by OLBackgroundNominalParamsValidate.
+%    corresponding fields, are defined in OLBackgroundParamsDefaults
+%    and validated by OLBackgroundParamsValidate.
 %
 % Inputs:
 %    None.
@@ -30,7 +30,7 @@ function dictionary = OLBackgroundNominalParamsDictionary()
 %              energy spectrum, scaled in middle of gamut.
 %
 % See also: 
-%    OLBackgroundNominalParamsDefaults, OLBackgroundNominalParamsValidate,
+%    OLBackgroundParamsDefaults, OLBackgroundParamsValidate,
 %    OLMakeBackgroundNominalPrimaries, 
 
 %    OLDirectionNominalParamsDictionary, OLMakeDirectionNominalPrimaries,
@@ -69,7 +69,7 @@ dictionary = containers.Map();
 baseName = 'MelanopsinDirected';
 type = 'optimized';
 
-params = OLBackgroundNominalParamsDefaults(type);
+params = OLBackgroundParamsDefaults(type);
 params.baseModulationContrast = 4/6;
 params.primaryHeadRoom = 0.01;
 params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
@@ -81,7 +81,7 @@ params.directionsYoked = [0];
 params.directionsYokedAbs = [0];
 params.name = OLMakeApproachBackgroundName(baseName,params);
 params.cacheFile = ['Background_' params.name  '.mat'];
-if OLBackgroundNominalParamsValidate(params)
+if OLBackgroundParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
 end
@@ -97,7 +97,7 @@ end
 baseName = 'MelanopsinDirected';
 type = 'optimized';
 
-params = OLBackgroundNominalParamsDefaults(type);
+params = OLBackgroundParamsDefaults(type);
 params.baseModulationContrast = 4/6;
 params.primaryHeadRoom = 0.01;
 params.fieldSizeDegrees = 60;
@@ -111,7 +111,7 @@ params.directionsYoked = [0];
 params.directionsYokedAbs = [0];
 params.name = OLMakeApproachBackgroundName(baseName,params);
 params.cacheFile = ['Background_' params.name  '.mat'];
-if OLBackgroundNominalParamsValidate(params)
+if OLBackgroundParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
 end
@@ -127,7 +127,7 @@ end
 baseName = 'LMSDirected';
 type = 'optimized';
 
-params = OLBackgroundNominalParamsDefaults(type);
+params = OLBackgroundParamsDefaults(type);
 params.baseModulationContrast = 4/6;
 params.primaryHeadRoom = 0.005;
 params.fieldSizeDegrees = 27.5;
@@ -141,7 +141,7 @@ params.directionsYoked = [1];
 params.directionsYokedAbs = [0];
 params.name = OLMakeApproachBackgroundName(baseName,params);
 params.cacheFile = ['Background_' params.name  '.mat'];
-if OLBackgroundNominalParamsValidate(params)
+if OLBackgroundParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
 end
@@ -157,7 +157,7 @@ end
 baseName = 'LMSDirected';
 type = 'optimized';
 
-params = OLBackgroundNominalParamsDefaults(type);
+params = OLBackgroundParamsDefaults(type);
 params.baseModulationContrast = 4/6;
 params.primaryHeadRoom = 0.005;
 params.fieldSizeDegrees = 60;
@@ -171,7 +171,7 @@ params.directionsYoked = [1];
 params.directionsYokedAbs = [0];
 params.name = OLMakeApproachBackgroundName(baseName,params);
 params.cacheFile = ['Background_' params.name  '.mat'];
-if OLBackgroundNominalParamsValidate(params)
+if OLBackgroundParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
 end
@@ -187,7 +187,7 @@ end
 baseName = 'MelanopsinDirected';
 type = 'optimized';
 
-params = OLBackgroundNominalParamsDefaults(type);
+params = OLBackgroundParamsDefaults(type);
 params.baseModulationContrast = 4/6;
 params.primaryHeadRoom = 0.01;
 params.pupilDiameterMm = 6;
@@ -200,7 +200,7 @@ params.directionsYoked = [0];
 params.directionsYokedAbs = [0];
 params.name = OLMakeApproachBackgroundName(baseName,params);
 params.cacheFile = ['Background_' params.name  '.mat'];
-if OLBackgroundNominalParamsValidate(params)
+if OLBackgroundParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
 end
@@ -216,7 +216,7 @@ end
 baseName = 'LMSDirected';
 type = 'optimized';
 
-params = OLBackgroundNominalParamsDefaults(type);
+params = OLBackgroundParamsDefaults(type);
 params.baseModulationContrast = 4/6;
 params.primaryHeadRoom = 0.005;
 params.pupilDiameterMm = 6;
@@ -229,7 +229,7 @@ params.directionsYoked = [1];
 params.directionsYokedAbs = [0];
 params.name = OLMakeApproachBackgroundName(baseName,params);
 params.cacheFile = ['Background_' params.name  '.mat'];
-if OLBackgroundNominalParamsValidate(params)
+if OLBackgroundParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
 end
@@ -240,12 +240,12 @@ end
 baseName = 'LightFlux';
 type = 'lightfluxchrom';
 
-params = OLBackgroundNominalParamsDefaults(type);
+params = OLBackgroundParamsDefaults(type);
 params.lightFluxDesiredXY = [0.54,0.38];
 params.lightFluxDownFactor = 5;
 params.name = OLMakeApproachBackgroundName(baseName,params);
 params.cacheFile = ['Background_' params.name  '.mat'];
-if OLBackgroundNominalParamsValidate(params)
+if OLBackgroundParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
 end
@@ -256,12 +256,12 @@ end
 baseName = 'LightFlux';
 type = 'lightfluxchrom';
 
-params = OLBackgroundNominalParamsDefaults(type);
+params = OLBackgroundParamsDefaults(type);
 params.lightFluxDesiredXY = [0.33,0.33];
 params.lightFluxDownFactor = 2;
 params.name = OLMakeApproachBackgroundName(baseName,params);
 params.cacheFile = ['Background_' params.name  '.mat'];
-if OLBackgroundNominalParamsValidate(params)
+if OLBackgroundParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
 end

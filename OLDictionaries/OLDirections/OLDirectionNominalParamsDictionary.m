@@ -29,7 +29,7 @@ function dictionary = OLDirectionNominalParamsDictionary()
 %    OLDirectionNominalParamsDefaults, OLDirectionNominalParamsValidate,
 %
 %    OLMakeDirectionNominalPrimaries, 
-%    OLBackgroundNominalParamsDictionary, OLMakeBackgroundNominalPrimaries,
+%    OLBackgroundParamsDictionary, OLMakeBackgroundNominalPrimaries,
 %
 %    OLCheckCacheParamsAgainstCurrentParams
 
@@ -387,7 +387,7 @@ function backgroundName = OLMakeApproachDirectionBackgroundName(name,params)
 %    None.
 %
 % See also:
-%    OLBackgroundNominalParamsDictionary, 
+%    OLBackgroundParamsDictionary, 
 params.type = params.backgroundType;
 backgroundName = OLMakeApproachBackgroundName(name,params);
 end

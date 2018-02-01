@@ -1,4 +1,4 @@
-function params = OLBackgroundNominalParamsDefaults(type)
+function params = OLBackgroundParamsDefaults(type)
 % Returns structure with default parameters for a background type
 %
 % Syntax:
@@ -8,7 +8,7 @@ function params = OLBackgroundNominalParamsDefaults(type)
 %    Since a lot of background specifications are small variations, this
 %    function generates a set of default parameters; the parameters of
 %    interest can then be overridden afterwards (either in the 
-%    OLBackgroundNominalParamsDictionary, or elsewhere), before using the
+%    OLBackgroundParamsDictionary, or elsewhere), before using the
 %    parameters to generate background primary values.
 %
 % Inputs:
@@ -25,7 +25,7 @@ function params = OLBackgroundNominalParamsDefaults(type)
 %    None.
 %
 % See also:
-%    OLBackgroundNominalParamsValidate, OLBackgroundNominalParamsDictionary 
+%    OLBackgroundParamsValidate, OLBackgroundParamsDictionary 
 
 % History:
 %    01/25/18  jv  Extracted from OLBackgroundNominalParamsDictionary

@@ -1,13 +1,13 @@
-function valid = OLBackgroundNominalParamsValidate(params)
+function valid = OLBackgroundParamsValidate(params)
 % Validate passed background parameters
 %
 % Syntax:
-%   valid = OLBackgroundNominalParamsValidate(entry)
+%   valid = OLBackgroundParamsValidate(entry)
 %
 % Description:
 %    This function checks whether a given params struct has all the
 %    appropriate fields, and no additional fields. The exact fields
-%    required, are those returned by OLBackgroundNominalParamsDefaults, for
+%    required, are those returned by OLBackgroundParamsDefaults, for
 %    the background type specified in params. Throws an error if additional
 %    fields are present, or if a field is missing or contains an unexpected
 %    value.
@@ -18,20 +18,20 @@ function valid = OLBackgroundNominalParamsValidate(params)
 % Outputs:
 %    valid  - logical boolean. True if entry contains all those fields, and 
 %             only those fields, returned by
-%             OLBackgroundNominalParamsDefaults for the given type. False
+%             OLBackgroundParamsDefaults for the given type. False
 %             if missing or additional fields.
 %
 % Optional key/value pairs:
 %    None.
 %
 % See also:
-%    OLBackgroundNominalParamsDefaults, OLBackgroundNominalParamsDictionary
+%    OLBackgroundParamsDefaults, OLBackgroundParamsDictionary
 
 % History:
 %    01/25/18  jv  Extracted from OLBackgroundNominalParamsDictionary
 
 % Get all the expected field names for this type
-allFieldNames = fieldnames(OLBackgroundNominalParamsDefaults(params.type));
+allFieldNames = fieldnames(OLBackgroundParamsDefaults(params.type));
 
 % Test that there are no extra params
 if (~all(ismember(fieldnames(params), allFieldNames)))
