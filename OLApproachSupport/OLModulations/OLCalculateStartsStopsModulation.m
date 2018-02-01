@@ -21,7 +21,7 @@ function modulation = OLCalculateStartsStopsModulation(waveformParams, cal, back
 % Optional key/value pairs.
 %    None.
 %
-% See also: OLMakeModulationsStartsStops, OLReceptorIsolateMakeModulationStartsStops, OLModulationParamsDictionary.
+% See also: OLMakeModulationsStartsStops, OLReceptorIsolateMakeModulationStartsStops, OLWaveformParamsDictionary.
 
 % 7/21/17  dhb        Tried to improve comments.
 % 8/09/17  dhb, mab   Compute pos/neg diff more flexibly. 
