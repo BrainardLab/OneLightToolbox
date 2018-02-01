@@ -102,7 +102,6 @@ clear cacheData
 backgroundPrimary = directionData.backgroundPrimary;
 
 %% Put primary data for direction into canonical form
-%
 % In some cases, the postive or negative difference may take things out of gamut.
 % We don't check here. Rather, when the actual starts and stops get made, we check
 % whether things are OK.
@@ -114,7 +113,6 @@ switch (directionParams.type)
         % whether directionData.modulationPrimarySignedNegative is empty.  If it is
         % empty, then we construct the negative by flipping the positve.  If it is explicitly
         % specified, then we we use it.
-        modulationPrimary = directionData.modulationPrimarySignedPositive;
         diffPrimaryPos = directionData.modulationPrimarySignedPositive-backgroundPrimary;
         if (~isempty(directionData.modulationPrimarySignedNegative))
             diffPrimaryNeg = directionData.modulationPrimarySignedNegative-backgroundPrimary;
@@ -127,73 +125,13 @@ switch (directionParams.type)
 end
 
 %% Here compute the modulation and waveform as specified in the modulation file.
-%
-% Some parameters are common to all modulation types, and some are specific to specific types.
-% We set these up here for all into OLCaclulateStartsStopsModulations.
-
 % Construct the waverform parameters for the particular type of modulation we
-% are constructing.  The structure waveformParams is pretty similar to modulationParams,
-% but has some calculated fields added and some field name diffferences that exist
-% for historical reasons.  We may eventually be able to merge the two.
-waveformParams.type = waveformParams.type;
-switch (waveformParams.type)
-
-    case 'pulse'
-        % A unidirectional pulse
-        % Frequency and phase parameters are meaningless here, and ignored.
-        waveformParams.contrast = waveformParams.contrast;
-        waveformParams.stimulusDuration = waveformParams.stimulusDuration;
-        if (p.Results.verbose)
-            fprintf('\tCalculating pulse: %0.f s of %s, %.1f pct contrast (of max)\n', waveformParams.stimulusDuration, directionName, 100*waveformParams.contrast);
-        end
-        
-    case 'sinusoid'
-        % A sinuloidal modulation around a background
-        waveformParams.frequency = waveformParams.frequency;
-        waveformParams.phaseDegs = waveformParams.phaseDegs;
-        waveformParams.contrast = waveformParams.contrast;
-        waveformParams.stimulusDuration = waveformParams.stimulusDuration;          
-        if (p.Results.verbose)
-            fprintf('\tCalculating %0.f s of %s, %.2f Hz, %.2f deg, %.1f pct contrast (of max)\n', waveformParams.stimulusDuration, directionName, waveformParams.frequency, waveformParams.phaseDegs, 100*waveformParams.contrast);
-        end
-        
-    case 'AM'
-        % Amplitude modulation of an underlying carrier frequency
-        error('Not yet implemented.  Harmonize the dictionary, the protocolParams.trialTypeParams, and this code.');
-        waveformParams.theEnvelopeFrequencyHz = waveformParams.modulationFrequencyTrials(1); % Modulation frequency
-        waveformParams.thePhaseDeg = waveformParams.modulationPhase;
-        waveformParams.thePhaseRad = deg2rad(waveformParams.modulationPhase);
-        waveformParams.theFrequencyHz = waveformParams.carrierFrequency;
-        waveformParams.contrast = waveformParams.contrast;
-        if (p.Results.verbose)
-            fprintf('\tCalculating %0.f s of %s, %.2f Hz, %.2f deg, %.1f pct contrast (of max)\n', waveformParams.stimulusDuration, directionName, waveformParams.theFrequencyHz, waveformParams.thePhaseDeg, 100*waveformParams.contrast);
-        end
-        
-    otherwise
-        error('Unknown modulation type specified');
-end
-
-% Waveform timebase
-waveformParams.t = 0:waveformParams.timeStep:waveformParams.stimulusDuration-waveformParams.timeStep;
-
-% Parameters common to all modulation types
-%
-% Windowing.  At present all windows are half-cosine.
-%
-% Define if there should be a cosine fading at the beginning of
-% end of the stimulus. If yes, this also gets extracted from
-% the config file
-waveformParams.window.type = 'cosine';
-waveformParams.window.cosineWindowIn = waveformParams.cosineWindowIn;
-waveformParams.window.cosineWindowOut = waveformParams.cosineWindowOut;
-waveformParams.window.cosineWindowDurationSecs = waveformParams.cosineWindowDurationSecs;
-waveformParams.window.nWindowed = waveformParams.cosineWindowDurationSecs/waveformParams.timeStep;
+% are constructing.
 
 % Exactly how we call the underlying routine depends on the modulation type, so handle that here.
 switch (waveformParams.type)
     case {'pulse', 'sinusoid'}
         modulation = OLCalculateStartsStopsModulation(waveformParams, waveformParams.oneLightCal, backgroundPrimary, diffPrimaryPos, diffPrimaryNeg);
-
     otherwise
         error('Unknown direction type specified.');
 end
@@ -204,11 +142,9 @@ modulationData.protocolParams = protocolParams;
 modulationData.modulation = modulation;
 
 %% Save out the modulation
-%
-% Add trial type to the out file name
-startsStopsFileName = strcat(startsStopsFileName, sprintf('_trialType_%s',num2str(trialType)));
-save(startsStopsFileName, 'modulationData', '-v7.3');
-if (p.Results.verbose); fprintf(['\tSaved modulation to ' startsStopsFileName '\n']); end;
+startsStopsFileName = sprintf('%s_trialType_%d',startsStopsFileName,trialType);
+save(startsStopsFileName, 'modulationData');
+if (p.Results.verbose); fprintf(['\tSaved modulation to ' startsStopsFileName '\n']); end
 end
 
 %%OLAssembleDirectionCacheAndStartsStopFileNames
