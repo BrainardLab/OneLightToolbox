@@ -47,27 +47,20 @@ paramsDictionary = OLDirectionParamsDictionary();
 
 %% Loop over directions
 for ii = 1:length(approachParams.directionNames)
-    generateAndSaveDirectionPrimaries(approachParams,paramsDictionary,approachParams.directionNames{ii});
+    directionName = approachParams.directionNames{ii};
+    % Get direction parameters out of the dictionary.
+    %
+    % The approach parameters structure specifies some direction independent
+    % information, such as the calibration names to be used.
+    directionParams = OLMergeBaseParamsWithParamsFromDictionaryEntry(approachParams, paramsDictionary, directionName);
+
+    % The called routine checks whether the cacheFile exists, and if so and
+    % it isnt' stale, just returns the data.
+    [cacheDataDirection, olCacheDirection, wasRecomputed] = OLReceptorIsolateMakeDirectionNominalPrimaries(approachParams.approach,directionParams, false, 'verbose', approachParams.verbose);
+
+    % Save the direction primaries in a cache file, if it was recomputed.
+    if (wasRecomputed)
+        [~, cacheFileName] = fileparts(directionParams.cacheFile);
+        olCacheDirection.save(cacheFileName, cacheDataDirection);
+    end
 end
-end
-
-function generateAndSaveDirectionPrimaries(approachParams, paramsDictionary, directionName)
-
-% Get direction parameters.
-%
-% The approach parameters structure specifies some direction independent
-% information, such as the calibration names to be used.
-directionParams = OLMergeBaseParamsWithParamsFromDictionaryEntry(approachParams, paramsDictionary, directionName);
-
-% The called routine checks whether the cacheFile exists, and if so and
-% it isnt' stale, just returns the data.
-[cacheDataDirection, olCacheDirection, wasRecomputed] = OLReceptorIsolateMakeDirectionNominalPrimaries(approachParams.approach,directionParams,false,'verbose',approachParams.verbose);
-
-% Save the direction primaries in a cache file, if it was recomputed.
-if (wasRecomputed)
-    [~, cacheFileName] = fileparts(directionParams.cacheFile);
-    olCacheDirection.save(cacheFileName, cacheDataDirection);
-end
-end
-
-
