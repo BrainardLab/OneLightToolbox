@@ -59,6 +59,7 @@ paramsDictionary = OLBackgroundParamsDictionary();
 %% Loop over directions
 for ii = 1:length(approachParams.backgroundNames)
     backgroundName = approachParams.backgroundNames{ii};
+    
     % Get background parameters out of the dictionary.
     %
     % The approach parameters structure specifies some background independent
@@ -72,6 +73,7 @@ for ii = 1:length(approachParams.backgroundNames)
     % Check if exist && if stale
     if (olCache.exist(cacheFileName))
         [cacheData,isStale] = olCache.load(cacheFileName);
+        
         % Compare cacheData.describe.params against currently passed
         % parameters to determine if cache is stale.   Could recompute, but
         % we want the user to think about this case and make sure it wasn't
