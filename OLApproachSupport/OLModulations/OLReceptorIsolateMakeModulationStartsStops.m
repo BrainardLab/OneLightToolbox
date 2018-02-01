@@ -96,16 +96,16 @@ switch (directionParams.type)
 end
 
 %% Construct the waverform from parameters
-[directionWaveform, timestep, waveformDuration] = OLWaveformFromParams(modulationParams);
+[directionWaveform, timestep, waveformDuration] = OLWaveformFromParams(waveformParams);
 
 %% Assemble modulation
-modulation = OLAssembleModulation(directionWaveform, modulationParams.oneLightCal, backgroundPrimary, diffPrimaryPos, diffPrimaryNeg);
+modulation = OLAssembleModulation(directionWaveform, waveformParams.oneLightCal, backgroundPrimary, diffPrimaryPos, diffPrimaryNeg);
 modulation.timestep = timestep;
 modulation.stimulusDuration = waveformDuration;
 
 % We're treating the background real special here.
 modulation.background.primaries = backgroundPrimary;
-[modulation.background.starts, modulation.background.stops] = OLPrimaryToStartsStops(backgroundPrimary,modulationParams.oneLightCal);
+[modulation.background.starts, modulation.background.stops] = OLPrimaryToStartsStops(backgroundPrimary,waveformParams.oneLightCal);
 
 %% Put everything into a return strucure
 modulationData.modulationParams = waveformParams;
