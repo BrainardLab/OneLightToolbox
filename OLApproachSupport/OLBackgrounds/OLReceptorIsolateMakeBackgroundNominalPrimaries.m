@@ -103,92 +103,9 @@ if (~forceRecompute)
 end
 
 %% OK, need to recompute
-switch backgroundParams.type
-    case 'named'
-        % These are cases where we just do something very specific with the
-        % name.
-        switch backgroundParams.name
-            case 'BackgroundHalfOn'
-                backgroundPrimary = 0.5*ones(size(cal.computed.pr650M,2),1);
-            case 'BackgroundEES'
-                backgroundPrimary = InvSolveChrom(cal, [1/3 1/3]);
-            otherwise
-                error('Unknown named background passed');
-        end
-        
-    case 'lightfluxchrom'
-        % Background at specified chromaticity that allows a large light
-        % flux pulse modulation.
-        maxBackgroundPrimary = OLBackgroundInvSolveChrom(cal, backgroundParams.lightFluxDesiredXY);
-        backgroundPrimary = maxBackgroundPrimary/backgroundParams.lightFluxDownFactor;
-        
-    case 'optimized'
-        % These backgrounds get optimized according to the parameters in
-        % the structure.  Backgrounds are optimized with respect to a
-        % backgroundParams.backgroundObserverAge year old observer, and no correction
-        % for photopigment bleaching is applied.  We are just trying to get
-        % pretty good backgrounds, so we don't need to fuss with small
-        % effects.
-        
-        %% Photoreceptor classes: cell array of strings
-        photoreceptorClasses = backgroundParams.photoreceptorClasses;
-        
-        %% Set up what will be common to all observer ages
-        % Pull out the 'M' matrix
-        B_primary = cal.computed.pr650M;
-        
-        %% Set up parameters for the optimization
-        whichPrimariesToPin = [];
-        whichReceptorsToIgnore = backgroundParams.whichReceptorsToIgnore;
-        whichReceptorsToIsolate = backgroundParams.whichReceptorsToIsolate;
-        whichReceptorsToMinimize = backgroundParams.whichReceptorsToMinimize;
-        
-        % Peg desired contrasts
-        if ~isempty(backgroundParams.modulationContrast)
-            desiredContrasts = backgroundParams.modulationContrast;
-        else
-            desiredContrasts = [];
-        end
-        
-        % Assign a zero 'ambientSpd' variable if we're not using the
-        % measured ambient.
-        if backgroundParams.useAmbient
-            ambientSpd = cal.computed.pr650MeanDark;
-        else
-            ambientSpd = zeros(size(B_primary,1),1);
-        end
-        
-        % We get backgrounds for the nominal observer age, and hope for the
-        % best for other observer ages.
-        observerAgeInYears = backgroundParams.backgroundObserverAge;
-        
-        %% Initial background
-        %
-        % Start at mid point of primaries.
-        backgroundPrimary = 0.5*ones(size(B_primary,2),1);
-        
-        %% Construct the receptor matrix
-        lambdaMaxShift = zeros(1, length(photoreceptorClasses));
-        fractionBleached = zeros(1,length(photoreceptorClasses));
-        T_receptors = GetHumanPhotoreceptorSS(S, photoreceptorClasses, backgroundParams.fieldSizeDegrees, observerAgeInYears, backgroundParams.pupilDiameterMm, lambdaMaxShift, fractionBleached);
-        
-        %% Isolate the receptors by calling the wrapper
-        initialPrimary = backgroundPrimary;
-        optimizedBackgroundPrimaries = ReceptorIsolateOptimBackgroundMulti(T_receptors, whichReceptorsToIsolate, ...
-            whichReceptorsToIgnore,whichReceptorsToMinimize,B_primary,backgroundPrimary,...
-            initialPrimary,whichPrimariesToPin,backgroundParams.primaryHeadRoom,backgroundParams.maxPowerDiff,...
-            desiredContrasts,ambientSpd,backgroundParams.directionsYoked,backgroundParams.directionsYokedAbs,backgroundParams.pegBackground);
-        
-        %% Pull out what we want
-        backgroundPrimary = optimizedBackgroundPrimaries{1};   
-        
-    otherwise
-        error('Unknown type for background passed');
-end
+backgroundPrimary = OLBackgroundNominalPrimaryFromParams(backgroundParams, cal, 'verbose', p.Results.verbose);
 
  %% Fill in the cache data for return
- %
- %
  % Fill in for all observer ages based on the nominal calculation.
  for observerAgeInYears = 20:60     
      % The background
