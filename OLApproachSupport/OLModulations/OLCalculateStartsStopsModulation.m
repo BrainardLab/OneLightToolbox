@@ -51,7 +51,7 @@ parser.parse(waveformParams,calibration,backgroundPrimary,diffPrimaryPos,varargi
 diffPrimaryNeg = parser.Results.diffPrimaryNeg;
 
 %% Generate the direction waveform from parameters
-[waveformDirection, waveformParams] = OLWaveformFromParams(waveformParams);
+[waveformDirection, timestep, waveformDuration] = OLWaveformFromParams(waveformParams);
 
 %% Assemble waveforms matrix
 % To generate the primary waveform, we need to combine the background, and
@@ -78,21 +78,23 @@ else
 end
 primaryValues = [backgroundPrimary, diffPrimaryPos, diffPrimaryNeg];
 
+
 %% Create primary waveform matrix, predict SPDs
 % OLPrimaryWaveform will do the matrix multiplication for us.
 primaryWaveform = OLPrimaryWaveform(primaryValues,waveformMatrix,'truncateGamut',false);
-spd = OLPrimaryToSpd(calibration,primaryWaveform);
+nominalSpd = OLPrimaryToSpd(calibration,primaryWaveform);
 
 %% Convert to starts/stops
 [starts, stops] = OLPrimaryToStartsStops(primaryWaveform,calibration);
 
 %% Creature return struct
 modulation = struct();
-modulation.waveformParams = waveformParams;
-modulation.waveform = waveformDirection;
+modulation.timestep = timestep;
+modulation.duration = waveformDuration;
+modulation.waveformMatrix;
+modulation.primaryValues = primaryValues;
+modulation.primaryWaveform = primaryWaveforms;
 modulation.starts = starts;
 modulation.stops = stops;
-modulation.primaryValues = primaryValues;
-modulation.primaries = primaryWaveform;
 modulation.background.primaries = backgroundPrimary;
 [modulation.background.starts, modulation.background.stops] = OLPrimaryToStartsStops(backgroundPrimary,calibration);
