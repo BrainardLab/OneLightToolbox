@@ -2,7 +2,8 @@ function directionStruct = OLDirectionNominalStructFromParams(directionParams,ba
 % Generate a parameterized direction from the given parameters
 %
 % Syntax:
-%   directionStruct = OLDirectionNominalFromParams(directionParameters)
+%   directionStruct = OLDirectionNominalFromParams(directionParameters, backgroundPrimary, calibration)
+%   directionStruct = OLDirectionNominalFromParams(..., 'verbose', true)
 %
 % Description:
 %    For several common types of directions, this function can generate the
@@ -18,26 +19,28 @@ function directionStruct = OLDirectionNominalStructFromParams(directionParams,ba
 %    parameters are predefined in OLDirectionParamsDictionary.
 %
 % Inputs:
-%    directionParams - struct defining the parameters for a type of
-%                       direction. Can be generated using
-%                       OLDirectionParamsDefaults
+%    directionParams   - struct defining the parameters for a type of
+%                        direction. Can be generated using
+%                        OLDirectionParamsDefaults
+%    backgroundPrimary - the primary values for the background
+%    calibration       - OneLight calibration struct
 %
 % Outputs:
-%    directionStruct - a 1x60 struct array (one struct per observer age
-%                      1:60 yrs), with the following fields:
-%                         * backgroundPrimary   : the primary values for
+%    directionStruct   - a 1x60 struct array (one struct per observer age
+%                        1:60 yrs), with the following fields:
+%                          * backgroundPrimary   : the primary values for
 %                                                 the background.
-%                         * differentialPositive: the difference in primary
+%                          * differentialPositive: the difference in primary
 %                                                 values to be added to the
 %                                                 background primary to
 %                                                 create the positive
 %                                                 direction
-%                         * differentialNegative: the difference in primary
+%                          * differentialNegative: the difference in primary
 %                                                 values to be added to the
 %                                                 background primary to
 %                                                 create the negative
 %                                                 direction
-%                         * describe            : Any additional
+%                          * describe            : Any additional
 %                                                 (meta)-information that
 %                                                 might be stored
 %
