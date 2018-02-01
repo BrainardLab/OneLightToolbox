@@ -1,13 +1,13 @@
-function valid = OLDirectionNominalParamsValidate(params)
+function valid = OLDirectionParamsValidate(params)
 % Validate passed direction parameters
 %
 % Syntax:
-%   valid = OLDirectionNominalParamsValidate(entry)
+%   valid = OLDirectionParamsValidate(entry)
 %
 % Description:
 %    This function checks whether a given entry has all the appropriate 
 %    fields, and no additional fields. The exact fields required, are those
-%    returned by OLDirectionNominalParamsDefaults, for the direction type 
+%    returned by OLDirectionParamsDefaults, for the direction type 
 %    specified in params. Throws an error if additional fields are present,
 %    or if a field is missing or contains an unexpected value.
 %
@@ -17,14 +17,14 @@ function valid = OLDirectionNominalParamsValidate(params)
 % Outputs:
 %    valid  - logical boolean. True if entry contains all those fields, and 
 %             only those fields, returned by
-%             OLDirectionNominalParamsDefaults for the given type. False
+%             OLDirectionParamsDefaults for the given type. False
 %             if missing or additional fields.
 %
 % Optional key/value pairs:
 %    None.
 %
 % See also:
-%    OLDirectionNominalParamsDefaults, OLDirectionNominalParamsDictionary
+%    OLDirectionParamsDefaults, OLDirectionParamsDictionary
 
 % History:
 %    01/25/18  jv  Extracted from OLDirectionNominalParamsDictionary
@@ -32,7 +32,7 @@ function valid = OLDirectionNominalParamsValidate(params)
 valid = false;
 
 % Get all the expected field names for this type
-allFieldNames = fieldnames(OLDirectionNominalParamsDefaults(params.type));
+allFieldNames = fieldnames(OLDirectionParamsDefaults(params.type));
 
 % Test that there are no extra params
 if (~all(ismember(fieldnames(params),allFieldNames)))

@@ -22,7 +22,7 @@ switch (currentParams.dictionaryType)
     case 'Background'
         checkBackgroundNominalParams(cacheParams.params, currentParams);
     case 'Direction'
-        checkDirectionNominalParams(cacheParams.directionParams, currentParams);
+        checkDirectionParams(cacheParams.directionParams, currentParams);
     otherwise
         error('Unknown type: ''%s''.\n', type);
 end
@@ -42,7 +42,7 @@ switch (cacheParams.type)
 end
 end
 
-function checkDirectionNominalParams(cacheParams, currentParams)
+function checkDirectionParams(cacheParams, currentParams)
 switch (cacheParams.type)
     case {'unipolar','bipolar'}
          fieldsToCompare = {...
@@ -52,7 +52,7 @@ switch (cacheParams.type)
              'maxPowerDiff', ...
              'primaryHeadRoom'};
           if ~(AreStructsEqualOnFields(cacheParams, currentParams, fieldsToCompare))
-              error('DirectionNominalParams cache data and CurrentParams differ on fields!!\n');
+              error('DirectionParams cache data and CurrentParams differ on fields!!\n');
           end
     case 'lightfluxchrom'
          fieldsToCompare = {...
@@ -60,7 +60,7 @@ switch (cacheParams.type)
              'lightFluxDownFactor' , ...
              };
           if ~(AreStructsEqualOnFields(cacheParams, currentParams, fieldsToCompare))
-              error('DirectionNominalParams cache data and CurrentParams differ on fields!!\n');
+              error('DirectionParams cache data and CurrentParams differ on fields!!\n');
           end
     otherwise
         error('Unknown background type specified');

@@ -1,14 +1,14 @@
-function dictionary = OLDirectionNominalParamsDictionary()
+function dictionary = OLDirectionParamsDictionary()
 % Defines a dictionary with parameters for named nominal directions
 %
 % Syntax:
-%   dictionary = OLDirectionNominalParamsDictionary()
+%   dictionary = OLDirectionParamsDictionary()
 %
 % Description:
 %    Define a dictionary of named directions of modulation, with
 %    corresponding nominal parameters. Types of directions, and their
-%    corresponding fields, are defined in OLDirectionNominalParamsDefaults,
-%    and validated by OLDirectionNominalParamsValidate.
+%    corresponding fields, are defined in OLDirectionParamsDefaults,
+%    and validated by OLDirectionParamsValidate.
 %
 % Inputs:
 %    None.
@@ -21,12 +21,12 @@ function dictionary = OLDirectionNominalParamsDictionary()
 %
 % Notes:
 %    * When you add a new type, you need to add that type to the
-%      corresponding switch statement in OLDirectionNominalParamsDefaults,
-%      OLDirectionNominalParamsValidate, and 
+%      corresponding switch statement in OLDirectionParamsDefaults,
+%      OLDirectionParamsValidate, and 
 %      OLCheckCacheParamsAgainstCurrentParams.
 %
 % See also: 
-%    OLDirectionNominalParamsDefaults, OLDirectionNominalParamsValidate,
+%    OLDirectionParamsDefaults, OLDirectionParamsValidate,
 %
 %    OLMakeDirectionNominalPrimaries, 
 %    OLBackgroundNominalParamsDictionary, OLMakeBackgroundNominalPrimaries,
@@ -71,7 +71,7 @@ dictionary = containers.Map();
 baseName = 'MaxMel';
 type = 'unipolar';
 
-params = OLDirectionNominalParamsDefaults(type);
+params = OLDirectionParamsDefaults(type);
 params.primaryHeadRoom = 0.01;
 params.baseModulationContrast = 4/6;
 params.pupilDiameterMm = 8.0;
@@ -84,7 +84,7 @@ params.backgroundType = 'optimized';
 params.backgroundName = OLMakeApproachDirectionBackgroundName('MelanopsinDirected',params);
 params.name = OLMakeApproachDirectionName(baseName,params);
 params.cacheFile = ['Direction_' params.name '.mat'];
-if OLDirectionNominalParamsValidate(params)
+if OLDirectionParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
 end
@@ -97,7 +97,7 @@ end
 baseName = 'MaxMel';
 type = 'bipolar';
 
-params = OLDirectionNominalParamsDefaults(type);
+params = OLDirectionParamsDefaults(type);
 params.primaryHeadRoom = 0.01;
 params.baseModulationContrast = 4/6;
 params.pupilDiameterMm = 8.0;
@@ -110,7 +110,7 @@ params.backgroundType = 'optimized';
 params.backgroundName = OLMakeApproachDirectionBackgroundName('MelanopsinDirected',params);
 params.name = OLMakeApproachDirectionName(baseName,params);
 params.cacheFile = ['Direction_' params.name '.mat'];
-if OLDirectionNominalParamsValidate(params)
+if OLDirectionParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
 end
@@ -127,7 +127,7 @@ end
 baseName = 'MaxMel';
 type = 'unipolar';
 
-params = OLDirectionNominalParamsDefaults(type);
+params = OLDirectionParamsDefaults(type);
 params.primaryHeadRoom = 0.01;
 params.baseModulationContrast = 4/6;
 params.pupilDiameterMm = 6.0;
@@ -140,7 +140,7 @@ params.backgroundType = 'optimized';
 params.backgroundName = OLMakeApproachDirectionBackgroundName('MelanopsinDirected',params);
 params.name = OLMakeApproachDirectionName(baseName,params);
 params.cacheFile = ['Direction_' params.name '.mat'];
-if OLDirectionNominalParamsValidate(params)
+if OLDirectionParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
 end
@@ -156,7 +156,7 @@ end
 baseName = 'MaxMel';
 type = 'unipolar';
 
-params = OLDirectionNominalParamsDefaults(type);
+params = OLDirectionParamsDefaults(type);
 params.primaryHeadRoom = 0.01;
 params.baseModulationContrast = 4/6;
 params.fieldSizeDegrees = 60.0;
@@ -170,7 +170,7 @@ params.backgroundType = 'optimized';
 params.backgroundName = OLMakeApproachDirectionBackgroundName('MelanopsinDirected',params);
 params.name = OLMakeApproachDirectionName(baseName,params);
 params.cacheFile = ['Direction_' params.name '.mat'];
-if OLDirectionNominalParamsValidate(params)
+if OLDirectionParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
 end
@@ -186,7 +186,7 @@ end
 baseName = 'MaxLMS';
 type = 'unipolar';
 
-params = OLDirectionNominalParamsDefaults(type);
+params = OLDirectionParamsDefaults(type);
 params.primaryHeadRoom = 0.01;
 params.baseModulationContrast = 4/6;
 params.pupilDiameterMm = 8.0;
@@ -199,7 +199,7 @@ params.backgroundType = 'optimized';
 params.backgroundName = OLMakeApproachDirectionBackgroundName('LMSDirected',params);
 params.name = OLMakeApproachDirectionName(baseName,params);
 params.cacheFile = ['Direction_' params.name '.mat'];
-if OLDirectionNominalParamsValidate(params)
+if OLDirectionParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
 end
@@ -216,7 +216,7 @@ end
 baseName = 'MaxLMS';
 type = 'unipolar';
 
-params = OLDirectionNominalParamsDefaults(type);
+params = OLDirectionParamsDefaults(type);
 params.primaryHeadRoom = 0.01;
 params.baseModulationContrast = 4/6;
 params.pupilDiameterMm = 6.0;
@@ -229,7 +229,7 @@ params.backgroundType = 'optimized';
 params.backgroundName = OLMakeApproachDirectionBackgroundName('LMSDirected',params);
 params.name = OLMakeApproachDirectionName(baseName,params);
 params.cacheFile = ['Direction_' params.name '.mat'];
-if OLDirectionNominalParamsValidate(params)
+if OLDirectionParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
 end
@@ -245,7 +245,7 @@ end
 baseName = 'MaxLMS';
 type = 'unipolar';
 
-params = OLDirectionNominalParamsDefaults(type);
+params = OLDirectionParamsDefaults(type);
 params.primaryHeadRoom = 0.01;
 params.baseModulationContrast = 4/6;
 params.fieldSizeDegrees = 60.0;
@@ -259,7 +259,7 @@ params.backgroundType = 'optimized';
 params.backgroundName = OLMakeApproachDirectionBackgroundName('LMSDirected',params);
 params.name = OLMakeApproachDirectionName(baseName,params);
 params.cacheFile = ['Direction_' params.name '.mat'];
-if OLDirectionNominalParamsValidate(params)
+if OLDirectionParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
 end
@@ -275,7 +275,7 @@ end
 baseName = 'MaxMel';
 type = 'unipolar';
 
-params = OLDirectionNominalParamsDefaults(type);
+params = OLDirectionParamsDefaults(type);
 params.primaryHeadRoom = 0.005;
 params.baseModulationContrast = 4/6;
 params.pupilDiameterMm = 6.0;
@@ -288,7 +288,7 @@ params.backgroundType = 'optimized';
 params.backgroundName = OLMakeApproachDirectionBackgroundName('MelanopsinDirected',params);
 params.name = OLMakeApproachDirectionName(baseName,params);
 params.cacheFile = ['Direction_' params.name '.mat'];
-if OLDirectionNominalParamsValidate(params)
+if OLDirectionParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
 end
@@ -304,7 +304,7 @@ end
 baseName = 'MaxLMS';
 type = 'unipolar';
 
-params = OLDirectionNominalParamsDefaults(type);
+params = OLDirectionParamsDefaults(type);
 params.primaryHeadRoom = 0.005;
 params.baseModulationContrast = 4/6;
 params.pupilDiameterMm = 6.0;
@@ -317,7 +317,7 @@ params.backgroundType = 'optimized';
 params.backgroundName = OLMakeApproachDirectionBackgroundName('LMSDirected',params);
 params.name = OLMakeApproachDirectionName(baseName,params);
 params.cacheFile = ['Direction_' params.name '.mat'];
-if OLDirectionNominalParamsValidate(params)
+if OLDirectionParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
 end
@@ -330,14 +330,14 @@ end
 baseName = 'LightFlux';
 type = 'lightfluxchrom';
 
-params = OLDirectionNominalParamsDefaults(type);
+params = OLDirectionParamsDefaults(type);
 params.lightFluxDesiredXY = [0.54,0.38];
 params.lightFluxDownFactor = 5;
 params.name = OLMakeApproachDirectionName(baseName,params);
 params.backgroundType = 'lightfluxchrom';
 params.backgroundName = OLMakeApproachDirectionBackgroundName('LightFlux',params);
 params.cacheFile = ['Direction_' params.name '.mat'];
-if OLDirectionNominalParamsValidate(params)
+if OLDirectionParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
 end
@@ -350,14 +350,14 @@ end
 baseName = 'LightFlux';
 type = 'lightfluxchrom';
 
-params = OLDirectionNominalParamsDefaults(type);
+params = OLDirectionParamsDefaults(type);
 params.lightFluxDesiredXY = [0.33,0.33];
 params.lightFluxDownFactor = 2;
 params.name = OLMakeApproachDirectionName(baseName,params);
 params.backgroundType = 'lightfluxchrom';
 params.backgroundName = OLMakeApproachDirectionBackgroundName('LightFlux',params);
 params.cacheFile = ['Direction_' params.name '.mat'];
-if OLDirectionNominalParamsValidate(params)
+if OLDirectionParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
 end

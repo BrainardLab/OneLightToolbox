@@ -48,8 +48,8 @@ function directionStruct = OLDirectionNominalStructFromParams(directionParams,ba
 %    None.
 %
 % See also:
-%    OLDirectionNominalParamsDefaults, OLDirectionNominalParamsValidate,
-%    OLDirectionNominalParamsDictionary
+%    OLDirectionParamsDefaults, OLDirectionParamsValidate,
+%    OLDirectionParamsDictionary
 
 % History:
 %    01/31/18  jv  wrote it, based on OLWaveformFromParams and

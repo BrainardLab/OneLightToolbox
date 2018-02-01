@@ -29,7 +29,7 @@ function dictionary = OLWaveformParamsDictionary
 %    OLWaveformParamsDefaults, OLWaveformParamsValidate,
 %    OLMakeModulationPrimaries, 
 
-%    OLDirectionNominalParamsDictionary, OLMakeDirectionNominalPrimaries,
+%    OLDirectionParamsDictionary, OLMakeDirectionNominalPrimaries,
 %
 %    OLCheckCacheParamsAgainstCurrentParams
 
