@@ -1,34 +1,40 @@
 function OLMakeBackgroundNominalPrimaries(approachParams,varargin)
-% OLMakeBackgroundNominalPrimaries - Calculate the background nominal primaries
+% Create the background nominal primaries, if they don't exist.
 %
-% Usage:
-%     OLMakeBackgroundNominalPrimaries(approachParams)
+% Syntax:
+%   OLMakeBackgroundNominalPrimaries(approachParams)
 %
 % Description:
-%     This function calculations background nominal primaries and saves them in
-%     cache files.  Typically, these are then incorporated into calculation
-%     of nominal direction primaries.
+%    This function calculations background nominal primaries and saves them in
+%    cache files.  Typically, these are then incorporated into calculation
+%    of nominal direction primaries.
 %
-%     The primaries depend on the calibration file and on parameters of
-%     field size and pupil size, and also observer age.  The whole range of
-%     ages is computed inside a cache file, with the cache file name giving
-%     field size and pupil size info.
+%    The primaries depend on the calibration file and on parameters of
+%    field size and pupil size, and also observer age.  The whole range of
+%    ages is computed inside a cache file, with the cache file name giving
+%    field size and pupil size info.
 %
-%     The output is cached in the directory specified by
-%     getpref(approachParams.approach,'BackgroundNominalPrimariesPath');
+%    The output is cached in the directory specified by
+%    getpref(approachParams.approach,'BackgroundNominalPrimariesPath');
 %
-% Input:
-%     approachParams (struct)   Structure defining key approach parameters.
+% Inputs:
+%    approachParams - Structure defining key approach parameters.
 %
-% Output:
-%     Creates nominal background files in the right place (specified by approach prefs).
+% Outputs:
+%    None.          - Creates nominal background files in the directory
+%                     specified by getpref(approachParams.approach,'BackgroundNominalPrimariesPath');
 %
 % Optional key/value pairs:
-%     verbose (logical)    Be chatty? (default false)
+%    verbose        - Boolean flag for printing information to console.
+%                     Default is false.
 
-% 6/18/17  dhb  Added header comment.
-% 6/22/17  npc  Dictionarized direction params, cleaned up.
-% 07/22/17 dhb  Enforce verbose flag
+% History:
+%    06/18/17  dhb  Added header comment.
+%    06/22/17  npc  Dictionarized direction params, cleaned up.
+%    07/22/17  dhb  Enforce verbose flag
+%    01/31/18  jv   Absorbed 
+%                   OLReceptorIsolateMakeBackgroundNominalPrimaries, use
+%                   new OLBackgroundNominalPrimaryFromParams
 
 %% Parse 
 p = inputParser;
@@ -46,7 +52,7 @@ if ~isdir(cacheDir)
 end
 
 %% Load the calibration file
-cal = OLGetCalibrationStructure('CalibrationType',approachParams.calibrationType,'CalibrationDate','latest');
+calibration = OLGetCalibrationStructure('CalibrationType',approachParams.calibrationType,'CalibrationDate','latest');
 
 %% Make dictionary with direction-specific params for all directions
 paramsDictionary = OLBackgroundParamsDictionary();
@@ -61,7 +67,7 @@ for ii = 1:length(approachParams.backgroundNames)
     backgroundParams = OLMergeBaseParamsWithParamsFromDictionaryEntry(approachParams, paramsDictionary, backgroundName);
 
     % Create the cache object and filename
-    olCache = OLCache(cacheDir, cal);
+    olCache = OLCache(cacheDir, calibration);
     [~, cacheFileName] = fileparts(backgroundParams.cacheFile);
 
     % Check if exist && if stale
@@ -76,14 +82,14 @@ for ii = 1:length(approachParams.backgroundNames)
     
     % If not, recompute
     if ~exist('isStale','var') || isStale
-        backgroundPrimary = OLBackgroundNominalPrimaryFromParams(backgroundParams, cal, 'verbose', p.Results.verbose);
+        backgroundPrimary = OLBackgroundNominalPrimaryFromParams(backgroundParams, calibration, 'verbose', p.Results.verbose);
 
         % Fill in for all observer ages based on the nominal calculation.
         for observerAgeInYears = 20:60     
             cacheDataBackground.data(observerAgeInYears).backgroundPrimary = backgroundPrimary;
         end
         cacheDataBackground.params = backgroundParams;
-        cacheDataBackground.cal = cal;
+        cacheDataBackground.cal = calibration;
     end
     
     % Save out
