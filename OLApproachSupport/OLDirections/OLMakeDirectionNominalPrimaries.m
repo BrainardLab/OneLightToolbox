@@ -77,10 +77,17 @@ for ii = 1:length(approachParams.directionNames)
         % we want the user to think about this case and make sure it wasn't
         % just an error.
         OLCheckCacheParamsAgainstCurrentParams(cacheData, directionParams);
+        if isStale
+            recompute = true;
+        else
+            recompute = false;
+        end
+    else
+        recompute = true;
     end
     
     % If not, recompute
-    if ~exist('isStale','var') || isStale
+    if recompute
         % Grab the background from the cache file
         backgroundCacheDir = fullfile(getpref(approachParams.approach, 'BackgroundNominalPrimariesPath'));
         backgroundOlCache = OLCache(backgroundCacheDir, cal);

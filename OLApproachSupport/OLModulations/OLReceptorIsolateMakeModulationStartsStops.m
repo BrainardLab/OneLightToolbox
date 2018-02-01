@@ -102,29 +102,8 @@ clear cacheData
 backgroundPrimary = directionData.backgroundPrimary;
 
 %% Put primary data for direction into canonical form
-%
-% In some cases, the postive or negative difference may take things out of gamut.
-% We don't check here. Rather, when the actual starts and stops get made, we check
-% whether things are OK.
-switch (directionParams.type)
-    case {'unipolar' 'bipolar' 'lightfluxchrom'}
-        % Sometimes, we only define the postive direction of the bipolar, so that
-        % we have to compute the negative difference.  Other times, we have asymmetric
-        % positive and negative swings.  Whether we have both or not is determined by
-        % whether directionData.modulationPrimarySignedNegative is empty.  If it is
-        % empty, then we construct the negative by flipping the positve.  If it is explicitly
-        % specified, then we we use it.
-        modulationPrimary = directionData.modulationPrimarySignedPositive;
-        diffPrimaryPos = directionData.modulationPrimarySignedPositive-backgroundPrimary;
-        if (~isempty(directionData.modulationPrimarySignedNegative))
-            diffPrimaryNeg = directionData.modulationPrimarySignedNegative-backgroundPrimary;
-        else
-            diffPrimaryNeg = -diffPrimaryPos;
-        end
-        
-    otherwise
-        error('Unknown direction type specified')
-end
+diffPrimaryPos = directionData.differentialPositive;
+diffPrimaryNeg = directionData.differentialNegative;
 
 %% Here compute the modulation and waveform as specified in the modulation file.
 %
