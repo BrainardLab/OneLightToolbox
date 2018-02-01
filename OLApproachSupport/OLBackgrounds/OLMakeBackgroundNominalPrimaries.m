@@ -36,12 +36,11 @@ function OLMakeBackgroundNominalPrimaries(approachParams,varargin)
 %                   OLReceptorIsolateMakeBackgroundNominalPrimaries, use
 %                   new OLBackgroundNominalPrimaryFromParams
 
-%% Parse 
-p = inputParser;
-p.addRequired('approachParams',@isstruct);
-p.addOptional('verbose',false,@islogical);
-p.parse(approachParams,varargin{:});
-approachParams.verbose = p.Results.verbose;
+%% Input validation 
+parser = inputParser;
+parser.addRequired('approachParams',@isstruct);
+parser.addParameter('verbose',false,@islogical);
+parser.parse(approachParams,varargin{:});
 
 %% Setup the directories we'll use. 
 % Backgrounds go in their special place under the materials path approach
@@ -82,7 +81,7 @@ for ii = 1:length(approachParams.backgroundNames)
     
     % If not, recompute
     if ~exist('isStale','var') || isStale
-        backgroundPrimary = OLBackgroundNominalPrimaryFromParams(backgroundParams, calibration, 'verbose', p.Results.verbose);
+        backgroundPrimary = OLBackgroundNominalPrimaryFromParams(backgroundParams, calibration, 'verbose', parser.Results.verbose);
 
         % Fill in for all observer ages based on the nominal calculation.
         for observerAgeInYears = 20:60     
