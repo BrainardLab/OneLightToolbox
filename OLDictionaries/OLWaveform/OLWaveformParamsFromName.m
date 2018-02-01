@@ -31,6 +31,7 @@ function waveformParams = OLWaveformParamsFromName(waveformName)
 
 % History:
 %    01/31/18  jv  Wrote it.
+
 waveformParamsDictionary = OLWaveformParamsDictionary;
 waveformParams = waveformParamsDictionary(waveformName);
 end
