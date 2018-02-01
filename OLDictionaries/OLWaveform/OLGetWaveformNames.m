@@ -27,5 +27,6 @@ function waveformNames = OLGetWaveformNames
 
 % History:
 %    01/31/18  jv  Wrote it.
+
 waveformNames = OLGetDictionaryEntryNames('Waveform');
 end
