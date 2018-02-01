@@ -2,7 +2,7 @@ function directionStruct = OLDirectionNominalStructFromParams(directionParams,ba
 % Generate a parameterized direction from the given parameters
 %
 % Syntax:
-%   direction = OLDirectionNominalFromParams(directionParameters)
+%   directionStruct = OLDirectionNominalFromParams(directionParameters)
 %
 % Description:
 %    For several common types of directions, this function can generate the
@@ -23,10 +23,10 @@ function directionStruct = OLDirectionNominalStructFromParams(directionParams,ba
 %                       OLDirectionParamsDefaults
 %
 % Outputs:
-%    direction       - a 1x60 struct array (one struct per observer age
+%    directionStruct - a 1x60 struct array (one struct per observer age
 %                      1:60 yrs), with the following fields:
 %                         * backgroundPrimary   : the primary values for
-%                                                  the background.
+%                                                 the background.
 %                         * differentialPositive: the difference in primary
 %                                                 values to be added to the
 %                                                 background primary to
