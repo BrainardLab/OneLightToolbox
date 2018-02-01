@@ -199,7 +199,7 @@ switch (waveformParams.type)
 end
 
 %% Put everything into a return strucure
-modulationData.waveformParams = waveformParams;
+modulationData.modulationParams = waveformParams;
 modulationData.protocolParams = protocolParams;
 modulationData.modulation = modulation;
 
