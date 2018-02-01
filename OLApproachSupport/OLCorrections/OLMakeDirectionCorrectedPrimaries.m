@@ -47,7 +47,6 @@ directionCacheFileNames = OLMakeDirectionCacheFileNames(protocolParams);
 
 %% Make sure we have booleans for all of the passed directions
 assert(numel(protocolParams.directionNames) == numel(protocolParams.correctBySimulation), 'protocolParams.correctBySimulation does not have the same length protocolParams.directionNames');
-theCorrectBySimulation = protocolParams.correctBySimulation;
 
 %% Get dir where the nominal and corrected primaries live
 %
@@ -87,9 +86,7 @@ else
 end
 
 %% Loop through and do correction for each desired direction.
-
 for corrD = 1:length(theDirections)
-    if (protocolParams.doCorrectionAndValidationFlag{corrD})
         % Print out some information
         if (p.Results.verbose), fprintf('\n\tDirection: %s\n', theDirections{corrD}); end
         if (p.Results.verbose), fprintf('\tObserver: %s\n', protocolParams.observerID); end
@@ -99,7 +96,7 @@ for corrD = 1:length(theDirections)
         [cacheData, cal] = OLCorrectCacheFileOOC(sprintf('%s.mat', fullfile(nominalPrimariesDir, directionCacheFileNames{corrD})), ol, spectroRadiometerOBJ, S, theLJdev, ...
             'approach',                     protocolParams.approach, ...
             'simulate',                     protocolParams.correctBySimulation(corrD), ...
-            'doCorrection',                 ~theCorrectBySimulation(corrD), ...
+            'doCorrection',                 protocolParams.doCorrection(corrD), ...
             'observerAgeInYrs',             protocolParams.observerAgeInYrs, ...
             'calibrationType',              protocolParams.calibrationType, ...
             'takeTemperatureMeasurements',  protocolParams.takeTemperatureMeasurements, ...
@@ -119,8 +116,8 @@ for corrD = 1:length(theDirections)
         cacheData.protocolParams = protocolParams;
         olCache.save(protocolParams.cacheFile, cacheData);
         if (p.Results.verbose), fprintf('\tCache saved to %s\n', protocolParams.cacheFile); end
-    end
 end
+
 %% Close the radiometer object
 if (~protocolParams.simulate.oneLight)
     if (~isempty(spectroRadiometerOBJ))
