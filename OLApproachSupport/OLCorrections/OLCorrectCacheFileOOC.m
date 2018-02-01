@@ -79,7 +79,7 @@ p.parse(varargin{:});
 correctionDescribe = p.Results;
 
 %% Check input OK
-if (~correctionDescribe.simulate & (isempty(spectroRadiometerOBJ) | isempty(S)))
+if (~correctionDescribe.simulate && (isempty(spectroRadiometerOBJ) || isempty(S)))
     error('Must pass radiometer objecta and S, unless simulating');
 end
 
@@ -130,13 +130,13 @@ try
     if (correctionDescribe.verbose), fprintf('\tPerforming radiometer measurements\n'); end;    
     
     % State and temperature measurements
-    if (~correctionDescribe.simulate & correctionDescribe.takeCalStateMeasurements)
+    if (~correctionDescribe.simulate && correctionDescribe.takeCalStateMeasurements)
         if (correctionDescribe.verbose), fprintf('\tState measurements\n'); end;
         [~, results.calStateMeas] = OLCalibrator.takeCalStateMeasurements(adjustedCal, ol, od, spectroRadiometerOBJ, meterToggle, correctionDescribe.nAverage, theLJdev, 'standAlone',true);
     else
         results.calStateMeas = [];
     end
-    if (~correctionDescribe.simulate & correctionDescribe.takeTemperatureMeasurements & ~isempty(theLJdev))
+    if (~correctionDescribe.simulate && correctionDescribe.takeTemperatureMeasurements & ~isempty(theLJdev))
         [~, results.temperatureMeas] = theLJdev.measure();
     else
         results.temperatureMeas = [];
@@ -145,7 +145,7 @@ try
     % Do the seeking for each iteration and power level
     correctionDescribe.powerLevels = cacheData.directionParams.correctionPowerLevels;
     nPowerLevels = length(correctionDescribe.powerLevels); 
-    if (nPowerLevels ~= 2 | correctionDescribe.powerLevels(1) ~= 0 | correctionDescribe.powerLevels(2) ~= 1)
+    if (nPowerLevels ~= 2 || correctionDescribe.powerLevels(1) ~= 0 || correctionDescribe.powerLevels(2) ~= 1)
         error('This routine is currently set up only for powerLevels = [0 1]');
     end
     for iter = 1:correctionDescribe.nIterations
