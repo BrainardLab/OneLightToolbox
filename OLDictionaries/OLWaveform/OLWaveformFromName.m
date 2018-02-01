@@ -34,9 +34,6 @@ function [waveform, timestep, waveformDuration] = OLWaveformFromName(waveformNam
 % History:
 %    01/30/18  jv  Created as wrapper around OLWaveformFromParams and
 %                  OLWaveformParamsDictionary.
-
-waveformParamsDictionary = OLWaveformParamsDictionary;
-waveformParams = waveformParamsDictionary(waveformName);
+waveformParams = OLWaveformParamsFromName(waveformName);
 [waveform, timestep, waveformDuration] = OLWaveformFromParams(waveformParams);
-
 end
