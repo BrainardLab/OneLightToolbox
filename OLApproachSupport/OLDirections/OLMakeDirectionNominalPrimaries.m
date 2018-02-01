@@ -42,6 +42,17 @@ p.addOptional('verbose',false,@islogical);
 p.parse(approachParams,varargin{:});
 approachParams.verbose = p.Results.verbose;
 
+%% Setup the directories we'll use. 
+% Directions go in their special place under the materials path approach
+% directory.
+cacheDir = fullfile(getpref(approachParams.approach, 'DirectionNominalPrimariesPath'));
+if ~isdir(cacheDir)
+    mkdir(cacheDir);
+end
+
+%% Load the calibration file
+cal = OLGetCalibrationStructure('CalibrationType',approachParams.calibrationType,'CalibrationDate','latest');
+
 %% Get dictionary with direction-specific params for all directions
 paramsDictionary = OLDirectionParamsDictionary();
 
@@ -54,13 +65,38 @@ for ii = 1:length(approachParams.directionNames)
     % information, such as the calibration names to be used.
     directionParams = OLMergeBaseParamsWithParamsFromDictionaryEntry(approachParams, paramsDictionary, directionName);
 
-    % The called routine checks whether the cacheFile exists, and if so and
-    % it isnt' stale, just returns the data.
-    [cacheDataDirection, olCacheDirection, wasRecomputed] = OLReceptorIsolateMakeDirectionNominalPrimaries(approachParams.approach,directionParams, false, 'verbose', approachParams.verbose);
+    % Create the cache object and filename
+    olCache = OLCache(cacheDir, cal);
+    [~, cacheFileName] = fileparts(directionParams.cacheFile);
 
-    % Save the direction primaries in a cache file, if it was recomputed.
-    if (wasRecomputed)
-        [~, cacheFileName] = fileparts(directionParams.cacheFile);
-        olCacheDirection.save(cacheFileName, cacheDataDirection);
+    % Check if exist && if stale
+    if (olCache.exist(cacheFileName))
+        [cacheData,isStale] = olCache.load(cacheFileName);
+        % Compare cacheData.describe.params against currently passed
+        % parameters to determine if cache is stale.   Could recompute, but
+        % we want the user to think about this case and make sure it wasn't
+        % just an error.
+        OLCheckCacheParamsAgainstCurrentParams(cacheData, directionParams);
     end
+    
+    % If not, recompute
+    if ~exist('isStale','var') || isStale
+        % Grab the background from the cache file
+        backgroundCacheDir = fullfile(getpref(approachParams.approach, 'BackgroundNominalPrimariesPath'));
+        backgroundOlCache = OLCache(backgroundCacheDir, cal);
+        backgroundCacheFile = ['Background_' directionParams.backgroundName '.mat'];
+        [backgroundCacheData,isStale] = backgroundOlCache.load(backgroundCacheFile);
+        assert(~isStale,'Background cache file is stale, aborting.');
+        backgroundPrimary = backgroundCacheData.data(directionParams.backgroundObserverAge).backgroundPrimary;
+        
+        % Generate direction struct
+        directionStruct = OLDirectionNominalStructFromParams(directionParams,backgroundPrimary,cal);
+        
+        cacheDataDirection.data = directionStruct;
+        cacheDataDirection.directionParams = directionParams;
+        cacheDataDirection.cal = cal;
+    end
+    
+    % Save out
+    olCache.save(cacheFileName, cacheDataDirection);   
 end
