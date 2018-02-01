@@ -192,14 +192,8 @@ try
             settings = OLPrimaryToSettings(adjustedCal, primariesThisIter);
             [starts,stops] = OLSettingsToStartsStops(adjustedCal, settings);
             
-            % Take the measurements.  Simulate with OLPrimaryToSpd when not measuring.
-            if (~correctionDescribe.simulate)
-                results.directionMeas(iter,i).meas = OLTakeMeasurementOOC(ol, [], spectroRadiometerOBJ, starts, stops, S, meterToggle, correctionDescribe.nAverage);
-            else
-                results.directionMeas(iter,i).meas.pr650.spectrum = OLPrimaryToSpd(adjustedCal,primariesThisIter);
-                results.directionMeas(iter,i).meas.pr650.time = [mglGetSecs mglGetSecs];
-                results.directionMeas(iter,i).meas.omni = [];
-            end
+            % Take the measurements
+            results.directionMeas(iter,i).meas.pr650.spectrum = OLMeasurePrimaryValues(primariesThisIter,adjustedCal,ol,spectroRadiometerOBJ);
             
             % Save out information about this.
             results.directionMeas(iter,i).powerLevel = correctionDescribe.powerLevels(i);
