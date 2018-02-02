@@ -36,28 +36,32 @@ p = p.Results;
 switch theStep
     case 'OLSessionInit'
         
-        % Check for prior sessions
-        sessionDir = fullfile(getpref(protocolParams.protocol,'SessionRecordsBasePath'),protocolParams.observerID,protocolParams.todayDate);
-        dirStatus = dir(sessionDir);
+        % Initialize directory for session date
+        dateDir = fullfile(getpref(protocolParams.protocol,'SessionRecordsBasePath'),protocolParams.observerID,protocolParams.todayDate);
+        dirStatus = dir(dateDir);
         dirStatus=dirStatus(~ismember({dirStatus.name},{'.','..','.DS_Store'}));
+        if ~exist(dateDir,'dir')
+            mkdir(dateDir);
+        end
         
-        if exist(sessionDir,'dir') && ~isempty(dirStatus)
-            dirString = ls(sessionDir);
-            priorSessionNumber = str2double(regexp(dirString, '(?<=session_[^0-9]*)[0-9]*\.?[0-9]+', 'match'));
-            protocolParams.currentSessionNumber = max(priorSessionNumber) + 1;
-            protocolParams.sessionName =['session_' num2str(protocolParams.currentSessionNumber)];
-            protocolParams.sessionLogOutDir = fullfile(getpref(protocolParams.protocol,'SessionRecordsBasePath'),protocolParams.observerID,protocolParams.todayDate,protocolParams.sessionName);
-            if ~exist(protocolParams.sessionLogOutDir,'dir')
-                mkdir(protocolParams.sessionLogOutDir);
-            end
-        else
-            protocolParams.currentSessionNumber = 1;
-            protocolParams.sessionName =['session_' num2str(protocolParams.currentSessionNumber)];
-            protocolParams.sessionLogOutDir = fullfile(getpref(protocolParams.protocol,'SessionRecordsBasePath'),protocolParams.observerID,protocolParams.todayDate,protocolParams.sessionName);
-            if ~exist(protocolParams.sessionLogOutDir,'dir')
-                mkdir(protocolParams.sessionLogOutDir);
+        % Create figure out session name, number.
+        if ~isfield(protocolParams,'sessionName') || isempty(protocolParams.sessionName)
+            if ~isempty(dirStatus) % otherfile already in the directory, need to figure out session number
+                dirString = ls(dateDir);
+                priorSessionNumber = str2double(regexp(dirString, '(?<=session_[^0-9]*)[0-9]*\.?[0-9]+', 'match'));
+                protocolParams.currentSessionNumber = max(priorSessionNumber) + 1;
+                protocolParams.sessionName =['session_' num2str(protocolParams.currentSessionNumber)];
+            else
+                protocolParams.currentSessionNumber = 1;
+                protocolParams.sessionName =['session_' num2str(protocolParams.currentSessionNumber)];
             end
         end
+        
+        % Create log dir.
+        protocolParams.sessionLogOutDir = fullfile(getpref(protocolParams.protocol,'SessionRecordsBasePath'),protocolParams.observerID,protocolParams.todayDate,protocolParams.sessionName);
+        if ~exist(protocolParams.sessionLogOutDir,'dir')
+        	mkdir(protocolParams.sessionLogOutDir);
+        end        
         
         % Start Log File
         fileName = [protocolParams.observerID '_' protocolParams.sessionName '.log'];
@@ -67,7 +71,9 @@ switch theStep
         fileID = fopen(protocolParams.fullFileName,'w');
         fprintf(fileID,'Experiment Started: %s.\n',protocolParams.protocol);
         fprintf(fileID,'Observer ID: %s.\n',protocolParams.observerID);
-        fprintf(fileID,'Session Number: %s.\n',num2str(protocolParams.currentSessionNumber));
+        if isfield(protocolParams,'currentSessionNumber')
+            fprintf(fileID,'Session Number: %s.\n',num2str(protocolParams.currentSessionNumber));
+        end
         fprintf(fileID,'Session Date: %s\n',datestr(now,'mm-dd-yyyy'));
         fprintf(fileID,'Session Start Time: %s.\n',datestr(now,'HH:MM:SS'));
         fclose(fileID);
