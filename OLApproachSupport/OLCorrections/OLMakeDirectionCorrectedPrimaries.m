@@ -115,7 +115,7 @@ for corrD = 1:length(theDirections)
         % Save the cache
         olCache = OLCache(correctedPrimariesDir,cal);
         protocolParams.modulationDirection = theDirections{corrD};
-        protocolParams.cacheFile = fullfile(nominalPrimariesDir, directionCacheFileNames{corrD});
+        protocolParams.cacheFile = fullfile(correctedPrimariesDir, directionCacheFileNames{corrD});
         cacheData.protocolParams = protocolParams;
         olCache.save(protocolParams.cacheFile, cacheData);
         if (p.Results.verbose), fprintf('\tCache saved to %s\n', protocolParams.cacheFile); end
