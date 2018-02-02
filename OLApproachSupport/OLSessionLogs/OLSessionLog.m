@@ -36,25 +36,9 @@ p = p.Results;
 switch theStep
     case 'OLSessionInit'
         
-        % Initialize directory for session date
-        dateDir = fullfile(getpref(protocolParams.protocol,'SessionRecordsBasePath'),protocolParams.observerID,protocolParams.todayDate);
-        dirStatus = dir(dateDir);
-        dirStatus=dirStatus(~ismember({dirStatus.name},{'.','..','.DS_Store'}));
-        if ~exist(dateDir,'dir')
-            mkdir(dateDir);
-        end
-        
         % Create figure out session name, number.
         if ~isfield(protocolParams,'sessionName') || isempty(protocolParams.sessionName)
-            if ~isempty(dirStatus) % otherfile already in the directory, need to figure out session number
-                dirString = ls(dateDir);
-                priorSessionNumber = str2double(regexp(dirString, '(?<=session_[^0-9]*)[0-9]*\.?[0-9]+', 'match'));
-                protocolParams.currentSessionNumber = max(priorSessionNumber) + 1;
-                protocolParams.sessionName =['session_' num2str(protocolParams.currentSessionNumber)];
-            else
-                protocolParams.currentSessionNumber = 1;
-                protocolParams.sessionName =['session_' num2str(protocolParams.currentSessionNumber)];
-            end
+            protocolParams.sessionName =sprintf('session_%d',OLNewSessionNumber(protocolParams));
         end
         
         % Create log dir.
