@@ -37,17 +37,8 @@ function [latestSessionNumber, directories, perDirectory] = OLLatestSessionNumbe
 parser = inputParser();
 parser.addRequired('protocol',@ischar);
 parser.addRequired('observerID',@ischar);
-parser.addOptional('date',0,@ischar);
+parser.addOptional('date','0000-01-00',@ischar);
 parser.parse(protocol,observerID,varargin{:});
-
-%% Date specified, convert date to yyyy-mm-dd
-try
-    date = datestr(parser.Results.date,'yyyy-mm-dd');
-catch
-    warning('OneLightToolbox:OLApproachSupport:Cache:OLLatestSessionNumber:InvalidDate',...
-        'Could not convert to ''yyyy-mm-dd'' datestring. Using provided string, which might not be a datestr...');
-    date = parser.Results.date;
-end
 
 %% Find directories
 prefs = getpref(protocol);

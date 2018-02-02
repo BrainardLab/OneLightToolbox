@@ -48,16 +48,7 @@ switch theStep
             % Find latest session, add 1.
             protocolParams.sessionName = sprintf('session_%d',OLLatestSessionNumber(protocolParams.protocol,protocolParams.observerID,protocolParams.todayDate)+1);
         end
-        
-        % Convert specified date to yyyy-mm-dd
-        try
-            protocolParams.todayDate = datestr(protocolParams.todayDate,'yyyy-mm-dd');
-        catch
-            warning('OneLightToolbox:OLApproachSupport:Cache:OLSessionLog:InvalidDate',...
-                'Could not convert to ''yyyy-mm-dd'' datestring. Using provided string, which might not be a datestr...');
-            protocolParams.todayDate = parser.Results.date;
-        end
-        
+               
         % Create log dir.
         protocolParams.sessionLogOutDir = fullfile(getpref(protocolParams.protocol,'SessionRecordsBasePath'),protocolParams.observerID,protocolParams.todayDate,protocolParams.sessionName);
         if ~exist(protocolParams.sessionLogOutDir,'dir')
