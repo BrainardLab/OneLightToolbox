@@ -78,7 +78,7 @@ for ii = 1:protocolParams.nValidationsPerDirection
     for dd = 1:length(theDirectionCacheFileNames)
         
         % Do the validation if the flag is true.
-        if (protocolParams.doCorrectionAndValidationFlag{dd})
+        if (protocolParams.doCorrection(dd))
             fprintf('\nValidation measurements, direction %d, %s, %s, measurement %d of %d, \n',dd,theDirectionCacheFileNames{dd},prePost,ii,protocolParams.nValidationsPerDirection);
 
             % Take the measurement

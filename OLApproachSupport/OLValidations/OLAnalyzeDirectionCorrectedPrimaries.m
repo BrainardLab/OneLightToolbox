@@ -49,7 +49,7 @@ end
 % validate once per direction.
 for dd = 1:length(theDirectionCacheFileNames)
     % Do the report if the flag is true.
-    if (protocolParams.doCorrectionAndValidationFlag{dd})
+    if (protocolParams.doCorrection(dd))
         fprintf('\nReporting on validation, direction %d, %s, %s\n',dd,theDirectionCacheFileNames{dd},prePost);
         
         % Loop over validations within direction
