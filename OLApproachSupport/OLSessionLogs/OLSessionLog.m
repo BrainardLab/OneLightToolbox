@@ -1,5 +1,5 @@
 function protocolParams = OLSessionLog(protocolParams,theStep,varargin)
-%OLSessionLog  Session Record Keeping
+% Session Record Keeping
 %
 % Usage:
 %     [DHB NOTE: Provide an example of how this would be called here.]
@@ -21,9 +21,15 @@ function protocolParams = OLSessionLog(protocolParams,theStep,varargin)
 % Optional key/value pairs:
 %     [DHB NOTE: PLEASE SAY WHAT THESE ARE]
 
-% 06/23/17 mab,jar  Created file and green text.
-% 06/26/17 mab,jar  Added switch.
-% 08/21/17 dhb      Save currentSessionNumber as field in returned protocol params on init.
+% History:
+%     06/23/17  mab,jar  Created file and green text.
+%     06/26/17  mab,jar  Added switch.
+%     08/21/17  dhb      Save currentSessionNumber as field in returned 
+%                        protocol params on init.
+%     02/02/18  jv       more flexible session naming, so that 
+%                        protocolParams  can override defaults. Outsourced
+%                        finding latest session number to '
+%                        OLLatestSessionNumber.
 
 %% Set up vars
 p = inputParser;
@@ -38,7 +44,18 @@ switch theStep
         
         % Create figure out session name, number.
         if ~isfield(protocolParams,'sessionName') || isempty(protocolParams.sessionName)
-            protocolParams.sessionName =sprintf('session_%d',OLNewSessionNumber(protocolParams));
+            
+            % Find latest session, add 1.
+            protocolParams.sessionName = sprintf('session_%d',OLLatestSessionNumber(protocolParams.protocol,protocolParams.observerID,protocolParams.todayDate)+1);
+        end
+        
+        % Convert specified date to yyyy-mm-dd
+        try
+            protocolParams.todayDate = datestr(protocolParams.todayDate,'yyyy-mm-dd');
+        catch
+            warning('OneLightToolbox:OLApproachSupport:Cache:OLSessionLog:InvalidDate',...
+                'Could not convert to ''yyyy-mm-dd'' datestring. Using provided string, which might not be a datestr...');
+            protocolParams.todayDate = parser.Results.date;
         end
         
         % Create log dir.
