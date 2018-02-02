@@ -12,10 +12,10 @@ function protocolParams = OLSessionLog(protocolParams,theStep,varargin)
 %     about the session **more info to be added here once specifics have
 %     been decided on**
 %
-% Input:
+% Inputs:
 %     [DHB NOTE: PLEASE SAY WHAT THE INPUTS ARE]
 %
-% Output:
+% Outputs:
 %     [DHB NOTE: PLEASE SAY WHAT THE INPUTS ARE]
 %
 % Optional key/value pairs:
