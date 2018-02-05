@@ -63,8 +63,8 @@ p.parse(varargin{:});
 validationDescribe = p.Results;
 
 %% Check input OK
-if (~validationDescribe.simulate & (isempty(spectroRadiometerOBJ) | isempty(S)))
-    error('Must pass radiometer objecta and S, unless simulating');
+if (~validationDescribe.simulate && isempty(spectroRadiometerOBJ))
+    error('Must pass radiometer object, unless simulating');
 end
 
 %% Get cached direction data as well as calibration file.  
@@ -96,17 +96,17 @@ try
     startMeas = GetSecs;
     
     % Say hello
-    if (validationDescribe.verbose), fprintf('\tPerforming radiometer measurements.\n'); end;
+    if (validationDescribe.verbose), fprintf('\tPerforming radiometer measurements.\n'); end
     
     % State and temperature measurements
-    if (~validationDescribe.simulate & validationDescribe.takeCalStateMeasurements)
-        if (validationDescribe.verbose), fprintf('\tState measurements \n'); end;
+    if (~validationDescribe.simulate && validationDescribe.takeCalStateMeasurements)
+        if (validationDescribe.verbose), fprintf('\tState measurements \n'); end
         [~, results.calStateMeas] = OLCalibrator.TakeStateMeasurements(adjustedCal, ol, od, spectroRadiometerOBJ, ...
             meterToggle, validationDescribe.nAverage, theLJdev, 'standAlone',true);
     else
         results.calStateMeas = [];
     end
-    if (~validationDescribe.simulate & validationDescribe.takeTemperatureMeasurements & ~isempty(theLJdev))
+    if (~validationDescribe.simulate && validationDescribe.takeTemperatureMeasurements && ~isempty(theLJdev))
         [~, results.temperatureMeas] = theLJdev.measure();
     else
         results.temperatureMeas = [];
@@ -120,32 +120,24 @@ try
     validationDescribe.powerLevels = cacheData.directionParams.validationPowerLevels;
     nPowerLevels = length(validationDescribe.powerLevels);
     for i = 1:nPowerLevels
-        if (validationDescribe.verbose), fprintf('\tMeasuring power leve %d, the level is %g\n', i, validationDescribe.powerLevels(i)); end
+        if (validationDescribe.verbose), fprintf('\tMeasuring power level %d, the level is %g\n', i, validationDescribe.powerLevels(i)); end
         
         % Get primaries for this power level
         primaries = backgroundPrimary+validationDescribe.powerLevels(i).*differencePrimary;
         
-        % Convert the primaries to starts/stops mirror settings in two easy steps
-        settings = OLPrimaryToSettings(adjustedCal, primaries);
-        [starts,stops] = OLSettingsToStartsStops(adjustedCal, settings);
-        
-        % Take the measurements.  Simulate with OLPrimaryToSpd when not measuring.
-        if (~validationDescribe.simulate)
-            results.directionMeas(i).meas = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, validationDescribe.nAverage);
-        else
-            results.directionMeas(i).meas.pr650.spectrum = OLPrimaryToSpd(adjustedCal,primaries);
-            results.directionMeas(i).meas.pr650.time = [mglGetSecs mglGetSecs];
-            results.directionMeas(i).meas.pr650.S = adjustedCal.describe.S;
-            results.directionMeas(i).meas.omni = [];
-        end
-        
+        % Measure
+        measurement = OLValidatePrimaryValues(primaries,adjustedCal,ol,spectroRadiometerOBJ);
+        results.directionMeas(i).meas.pr650.spectrum = measurement.measuredSPD;
+        results.directionMeas(i).predictedSpd = measurement.predictedSPD;
+        results.directionMeas(i).error = measurement.error;
+        results.directionMeas(i).meas.pr650.time = [mglGetSecs mglGetSecs];
+        results.directionMeas(i).meas.pr650.S = adjustedCal.describe.S;
+        results.directionMeas(i).meas.omni = [];        
+               
         % Save out information about this power level.
         results.directionMeas(i).powerLevel = validationDescribe.powerLevels(i);
         results.directionMeas(i).primaries = primaries;
         results.directionMeas(i).settings = settings;
-        results.directionMeas(i).starts = starts;
-        results.directionMeas(i).stops = stops;
-        results.directionMeas(i).predictedSpd = OLPrimaryToSpd(adjustedCal,primaries); 
     end
     
     % Time at finish
