@@ -2,7 +2,8 @@ function SPD = OLValidatePrimaryValues(primaryValues, calibration, oneLight, var
 % Validates SPD that OneLight puts out for given primary values vector(s)
 %
 % Syntax:
-%   results = OLValidatePrimary(primaryValues, calibration, OneLight, radiometer)
+%   results = OLValidatePrimary(primaryValues, calibration, oneLight, radiometer)
+%   results = OLValidatePrimary(primaryValues, calibration, OneLight, radiometer, nAverage)
 %   results = OLValidatePrimary(primaryValues, calibration, SimulatedOneLight)
 %
 % Description:
@@ -20,6 +21,8 @@ function SPD = OLValidatePrimaryValues(primaryValues, calibration, oneLight, var
 %                      OneLight device, can be real or simulated
 %    radiometer      - radiometer object to control a spectroradiometer. 
 %                      Can be passed empty when simulating
+%    nAverage        - (OPTIONAL) number of measurements to average. 
+%                      Default 1.
 %
 % Outputs:
 %    results         - 1xN struct-array containing measurement information
@@ -42,6 +45,7 @@ parser.addRequired('primaryValues',@isnumeric);
 parser.addRequired('calibration',@isstruct);
 parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
 parser.addOptional('radiometer',[],@(x) isempty(x) || isa(x,'Radiometer'));
+parser.addOptional('nAverage',1,@isnumeric);
 parser.parse(primaryValues,calibration,oneLight,varargin{:});
 
 radiometer = parser.Results.radiometer;
@@ -50,7 +54,7 @@ radiometer = parser.Results.radiometer;
 predictedSPDs = OLPrimaryToSpd(calibration,primaryValues);
 
 %% Measure SPD(s)
-measurement = OLMeasurePrimaryValues(primaryValues,calibration,oneLight,radiometer);
+measurement = OLMeasurePrimaryValues(primaryValues,calibration,oneLight,radiometer,parser.Results.nAverage);
 
 %% Analyze and output
 SPD = [];
