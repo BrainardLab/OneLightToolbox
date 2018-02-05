@@ -25,12 +25,11 @@ function directionParams = OLDirectionParamsFromName(directionName)
 %    None.
 %
 % See also:
-%    OLDirectionParamsDictionary,
-%    OLDirectionNominalStructFromParams, OLDirectionParamsDefaults,
-%    OLDirectionParamsValidate.
+%    OLDirectionNominalParamsDictionary, OLDirectionNominalParamsDefaults,
+%    OLDirectionNominalParamsValidate.
 
 % History:
 %    01/31/18  jv  Wrote it.
-directionParamsDictionary = OLDirectionParamsDictionary;
+directionParamsDictionary = OLDirectionNominalParamsDictionary;
 directionParams = directionParamsDictionary(directionName);
 end

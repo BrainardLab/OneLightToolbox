@@ -28,7 +28,7 @@ function names = OLGetDictionaryEntryNames(dictionaryName)
 
 % History:
 %    01/31/18  jv  Wrote it.
-dictionaryFunction = str2func(sprintf('@OL%sParamsDictionary',dictionaryName));
+dictionaryFunction = str2func(sprintf('@OL%sNominalParamsDictionary',dictionaryName));
 dictionary = dictionaryFunction();
 names = dictionary.keys()';
 end
