@@ -4,7 +4,6 @@ function SPD = OLValidatePrimaryValues(primaryValues, calibration, oneLight, var
 % Syntax:
 %   results = OLValidatePrimary(primaryValues, calibration, OneLight, radiometer)
 %   results = OLValidatePrimary(primaryValues, calibration, SimulatedOneLight)
-%   [results, actualContrast, nominalContrasts] = OLValidatePrimary(..., 'receptors',SSTReceptor)
 %
 % Description:
 %    Sends a vector of primary values to a OneLight, measures the SPD and
@@ -28,9 +27,7 @@ function SPD = OLValidatePrimaryValues(primaryValues, calibration, oneLight, var
 %                      between the two, for all N spectra
 %
 % Optional key/value pairs:
-%    'receptors'    - SSTReceptor object defining a set of receptors. If
-%                     two or more vectors of primary values or passed,
-%                     calculate contrasts on these receptors. Default none.
+%    None.
 %
 % See also:
 %    OLCorrectPrimary, OLValidateDirectionPrimary
@@ -47,8 +44,6 @@ parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
 parser.addOptional('radiometer',[],@(x) isempty(x) || isa(x,'Radiometer'));
 parser.parse(primaryValues,calibration,oneLight,varargin{:});
 
-primaryValues = parser.Results.primaryValues;
-calibration = parser.Results.calibration;
 radiometer = parser.Results.radiometer;
 
 %% Predict SPD(s)
