@@ -66,7 +66,7 @@ function directionStruct = OLDirectionNominalStructFromParams(directionParams,ba
 
 %% Input validation
 parser = inputParser();
-parser.addRequired('directionParams',@isstruct);
+parser.addRequired('directionParams',@(x) isstruct(x) || isa(x,'OLDirectionParams'));
 parser.addRequired('backgroundPrimary');
 parser.addRequired('calibration',@isstruct);
 parser.addParameter('verbose',false,@islogical);
