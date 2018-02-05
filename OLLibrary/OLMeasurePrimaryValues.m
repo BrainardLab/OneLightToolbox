@@ -42,9 +42,7 @@ parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
 parser.addOptional('radiometer',[]);
 parser.parse(primaryValues,calibration,oneLight,varargin{:});
 
-primaryValues = parser.Results.primaryValues;
-calibration = parser.Results.calibration;
-oneLight = parser.Results.oneLight;
+radiometer = parser.Results.radiometer;
 
 %% Convert primary values to starts and stops
 olSettings = OLPrimaryToSettings(calibration, primaryValues);
@@ -52,13 +50,9 @@ olSettings = OLPrimaryToSettings(calibration, primaryValues);
 
 %% Measure (or simulate)
 SPD = [];
-if ~oneLight.Simulate
+if ~isempty(radiometer)
+    
     % Actually measure
-    
-    % check that we have a radiometer
-    radiometer = parser.Results.radiometer;
-    assert(~isempty(radiometer),'OneLightToolbox:OLMeasurePrimaryValues:InvalidRadiometer','No radiometer object passed');
-    
     oneLight.setAll(true);
             
     % Loop over primary values vectors
@@ -69,6 +63,7 @@ if ~oneLight.Simulate
         SPD = [SPD reshape(measurement.pr650.spectrum(:),[numel(measurement.pr650.spectrum),1])];
     end
     
+    % Turn all mirrors off
     oneLight.setAll(false);
 else
     % Simulate

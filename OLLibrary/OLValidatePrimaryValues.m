@@ -1,4 +1,4 @@
-function [results, actualContrasts, nominalContrasts] = OLValidatePrimaryValues(primaryValues, calibration, oneLight, varargin)
+function SPD = OLValidatePrimaryValues(primaryValues, calibration, oneLight, varargin)
 % Validates SPD that OneLight puts out for given primary values vector(s)
 %
 % Syntax:
@@ -9,9 +9,7 @@ function [results, actualContrasts, nominalContrasts] = OLValidatePrimaryValues(
 % Description:
 %    Sends a vector of primary values to a OneLight, measures the SPD and
 %    compares that to the SPD that would be predicted from calibration
-%    information. Can handle any number of vectors. Can optionally also
-%    calculate the actual and nominal contrasts for a given set of
-%    photoreceptors.
+%    information. Can handle any number of vectors of primary values.
 %
 % Inputs:
 %    primaryValues   - PxN array of primary values, where P is the number 
@@ -27,12 +25,7 @@ function [results, actualContrasts, nominalContrasts] = OLValidatePrimaryValues(
 % Outputs:
 %    results         - 1xN struct-array containing measurement information
 %                      (as returned by radiometer), predictedSPD, error
-%                      between the two, and descriptive metadata, for all N
-%                      spectra
-%    actualContrast  - NxNxR array of contrasts between N measured SPDs on 
-%                      R receptors.
-%    nominalContrast - NxNxR array of contrasts between N predicted SPDs on 
-%                      R receptors.
+%                      between the two, for all N spectra
 %
 % Optional key/value pairs:
 %    'receptors'    - SSTReceptor object defining a set of receptors. If
@@ -52,18 +45,11 @@ parser.addRequired('primaryValues',@isnumeric);
 parser.addRequired('calibration',@isstruct);
 parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
 parser.addOptional('radiometer',[],@(x) isempty(x) || isa(x,'Radiometer'));
-parser.addParameter('receptors',[],@(x) isa(x,'SSTReceptor'));
 parser.parse(primaryValues,calibration,oneLight,varargin{:});
 
 primaryValues = parser.Results.primaryValues;
 calibration = parser.Results.calibration;
 radiometer = parser.Results.radiometer;
-receptors = parser.Results.receptors;
-
-if nargout > 1
-    assert(~isempty(receptors),'OneLightToolbox:OLValidatePrimary:InvalidReceptors',...
-        'No receptors specified for which to calculate contrasts');
-end
 
 %% Predict SPD(s)
 predictedSPDs = OLPrimaryToSpd(calibration,primaryValues);
@@ -72,23 +58,15 @@ predictedSPDs = OLPrimaryToSpd(calibration,primaryValues);
 measurement = OLMeasurePrimaryValues(primaryValues,calibration,oneLight,radiometer);
 
 %% Analyze and output
-results = [];
+SPD = [];
 for p = size(primaryValues,2):-1:1
     % Compare to prediction
     err = measurement(:,p) - predictedSPDs(:,p);
     
     % Add to results
-    results(p).measuredSpd = measurement(:,p);
-    results(p).predictedSpd = predictedSPDs(:,p);
-    results(p).error = err;
-    
-    % Some metadata
-    results(p).primaries = primaryValues(:,p);
+    SPD(p).measuredSPD = measurement(:,p);
+    SPD(p).predictedSPD = predictedSPDs(:,p);
+    SPD(p).error = err;
 end
 
-%% Calculate nominal and actual contrasts
-if ~isempty(receptors)
-    nominalContrasts = SPDToReceptorContrast([results.predictedSpd],receptors);
-    actualContrasts = SPDToReceptorContrast([results.measuredSpd],receptors);
-end
 end
