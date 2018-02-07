@@ -20,10 +20,14 @@ classdef OLBackgroundParams < matlab.mixin.Heterogeneous
 % History:
 %    02/07/18  jv  wrote it.
 
+
+properties (SetAccess = immutable)
+    dictionaryType = 'Background';
+end
+
 properties
     name
     baseName;
-    dictionaryType = 'Background';
     type
     cacheFile;
     useAmbient = true;                 % Use measured ambient in calculations if true. If false, set ambient to zero.
