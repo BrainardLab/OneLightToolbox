@@ -14,9 +14,8 @@ function backgroundParams = OLBackgroundParamsFromName(backgroundName)
 %                       stored in OLBackgroundNominalStructParamsDictionary
 %
 % Outputs:
-%    backgroundParams - struct defining the parameters for a type of
-%                       background. Can be generated using
-%                       OLBackgroundParamsDefaults
+%    backgroundParams - OLBackgroundParams object defining the parameters
+%                       for a type of background.
 %
 % Optional key/value pairs:
 %    None.
@@ -25,12 +24,12 @@ function backgroundParams = OLBackgroundParamsFromName(backgroundName)
 %    None.
 %
 % See also:
-%    OLBackgroundParamsDictionary,
-%    OLBackgroundNominalPrimaryFromParams, OLBackgroundParamsDefaults,
-%    OLBackgroundParamsValidate.
+%    OLBackgroundParamsDictionary, OLBackgroundParams,
+%    OLBackgroundNominalPrimaryFromParams, OLBackgroundParamsValidate
 
 % History:
 %    01/31/18  jv  Wrote it.
+
 backgroundParamsDictionary = OLBackgroundParamsDictionary;
 backgroundParams = backgroundParamsDictionary(backgroundName);
 end

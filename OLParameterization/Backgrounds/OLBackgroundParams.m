@@ -1,7 +1,25 @@
 classdef OLBackgroundParams < matlab.mixin.Heterogeneous
-%OLBACKGROUNDPARAMS Summary of this class goes here
-%   Detailed explanation goes here
-    
+% Parameter-object superclass for all parameterized backgrounds
+%
+% Syntax:
+%   <This class is abstract and thus cannot be instantiated. See
+%   subclasses>
+%
+% Description:
+%    All sets of background parameters are stored in objects of classes
+%    derived from this class. The individual subclasses differ in the
+%    type of background they implement, and they encapsulate some methods
+%    that are different between these types. This superclass defines the
+%    properties common to all backgrounds, as well as the methods that all
+%    subclasses must implement. 
+%
+% See also:
+%    OLBackgroundParams_LightFluxChrom, OLBackgroundParams_Optimized
+%
+
+% History:
+%    02/07/18  jv  wrote it.
+
 properties
     name
     baseName;

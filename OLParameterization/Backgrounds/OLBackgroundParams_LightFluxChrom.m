@@ -1,6 +1,21 @@
 classdef OLBackgroundParams_LightFluxChrom < OLBackgroundParams
-    %OLBACKGROUNDPARAMS_LIGHTFLUXCHROM Summary of this class goes here
-    %   Detailed explanation goes here
+% Parameter-object for light flux backgrounds at a chromaticity
+%
+% Syntax:
+%   params = OLBackgroundParams_LightFluxChrom
+%   backgroundPrimary = OLBackgroundNominalPrimaryFromParams(OLBackgroundParams_LightFluxChromObject,calibration)
+%
+% Description:
+%    These parameters generate a background of specified CIE x, y
+%    chromaticity. The luminance of this background is a specified flux
+%    factor down from the max luminance at this chromaticity.
+%
+% See also:
+%    OLBackgroundParams, OLBackgroundParams_Optimized
+%
+
+% History:
+%    02/07/18  jv  wrote it.
     
     properties
         lightFluxDesiredXY(1,2) = [0.54 0.38];  % Background chromaticity.

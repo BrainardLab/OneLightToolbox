@@ -25,14 +25,14 @@ function backgroundPrimary = OLBackgroundNominalPrimaryFromName(backgroundName, 
 %    None.
 %
 % See also:
-%    OLBackgroundParamsDictionary,
-%    OLBackgroundNominalPrimaryFromParams, OLBackgroundParamsDefaults,
-%    OLBackgroundParamsValidate.
+%    OLBackgroundParamsDictionary, OLBackgroundParams,
+%    OLBackgroundNominalPrimaryFromParams, OLBackgroundParamsValidate
 
 % History:
 %    01/31/18  jv  Created as wrapper around
 %                  OLBackgroundNominalPrimaryFromParams and
 %                  OLBackgroundNominalPrimaryFromName.
+
 backgroundParams = OLBackgroundParamsFromName(backgroundName);
 backgroundPrimary = OLBackgroundNominalPrimaryFromParams(backgroundParams, calibration, varargin{:});
 end

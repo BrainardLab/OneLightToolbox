@@ -1,22 +1,41 @@
 classdef OLBackgroundParams_Optimized < OLBackgroundParams
-    %OLBACKGROUNDPARAMS_OPTIMIZED Summary of this class goes here
-    %   Detailed explanation goes here
+% Parameter-object for optimized backgrounds
+%
+% Syntax:
+%   params = OLBackgroundParams_Optimized
+%   backgroundPrimary = OLBackgroundNominalPrimaryFromParams(OLBackgroundParams_OptimizedObject,calibration)
+%
+% Description:
+%    The 'optimized' backgrounds are specific to a direction of modulation,
+%    for which they provide the maximum (bipolar) contrast. They are
+%    generated using the SilentSubstitutionToolbox. Backgrounds are
+%    optimized with respect to a backgroundObserverAge year old observer,
+%    and no correction for photopigment bleaching is applied. We are just
+%    trying to get pretty good backgrounds, so we don't need to fuss with
+%    small effects.
+%
+% See also:
+%    OLBackgroundParams, OLBackgroundParams_LightFluxChrom
+%
+
+% History:
+%    02/07/18  jv  wrote it.
     
     properties
-        pegBackground(1,1) logical = false;                                      % Passed to the routine that optimizes backgrounds.
-        baseModulationContrast;
-        photoreceptorClasses = ...                                  % Names of photoreceptor classes being considered.
+        pegBackground(1,1) logical = false;                                 % Passed to the routine that optimizes backgrounds.
+        baseModulationContrast;                                             % Legacy, for naming.
+        photoreceptorClasses = ...                                          % Names of photoreceptor classes being considered.
             {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
-        fieldSizeDegrees(1,1) = 27.5;                                    % Field size used in background seeking. Affects fundamentals.
-        pupilDiameterMm(1,1) = 8.0;                                      % Pupil diameter used in background seeking. Affects fundamentals.
-        backgroundObserverAge(1,1) = 32;                                 % Observer age used in background seeking. Affects fundamentals.
-        maxPowerDiff(1,1) = 0.1;                                         % Smoothing parameter for routine that finds backgrounds.
-        modulationContrast = [4/6];                                 % Vector of constrasts sought in isolation.
-        whichReceptorsToIsolate = {[4]};                            % Which receptor classes are not being silenced.
-        whichReceptorsToIgnore = {[]};                              % Receptor classes ignored in calculations.
-        whichReceptorsToMinimize = {[]};                            % These receptors are minimized in contrast, subject to other constraints.
-        directionsYoked = [0];                                      % See ReceptorIsolate.
-        directionsYokedAbs = [0];                                   % See ReceptorIsolate.
+        fieldSizeDegrees(1,1) = 27.5;                                       % Field size used in background seeking. Affects fundamentals.
+        pupilDiameterMm(1,1) = 8.0;                                         % Pupil diameter used in background seeking. Affects fundamentals.
+        backgroundObserverAge(1,1) = 32;                                    % Observer age used in background seeking. Affects fundamentals.
+        maxPowerDiff(1,1) = 0.1;                                            % Smoothing parameter for routine that finds backgrounds.
+        modulationContrast = [4/6];                                         % Vector of constrasts sought in isolation.
+        whichReceptorsToIsolate = {[4]};                                    % Which receptor classes are not being silenced.
+        whichReceptorsToIgnore = {[]};                                      % Receptor classes ignored in calculations.
+        whichReceptorsToMinimize = {[]};                                    % These receptors are minimized in contrast, subject to other constraints.
+        directionsYoked = [0];                                              % See ReceptorIsolate.
+        directionsYokedAbs = [0];                                           % See ReceptorIsolate.
     end
     
     methods

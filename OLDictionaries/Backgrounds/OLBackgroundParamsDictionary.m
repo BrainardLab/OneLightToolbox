@@ -30,12 +30,10 @@ function dictionary = OLBackgroundParamsDictionary()
 %              energy spectrum, scaled in middle of gamut.
 %
 % See also: 
-%    OLBackgroundParamsDefaults, OLBackgroundParamsValidate,
-%    OLMakeBackgroundNominalPrimaries, 
-
-%    OLDirectionParamsDictionary, OLMakeDirectionNominalPrimaries,
+%    OLBackgroundParams, OLBackgroundNomimalPrimaryFromParams,
+%    OLBackgroundNominalPrimaryFromName,
 %
-%    OLCheckCacheParamsAgainstCurrentParams
+%    OLDirectionParamsDictionary, OLMakeDirectionNominalPrimaries,
 
 % History:
 %    06/28/17  dhb  Created from direction version.
@@ -54,6 +52,7 @@ function dictionary = OLBackgroundParamsDictionary()
 %                   params.photoreceptorClasses is now a cell array.
 %    07/22/17  dhb  No more modulationDirection field.
 %    01/25/18  jv   Extract default params generation, validation.
+%    02/07/18  jv   Updated to use OLBackgroundParams objects
 
 % Initialize dictionary
 dictionary = containers.Map();
