@@ -28,7 +28,8 @@ function primaryWaveform = OLPrimaryWaveform(primaryValues, waveform, varargin)
 %                      gamut (i.e outside range [0,1]. If false, and output
 %                      is out of gamut, will throw an error. If true, and
 %                      output is out of gamut, will throw a warning, and
-%                      proceed to truncate output to be in gamut.
+%                      proceed to truncate output to be in gamut. Default
+%                      false.
 %
 % Examples are provided in the source code.
 %
@@ -84,7 +85,7 @@ parser.parse(primaryValues,waveform,varargin{:});
 primaryWaveform = primaryValues * waveform;
 
 %% Check gamut
-if any(any(primaryWaveform < 0 | primaryWaveform > 1))
+if any(any(primaryWaveform < -1e-10 | primaryWaveform > 1+1e-10))
     if parser.Results.truncateGamut
         warning('OneLightToolbox:OLPrimaryWaveform:OutOfGamut','Primary waveform is out of gamut somewhere. This will be truncated');
         primaryWaveform(primaryWaveform < 0) = 0;

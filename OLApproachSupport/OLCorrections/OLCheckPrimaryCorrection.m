@@ -24,11 +24,14 @@ function OLCheckPrimaryCorrection(protocolParams)
 %% THIS NEEDS UPDATING TO WORK THROUGH MULTIPLE CORRECTED DIRECTIONS, ETC.
 %% IT IS CURRENTLY A QUICK UPDATE OF AN OLD ROUTINE.
 
+%% Start afresh with figures
+close all;
+
 %% Get some data to analyze
 %
 % This is hard coded in right now, until we mind-meld this code with our new approach approach.
 cacheBasePath = getpref(protocolParams.protocol, 'DirectionCorrectedPrimariesBasePath');
-load(fullfile(cacheBasePath, protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName, 'Direction_LightFlux_330_330_20.mat'));
+load(fullfile(cacheBasePath, protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName, ['Direction_' protocolParams.directionNames{1} '.mat']));
 
 % Identify the box
 theBox = protocolParams.calibrationType;
@@ -147,7 +150,7 @@ for ii = 1:nIterations
         end
         spectraPredictedFromRecovered = cal.computed.pr650M*primariesRecovered+cal.computed.pr650MeanDark(:,ones(size(primariesUsed,2),1));
         
-        whichPrimaries = [25,35,52];
+        whichPrimaries = [25,35,48];
         theColors = ['r' 'g' 'b' 'k' 'c'];
         figure(primaryFig); clf; hold on
         for kk = 1:length(whichPrimaries)
@@ -168,7 +171,7 @@ for ii = 1:nIterations
         end 
         lastFigIndex = lastFigIndex + 2;
         
-        whichPrimaries = [25,35,52];
+        whichPrimaries = [25,35,48];
         theColors = ['r' 'g' 'b' 'k' 'c'];
         figure(primaryFig); clf; hold on
         for kk = 1:length(whichPrimaries)
@@ -289,38 +292,39 @@ for ii = 1:nIterations
     %
     % This might not be the most perfect check for what is stored with the nominal direction primaries,
     % but until it breaks we'll go with it.
-    % if isfield(directionCacheData.directionParams,'photoreceptorClasses')
-    %     if (directionCacheData.data(protocolParams.observerAgeInYrs).describe.params.fieldSizeDegrees ~=  protocolParams.fieldSizeDegrees)
-    %         error('Field size used for direction does not match that specified in protocolPrams.');
-    %     end
-    %     if (directionCacheData.data(protocolParams.observerAgeInYrs).describe.params.pupilDiameterMm ~=  protocolParams.pupilDiameterMm)
-    %         error('Pupil diameter used for direction does not match that specified in protocolPrams.');
-    %     end
-    %     photoreceptorClasses = directionCacheData.data(protocolParams.observerAgeInYrs).describe.photoreceptors;
-    %     T_receptors = directionCacheData.data(protocolParams.observerAgeInYrs).describe.T_receptors;
-    % else
-    %     photoreceptorClasses = {'LConeTabulatedAbsorbance'  'MConeTabulatedAbsorbance'  'SConeTabulatedAbsorbance'  'Melanopsin'};
-    %     T_receptors = GetHumanPhotoreceptorSS(S,photoreceptorClasses,protocolParams.fieldSizeDegrees,protocolParams.observerAgeInYrs,protocolParams.pupilDiameterMm,[],[]);
-    % end
+    if false %isfield(directionCacheData.directionParams,'photoreceptorClasses')
+        if (directionCacheData.data(protocolParams.observerAgeInYrs).describe.params.fieldSizeDegrees ~=  protocolParams.fieldSizeDegrees)
+            error('Field size used for direction does not match that specified in protocolPrams.');
+        end
+        if (directionCacheData.data(protocolParams.observerAgeInYrs).describe.params.pupilDiameterMm ~=  protocolParams.pupilDiameterMm)
+            error('Pupil diameter used for direction does not match that specified in protocolPrams.');
+        end
+        photoreceptorClasses = directionCacheData.data(protocolParams.observerAgeInYrs).describe.photoreceptors;
+        T_receptors = directionCacheData.data(protocolParams.observerAgeInYrs).describe.T_receptors;
+    else
+        S = [380 2 201];
+        photoreceptorClasses = {'LConeTabulatedAbsorbance'  'MConeTabulatedAbsorbance'  'SConeTabulatedAbsorbance'  'Melanopsin'};
+        T_receptors = GetHumanPhotoreceptorSS(S,photoreceptorClasses,protocolParams.fieldSizeDegrees,protocolParams.observerAgeInYrs,protocolParams.pupilDiameterMm,[],[]);
+    end
 
-    % backgroundReceptors = T_receptors*backgroundSpectrumMeasuredScaled;
-    % modulationReceptors = T_receptors*modulationSpectrumMeasuredScaled;
-    % contrasts(:,ii) = (modulationReceptors-backgroundReceptors) ./ backgroundReceptors;
+    backgroundReceptors = T_receptors*backgroundSpectrumMeasuredScaled;
+    modulationReceptors = T_receptors*modulationSpectrumMeasuredScaled;
+    contrasts(:,ii) = (modulationReceptors-backgroundReceptors) ./ backgroundReceptors;
     
     %% Contrast figure
-    % figure(contrastPlot);
-    % subplot(1,2,1);
-    % hold off;
-    % plot(1:ii, 100*contrasts(1, 1:ii), '-sr', 'MarkerFaceColor', 'r'); hold on
-    % plot(1:ii, 100*contrasts(2, 1:ii), '-sg', 'MarkerFaceColor', 'g');
-    % plot(1:ii, 100*contrasts(3, 1:ii), '-sb', 'MarkerFaceColor', 'b');
-    % xlabel('Iteration #'); xlim([0 nIterations+1]);
-    % ylabel('LMS Contrast'); %ylim(]);
-    % subplot(1,2,2);
-    % hold off;
-    % plot(1:ii,contrasts(4, 1:ii), '-sc', 'MarkerFaceColor', 'c'); hold on
-    % xlabel('Iteration #'); xlim([0 nIterations+1]);
-    % ylabel('Mel Contrast');
+    figure(contrastPlot);
+    subplot(1,2,1);
+    hold off;
+    plot(1:ii, 100*contrasts(1, 1:ii), '-sr', 'MarkerFaceColor', 'r'); hold on
+    plot(1:ii, 100*contrasts(2, 1:ii), '-sg', 'MarkerFaceColor', 'g');
+    plot(1:ii, 100*contrasts(3, 1:ii), '-sb', 'MarkerFaceColor', 'b');
+    xlabel('Iteration #'); xlim([0 nIterations+1]);
+    ylabel('LMS Contrast'); %ylim(]);
+    subplot(1,2,2);
+    hold off;
+    plot(1:ii,contrasts(4, 1:ii), '-sc', 'MarkerFaceColor', 'c'); hold on
+    xlabel('Iteration #'); xlim([0 nIterations+1]);
+    ylabel('Mel Contrast');
     
     %% Force draw
     drawnow;
@@ -333,7 +337,7 @@ for ii = 1:nIterations
     fprintf('Iteration %d\n',ii);
     fprintf('\tNumber zero bg primaries: %d, one bg primaries: %d, zero mod primaries: %d, one mod primaries: %d\n',nZeroBgSettings(ii),nOneBgSettings(ii),nZeroModSettings(ii),nOneModSettings(ii));
     
-    %commandwindow;
-    %pause;
+    commandwindow;
+    pause;
     
 end

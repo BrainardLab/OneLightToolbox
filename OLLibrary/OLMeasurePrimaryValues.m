@@ -3,7 +3,8 @@ function SPD = OLMeasurePrimaryValues(primaryValues,calibration,oneLight,varargi
 %
 % Syntax:
 %   SPD = OLMeasurePrimary(primaryValues, calibration, oneLight, radiometer)
-%   SPD = OLMeasurePrimary(primaryValues, calibration, oneLight)
+%   SPD = OLMeasurePrimary(primaryValues, calibration, oneLight, radiometer, nAverage)
+%   SPD = OLMeasurePrimary(primaryValues, calibration, SimulatedOneLight)
 %
 % Description:
 %    Sends a vector of primary values to a OneLight, measures the SPD and
@@ -21,6 +22,8 @@ function SPD = OLMeasurePrimaryValues(primaryValues,calibration,oneLight,varargi
 %                    predicted from just the calibration information.
 %    radiometer    - (OPTIONAL when simulating) radiometer object to 
 %                    control a spectroradiometer
+%    nAverage      - (OPTIONAL) number of measurements to average. 
+%                    Default 1.
 % Outputs:
 %    SPD           - nWlsxN array of spectral power, where N is the number
 %                    of vector of primary values to measure
@@ -40,11 +43,10 @@ parser.addRequired('primaryValues',@isnumeric);
 parser.addRequired('calibration',@isstruct);
 parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
 parser.addOptional('radiometer',[]);
+parser.addOptional('nAverage',1,@isnumeric);
 parser.parse(primaryValues,calibration,oneLight,varargin{:});
 
-primaryValues = parser.Results.primaryValues;
-calibration = parser.Results.calibration;
-oneLight = parser.Results.oneLight;
+radiometer = parser.Results.radiometer;
 
 %% Convert primary values to starts and stops
 olSettings = OLPrimaryToSettings(calibration, primaryValues);
@@ -52,23 +54,20 @@ olSettings = OLPrimaryToSettings(calibration, primaryValues);
 
 %% Measure (or simulate)
 SPD = [];
-if ~oneLight.Simulate
+if ~isempty(radiometer)
+    
     % Actually measure
-    
-    % check that we have a radiometer
-    radiometer = parser.Results.radiometer;
-    assert(~isempty(radiometer),'OneLightToolbox:OLMeasurePrimaryValues:InvalidRadiometer','No radiometer object passed');
-    
     oneLight.setAll(true);
             
     % Loop over primary values vectors
     for p = 1:size(primaryValues,2)
-        measurement = OLTakeMeasurementOOC(oneLight,[],radiometer,starts(p,:),stops(p,:),[],[true,false],1);
+        measurement = OLTakeMeasurementOOC(oneLight,[],radiometer,starts(p,:),stops(p,:),[],[true,false],parser.Results.nAverage);
         
         % Extract SPDs
         SPD = [SPD reshape(measurement.pr650.spectrum(:),[numel(measurement.pr650.spectrum),1])];
     end
     
+    % Turn all mirrors off
     oneLight.setAll(false);
 else
     % Simulate

@@ -32,12 +32,10 @@ function OLReceptorIsolateMakeModulationStartsStops(trialType, modulationName, d
 % Optional key/value pairs
 %     'verbose' (boolean)    Print out diagnostic information?
 %
-% See also: OLMakeModulationsStartsStops, OLCacluateStartsStopsModulation, OLModulationParamsDictionary.
+% See also: OLMakeModulationsStartsStops, OLCacluateStartsStopsModulation, OLWaveformParamsDictionary.
 
 % 04/19/13   dhb, ms     Update for new convention for desired contrasts in routine ReceptorIsolate.
 % 06/17/17   dhb         Merge with mab version and expand comments.
-% 06/23/17   npc         No more config files, get modulation properties from OLModulationParamsDictionary
-% 08/21/17   dhb         Save protocolParams in output.  Also, save modulationParams in field modulationParams, rather than just params.
 %                        Delete some commented out code, and don't pass trialType to OLAssembleDirectionCacheAndStartsStopFileNames because it was not being used.
 
 %% Parse input to get key/value pairs
@@ -52,11 +50,11 @@ p.parse(modulationName, directionName, protocolParams, varargin{:});
 if (p.Results.verbose); fprintf('\nComputing modulation %s+%s\n',modulationName,directionName); end;
 
 %% Get modulation params from modulation params dictionary
-d = OLModulationParamsDictionary;
-modulationParams = d(modulationName);
+d = OLWaveformParamsDictionary;
+waveformParams = d(modulationName);
 
 % Override with trialTypeParams passed by the current protocol
-modulationParams = UpdateStructWithStruct(modulationParams,protocolParams.trialTypeParams(trialType));
+waveformParams = UpdateStructWithStruct(waveformParams,protocolParams.trialTypeParams(trialType));
 
 %% Set up the input and output directories
 % We count on the standard relative directory structure that we always use
@@ -69,17 +67,17 @@ if (~exist(directionCacheDir,'dir'))
 end
 
 % Output for starts/stops. Create if it doesn't exist.
-modulationParams.modulationDir = fullfile(getpref(protocolParams.protocol, 'ModulationStartsStopsBasePath'),protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
-if(~exist(modulationParams.modulationDir,'dir'))
-    mkdir(modulationParams.modulationDir)
+waveformParams.modulationDir = fullfile(getpref(protocolParams.protocol, 'ModulationStartsStopsBasePath'),protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
+if(~exist(waveformParams.modulationDir,'dir'))
+    mkdir(waveformParams.modulationDir)
 end
 
-%% Load the calibration file and tack it onto the modulationParams structure.
+%% Load the calibration file and tack it onto the waveformParams structure.
 %
 % Not entirely sure whether that structure is the right place for the calibration information
 % but leaving it be for now.
 cType = OLCalibrationTypes.(protocolParams.calibrationType);
-modulationParams.oneLightCal = LoadCalFile(cType.CalFileName, [], fullfile(getpref(protocolParams.approach, 'OneLightCalDataPath')));
+waveformParams.oneLightCal = LoadCalFile(cType.CalFileName, [], fullfile(getpref(protocolParams.approach, 'OneLightCalDataPath')));
 
 %% Get the corrected direction primaries
 %
@@ -90,8 +88,8 @@ modulationParams.oneLightCal = LoadCalFile(cType.CalFileName, [], fullfile(getpr
 % and multiple cal files are both unlikely.
 %
 % Setup the cache object for read, and do the read.
-directionOLCache = OLCache(directionCacheDir, modulationParams.oneLightCal);
-[directionCacheFile, startsStopsFileName, modulationParams.direction] = OLAssembleDirectionCacheAndStartsStopFileNames(protocolParams, modulationParams, directionName);
+directionOLCache = OLCache(directionCacheDir, waveformParams.oneLightCal);
+[directionCacheFile, startsStopsFileName, waveformParams.direction] = OLAssembleDirectionCacheAndStartsStopFileNames(protocolParams, waveformParams, directionName);
 
 % Load direciton data, check for staleness, and pull out what we want
 [cacheData,isStale] = directionOLCache.load(directionCacheFile);
@@ -137,24 +135,24 @@ end
 % are constructing.  The structure waveformParams is pretty similar to modulationParams,
 % but has some calculated fields added and some field name diffferences that exist
 % for historical reasons.  We may eventually be able to merge the two.
-waveformParams.type = modulationParams.type;
-switch (modulationParams.type)
+waveformParams.type = waveformParams.type;
+switch (waveformParams.type)
 
     case 'pulse'
         % A unidirectional pulse
         % Frequency and phase parameters are meaningless here, and ignored.
-        waveformParams.contrast = modulationParams.contrast;
-        waveformParams.stimulusDuration = modulationParams.stimulusDuration;
+        waveformParams.contrast = waveformParams.contrast;
+        waveformParams.stimulusDuration = waveformParams.stimulusDuration;
         if (p.Results.verbose)
             fprintf('\tCalculating pulse: %0.f s of %s, %.1f pct contrast (of max)\n', waveformParams.stimulusDuration, directionName, 100*waveformParams.contrast);
         end
         
     case 'sinusoid'
         % A sinuloidal modulation around a background
-        waveformParams.frequency = modulationParams.frequency;
-        waveformParams.phaseDegs = modulationParams.phaseDegs;
-        waveformParams.contrast = modulationParams.contrast;
-        waveformParams.stimulusDuration = modulationParams.stimulusDuration;          
+        waveformParams.frequency = waveformParams.frequency;
+        waveformParams.phaseDegs = waveformParams.phaseDegs;
+        waveformParams.contrast = waveformParams.contrast;
+        waveformParams.stimulusDuration = waveformParams.stimulusDuration;          
         if (p.Results.verbose)
             fprintf('\tCalculating %0.f s of %s, %.2f Hz, %.2f deg, %.1f pct contrast (of max)\n', waveformParams.stimulusDuration, directionName, waveformParams.frequency, waveformParams.phaseDegs, 100*waveformParams.contrast);
         end
@@ -162,11 +160,11 @@ switch (modulationParams.type)
     case 'AM'
         % Amplitude modulation of an underlying carrier frequency
         error('Not yet implemented.  Harmonize the dictionary, the protocolParams.trialTypeParams, and this code.');
-        waveformParams.theEnvelopeFrequencyHz = modulationParams.modulationFrequencyTrials(1); % Modulation frequency
-        waveformParams.thePhaseDeg = modulationParams.modulationPhase;
-        waveformParams.thePhaseRad = deg2rad(modulationParams.modulationPhase);
-        waveformParams.theFrequencyHz = modulationParams.carrierFrequency;
-        waveformParams.contrast = modulationParams.contrast;
+        waveformParams.theEnvelopeFrequencyHz = waveformParams.modulationFrequencyTrials(1); % Modulation frequency
+        waveformParams.thePhaseDeg = waveformParams.modulationPhase;
+        waveformParams.thePhaseRad = deg2rad(waveformParams.modulationPhase);
+        waveformParams.theFrequencyHz = waveformParams.carrierFrequency;
+        waveformParams.contrast = waveformParams.contrast;
         if (p.Results.verbose)
             fprintf('\tCalculating %0.f s of %s, %.2f Hz, %.2f deg, %.1f pct contrast (of max)\n', waveformParams.stimulusDuration, directionName, waveformParams.theFrequencyHz, waveformParams.thePhaseDeg, 100*waveformParams.contrast);
         end
@@ -176,7 +174,7 @@ switch (modulationParams.type)
 end
 
 % Waveform timebase
-waveformParams.t = 0:modulationParams.timeStep:waveformParams.stimulusDuration-modulationParams.timeStep;
+waveformParams.t = 0:waveformParams.timeStep:waveformParams.stimulusDuration-waveformParams.timeStep;
 
 % Parameters common to all modulation types
 %
@@ -186,22 +184,22 @@ waveformParams.t = 0:modulationParams.timeStep:waveformParams.stimulusDuration-m
 % end of the stimulus. If yes, this also gets extracted from
 % the config file
 waveformParams.window.type = 'cosine';
-waveformParams.window.cosineWindowIn = modulationParams.cosineWindowIn;
-waveformParams.window.cosineWindowOut = modulationParams.cosineWindowOut;
-waveformParams.window.cosineWindowDurationSecs = modulationParams.cosineWindowDurationSecs;
-waveformParams.window.nWindowed = modulationParams.cosineWindowDurationSecs/modulationParams.timeStep;
+waveformParams.window.cosineWindowIn = waveformParams.cosineWindowIn;
+waveformParams.window.cosineWindowOut = waveformParams.cosineWindowOut;
+waveformParams.window.cosineWindowDurationSecs = waveformParams.cosineWindowDurationSecs;
+waveformParams.window.nWindowed = waveformParams.cosineWindowDurationSecs/waveformParams.timeStep;
 
 % Exactly how we call the underlying routine depends on the modulation type, so handle that here.
-switch (modulationParams.type)
+switch (waveformParams.type)
     case {'pulse', 'sinusoid'}
-        modulation = OLCalculateStartsStopsModulation(waveformParams, modulationParams.oneLightCal, backgroundPrimary, diffPrimaryPos, diffPrimaryNeg);
+        modulation = OLCalculateStartsStopsModulation(waveformParams, waveformParams.oneLightCal, backgroundPrimary, diffPrimaryPos, diffPrimaryNeg);
 
     otherwise
         error('Unknown direction type specified.');
 end
 
 %% Put everything into a return strucure
-modulationData.modulationParams = modulationParams;
+modulationData.modulationParams = waveformParams;
 modulationData.protocolParams = protocolParams;
 modulationData.modulation = modulation;
 
@@ -217,10 +215,10 @@ end
 %
 % Put together the modulation file name from the modulation name and the direction name, and also
 % get the name of the cache file where we'll read the direction.
-function [directionCacheFileName, startsStopsFileName, directionName] = OLAssembleDirectionCacheAndStartsStopFileNames(protocolParams, modulationParams, directionName)
+function [directionCacheFileName, startsStopsFileName, directionName] = OLAssembleDirectionCacheAndStartsStopFileNames(protocolParams, waveformParams, directionName)
 
 fullDirectionName = sprintf('Direction_%s', directionName);
-fullStartsStopsName = sprintf('ModulationStartsStops_%s_%s', modulationParams.name, directionName);
+fullStartsStopsName = sprintf('ModulationStartsStops_%s_%s', waveformParams.name, directionName);
 directionCacheFileName = fullfile(getpref(protocolParams.protocol,'DirectionCorrectedPrimariesBasePath'), protocolParams.observerID,protocolParams.todayDate,protocolParams.sessionName, fullDirectionName);
-startsStopsFileName = fullfile(modulationParams.modulationDir, fullStartsStopsName);
+startsStopsFileName = fullfile(waveformParams.modulationDir, fullStartsStopsName);
 end

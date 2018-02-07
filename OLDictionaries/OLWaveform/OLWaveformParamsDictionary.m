@@ -1,14 +1,14 @@
-function dictionary = OLModulationParamsDictionary
+function dictionary = OLWaveformParamsDictionary
 % Defines a dictionary with parameters for named modulations
 %
 % Syntax:
-%   dictionary = OLModulationParamsDictionary()
+%   dictionary = OLWaveformParamsDictionary()
 %
 % Description:
 %    Define a dictionary of named timeseries of modulation, with
 %    corresponding nominal parameters. Types of modulations, and their
-%    corresponding fields, are defined in OLModulationParamsDefaults
-%    and validated by OLModulationParamsValidate.
+%    corresponding fields, are defined in OLWaveformParamsDefaults
+%    and validated by OLWaveformParamsValidate.
 %
 % Inputs:
 %    None.
@@ -26,7 +26,7 @@ function dictionary = OLModulationParamsDictionary
 %      OLCheckCacheParamsAgainstCurrentParams.
 %
 % See also: 
-%    OLModulationParamsDefaults, OLModulationParamsValidate,
+%    OLWaveformParamsDefaults, OLWaveformParamsValidate,
 %    OLMakeModulationPrimaries, 
 
 %    OLDirectionNominalParamsDictionary, OLMakeDirectionNominalPrimaries,
@@ -49,11 +49,11 @@ dictionary = containers.Map();
 modulationName = 'MaxContrast3sPulse';
 type = 'pulse';
 
-params = OLModulationParamsDefaults(type);
+params = OLWaveformParamsDefaults(type);
 params.name = modulationName;
 params.stimulusDuration = 3;
 
-if OLModulationParamsValidate(params)
+if OLWaveformParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
 end
@@ -62,11 +62,11 @@ end
 modulationName = 'MaxContrast4sPulse';
 type = 'pulse';
 
-params = OLModulationParamsDefaults(type);
+params = OLWaveformParamsDefaults(type);
 params.name = modulationName;
 params.stimulusDuration = 4;
 
-if OLModulationParamsValidate(params)
+if OLWaveformParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
 end
@@ -75,12 +75,12 @@ end
 modulationName = 'MaxContrast3sSinusoid';
 type = 'sinusoid';
 
-params = OLModulationParamsDefaults(type);
+params = OLWaveformParamsDefaults(type);
 params.name = modulationName;
 params.stimulusDuration = 3;                
 params.cosineWindowDurationSecs = 0.5;      
 
-if OLModulationParamsValidate(params)
+if OLWaveformParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
 end
@@ -89,12 +89,12 @@ end
 modulationName = 'MaxContrast12sSinusoid';
 type = 'sinusoid';
 
-params = OLModulationParamsDefaults(type);
+params = OLWaveformParamsDefaults(type);
 params.name = modulationName;
 params.stimulusDuration = 12;                  
 params.cosineWindowDurationSecs = 3;            
                 
-if OLModulationParamsValidate(params)
+if OLWaveformParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
 end

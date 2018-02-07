@@ -1,4 +1,4 @@
-function params = OLModulationParamsDefaults(type)
+function params = OLWaveformParamsDefaults(type)
 % Returns structure with default parameters for a modulation type
 %
 % Syntax:
@@ -8,7 +8,7 @@ function params = OLModulationParamsDefaults(type)
 %    Since a lot of modulation specifications are small variations, this
 %    function generates a set of default parameters; the parameters of
 %    interest can then be overridden afterwards (either in the 
-%    OLModulationParamsDictionary, or elsewhere), before using the
+%    OLWaveformParamsDictionary, or elsewhere), before using the
 %    parameters to generate modulation primary values.
 %
 % Inputs:
@@ -24,7 +24,7 @@ function params = OLModulationParamsDefaults(type)
 %    None.
 %
 % See also:
-%    OLModulationParamsValidate, OLModulationParamsDictionary 
+%    OLWaveformParamsValidate, OLWaveformParamsDictionary 
 
 % History:
 %    01/25/18  jv  Extracted from OLModulationParamsDictionary
