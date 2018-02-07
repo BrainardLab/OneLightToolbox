@@ -1,8 +1,8 @@
-function OLMakeModulationStartsStops(modulationNames,directionNames,protocolParams,varargin)
+function OLMakeModulationStartsStops(waveformNames,directionNames,protocolParams,varargin)
 %OLMakeModulationStartsStops  Make the modulations starts/stops for a protocol subject/date/session
 %
 % Usage:
-%     OLMakeModulationStartsStops(modulationNames,directionNames,protocolParams)
+%     OLMakeModulationStartsStops(waveformNames,directionNames,protocolParams)
 %
 % Description:
 %     This script reads in the primaries for the modulations in the experiment and computes the starts stops.
@@ -18,7 +18,7 @@ function OLMakeModulationStartsStops(modulationNames,directionNames,protocolPara
 %      getpref(protocolParams.approach,'ModulationStartsStopsDir');
 %
 % Input:
-%      modulationNames (cell array)         Cell array with the names of the modulations that are used in
+%      waveformNames (cell array)         Cell array with the names of the modulations that are used in
 %                                           the current protocol.
 %      directionNames (cell array)          Cell array with the names of the directions that are used in
 %                                           the current protocol.
@@ -37,11 +37,11 @@ function OLMakeModulationStartsStops(modulationNames,directionNames,protocolPara
 
 %% Parse input to get key/value pairs
 p = inputParser;
-p.addRequired('modulationNames',@iscell);
+p.addRequired('waveformNames',@iscell);
 p.addRequired('directionNames', @iscell);
 p.addRequired('protocolParams',@isstruct);
 p.addParameter('verbose',true,@islogical);
-p.parse(modulationNames,directionNames,protocolParams,varargin{:});
+p.parse(waveformNames,directionNames,protocolParams,varargin{:});
 
 %% Update session log file
 OLSessionLog(protocolParams,mfilename,'StartEnd','start');
@@ -68,24 +68,60 @@ end
 cType = OLCalibrationTypes.(protocolParams.calibrationType);
 oneLightCal = LoadCalFile(cType.CalFileName, [], fullfile(getpref(protocolParams.approach, 'OneLightCalDataPath')));
 
+%% Setup a cache object for read, and do the read.
+directionCacheDir = fullfile(getpref(protocolParams.protocol,'DirectionCorrectedPrimariesBasePath'), protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
+directionOLCache = OLCache(directionCacheDir, oneLightCal);
+
 %% Do each modulation
-for ii = 1:length(modulationNames)
-    modulationName = modulationNames{ii};
+for ii = 1:length(waveformNames)
+    waveformName = waveformNames{ii};
     directionName = directionNames{ii};
     
     % Say hello
-    if (p.Results.verbose); fprintf('\nComputing modulation %s+%s\n',modulationName,directionName); end
+    if (p.Results.verbose); fprintf('\nComputing modulation %s+%s\n',waveformName,directionName); end
     
-    % Get modulation params
-    modulationParams = OLWaveformParamsFromName(modulationName);
+    % Load direction data, check for staleness, and pull out what we want
+    % These are currently in a cache file. These particular files should never
+    % be stale, so the role of using a cache file is to allow us to keep things
+    % separate by calibration and to detect staleness.  But, given that these
+    % are written in subject/date/session specific directories, staleness is
+    % and multiple cal files are both unlikely.
+    directionCacheFile = fullfile(getpref(protocolParams.protocol,'DirectionCorrectedPrimariesBasePath'), protocolParams.observerID,protocolParams.todayDate,protocolParams.sessionName, sprintf('Direction_%s', directionName));
+    [cacheData,isStale] = directionOLCache.load(directionCacheFile);
+    assert(~isStale,'Cache file is stale, aborting.');
+    directionParams = cacheData.directionParams;
+    directionData = cacheData.data(protocolParams.observerAgeInYrs);
+    clear cacheData
+
+    % Get modulation params, override with trialTypeParams passed by
+    % current protocol
+    waveformParams = OLWaveformParamsFromName(waveformName);
+    waveformParams = UpdateStructWithStruct(waveformParams,protocolParams.trialTypeParams(ii));
     
-    % Override with trialTypeParams passed by the current protocol
-    modulationParams = UpdateStructWithStruct(modulationParams,protocolParams.trialTypeParams(ii));
-    modulationParams.modulationDir = protocolParams.modulationDir;
-    modulationParams.oneLightCal = oneLightCal;
+    % Construct the waverform from parameters
+    [directionWaveform, timestep, waveformDuration] = OLWaveformFromParams(waveformParams);
     
-    % Create modulation
-    OLReceptorIsolateMakeModulationStartsStops(ii,modulationParams, directionName, protocolParams,'verbose',p.Results.verbose);
+    % Assemble modulation
+    modulation = OLAssembleModulation(directionData, directionWaveform, oneLightCal);
+    modulation.timestep = timestep;
+    modulation.stimulusDuration = waveformDuration;
+
+    % We're treating the background real special here.
+    modulation.background.primaries = directionData.backgroundPrimary;
+    [modulation.background.starts, modulation.background.stops] = OLPrimaryToStartsStops(modulation.background.primaries, oneLightCal);
+
+    % Put everything into a return strucure
+    modulationData.modulationParams = waveformParams;
+    modulationData.calibration = oneLightCal;
+    modulationData.protocolParams = protocolParams;
+    modulationData.modulation = modulation;
+    
+    % Save
+    fullModulationName = sprintf('ModulationStartsStops_%s_%s_trialType_%d', waveformName, directionName, ii);
+    modulationDir = protocolParams.modulationDir;
+    modulationData.modulationCacheFile = fullfile(modulationDir, fullModulationName);
+    save(modulationData.modulationCacheFile, 'modulationData');
+    if (p.Results.verbose); fprintf(['\tSaved modulation to ' modulationData.modulationCacheFile '\n']); end    
 end
 
 %% Update session log file
