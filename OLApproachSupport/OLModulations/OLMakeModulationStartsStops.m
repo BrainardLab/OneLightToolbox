@@ -68,9 +68,6 @@ end
 cType = OLCalibrationTypes.(protocolParams.calibrationType);
 oneLightCal = LoadCalFile(cType.CalFileName, [], fullfile(getpref(protocolParams.approach, 'OneLightCalDataPath')));
 
-%% Populate waveformParamsDictionary
-waveformParamsDictionary = OLWaveformParamsDictionary;
-
 %% Do each modulation
 for ii = 1:length(modulationNames)
     modulationName = modulationNames{ii};
@@ -80,7 +77,7 @@ for ii = 1:length(modulationNames)
     if (p.Results.verbose); fprintf('\nComputing modulation %s+%s\n',modulationName,directionName); end
     
     % Get modulation params
-    modulationParams = waveformParamsDictionary(modulationName);
+    modulationParams = OLWaveformParamsFromName(modulationName);
     
     % Override with trialTypeParams passed by the current protocol
     modulationParams = UpdateStructWithStruct(modulationParams,protocolParams.trialTypeParams(ii));
