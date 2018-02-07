@@ -29,17 +29,17 @@ function directionStruct = OLDirectionNominalStructFromParams(directionParams,ba
 %    directionStruct   - a 1x60 struct array (one struct per observer age
 %                        1:60 yrs), with the following fields:
 %                          * backgroundPrimary   : the primary values for
-%                                                 the background.
-%                          * differentialPositive: the difference in primary
-%                                                 values to be added to the
-%                                                 background primary to
-%                                                 create the positive
-%                                                 direction
-%                          * differentialNegative: the difference in primary
-%                                                 values to be added to the
-%                                                 background primary to
-%                                                 create the negative
-%                                                 direction
+%                                                  the background.
+%                          * differentialPositive: the difference in 
+%                                                  primary values to be
+%                                                  added to the background
+%                                                  primary to create the
+%                                                  positive direction
+%                          * differentialNegative: the difference in 
+%                                                  primary values to be
+%                                                  added to the background
+%                                                  primary to create the
+%                                                  negative direction
 %                          * describe            : Any additional
 %                                                 (meta)-information that
 %                                                 might be stored
