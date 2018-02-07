@@ -176,7 +176,7 @@ switch directionParams.type
             modulationSpdSignedNegative = backgroundSpd+differenceSpdSignedNegative;
             
             % Print out contrasts. This routine is in the Silent Substitution Toolbox.
-            if (parser.Results.verbose), ComputeAndReportContrastsFromSpds(sprintf('\n> Observer age: %g',observerAgeInYears),photoreceptorClasses,T_receptors,backgroundSpd,modulationSpdSignedPositive,[],[]); end
+            if (parser.Results.verbose), ComputeAndReportContrastsFromSpds(sprintf('\n> Observer age: %g',observerAgeInYears),photoreceptorClasses,T_receptors,backgroundSpd,modulationSpdSignedPositive); end
             
             % [DHB NOTE: MIGHT WANT TO SAVE THE VALUES HERE AND PHOTOPIC LUMINANCE TOO.]
             % Print out luminance info.  This routine is also in the Silent Substitution Toolbox
