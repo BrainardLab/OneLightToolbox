@@ -64,7 +64,8 @@ for ii = 1:length(approachParams.backgroundNames)
     %
     % The approach parameters structure specifies some background independent
     % information, such as the calibration names to be used.
-    backgroundParams = OLMergeBaseParamsWithParamsFromDictionaryEntry(approachParams, paramsDictionary, backgroundName);
+    backgroundParams = paramsDictionary(backgroundName);
+%    backgroundParams = OLMergeBaseParamsWithParamsFromDictionaryEntry(approachParams, paramsDictionary, backgroundName);
 
     % Create the cache object and filename
     olCache = OLCache(cacheDir, calibration);
@@ -83,7 +84,7 @@ for ii = 1:length(approachParams.backgroundNames)
     
     % If not, recompute
     if ~exist('isStale','var') || isStale
-        backgroundPrimary = OLBackgroundNominalPrimaryFromParams(backgroundParams, calibration, 'verbose', parser.Results.verbose);
+        backgroundPrimary = OLBackgroundNominalPrimaryFromParams(backgroundParams, calibration);
 
         % Fill in for all observer ages based on the nominal calculation.
         for observerAgeInYears = 20:60     

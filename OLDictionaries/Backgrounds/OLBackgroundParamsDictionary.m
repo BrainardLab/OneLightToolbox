@@ -66,20 +66,20 @@ dictionary = containers.Map();
 %
 % Bipolar contrast is specified to generate, this background is also used
 % for a 400% unipolar pulse
-baseName = 'MelanopsinDirected';
-type = 'optimized';
-
-params = OLBackgroundParamsDefaults(type);
-params.baseModulationContrast = 4/6;
+params = OLBackgroundParams_Optimized;
+params.baseName = 'MelanopsinDirected';
 params.primaryHeadRoom = 0.01;
+params.baseModulationContrast = 4/6;
+params.fieldSizeDegrees = 27.5;
+params.pupilDiameterMm = 8;
 params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
-params.modulationContrast = [params.baseModulationContrast];
+params.modulationContrast = 4/6;
 params.whichReceptorsToIsolate = {[4]};
 params.whichReceptorsToIgnore = {[]};
 params.whichReceptorsToMinimize = {[]};
 params.directionsYoked = [0];
 params.directionsYokedAbs = [0];
-params.name = OLMakeApproachBackgroundName(baseName,params);
+params.name = OLBackgroundNameFromParams(params);
 params.cacheFile = ['Background_' params.name  '.mat'];
 if OLBackgroundParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
@@ -94,22 +94,20 @@ end
 %
 % Bipolar contrast is specified to generate, this background is also used
 % for a 400% unipolar pulse
-baseName = 'MelanopsinDirected';
-type = 'optimized';
-
-params = OLBackgroundParamsDefaults(type);
+params = OLBackgroundParams_Optimized;
+params.baseName = 'MelanopsinDirected';
 params.baseModulationContrast = 4/6;
 params.primaryHeadRoom = 0.01;
 params.fieldSizeDegrees = 60;
 params.pupilDiameterMm = 8;
 params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
-params.modulationContrast = [params.baseModulationContrast];
+params.modulationContrast = [4/6];
 params.whichReceptorsToIsolate = {[4]};
 params.whichReceptorsToIgnore = {[]};
 params.whichReceptorsToMinimize = {[]};
 params.directionsYoked = [0];
 params.directionsYokedAbs = [0];
-params.name = OLMakeApproachBackgroundName(baseName,params);
+params.name = OLBackgroundNameFromParams(params);
 params.cacheFile = ['Background_' params.name  '.mat'];
 if OLBackgroundParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
@@ -124,22 +122,20 @@ end
 %
 % Bipolar contrast is specified to generate, this background is also used
 % for a 400% unipolar pulse
-baseName = 'LMSDirected';
-type = 'optimized';
-
-params = OLBackgroundParamsDefaults(type);
+params = OLBackgroundParams_Optimized;
+params.baseName = 'LMSDirected';
 params.baseModulationContrast = 4/6;
 params.primaryHeadRoom = 0.005;
 params.fieldSizeDegrees = 27.5;
 params.pupilDiameterMm = 8;
 params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
-params.modulationContrast = {[params.baseModulationContrast params.baseModulationContrast params.baseModulationContrast]};
+params.modulationContrast = {[4/6 4/6 4/6]};
 params.whichReceptorsToIsolate = {[1 2 3]};
 params.whichReceptorsToIgnore = {[]};
 params.whichReceptorsToMinimize = {[]};
 params.directionsYoked = [1];
 params.directionsYokedAbs = [0];
-params.name = OLMakeApproachBackgroundName(baseName,params);
+params.name = OLBackgroundNameFromParams(params);
 params.cacheFile = ['Background_' params.name  '.mat'];
 if OLBackgroundParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
@@ -154,22 +150,20 @@ end
 %
 % Bipolar contrast is specified to generate, this background is also used
 % for a 400% unipolar pulse
-baseName = 'LMSDirected';
-type = 'optimized';
-
-params = OLBackgroundParamsDefaults(type);
+params = OLBackgroundParams_Optimized;
+params.baseName = 'LMSDirected';
 params.baseModulationContrast = 4/6;
 params.primaryHeadRoom = 0.005;
 params.fieldSizeDegrees = 60;
 params.pupilDiameterMm = 8;
 params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
-params.modulationContrast = {[params.baseModulationContrast params.baseModulationContrast params.baseModulationContrast]};
+params.modulationContrast = {[4/6 4/6 4/6]};
 params.whichReceptorsToIsolate = {[1 2 3]};
 params.whichReceptorsToIgnore = {[]};
 params.whichReceptorsToMinimize = {[]};
 params.directionsYoked = [1];
 params.directionsYokedAbs = [0];
-params.name = OLMakeApproachBackgroundName(baseName,params);
+params.name = OLBackgroundNameFromParams(params);
 params.cacheFile = ['Background_' params.name  '.mat'];
 if OLBackgroundParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
@@ -184,21 +178,19 @@ end
 %
 % Bipolar contrast is specified to generate, this background is also used
 % for a 400% unipolar pulse
-baseName = 'MelanopsinDirected';
-type = 'optimized';
-
-params = OLBackgroundParamsDefaults(type);
+params = OLBackgroundParams_Optimized;
+params.baseName = 'MelanopsinDirected';
 params.baseModulationContrast = 4/6;
 params.primaryHeadRoom = 0.01;
 params.pupilDiameterMm = 6;
 params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
-params.modulationContrast = [params.baseModulationContrast];
+params.modulationContrast = [4/6];
 params.whichReceptorsToIsolate = {[4]};
 params.whichReceptorsToIgnore = {[]};
 params.whichReceptorsToMinimize = {[]};
 params.directionsYoked = [0];
 params.directionsYokedAbs = [0];
-params.name = OLMakeApproachBackgroundName(baseName,params);
+params.name = OLBackgroundNameFromParams(params);
 params.cacheFile = ['Background_' params.name  '.mat'];
 if OLBackgroundParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
@@ -213,21 +205,19 @@ end
 %
 % Bipolar contrast is specified to generate, this background is also used
 % for a 400% unipolar pulse
-baseName = 'LMSDirected';
-type = 'optimized';
-
-params = OLBackgroundParamsDefaults(type);
+params = OLBackgroundParams_Optimized;
+params.baseName = 'LMSDirected';
 params.baseModulationContrast = 4/6;
 params.primaryHeadRoom = 0.005;
 params.pupilDiameterMm = 6;
 params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
-params.modulationContrast = {[params.baseModulationContrast params.baseModulationContrast params.baseModulationContrast]};
+params.modulationContrast = {[4/6 4/6 /46]};
 params.whichReceptorsToIsolate = {[1 2 3]};
 params.whichReceptorsToIgnore = {[]};
 params.whichReceptorsToMinimize = {[]};
 params.directionsYoked = [1];
 params.directionsYokedAbs = [0];
-params.name = OLMakeApproachBackgroundName(baseName,params);
+params.name = OLBackgroundNameFromParams(params);
 params.cacheFile = ['Background_' params.name  '.mat'];
 if OLBackgroundParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
@@ -237,13 +227,11 @@ end
 %% LightFlux_540_380_50
 % Background at xy = [0.54,0.38] that allows light flux pulses to increase
 % a factor of 5 within gamut
-baseName = 'LightFlux';
-type = 'lightfluxchrom';
-
-params = OLBackgroundParamsDefaults(type);
+params = OLBackgroundParams_LightFluxChrom;
+params.baseName = 'LightFlux';
 params.lightFluxDesiredXY = [0.54,0.38];
 params.lightFluxDownFactor = 5;
-params.name = OLMakeApproachBackgroundName(baseName,params);
+params.name = OLBackgroundNameFromParams(params);
 params.cacheFile = ['Background_' params.name  '.mat'];
 if OLBackgroundParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
@@ -253,13 +241,11 @@ end
 %% LightFlux_330_330_20
 % Background at xy = [0.33,0.33] that allows light flux pulses to increase 
 % a factor of  2 within gamut
-baseName = 'LightFlux';
-type = 'lightfluxchrom';
-
-params = OLBackgroundParamsDefaults(type);
+params = OLBackgroundParams_LightFluxChrom;
+params.baseName = 'LightFlux';
 params.lightFluxDesiredXY = [0.33,0.33];
 params.lightFluxDownFactor = 2;
-params.name = OLMakeApproachBackgroundName(baseName,params);
+params.name = OLBackgroundNameFromParams(params);
 params.cacheFile = ['Background_' params.name  '.mat'];
 if OLBackgroundParamsValidate(params)
     % All validations OK. Add entry to the dictionary.

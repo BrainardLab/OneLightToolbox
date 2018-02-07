@@ -1,0 +1,227 @@
+classdef OLBackgroundParams_Optimized < OLBackgroundParams
+    %OLBACKGROUNDPARAMS_OPTIMIZED Summary of this class goes here
+    %   Detailed explanation goes here
+    
+    properties
+        pegBackground(1,1) logical = false;                                      % Passed to the routine that optimizes backgrounds.
+        baseModulationContrast;
+        photoreceptorClasses = ...                                  % Names of photoreceptor classes being considered.
+            {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
+        fieldSizeDegrees(1,1) = 27.5;                                    % Field size used in background seeking. Affects fundamentals.
+        pupilDiameterMm(1,1) = 8.0;                                      % Pupil diameter used in background seeking. Affects fundamentals.
+        backgroundObserverAge(1,1) = 32;                                 % Observer age used in background seeking. Affects fundamentals.
+        maxPowerDiff(1,1) = 0.1;                                         % Smoothing parameter for routine that finds backgrounds.
+        modulationContrast = [4/6];                                 % Vector of constrasts sought in isolation.
+        whichReceptorsToIsolate = {[4]};                            % Which receptor classes are not being silenced.
+        whichReceptorsToIgnore = {[]};                              % Receptor classes ignored in calculations.
+        whichReceptorsToMinimize = {[]};                            % These receptors are minimized in contrast, subject to other constraints.
+        directionsYoked = [0];                                      % See ReceptorIsolate.
+        directionsYokedAbs = [0];                                   % See ReceptorIsolate.
+    end
+    
+    methods
+        function obj = OLBackgroundParams_Optimized
+            obj = obj@OLBackgroundParams;
+            obj.type = 'optimized';
+        end
+        
+        function name = OLBackgroundNameFromParams(params)
+        	name = sprintf('%s_%d_%d_%d',params.baseName,round(10*params.fieldSizeDegrees),round(10*params.pupilDiameterMm),round(1000*params.baseModulationContrast));
+        end
+        
+        function backgroundPrimary = OLBackgroundNominalPrimaryFromParams(params,calibration)
+            % Generate nominal primary for these parameters, for calibration
+            %
+            % Syntax:
+            %   backgroundPrimary = MakeNominalPrimary(OLBackgroundParams_Optimized,calibration);
+            %
+            % Description:
+            %    Generate the nominal primary values that would correspond
+            %    to the given parameter, under the given calibration.
+            %
+            %    These backgrounds get optimized according to the
+            %    parameters in the structure.  Backgrounds are optimized
+            %    with respect to a backgroundObserverAge year old observer,
+            %    and no correction for photopigment bleaching is applied.
+            %    We are just trying to get pretty good backgrounds, so we
+            %    don't need to fuss with small effects.
+            %
+            % Inputs:
+            %    params            - OLBackgroundParams_optimized
+            %                        defining the parameters for this
+            %                        optimized background.
+            %    calibration       - OneLight calibration struct
+            %
+            % Outputs:
+            %    backgroundPrimary - column vector of primary values for
+            %                        the background
+            %
+            % Optional key/value pairs:
+            %    None.
+            %
+            
+            % Input validation
+            parser = inputParser();
+            parser.addRequired('params',@(x) isa(x,'OLBackgroundParams_Optimized'));
+            parser.addRequired('calibration',@isstruct);
+            parser.parse(params,calibration);
+            
+            % Pull out the 'M' matrix as device primaries
+            B_primary = calibration.computed.pr650M;
+            
+            %% Set up parameters for the optimization
+            whichPrimariesToPin = [];
+            
+            % Peg desired contrasts
+            if ~isempty(params.modulationContrast)
+                desiredContrasts = params.modulationContrast;
+            else
+                desiredContrasts = [];
+            end
+            
+            % Assign a zero 'ambientSpd' variable if we're not using the
+            % measured ambient.
+            if params.useAmbient
+                ambientSpd = calibration.computed.pr650MeanDark;
+            else
+                ambientSpd = zeros(size(B_primary,1),1);
+            end
+            
+            %% Initial background
+            % Start at mid point of primaries.
+            initialPrimary = 0.5*ones(size(B_primary,2),1);
+            
+            %% Construct the receptor matrix
+            lambdaMaxShift = zeros(1, length(params.photoreceptorClasses));
+            fractionBleached = zeros(1,length(params.photoreceptorClasses));
+            T_receptors = GetHumanPhotoreceptorSS(calibration.describe.S, params.photoreceptorClasses, params.fieldSizeDegrees, params.backgroundObserverAge, params.pupilDiameterMm, lambdaMaxShift, fractionBleached);
+            
+            %% Isolate the receptors by calling the wrapper
+            optimizedBackgroundPrimaries = ReceptorIsolateOptimBackgroundMulti(T_receptors, params.whichReceptorsToIsolate, ...
+                params.whichReceptorsToIgnore,params.whichReceptorsToMinimize,B_primary,initialPrimary,...
+                initialPrimary,whichPrimariesToPin,params.primaryHeadRoom,params.maxPowerDiff,...
+                desiredContrasts,ambientSpd,params.directionsYoked,params.directionsYokedAbs,params.pegBackground);
+            
+            %% Pull out what we want
+            backgroundPrimary = optimizedBackgroundPrimaries{1};
+        end
+        
+        function valid = OLBackgroundParamsValidate(params)
+            % Validate passed background parameters
+            %
+            % Syntax:
+            %   valid = OLBackgroundParamsValidate(entry)
+            %
+            % Description:
+            %    This function checks whether a given
+            %    OLBackgroundParams_LightFluxChrom has valid values in all
+            %    properties. Throws an error if a property contains an
+            %    unexpected value.
+            %
+            % Inputs:
+            %    params - OLBackgroundParams_LightFluxChrom defining the
+            %             parameters for this LightFluxChrom background.
+            %
+            % Outputs:
+            %    valid  - logical boolean. True if entry contains all those fields, and
+            %             only those fields, returned by
+            %             OLBackgroundParamsDefaults for the given type. False
+            %             if missing or additional fields.
+            %
+            % Optional key/value pairs:
+            %    None.
+            
+            try
+                % Validate pegBackground
+                property = ('pegBackground');
+                mustBeNonempty(params.(property));
+                
+                % Validate fieldSizeDegrees
+                property = ('fieldSizeDegrees');
+                mustBeNonempty(params.(property));
+                mustBePositive(params.(property));                
+                
+                % Validate pupilDiameterMm
+                property = ('pupilDiameterMm');
+                mustBeNonempty(params.(property));
+                mustBePositive(params.(property));                
+                
+                % Validate backgroundObserverAge
+                property = ('backgroundObserverAge');
+                mustBeNonempty(params.(property));
+                mustBeInteger(params.(property));
+                mustBePositive(params.(property));
+                
+                % Validate maxPowerDiff
+                property = ('maxPowerDiff');
+                mustBeNonempty(params.(property)); 
+                mustBeNonnegative(params.(property));
+                mustBeLessThanOrEqual(params.(property),1);
+                
+                % Validate whichReceptorsToIsolate
+                property = ('whichReceptorsToIsolate');
+                assert(iscell(params.(property)),'Value must be cell');
+                mustBeNonempty(params.(property));
+%                 mustBeInteger(params.(property));
+%                 mustBePositive(params.(property));
+%                 mustBeLessThanOrEqual(params.(property), numel(params.photoreceptorClasses));
+%                 assert(numel(unique(params.(property))) == numel(params.(property)),...
+%                     'DuplicateReceptorIsolateSpecification','Contains duplicate specification for a receptor');
+                
+                % Validate modulationContrast
+                property = ('modulationContrast');
+                mustBeNonempty(params.(property));
+%                 assert(numel(unique(params.(property))) == numel(params.(property)),...
+%                     'DuplicateReceptorIsolateSpecification','Contains duplicate specification for a receptor');                
+                
+                % Validate whichReceptorsToMinimize
+                property = ('whichReceptorsToMinimize');
+                assert(iscell(params.(property)),'Value must be cell');
+%                 mustBeInteger(params.(property));
+%                 mustBePositive(params.(property));
+%                 mustBeLessThanOrEqual(params.(property), numel(params.photoreceptorClasses)); 
+%                 assert(numel(unique(params.whichReceptorsToIsolate)) == numel(params.whichReceptorsToIsolate),...
+%                     'DuplicateReceptorIsolateSpecification','Contains duplicate specification for a receptor');                
+                
+                % Validate whichReceptorsToIgnore
+                property = ('whichReceptorsToIgnore');
+                assert(iscell(params.(property)),'Value must be cell');          
+%                 mustBeInteger(params.(property));
+%                 mustBePositive(params.(property));
+%                 mustBeLessThanOrEqual(params.(property), numel(params.photoreceptorClasses)); 
+%                 assert(numel(unique(params.whichReceptorsToIsolate)) == numel(params.whichReceptorsToIsolate),...
+%                     'DuplicateReceptorIsolateSpecification','Contains duplicate specification for a receptor');                
+                
+                % Validate that no receptors have been assigned both
+                % isolate, ignore, minimize
+%                 assert(isempty(intersect(params.whichReceptorsToMinimize,intersect(params.whichReceptorsToIsolate,params.whichReceptorsToIgnore))),...
+%                     'DuplicateReceptorIsolateSpecification','whichReceptorsToIsolate/Minimize/Ignore contain duplicate receptors');
+                
+                % Validate that all receptors have been assigned isolate,
+                % ignore or minimize
+%                 assert(numel([params.whichReceptorsToIsolate,params.whichReceptorsToMinimize,params.whichReceptorsToIgnore])==numel(params.photoreceptorClasses),...
+%                     'whichReceptorsToIsolate/Minimize/Ignore do not contain a specification for every receptor');
+                
+                % Validate directionsYokedAbs
+                property = ('directionsYokedAbs');
+                mustBeInteger(params.(property));
+                mustBeLessThanOrEqual(numel(params.(property)), numel(params.photoreceptorClasses));   
+                
+                % Validate directionsYoked
+                property = ('directionsYoked');
+                mustBeInteger(params.(property));
+                mustBeLessThanOrEqual(numel(params.(property)), numel(params.photoreceptorClasses));    
+
+            catch valueException
+                % Add more descriptive message
+                propException = MException(sprintf('BackgroundParams:Validate:%s',property),...
+                    sprintf('%s is invalid: %s',property,valueException.message));
+                addCause(propException,valueException);
+                throw(propException);
+            end
+            
+            valid = true;
+        end
+    end
+    
+end
