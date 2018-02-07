@@ -68,24 +68,17 @@ directionParams = cacheData.directionParams;
 directionData = cacheData.data(protocolParams.observerAgeInYrs);
 clear cacheData
 
-%% Get the background
-backgroundPrimary = directionData.backgroundPrimary;
-
-%% Put primary data for direction into canonical form
-diffPrimaryPos = directionData.differentialPositive;
-diffPrimaryNeg = directionData.differentialNegative;
-
 %% Construct the waverform from parameters
 [directionWaveform, timestep, waveformDuration] = OLWaveformFromParams(waveformParams);
 
 %% Assemble modulation
-modulation = OLAssembleModulation(directionWaveform, waveformParams.oneLightCal, backgroundPrimary, diffPrimaryPos, diffPrimaryNeg);
+modulation = OLAssembleModulation(directionData, directionWaveform, waveformParams.oneLightCal);
 modulation.timestep = timestep;
 modulation.stimulusDuration = waveformDuration;
 
 % We're treating the background real special here.
-modulation.background.primaries = backgroundPrimary;
-[modulation.background.starts, modulation.background.stops] = OLPrimaryToStartsStops(backgroundPrimary,waveformParams.oneLightCal);
+modulation.background.primaries = directionData.backgroundPrimary;
+[modulation.background.starts, modulation.background.stops] = OLPrimaryToStartsStops(modulation.background.primaries,waveformParams.oneLightCal);
 
 %% Put everything into a return strucure
 modulationData.modulationParams = waveformParams;
