@@ -14,8 +14,8 @@ function directionStruct = OLDirectionNominalStructFromName(directionName,backgr
 %    OLDirectionStructFromParams.
 %
 % Inputs:
-%    directionName   - String name of a set of parameters for a direction
-%                      stored in OLDirectionNominalStructParamsDictionary.
+%    directionName     - String name of a set of parameters for a direction
+%                        stored in OLDirectionParamsDictionary.
 %    backgroundPrimary - the primary values for the background
 %    calibration       - OneLight calibration struct
 %
@@ -39,7 +39,10 @@ function directionStruct = OLDirectionNominalStructFromName(directionName,backgr
 %                                                 might be stored
 %
 % Optional key/value pairs:
-%    'verbose'        - boolean flag to print output. Default false.
+%    observerAge       - (vector of) observer age(s) to generate direction
+%                        struct for. Output directionStruct will be of 
+%                        length(observerAge). Default is 1:60.
+%    verbose           - boolean flag to print output. Default false.
 %
 % Notes:
 %    None.
@@ -51,5 +54,5 @@ function directionStruct = OLDirectionNominalStructFromName(directionName,backgr
 % History:
 %    01/31/18  jv  wrote it
 directionParams = OLDirectionParamsFromName(directionName);
-directionStruct = OLDirectionNominalStructFromParams(directionParams, backgroundPrimary, calibration);
+directionStruct = OLDirectionNominalStructFromParams(directionParams, backgroundPrimary, calibration, varargin{:});
 end

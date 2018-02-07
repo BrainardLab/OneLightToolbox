@@ -45,7 +45,13 @@ function directionStruct = OLDirectionNominalStructFromParams(directionParams,ba
 %                                                 might be stored
 %
 % Optional key/value pairs:
-%    'verbose'        - boolean flag to print output. Default false.
+%    observerAge       - (vector of) observer age(s) to generate direction
+%                        struct for. When numel(observerAge > 1), output
+%                        directionStruct will still be of size [1,60], so
+%                        that the index is the observerAge. When
+%                        numel(observerAge == 1), directionStruct will be
+%                        a single struct. Default is 20:60.
+%    verbose           - boolean flag to print output. Default false.
 %
 % Notes:
 %    None.
@@ -64,6 +70,7 @@ parser.addRequired('directionParams',@isstruct);
 parser.addRequired('backgroundPrimary');
 parser.addRequired('calibration',@isstruct);
 parser.addParameter('verbose',false,@islogical);
+parser.addParameter('observerAge',20:60,@isnumeric);
 parser.parse(directionParams,backgroundPrimary,calibration,varargin{:});
 
 S = calibration.describe.S;
@@ -113,7 +120,7 @@ switch directionParams.type
         end
         
         % Make direction information for each observer age
-        for observerAgeInYears = 20:60
+        for observerAgeInYears = parser.Results.observerAge
             % Say hello
             if (parser.Results.verbose), fprintf('\nObserver age: %g\n',observerAgeInYears); end
             
@@ -222,7 +229,7 @@ switch directionParams.type
         end
         
         % Replace the values
-        for observerAgeInYrs = 20:60
+        for observerAgeInYrs = parser.Results.observerAge
             directionStruct(observerAgeInYrs).differentialPositive = differentialPositive;
             directionStruct(observerAgeInYrs).differentialNegative = differentialNegative;     
             directionStruct(observerAgeInYrs).backgroundPrimary = backgroundPrimary;
@@ -234,6 +241,10 @@ switch directionParams.type
 
     otherwise
         error('Unknown direction type specified');
+end
+
+if numel(parser.Results.observerAge == 1)
+    directionStruct = directionStruct(parser.Results.observerAge);
 end
 
 end
