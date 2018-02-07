@@ -102,6 +102,8 @@ for ii = 1:length(approachParams.directionNames)
         cacheDataDirection.data = directionStruct;
         cacheDataDirection.directionParams = directionParams;
         cacheDataDirection.cal = cal;
+    else
+        cacheDataDirection = cacheData;
     end
     
     % Save out

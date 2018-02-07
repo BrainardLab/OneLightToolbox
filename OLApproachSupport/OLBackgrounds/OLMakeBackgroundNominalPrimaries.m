@@ -91,6 +91,8 @@ for ii = 1:length(approachParams.backgroundNames)
         end
         cacheDataBackground.params = backgroundParams;
         cacheDataBackground.cal = calibration;
+    else
+        cacheDataBackground = cacheData;
     end
     
     % Save out
