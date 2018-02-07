@@ -33,7 +33,7 @@ function dictionary = OLBackgroundParamsDictionary()
 %    OLBackgroundParamsDefaults, OLBackgroundParamsValidate,
 %    OLMakeBackgroundNominalPrimaries, 
 
-%    OLDirectionNominalParamsDictionary, OLMakeDirectionNominalPrimaries,
+%    OLDirectionParamsDictionary, OLMakeDirectionNominalPrimaries,
 %
 %    OLCheckCacheParamsAgainstCurrentParams
 

@@ -1,4 +1,4 @@
-function params = OLDirectionNominalParamsDefaults(type)
+function params = OLDirectionParamsDefaults(type)
 % Returns structure with default parameters for a direction type
 %
 % Syntax:
@@ -8,7 +8,7 @@ function params = OLDirectionNominalParamsDefaults(type)
 %    Since a lot of direction specifications are small variations, this
 %    function generates a set of default parameters; the parameters of
 %    interest can then be overridden afterwards (either in the 
-%    OLDirectionNominalParamsDictionary, or elsewhere), before using the
+%    OLDirectionParamsDictionary, or elsewhere), before using the
 %    parameters to generate direction primary values.
 %
 % Inputs:
@@ -25,7 +25,7 @@ function params = OLDirectionNominalParamsDefaults(type)
 %    None.
 %
 % See also:
-%    OLDirectionNominalParamsValidate, OLDirectionNominalParamsDictionary 
+%    OLDirectionParamsValidate, OLDirectionParamsDictionary 
 
 % History:
 %    01/25/18  jv  Extracted from OLDirectionNominalParamsDictionary
