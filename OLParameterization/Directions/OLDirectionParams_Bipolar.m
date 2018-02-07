@@ -1,26 +1,26 @@
 classdef OLDirectionParams_Bipolar < OLDirectionParams
-% Parameter-object for Unipolar directions
+% Parameter-object for Bipolar directions
 %   Detailed explanation goes here
     
-    properties %(SetAccess = protected)       
-        whichReceptorGenerator = 'SSTPhotoreceptorSensitivity';
+    properties
         photoreceptorClasses = {'LConeTabulatedAbsorbance'  'MConeTabulatedAbsorbance'  'SConeTabulatedAbsorbance'  'Melanopsin'};
-        fieldSizeDegrees = 27.5;
-        pupilDiameterMm = 8.0;
-        maxPowerDiff = 0.1;
-        baseModulationContrast = 2/3;        
-        modulationContrast = [2/3 2/3 2/3];
-        whichReceptorsToIsolate = [4];
+        fieldSizeDegrees(1,1) = 27.5;
+        pupilDiameterMm(1,1) = 8.0;
+        maxPowerDiff(1,1) = 0.1;
+        baseModulationContrast = [];
+        modulationContrast = [];
+        whichReceptorsToIsolate = [];
         whichReceptorsToIgnore = [];
         whichReceptorsToMinimize = [];
+        whichPrimariesToPin = [];
         directionsYoked = 0;
         directionsYokedAbs = 0;
         receptorIsolateMode = 'Standard';
         doSelfScreening = false;
         
-        backgroundType = 'optimized';
         backgroundName = '';
-        backgroundObserverAge = 32;
+        backgroundParams = [];
+        backgroundPrimary = [];
     end
     
     methods

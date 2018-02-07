@@ -18,8 +18,8 @@ classdef OLBackgroundParams_LightFluxChrom < OLBackgroundParams
 %    02/07/18  jv  wrote it.
     
     properties
-        lightFluxDesiredXY(1,2) = [0.54 0.38];  % Background chromaticity.
-        lightFluxDownFactor(1,1) = 5;           % Factor to decrease background after initial values found.  Determines how big a pulse we can put on it.
+        lightFluxDesiredXY(1,2) = [0.54 0.38];                              % Modulation chromaticity.
+        lightFluxDownFactor(1,1) = 5;                                       % Factor to decrease background after initial values found.  Determines how big a pulse we can put on it.
     end
     
     methods

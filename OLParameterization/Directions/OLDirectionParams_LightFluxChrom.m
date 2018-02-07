@@ -2,13 +2,13 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
 % Parameter-object for LightFluxChrom directions
 %   Detailed explanation goes here
     
-    properties %(SetAccess = protected)
-        lightFluxDesiredXY = [0.5400 0.3800];
-        lightFluxDownFactor = 5;
+    properties
+        lightFluxDesiredXY(1,2) = [0.5400 0.3800];                         % Modulation chromaticity.
+        lightFluxDownFactor(1,1) = 5;                                      % Size of max flux increase from background
                 
-        backgroundType = 'lightfluxchrom';
         backgroundName = '';
-        backgroundObserverAge = 32;
+        backgroundParams = [];
+        backgroundPrimary = [];
     end
     
     methods
