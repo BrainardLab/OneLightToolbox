@@ -1,29 +1,36 @@
-function modulation = OLAssembleModulation(directionWaveform, calibration, backgroundPrimary, diffPrimaryPos, varargin)
+function modulation = OLAssembleModulation(directionStruct, directionWaveform, calibration, varargin)
 % Assemble background and direction primaries, and waveform into modulation 
 %
 % Usage:
-%   modulation = OLAssembleModulation(directionWaveform, calibration, backgroundPrimary, diffPrimaryPos, diffPrimaryNeg)
-%   modulation = OLAssembleModulation(directionWaveform, calibration, backgroundPrimary, diffPrimaryPos)
+%   modulation = OLAssembleModulation(directionStruct, directionWaveform, calibration)
 %
 % Description:
 %    A modulation is a temporal variation of the device primaries, from a
-%    background in a certain direction. This function takes in a temporal
-%    waveform for this variation, a vector of background primary values,
-%    and the vector(s) of differential direction primary(s) to assemble
-%    such a modulation.
+%    background in a certain direction. This function takes in
+%    specification of a direction, in a directionStruct, and a temporal
+%    waveform for this variation and creates the modulation.
 %
 % Input:
+%    directionStruct   - a single struct array (for one observer age), with
+%                        the following fields:
+%                          * backgroundPrimary   : the primary values for
+%                                                  the background.
+%                          * differentialPositive: the difference in 
+%                                                  primary values to be
+%                                                  added to the background
+%                                                  primary to create the
+%                                                  positive direction
+%                          * differentialNegative: the difference in 
+%                                                  primary values to be
+%                                                  added to the background
+%                                                  primary to create the
+%                                                  negative direction
+%                          * describe            : Any additional
+%                                                 (meta)-information that
+%                                                 might be stored
 %    directionWaveform - A 1xT vector of contrast (in range [-1,1]) on 
 %                        direction at each timepoint t.
 %    calibration       - OneLight calibration struct
-%    backgroundPrimary - primary values for the background
-%    diffPrimaryPos    - Primary values for the positive differential of
-%                        the direction
-%    diffPrimaryNeg    - Primary values for the negative differential of 
-%                        the direction. Can be passed empty if there will 
-%                        be no negative component to the waveform, e.g. for
-%                        a pulse.
-%
 % Output:
 %    modulation        - Structure with all the information necessary to 
 %                        run the modulation in these fields:
@@ -72,13 +79,10 @@ function modulation = OLAssembleModulation(directionWaveform, calibration, backg
 
 %% Input validation, initialization
 parser = inputParser();
+parser.addRequired('directionStruct',@isstruct);
 parser.addRequired('directionWaveform',@isnumeric);
 parser.addRequired('calibration',@isstruct);
-parser.addRequired('backgroundPrimary',@isnumeric);
-parser.addRequired('diffPrimaryPos',@isnumeric);
-parser.addOptional('diffPrimaryNeg',[],@isnumeric);
-parser.parse(directionWaveform,calibration,backgroundPrimary,diffPrimaryPos,varargin{:});
-diffPrimaryNeg = parser.Results.diffPrimaryNeg;
+parser.parse(directionStruct,directionWaveform,calibration,varargin{:});
 
 %% Assemble waveforms matrix
 % To generate the primary waveform, we need to combine the background, and
@@ -97,13 +101,13 @@ waveformMatrix = [waveformBackground; waveformPos; waveformNeg];
 
 %% Assemble primary values matrix
 if any(waveformNeg) % waveformNeg is non-empty
-    assert(~isempty(diffPrimaryNeg),'diffPrimaryNeg cannot be empty if there is a negative component to the waveform');
+    assert(~isempty(directionStruct.differentialNegative),'directionStruct.differentialNegative cannot be empty if there is a negative component to the waveform');
 else
     % if no negative component to the waveform, set the negative
     % differential primary to zeroes. 
-    diffPrimaryNeg = zeros(size(diffPrimaryPos)); 
+    directionStruct.differentialNegative = zeros(size(directionStruct.differentialPositive)); 
 end
-primaryValues = [backgroundPrimary, diffPrimaryPos, diffPrimaryNeg];
+primaryValues = [directionStruct.backgroundPrimary, directionStruct.differentialPositive, directionStruct.differentialNegative];
 
 %% Create primary waveform matrix, predict SPDs
 % OLPrimaryWaveform will do the matrix multiplication for us.
