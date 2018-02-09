@@ -45,11 +45,11 @@ function [SPDs, actualContrast, predictedContrast] = OLValidateDirection(directi
 %    actualContrast    - Rx2 array of actual contrasts on R receptors, with 
 %                        a column for contrast between maxPositive and
 %                        background, and maxNegative and background.
-%                        Requires optional key/value pair 'receptors'.
+%                        Requires optional argument 'receptors'.
 %    predictedContrast - Rx2 array of predicted contrasts on R receptors,
 %                        with a column for contrast between maxPositive and
 %                        background, and maxNegative and background
-%                        Requires optional key/value pair 'receptors'.
+%                        Requires optional argument 'receptors'.
 %
 % Optional key/value pairs:
 %    None.
