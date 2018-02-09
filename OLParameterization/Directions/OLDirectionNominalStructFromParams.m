@@ -70,7 +70,7 @@ parser.addRequired('directionParams',@isstruct);
 parser.addRequired('backgroundPrimary');
 parser.addRequired('calibration',@isstruct);
 parser.addParameter('verbose',false,@islogical);
-parser.addParameter('observerAge',20:60,@isnumeric);
+parser.addParameter('observerAge',1:60,@isnumeric);
 parser.parse(directionParams,backgroundPrimary,calibration,varargin{:});
 
 S = calibration.describe.S;
@@ -189,6 +189,7 @@ switch directionParams.type
             directionStruct(observerAgeInYears).differentialNegative = differentialNegative;            
             
             % Description
+            directionStruct(observerAgeInYears).describe.observerAge = observerAgeInYears;
             directionStruct(observerAgeInYears).describe.params = directionParams;
             directionStruct(observerAgeInYears).describe.modulationPrimarySignedPositive = modulationPrimarySignedPositive;
             directionStruct(observerAgeInYears).describe.modulationPrimarySignedNegative = modulationPrimarySignedNegative;
@@ -230,6 +231,7 @@ switch directionParams.type
         
         % Replace the values
         for observerAgeInYrs = parser.Results.observerAge
+            directionStruct(observerAgeInYears).describe.observerAge = observerAgeInYears;
             directionStruct(observerAgeInYrs).differentialPositive = differentialPositive;
             directionStruct(observerAgeInYrs).differentialNegative = differentialNegative;     
             directionStruct(observerAgeInYrs).backgroundPrimary = backgroundPrimary;
