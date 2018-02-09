@@ -222,7 +222,7 @@ switch directionParams.type
         modulationPrimarySignedPositive = backgroundPrimary*directionParams.lightFluxDownFactor;
         modulationSpdSignedPositive = OLPrimaryToSpd(calibration, modulationPrimarySignedPositive);
         differentialPositive = modulationPrimarySignedPositive - backgroundPrimary;
-        differentialNegative = -1 * differentialPositive;
+        differentialNegative = zeros(size(backgroundPrimary)); % lightfluxchrom only goes up.
         
         % Check gamut
         if (any(modulationPrimarySignedPositive > 1) || any(modulationPrimarySignedPositive < 0))
