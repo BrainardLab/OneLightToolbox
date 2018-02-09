@@ -39,6 +39,23 @@ function [correctedPrimaryValues, data] = OLCorrectPrimaryValues(nominalPrimaryV
 %    02/09/18  jv  extracted from OLCorrectCacheFileOOC.
 %
 
+% Examples:
+%{
+    %% Test under simulation
+    % Get calibration
+    demoCalFolder = fullfile(tbLocateToolbox('OneLightToolbox'),'OLDemoCal');
+    calibration = OLGetCalibrationStructure('CalibrationFolder',demoCalFolder,'CalibrationType','OLDemoCal');
+
+    % Define inputs
+    primaryValues = .5 * ones([calibration.describe.numWavelengthBands,1]);
+    oneLight = OneLight('simulate',true);
+
+    % Correct
+    [correctedPrimaryValues, data] = OLCorrectPrimaryValues(primaryValues,calibration,oneLight,[]);
+    assert(all(correctedPrimaryValues == primaryValues));
+    assert(all(data.correction.SpdMeasuredAll(:,end) == OLPrimaryToSpd(calibration, primaryValues)));
+%}
+
 %% Input validation
 parser = inputParser;
 parser.addRequired('primaryValues',@isnumeric);
