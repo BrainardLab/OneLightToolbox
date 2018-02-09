@@ -127,8 +127,8 @@ try
         
         % Measure
         measurement = OLValidatePrimaryValues(primaries,adjustedCal,ol,spectroRadiometerOBJ);
-        results.directionMeas(i).meas.pr650.spectrum = measurement.measuredSPD;
-        results.directionMeas(i).predictedSpd = measurement.predictedSPD;
+        results.directionMeas(i).meas.pr650.spectrum = measurement.measuredSpd;
+        results.directionMeas(i).predictedSpd = measurement.predictedSpd;
         results.directionMeas(i).error = measurement.error;
         results.directionMeas(i).meas.pr650.time = [mglGetSecs mglGetSecs];
         results.directionMeas(i).meas.pr650.S = adjustedCal.describe.S;
