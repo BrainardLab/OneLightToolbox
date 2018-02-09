@@ -68,6 +68,7 @@ parser.addRequired('direction',@isstruct);
 parser.addRequired('calibration',@isstruct);
 parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
 parser.addOptional('radiometer',[],@(x) isempty(x) || isa(x,'Radiometer'));
+parser.KeepUnmatched = true; % allows fastforwarding of kwargs to OLCorrectPrimaryValues
 parser.parse(directionStruct,calibration,oneLight,radiometer,varargin{:});
 
 %% Save pre-correction primaries into describe

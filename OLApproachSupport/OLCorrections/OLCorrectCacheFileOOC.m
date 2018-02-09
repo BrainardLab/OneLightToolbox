@@ -78,6 +78,13 @@ p.addParameter('nAverage',1,@isnumeric);
 p.parse(varargin{:});
 correctionDescribe = p.Results;
 
+nIterations = p.Results.nIterations;
+learningRate = p.Results.learningRate;
+learningRateDecrease = p.Results.learningRateDecrease;
+asympLearningRateFactor = p.Results.asympLearningRateFactor;
+smoothness = p.Results.smoothness;
+iterativeSearch = p.Results.iterativeSearch;
+
 %% Check input OK
 if (~correctionDescribe.simulate && (isempty(spectroRadiometerOBJ) || isempty(S)))
     error('Must pass radiometer objecta and S, unless simulating');
@@ -89,18 +96,11 @@ if (isempty(S))
     S = adjustedCal.describe.S;
 end
 
+%% Get directionStruct to correct
+directionStruct = cacheData.data(p.Results.observerAgeInYrs);
+
 %% We might not want to seek
-%
-% If we aren't seeking just return now, filling in necessary fields.  The reason we might do this is to
-% get an uncorrected cache file with all the same naming conventions as a
-% corrected one, so that we can run with uncorrected modulations using the
-% same downstream naming conventions as code as if we had corrected.
 if (~correctionDescribe.doCorrection)
-    for ii = 1:length(cacheData.data)
-        if ii == correctionDescribe.observerAgeInYrs
-            cacheData.data(ii).modulationPrimarySignedNegative = [];
-        end
-    end
     return;
 end
 
@@ -119,10 +119,7 @@ else
     ol.setAll(false);
 end
 
-%% Since we're working with hardware, things can go wrong.
-%
-% Use a try/catch to maximize robustness.
-try
+%% Correct
     % Keep time
     startMeas = GetSecs;
     
@@ -142,231 +139,49 @@ try
         results.temperatureMeas = [];
     end
     
-    % Do the seeking for each iteration and power level
-    correctionDescribe.powerLevels = cacheData.directionParams.correctionPowerLevels;
-    nPowerLevels = length(correctionDescribe.powerLevels); 
-    if (nPowerLevels ~= 2 || correctionDescribe.powerLevels(1) ~= 0 || correctionDescribe.powerLevels(2) ~= 1)
-        error('This routine is currently set up only for powerLevels = [0 1]');
-    end
-    
-    %% Farm out correction of background, modulation
-    backgroundPrimaryInitial = cacheData.data(correctionDescribe.observerAgeInYrs).backgroundPrimary;
-    [~, dataBackground] = OLCorrectPrimaryValues(backgroundPrimaryInitial,adjustedCal,ol,spectroRadiometerOBJ);
-    
-    modulationPrimaryInitial = cacheData.data(correctionDescribe.observerAgeInYrs).modulationPrimarySignedPositive;
-    [~, dataModulation] = OLCorrectPrimaryValues(modulationPrimaryInitial,adjustedCal,ol,spectroRadiometerOBJ);    
-    
-%{     
-%   for iter = 1:correctionDescribe.nIterations
-%         
-%         % Only get the primaries from the cache file if it's the first
-%         % iteration.  In this case we also store them for future reference,
-%         % since they are replaced on every iteration.
-%         if iter == 1
-%             backgroundPrimaryUsed = cacheData.data(correctionDescribe.observerAgeInYrs).backgroundPrimary;
-%             modulationPrimaryUsed = cacheData.data(correctionDescribe.observerAgeInYrs).modulationPrimarySignedPositive;
-%             differencePrimaryUsed = modulationPrimaryUsed-backgroundPrimaryUsed;
-%             %cacheData.data(correctionDescribe.observerAgeInYrs).backgroundPrimary+cacheData.data(correctionDescribe.observerAgeInYrs).differencePrimary;
-%             %differencePrimaryUsed = cacheData.data(correctionDescribe.observerAgeInYrs).differencePrimary;
-% 
-%             backgroundPrimaryInitial = backgroundPrimaryUsed;
-%             modulationPrimaryInitial = modulationPrimaryUsed;
-%             differencePrimaryInitial = differencePrimaryUsed;
-%         else
-%             backgroundPrimaryUsed = backgroundNextPrimaryTruncatedLearningRate;
-%             modulationPrimaryUsed = modulationNextPrimaryTruncatedLearningRate;
-%             differencePrimaryUsed = modulationPrimaryUsed-backgroundPrimaryUsed;
-%         end
-%         if (max(abs(modulationPrimaryUsed(:) - (backgroundPrimaryUsed(:) + differencePrimaryUsed(:)))) > 1e-8)
-%             error('Inconsistency between background, difference, and modulation');
-%         end
-%         
-%         % Set learning rate to use this iteration
-%         if (p.Results.learningRateDecrease)
-%             learningRateThisIter = correctionDescribe.learningRate*(1-(iter-1)*correctionDescribe.asympLearningRateFactor/(correctionDescribe.nIterations-1));
-%         else
-%             learningRateThisIter = correctionDescribe.learningRate;
-%         end
-%         
-%         % Get the desired primaries for each power level and make a measurement for each one.
-%         for i = 1:nPowerLevels
-%             if (correctionDescribe.verbose), fprintf('\t\tMeasuring spectrum %d, level %g\n', i, correctionDescribe.powerLevels(i)); end
-%             
-%             % Get primary values for this power level, adding the
-%             % modulation difference to the background, after
-%             % scaling by the power level.
-%             primariesThisIter = backgroundPrimaryUsed+correctionDescribe.powerLevels(i).*differencePrimaryUsed;
-%             
-%             % Convert the primaries to mirror starts/stops
-%             settings = OLPrimaryToSettings(adjustedCal, primariesThisIter);
-%             [starts,stops] = OLSettingsToStartsStops(adjustedCal, settings);
-%             
-%             % Take the measurements
-%             results.directionMeas(iter,i).meas.pr650.spectrum = OLMeasurePrimaryValues(primariesThisIter,adjustedCal,ol,spectroRadiometerOBJ);
-%             
-%             % Save out information about this.
-%             results.directionMeas(iter,i).powerLevel = correctionDescribe.powerLevels(i);
-%             results.directionMeas(iter,i).primariesThisIter = primariesThisIter;
-%             results.directionMeas(iter,i).settings = settings;
-%             results.directionMeas(iter,i).starts = starts;
-%             results.directionMeas(iter,i).stops = stops;
-%             
-%             % If this is first time through the seeking, figure out
-%             % what spectrum we want, based on the stored primaries
-%             % and the calibration data.  The stored primaries were
-%             % generated so that they produced the desired spectrum
-%             % when mapped through the calibration, so we just
-%             % recreate the desired spectrum from the calibration
-%             % and the primaries. On the first iteration, the
-%             % primaries match those from the cache file, possibly
-%             % scaled by the appropriate power level.
-%             if (iter == 1)
-%                 spdsDesired(:,i) = OLPrimaryToSpd(adjustedCal,primariesThisIter);
-%             end
-%         end
-%         
-%         % For convenience we pull out from the set of power level
-%         % measurements those corresonding to the background
-%         % (powerLevel == 0) and max positive modulation (powerLevel == 1).
-%         thePosIndex = find([results.directionMeas(iter,:).powerLevel] == 1);
-%         theBGIndex = find([results.directionMeas(iter,:).powerLevel] == 0);
-%         if (isempty(thePosIndex) || isempty(theBGIndex))
-%             error('Should have measurements for power levels 0 and 1');
-%         end
-%         modulationMaxMeas = results.directionMeas(iter,thePosIndex);
-%         modulationSpdDesired = spdsDesired(:,thePosIndex);
-%         modulationSpdMeasured = modulationMaxMeas.meas.pr650.spectrum;
-%         
-%         modulationBGMeas = results.directionMeas(iter,theBGIndex);
-%         backgroundSpdDesired = spdsDesired(:,theBGIndex);
-%         backgroundSpdMeasured = modulationBGMeas.meas.pr650.spectrum;
-%         
-%         % If first time through, figure out a scaling factor from
-%         % the first measurement which puts the measured spectrum
-%         % into the same range as the predicted spectrum. This deals
-%         % with fluctuations with absolute light level.
-%         if iter == 1
-%             kScale = backgroundSpdMeasured \ backgroundSpdDesired;
-%         end
-%         
-%         % Find delta primaries using small signal linear methods.
-%         backgroundDeltaPrimaryTruncatedLearningRate = OLLinearDeltaPrimaries(backgroundPrimaryUsed,kScale*backgroundSpdMeasured,backgroundSpdDesired,learningRateThisIter,correctionDescribe.smoothness,adjustedCal);
-%         modulationDeltaPrimaryTruncatedLearningRate = OLLinearDeltaPrimaries(modulationPrimaryUsed,kScale*modulationSpdMeasured,modulationSpdDesired,learningRateThisIter,correctionDescribe.smoothness,adjustedCal);
-%         
-%         % Optionally use fmincon to improve the truncated learning
-%         % rate delta primaries by iterative search.
-%         %
-%         % Put that in your pipe and smoke it!
-%         if (correctionDescribe.iterativeSearch)
-%             backgroundDeltaPrimaryTruncatedLearningRate = OLIterativeDeltaPrimaries(backgroundDeltaPrimaryTruncatedLearningRate,backgroundPrimaryUsed,kScale*backgroundSpdMeasured,backgroundSpdDesired,learningRateThisIter,adjustedCal);
-%             modulationDeltaPrimaryTruncatedLearningRate = OLIterativeDeltaPrimaries(modulationDeltaPrimaryTruncatedLearningRate,modulationPrimaryUsed,kScale*modulationSpdMeasured,modulationSpdDesired,learningRateThisIter,adjustedCal);
-%         end
-%         
-%         % Compute and store the settings to use next time through
-%         backgroundNextPrimaryTruncatedLearningRate = backgroundPrimaryUsed + backgroundDeltaPrimaryTruncatedLearningRate;
-%         modulationNextPrimaryTruncatedLearningRate = modulationPrimaryUsed + modulationDeltaPrimaryTruncatedLearningRate;
-%               
-%         % Save the information for this iteration in a convenient form for later.
-%         backgroundSpdMeasuredAll(:,iter) = backgroundSpdMeasured;
-%         modulationSpdMeasuredAll(:,iter) = modulationSpdMeasured;
-%         backgroundPrimaryUsedAll(:,iter) = backgroundPrimaryUsed;
-%         backgroundNextPrimaryTruncatedLearningRateAll(:,iter) = backgroundNextPrimaryTruncatedLearningRate;
-%         backgroundDeltaPrimaryTruncatedLearningRateAll(:,iter) = backgroundDeltaPrimaryTruncatedLearningRate;
-%         modulationPrimaryUsedAll(:,iter) = modulationPrimaryUsed;
-%         modulationNextPrimaryTruncatedLearningRateAll(:,iter) = modulationNextPrimaryTruncatedLearningRate;
-%         modulationDeltaPrimaryTruncatedLearningRateAll(:,iter)= modulationDeltaPrimaryTruncatedLearningRate;
-%     end
-%}
-    
-    %% Store information about corrected modulations for return.
-    
-    % Combine dataBackground and dataModulation into legacy cacheData
-    data.correctionDescribe = correctionDescribe;
-    data.cal = adjustedCal;
-    data.correction.kScale = dataBackground.correction.kScale;
-    data.backgroundPrimary = dataBackground.Primary;
-    data.modulationPrimarySignedPositive = dataModulation.Primary;    
-    data.modulationPrimarySignedNegative = [];
-    data.correction.backgroundSpdDesired = dataBackground.correction.SpdDesired;
-    data.correction.modulationSpdDesired = dataModulation.correction.SpdDesired;
-    data.correction.backgroundPrimaryInitial = backgroundPrimaryInitial;
-    data.correction.modulationPrimaryInitial = modulationPrimaryInitial;
-    data.correction.differencePrimaryInitial = [];
-    
-    data.correction.backgroundPrimaryUsedAll = dataBackground.correction.PrimaryUsedAll;
-    data.correction.backgroundSpdMeasuredAll = dataBackground.correction.SpdMeasuredAll;
-    data.correction.backgroundNextPrimaryTruncatedLearningRateAll = dataBackground.correction.NextPrimaryTruncatedLearningRateAll;
-    data.correction.backgroundDeltaPrimaryTruncatedLearningRateAll = dataBackground.correction.DeltaPrimaryTruncatedLearningRateAll;
-            
-    data.correction.modulationPrimaryUsedAll = dataModulation.correction.PrimaryUsedAll;
-    data.correction.modulationSpdMeasuredAll = dataModulation.correction.SpdMeasuredAll;
-    data.correction.modulationNextPrimaryTruncatedLearningRateAll = dataModulation.correction.NextPrimaryTruncatedLearningRateAll;
-    data.correction.modulationDeltaPrimaryTruncatedLearningRateAll = dataModulation.correction.DeltaPrimaryTruncatedLearningRateAll;
+    %% Correct direction struct
+    correctedDirectionStruct = OLCorrectDirection(directionStruct, adjustedCal, ol, spectroRadiometerOBJ,...
+        'nIterations', nIterations,... 
+        'learningRate', learningRate,...
+        'learningRateDecrease',  learningRateDecrease,...
+        'asympLearningRateFactor', asympLearningRateFactor,...
+        'smoothness', smoothness,...
+        'iterativeSearch', iterativeSearch);
 
-    
+    %% Store information about corrected modulations for return.
     % Since this routine only does the correction for one age, we set the data for that and zero out all
     % the rest, just to avoid accidently thinking we have corrected spectra where we do not.
     for ii = 1:length(cacheData.data)
         if ii == correctionDescribe.observerAgeInYrs
-            cacheData.data(ii).correctionDescribe = correctionDescribe;
-            cacheData.data(ii).cal = adjustedCal;
-            cacheData.data(ii).correction.kScale = dataBackground.correction.kScale;
-            cacheData.data(ii).backgroundPrimary = dataBackground.Primary;
-            cacheData.data(ii).modulationPrimarySignedPositive = dataModulation.Primary;    
-            cacheData.data(ii).modulationPrimarySignedNegative = [];
-            cacheData.data(ii).correction.backgroundSpdDesired = dataBackground.correction.SpdDesired;
-            cacheData.data(ii).correction.modulationSpdDesired = dataModulation.correction.SpdDesired;
-            cacheData.data(ii).correction.backgroundPrimaryInitial = backgroundPrimaryInitial;
-            cacheData.data(ii).correction.modulationPrimaryInitial = modulationPrimaryInitial;
-            cacheData.data(ii).correction.differencePrimaryInitial = [];
-
-            cacheData.data(ii).correction.backgroundPrimaryUsedAll = dataBackground.correction.PrimaryUsedAll;
-            cacheData.data(ii).correction.backgroundSpdMeasuredAll = dataBackground.correction.SpdMeasuredAll;
-            cacheData.data(ii).correction.backgroundNextPrimaryTruncatedLearningRateAll = dataBackground.correction.NextPrimaryTruncatedLearningRateAll;
-            cacheData.data(ii).correction.backgroundDeltaPrimaryTruncatedLearningRateAll = dataBackground.correction.DeltaPrimaryTruncatedLearningRateAll;
-
-            cacheData.data(ii).correction.modulationPrimaryUsedAll = dataModulation.correction.PrimaryUsedAll;
-            cacheData.data(ii).correction.modulationSpdMeasuredAll = dataModulation.correction.SpdMeasuredAll;
-            cacheData.data(ii).correction.modulationNextPrimaryTruncatedLearningRateAll = dataModulation.correction.NextPrimaryTruncatedLearningRateAll;
-            cacheData.data(ii).correction.modulationDeltaPrimaryTruncatedLearningRateAll = dataModulation.correction.DeltaPrimaryTruncatedLearningRateAll;
+            cacheData.data(ii) = correctedDirectionStruct;
+%             cacheData.data(ii).correctionDescribe = correctionDescribe;
+%             cacheData.data(ii).cal = adjustedCal;
+%             cacheData.data(ii).correction.kScale = dataBackground.correction.kScale;
+%             cacheData.data(ii).backgroundPrimary = dataBackground.Primary;
+%             cacheData.data(ii).modulationPrimarySignedPositive = dataModulation.Primary;    
+%             cacheData.data(ii).modulationPrimarySignedNegative = [];
+%             cacheData.data(ii).correction.backgroundSpdDesired = dataBackground.correction.SpdDesired;
+%             cacheData.data(ii).correction.modulationSpdDesired = dataModulation.correction.SpdDesired;
+%             cacheData.data(ii).correction.backgroundPrimaryInitial = backgroundPrimaryInitial;
+%             cacheData.data(ii).correction.modulationPrimaryInitial = modulationPrimaryInitial;
+%             cacheData.data(ii).correction.differencePrimaryInitial = [];
+% 
+%             cacheData.data(ii).correction.backgroundPrimaryUsedAll = dataBackground.correction.PrimaryUsedAll;
+%             cacheData.data(ii).correction.backgroundSpdMeasuredAll = dataBackground.correction.SpdMeasuredAll;
+%             cacheData.data(ii).correction.backgroundNextPrimaryTruncatedLearningRateAll = dataBackground.correction.NextPrimaryTruncatedLearningRateAll;
+%             cacheData.data(ii).correction.backgroundDeltaPrimaryTruncatedLearningRateAll = dataBackground.correction.DeltaPrimaryTruncatedLearningRateAll;
+% 
+%             cacheData.data(ii).correction.modulationPrimaryUsedAll = dataModulation.correction.PrimaryUsedAll;
+%             cacheData.data(ii).correction.modulationSpdMeasuredAll = dataModulation.correction.SpdMeasuredAll;
+%             cacheData.data(ii).correction.modulationNextPrimaryTruncatedLearningRateAll = dataModulation.correction.NextPrimaryTruncatedLearningRateAll;
+%             cacheData.data(ii).correction.modulationDeltaPrimaryTruncatedLearningRateAll = dataModulation.correction.DeltaPrimaryTruncatedLearningRateAll;
         else
             cacheData.data(ii).describe = [];
             cacheData.data(ii).backgroundPrimary = [];
-            cacheData.data(ii).backgroundSpd = [];
-            cacheData.data(ii).differencePrimary = [];
-            cacheData.data(ii).differenceSpd = [];
-            cacheData.data(ii).modulationPrimarySignedPositive = [];
-            cacheData.data(ii).modulationPrimarySignedNegative = [];
-            cacheData.data(ii).modulationSpdSignedPositive = [];
-            cacheData.data(ii).modulationSpdSignedNegative = [];
-            cacheData.data(ii).ambientSpd = [];
-            cacheData.data(ii).operatingPoint = [];
-            cacheData.data(ii).computeMethod = [];
+            cacheData.data(ii).differentialPositive = [];
+            cacheData.data(ii).differentialNegative = [];
         end
     end
-    
-    % Turn the OneLight mirrors off.
-    ol.setAll(false);
-      
-% Something went wrong, try to close radiometer gracefully
-catch e
-  % Turn the OneLight mirrors off.
-    ol.setAll(false);
-    
-    % Close the radiometer
-    if (~correctionDescribe.simulate)
-        if (~isempty(spectroRadiometerOBJ))
-            spectroRadiometerOBJ.shutDown();
-        end
-        
-        if (~isempty(theLJdev))
-            theLJdev.close;
-        end
-    end
-    
-    % Rethrow the error
-    rethrow(e)
-end
 
 end
 
