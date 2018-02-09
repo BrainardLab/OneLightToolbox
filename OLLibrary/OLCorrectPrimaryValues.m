@@ -1,9 +1,10 @@
-function [correctedPrimaryValues, data] = OLCorrectPrimaryValues(nominalPrimaryValues, calibration, oneLight, radiometer, varargin)
+function [correctedPrimaryValues, detailedData] = OLCorrectPrimaryValues(nominalPrimaryValues, calibration, oneLight, radiometer, varargin)
 % Corrects primary values iteratively to attain predicted SPD
 %
 % Syntax:
 %   correctedPrimaryValues = OLCorrectPrimaryValues(nominalPrimaryValues, calibration, OneLight, radiometer)
 %   correctedPrimaryValues = OLCorrectPrimaryValues(nominalPrimaryValues, calibration, SimulatedOneLight)
+%  [correctedPrimaryValues, detailedData] = OLCorrectPrimaryValues(...)
 %
 % Description:
 %    Detailed explanation goes here
@@ -25,11 +26,21 @@ function [correctedPrimaryValues, data] = OLCorrectPrimaryValues(nominalPrimaryV
 %                             number of primary values per spectrum, and N
 %                             is the number of spectra to validate (i.e., a
 %                             column vector per spectrum)
-%    data                   - A ton of data, for debugging purposes.
+%    detailedData           - A ton of data, for debugging purposes.
 %
 % Optional key/value pairs:
-%    nIterations            - Number of iterations for correction. Default
-%                             is 20.
+%    nIterations            - Number of iterations. Default is 20.
+%    learningRate           - Learning rate. Default is .8.
+%    learningRateDecrease   - Decrease learning rate over iterations?
+%                             Default is true.
+%    asympLearningRateFactor- If learningRateDecrease is true, the 
+%                             asymptotic learning rate is
+%                             (1-asympLearningRateFactor)*learningRate. 
+%                             Default = .5.
+%    smoothness             - Smoothness parameter for OLSpdToPrimary.
+%                             Default .001.
+%    iterativeSearch        - Do iterative search with fmincon on each
+%                             measurement interation? Default is false.
 %
 % See also:
 %    OLValidatePrimaryValues
@@ -71,110 +82,79 @@ parser.addParameter('smoothness', 0.001, @isscalar);
 parser.addParameter('iterativeSearch',false, @islogical);
 parser.parse(nominalPrimaryValues,calibration,oneLight,varargin{:});
 
-nIterations = uint8(parser.Results.nIterations);
+nIterations = parser.Results.nIterations;
 learningRate = parser.Results.learningRate;
+learningRateDecrease = parser.Results.learningRateDecrease;
+asympLearningRateFactor = parser.Results.asympLearningRateFactor;
 smoothness = parser.Results.smoothness;
+iterativeSearch = parser.Results.iterativeSearch;
 
-correctionDescribe = parser.Results;
-
-%% Target (predited) SPD
+%% Target (predicted) SPD
 targetSPD = OLPrimaryToSpd(calibration, nominalPrimaryValues);
-spdsDesired = targetSPD;
-primaryInitial = nominalPrimaryValues;
 
 %% Correct
-for iter = 1:correctionDescribe.nIterations
-    
-    % Only get the primaries from the cache file if it's the first
-    % iteration.  In this case we also store them for future reference,
-    % since they are replaced on every iteration.
+NextPrimaryTruncatedLearningRate = nominalPrimaryValues; % initialize
+for iter = 1:nIterations
+    % Take the measurements
+    primariesThisIter = NextPrimaryTruncatedLearningRate;
+    measuredSPD = OLMeasurePrimaryValues(primariesThisIter,calibration,oneLight,radiometer);
+  
+    % If first time through, figure out a scaling factor from the first
+    % measurement which puts the measured spectrum into the same range as
+    % the predicted spectrum. This deals with fluctuations with absolute
+    % light level.
     if iter == 1
-        PrimaryUsed = primaryInitial;
-    else
-        PrimaryUsed = NextPrimaryTruncatedLearningRate;
+        kScale = measuredSPD \ targetSPD;
     end
     
     % Set learning rate to use this iteration
-    if (parser.Results.learningRateDecrease)
-        learningRateThisIter = correctionDescribe.learningRate*(1-(iter-1)*correctionDescribe.asympLearningRateFactor/(correctionDescribe.nIterations-1));
+    if learningRateDecrease
+        learningRateThisIter = learningRate*(1-(iter-1)*asympLearningRateFactor/(nIterations-1));
     else
-        learningRateThisIter = correctionDescribe.learningRate;
-    end
-    
-    % Get the desired primaries for each power level and make a measurement for each one.
-
-    % Get primary values for this power level, adding the
-    % modulation difference to the , after
-    % scaling by the power level.
-    primariesThisIter = PrimaryUsed;
-
-    % Convert the primaries to mirror starts/stops
-    settings = OLPrimaryToSettings(calibration, primariesThisIter);
-    [starts,stops] = OLSettingsToStartsStops(calibration, settings);
-
-    % Take the measurements
-    results.directionMeas(iter).meas.pr650.spectrum = OLMeasurePrimaryValues(primariesThisIter,calibration,oneLight,radiometer);
-
-    % Save out information about this.
-    results.directionMeas(iter).primariesThisIter = primariesThisIter;
-    results.directionMeas(iter).settings = settings;
-    results.directionMeas(iter).starts = starts;
-    results.directionMeas(iter).stops = stops;
-       
-    modulationBGMeas = results.directionMeas(iter);
-    SpdDesired = spdsDesired;
-    SpdMeasured = modulationBGMeas.meas.pr650.spectrum;
-    
-    % If first time through, figure out a scaling factor from
-    % the first measurement which puts the measured spectrum
-    % into the same range as the predicted spectrum. This deals
-    % with fluctuations with absolute light level.
-    if iter == 1
-        kScale = SpdMeasured \ SpdDesired;
+        learningRateThisIter = learningRate;
     end
     
     % Find delta primaries using small signal linear methods.
-    DeltaPrimaryTruncatedLearningRate = OLLinearDeltaPrimaries(PrimaryUsed,kScale*SpdMeasured,SpdDesired,learningRateThisIter,correctionDescribe.smoothness,calibration);
+    DeltaPrimaryTruncatedLearningRate = OLLinearDeltaPrimaries(primariesThisIter,kScale*measuredSPD,targetSPD,learningRateThisIter,smoothness,calibration);
     
     % Optionally use fmincon to improve the truncated learning
     % rate delta primaries by iterative search.
-    %
-    % Put that in your pipe and smoke it!
-    if (correctionDescribe.iterativeSearch)
-        DeltaPrimaryTruncatedLearningRate = OLIterativeDeltaPrimaries(DeltaPrimaryTruncatedLearningRate,PrimaryUsed,kScale*SpdMeasured,SpdDesired,learningRateThisIter,calibration);
+    if iterativeSearch
+        DeltaPrimaryTruncatedLearningRate = OLIterativeDeltaPrimaries(DeltaPrimaryTruncatedLearningRate,primariesThisIter,kScale*measuredSPD,targetSPD,learningRateThisIter,calibration);
     end
     
     % Compute and store the settings to use next time through
-    NextPrimaryTruncatedLearningRate = PrimaryUsed + DeltaPrimaryTruncatedLearningRate;
+    NextPrimaryTruncatedLearningRate = primariesThisIter + DeltaPrimaryTruncatedLearningRate;
     
     % Save the information for this iteration in a convenient form for later.
-    SpdMeasuredAll(:,iter) = SpdMeasured;
-    PrimaryUsedAll(:,iter) = PrimaryUsed;
+    SpdMeasuredAll(:,iter) = measuredSPD;
+    PrimaryUsedAll(:,iter) = primariesThisIter;
     NextPrimaryTruncatedLearningRateAll(:,iter) = NextPrimaryTruncatedLearningRate;
     DeltaPrimaryTruncatedLearningRateAll(:,iter) = DeltaPrimaryTruncatedLearningRate;
 end
 
-%% Store information about corrected modulations for return.
-%
-% Since this routine only does the correction for one age, we set the data for that and zero out all
-% the rest, just to avoid accidently thinking we have corrected spectra where we do not.
-data.correctionDescribe = correctionDescribe;
-data.cal = calibration;
-data.correction.kScale = kScale;
-
-% Store the answer after the iteration.  This block is the part
-% that other code cares about.
-data.Primary = NextPrimaryTruncatedLearningRateAll(:, end);
+%% Store information about correction for return
+% Business end
 correctedPrimaryValues = NextPrimaryTruncatedLearningRateAll(:, end);
 
-% Store target spectra and initial primaries used.  This information is useful
-% for debugging the seeking procedure.
-data.correction.SpdDesired = SpdDesired;
-data.correction.PrimaryInitial = primaryInitial;
+% Metadata, e.g., parameters. While I'm not a fan of including input
+% parameters in output, it is relevant here because we might have used
+% defaults.
+detailedData.nIterations = nIterations;
+detailedData.learningRate = learningRate;
+detailedData.learningRateDecrease = learningRateDecrease;
+detailedData.asympLearningRateFactor = asympLearningRateFactor;
+detailedData.smoothness = smoothness;
+detailedData.iterativeSearch = iterativeSearch;
 
-data.correction.PrimaryUsedAll = PrimaryUsedAll;
-data.correction.SpdMeasuredAll = SpdMeasuredAll;
-data.correction.NextPrimaryTruncatedLearningRateAll = NextPrimaryTruncatedLearningRateAll;
-data.correction.DeltaPrimaryTruncatedLearningRateAll = DeltaPrimaryTruncatedLearningRateAll;
-
+% Store target spectra and initial primaries used.  This information is
+% useful for debugging the seeking procedure.
+detailedData.initialPrimaryValues = nominalPrimaryValues;
+detailedData.targetSPD = targetSPD;
+detailedData.kScale = kScale;
+detailedData.primaryUsedAll = PrimaryUsedAll;
+detailedData.SPDMeasuredAll = SpdMeasuredAll;
+detailedData.NextPrimaryTruncatedLearningRateAll = NextPrimaryTruncatedLearningRateAll;
+detailedData.DeltaPrimaryTruncatedLearningRateAll = DeltaPrimaryTruncatedLearningRateAll;
+detailedData.correctedPrimaryValues = correctedPrimaryValues;
 end
