@@ -230,15 +230,15 @@ switch directionParams.type
         end
         
         % Replace the values
-        for observerAgeInYrs = parser.Results.observerAge
+        for observerAgeInYears = parser.Results.observerAge
             directionStruct(observerAgeInYears).describe.observerAge = observerAgeInYears;
-            directionStruct(observerAgeInYrs).differentialPositive = differentialPositive;
-            directionStruct(observerAgeInYrs).differentialNegative = differentialNegative;     
-            directionStruct(observerAgeInYrs).backgroundPrimary = backgroundPrimary;
-            directionStruct(observerAgeInYrs).describe.backgroundSpd = backgroundSpd;
-            directionStruct(observerAgeInYrs).describe.modulationPrimarySignedPositive = modulationPrimarySignedPositive;
-            directionStruct(observerAgeInYrs).describe.modulationSpdSignedPositive = modulationSpdSignedPositive;      
-            directionStruct(observerAgeInYrs).describe.params = directionParams;
+            directionStruct(observerAgeInYears).differentialPositive = differentialPositive;
+            directionStruct(observerAgeInYears).differentialNegative = differentialNegative;     
+            directionStruct(observerAgeInYears).backgroundPrimary = backgroundPrimary;
+            directionStruct(observerAgeInYears).describe.backgroundSpd = backgroundSpd;
+            directionStruct(observerAgeInYears).describe.modulationPrimarySignedPositive = modulationPrimarySignedPositive;
+            directionStruct(observerAgeInYears).describe.modulationSpdSignedPositive = modulationSpdSignedPositive;      
+            directionStruct(observerAgeInYears).describe.params = directionParams;
         end
 
     otherwise
