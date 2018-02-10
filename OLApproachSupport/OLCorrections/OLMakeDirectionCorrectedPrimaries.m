@@ -1,4 +1,4 @@
-function OLMakeDirectionCorrectedPrimaries(ol,protocolParams,varargin)
+function OLMakeDirectionCorrectedPrimaries(oneLight,protocolParams,varargin)
 %%OLMakeDirectionCorrectedPrimaries  Make the corrected primaries from the nominal primaries
 %
 % Syntax:
@@ -66,14 +66,13 @@ correctionParams = corrD(protocolParams.boxName);
 
 %% Open up a radiometer object
 if (~protocolParams.simulate.radiometer)
-    [spectroRadiometerOBJ,S] = OLOpenSpectroRadiometerObj('PR-670');
+    radiometer = OLOpenSpectroRadiometerObj('PR-670');
 else
-    spectroRadiometerOBJ = [];
-    S = [];
+    radiometer = [];
 end
 
 %% Open up lab jack for temperature measurements
-if (~protocolParams.simulate.oneLight & protocolParams.takeTemperatureMeasurements)
+if (~protocolParams.simulate.oneLight && protocolParams.takeTemperatureMeasurements)
     % Gracefully attempt to open the LabJack.  If it doesn't work and the user OK's the
     % change, then the takeTemperature measurements flag is set to false and we proceed.
     % Otherwise it either worked (good) or we give up and throw an error.
@@ -93,20 +92,16 @@ for corrD = 1:length(theDirections)
         
         % Correct the cache
         if (p.Results.verbose), fprintf('\tStarting spectrum-seeking loop\n'); end
-        [cacheData, cal] = OLCorrectCacheFileOOC(sprintf('%s.mat', fullfile(nominalPrimariesDir, directionCacheFileNames{corrD})), ol, spectroRadiometerOBJ, S, theLJdev, ...
+        [cacheData, cal] = OLCorrectCacheFileOOC(sprintf('%s.mat', fullfile(nominalPrimariesDir, directionCacheFileNames{corrD})), oneLight, radiometer, ...
             'approach',                     protocolParams.approach, ...
-            'simulate',                     protocolParams.correctBySimulation(corrD), ...
-            'doCorrection',                 protocolParams.doCorrection(corrD), ...
             'observerAgeInYrs',             protocolParams.observerAgeInYrs, ...
             'calibrationType',              protocolParams.calibrationType, ...
-            'takeTemperatureMeasurements',  protocolParams.takeTemperatureMeasurements, ...
             'learningRate',                 correctionParams.learningRate, ...
             'learningRateDecrease',         correctionParams.learningRateDecrease, ...
             'asympLearningRateFactor',      correctionParams.asympLearningRateFactor, ...
             'smoothness',                   correctionParams.smoothness, ...
             'iterativeSearch',              correctionParams.iterativeSearch, ...
-            'nIterations',                  correctionParams.nIterations, ...
-            'verbose',                      p.Results.verbose);
+            'nIterations',                  correctionParams.nIterations);
         if (p.Results.verbose), fprintf('\tSpectrum seeking loop finished!\n'); end
         
         % Save the cache
@@ -120,8 +115,8 @@ end
 
 %% Close the radiometer object
 if (~protocolParams.simulate.oneLight)
-    if (~isempty(spectroRadiometerOBJ))
-        spectroRadiometerOBJ.shutDown();
+    if (~isempty(radiometer))
+        radiometer.shutDown();
     end
     
     if (~isempty(theLJdev))
@@ -130,4 +125,4 @@ if (~protocolParams.simulate.oneLight)
 end
 
 %% Update session log info
-protocolParams = OLSessionLog(protocolParams,mfilename,'StartEnd','end');
+OLSessionLog(protocolParams,mfilename,'StartEnd','end');

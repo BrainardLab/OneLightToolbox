@@ -1,8 +1,8 @@
-function [cacheData, adjustedCal] = OLCorrectCacheFileOOC(cacheFileNameFullPath, ol, spectroRadiometerOBJ, S, theLJdev, varargin)
+function [cacheData, calibration] = OLCorrectCacheFileOOC(cacheFileNameFullPath, oneLight, radiometer, varargin)
 %%OLCorrectCacheFileOOC  Use iterated procedure to optimize modulations in a cache file
 %
 % Usage:
-%    [cacheData, adjustedCal] = OLCorrectCacheFileOOC(cacheFileNameFullPath, ol, spectroRadiometerOBJ, S, theLJdev);
+%    [cacheData, adjustedCal] = OLCorrectCacheFileOOC(cacheFileNameFullPath, ol, spectroRadiometerOBJ);
 %
 % Description:
 %   Uses an iterated procedure to bring a modulation as close as possible to
@@ -56,138 +56,60 @@ function [cacheData, adjustedCal] = OLCorrectCacheFileOOC(cacheFileNameFullPath,
 %                    Also, don't try to use the now non-extant difference when we get the input.
 % 08/21/17  dhb      Remove useAverageGamma, zeroPrimariesAwayFromPeak parameters.  These should be set in the calibration file and not monkey'd with.
 
-% Parse the input
-p = inputParser;
-p.addParameter('approach','', @isstr);
-p.addParameter('simulate',false,@islogical);
-p.addParameter('doCorrection', true, @islogical);
-p.addParameter('noRadiometerAdjustment', true, @islogical);
-p.addParameter('pauseDuration',0,@inumeric);
-p.addParameter('observerAgeInYrs', 32, @isscalar);
-p.addParameter('calibrationType','', @isstr);
-p.addParameter('takeCalStateMeasurements', false, @islogical);
-p.addParameter('takeTemperatureMeasurements', false, @islogical);
-p.addParameter('verbose',false,@islogical);
-p.addParameter('nIterations', 20, @isscalar);
-p.addParameter('learningRate', 0.8, @isscalar);
-p.addParameter('learningRateDecrease',true,@islogical);
-p.addParameter('asympLearningRateFactor',0.5,@isnumeric);
-p.addParameter('smoothness', 0.001, @isscalar);
-p.addParameter('iterativeSearch',false, @islogical);
-p.addParameter('nAverage',1,@isnumeric);
-p.parse(varargin{:});
-correctionDescribe = p.Results;
+%% Input validation
+parser = inputParser;
+parser.addRequired('cachFileNameFullPath',@ischar)
+parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
+parser.addOptional('radiometer',[],@(x) isempty(x) || isa(x,'Radiometer'));
+parser.addParameter('approach','', @isstr);
+parser.addParameter('observerAgeInYrs', 32, @isscalar);
+parser.addParameter('calibrationType','', @isstr);
+parser.addParameter('verbose',false,@islogical);
+parser.addParameter('nIterations', 20, @isscalar);
+parser.addParameter('learningRate', 0.8, @isscalar);
+parser.addParameter('learningRateDecrease',true,@islogical);
+parser.addParameter('asympLearningRateFactor',0.5,@isnumeric);
+parser.addParameter('smoothness', 0.001, @isscalar);
+parser.addParameter('iterativeSearch',false, @islogical);
+parser.addParameter('nAverage',1,@isnumeric);
+parser.parse(cacheFileNameFullPath, oneLight, radiometer, varargin{:});
+correctionDescribe = parser.Results;
 
-nIterations = p.Results.nIterations;
-learningRate = p.Results.learningRate;
-learningRateDecrease = p.Results.learningRateDecrease;
-asympLearningRateFactor = p.Results.asympLearningRateFactor;
-smoothness = p.Results.smoothness;
-iterativeSearch = p.Results.iterativeSearch;
-
-%% Check input OK
-if (~correctionDescribe.simulate && (isempty(spectroRadiometerOBJ) || isempty(S)))
-    error('Must pass radiometer objecta and S, unless simulating');
-end
+nIterations = parser.Results.nIterations;
+learningRate = parser.Results.learningRate;
+learningRateDecrease = parser.Results.learningRateDecrease;
+asympLearningRateFactor = parser.Results.asympLearningRateFactor;
+smoothness = parser.Results.smoothness;
+iterativeSearch = parser.Results.iterativeSearch;
 
 %% Get cached direction data as well as calibration file
-[cacheData,adjustedCal] = OLGetCacheAndCalData(cacheFileNameFullPath, correctionDescribe);
-if (isempty(S))
-    S = adjustedCal.describe.S;
-end
+[cacheData,calibration] = OLGetCacheAndCalData(cacheFileNameFullPath, correctionDescribe);
 
 %% Get directionStruct to correct
-directionStruct = cacheData.data(p.Results.observerAgeInYrs);
+directionStruct = cacheData.data(parser.Results.observerAgeInYrs);
 
-%% We might not want to seek
-if (~correctionDescribe.doCorrection)
-    return;
-end
+%% Correct direction struct
+correctedDirectionStruct = OLCorrectDirection(directionStruct, calibration, oneLight, radiometer,...
+    'nIterations', nIterations,...
+    'learningRate', learningRate,...
+    'learningRateDecrease',  learningRateDecrease,...
+    'asympLearningRateFactor', asympLearningRateFactor,...
+    'smoothness', smoothness,...
+    'iterativeSearch', iterativeSearch);
 
-%% Set meterToggle so that we don't use the Omni radiometer in various measuremnt calls below.
-meterToggle = [true false]; od = [];
-
-%% Let user get the radiometer set up if desired.
-if (~correctionDescribe.noRadiometerAdjustment)
-    ol.setAll(true);
-    commandwindow;
-    fprintf('\tFocus the radiometer and press enter to pause %d seconds and start measuring.\n', correctionDescribe.pauseDuration);
-    input('');
-    ol.setAll(false);
-    pause(correctionDescribe.pauseDuration);
-else
-    ol.setAll(false);
-end
-
-%% Correct
-    % Keep time
-    startMeas = GetSecs;
-    
-    % Say hello
-    if (correctionDescribe.verbose), fprintf('\tPerforming radiometer measurements\n'); end;    
-    
-    % State and temperature measurements
-    if (~correctionDescribe.simulate && correctionDescribe.takeCalStateMeasurements)
-        if (correctionDescribe.verbose), fprintf('\tState measurements\n'); end;
-        [~, results.calStateMeas] = OLCalibrator.takeCalStateMeasurements(adjustedCal, ol, od, spectroRadiometerOBJ, meterToggle, correctionDescribe.nAverage, theLJdev, 'standAlone',true);
+%% Store information about corrected modulations for return.
+% Since this routine only does the correction for one age, we set the
+% data for that and zero out all the rest, just to avoid accidently
+% thinking we have corrected spectra where we do not.
+for ii = 1:length(cacheData.data)
+    if ii == correctionDescribe.observerAgeInYrs
+        cacheData.data(ii) = correctedDirectionStruct;
     else
-        results.calStateMeas = [];
+        cacheData.data(ii).describe = [];
+        cacheData.data(ii).backgroundPrimary = [];
+        cacheData.data(ii).differentialPositive = [];
+        cacheData.data(ii).differentialNegative = [];
     end
-    if (~correctionDescribe.simulate && correctionDescribe.takeTemperatureMeasurements & ~isempty(theLJdev))
-        [~, results.temperatureMeas] = theLJdev.measure();
-    else
-        results.temperatureMeas = [];
-    end
-    
-    %% Correct direction struct
-    correctedDirectionStruct = OLCorrectDirection(directionStruct, adjustedCal, ol, spectroRadiometerOBJ,...
-        'nIterations', nIterations,... 
-        'learningRate', learningRate,...
-        'learningRateDecrease',  learningRateDecrease,...
-        'asympLearningRateFactor', asympLearningRateFactor,...
-        'smoothness', smoothness,...
-        'iterativeSearch', iterativeSearch);
-
-    %% Store information about corrected modulations for return.
-    % Since this routine only does the correction for one age, we set the data for that and zero out all
-    % the rest, just to avoid accidently thinking we have corrected spectra where we do not.
-    for ii = 1:length(cacheData.data)
-        if ii == correctionDescribe.observerAgeInYrs
-            cacheData.data(ii) = correctedDirectionStruct;
-%             cacheData.data(ii).correctionDescribe = correctionDescribe;
-%             cacheData.data(ii).cal = adjustedCal;
-%             cacheData.data(ii).correction.kScale = dataBackground.correction.kScale;
-%             cacheData.data(ii).backgroundPrimary = dataBackground.Primary;
-%             cacheData.data(ii).modulationPrimarySignedPositive = dataModulation.Primary;    
-%             cacheData.data(ii).modulationPrimarySignedNegative = [];
-%             cacheData.data(ii).correction.backgroundSpdDesired = dataBackground.correction.SpdDesired;
-%             cacheData.data(ii).correction.modulationSpdDesired = dataModulation.correction.SpdDesired;
-%             cacheData.data(ii).correction.backgroundPrimaryInitial = backgroundPrimaryInitial;
-%             cacheData.data(ii).correction.modulationPrimaryInitial = modulationPrimaryInitial;
-%             cacheData.data(ii).correction.differencePrimaryInitial = [];
-% 
-%             cacheData.data(ii).correction.backgroundPrimaryUsedAll = dataBackground.correction.PrimaryUsedAll;
-%             cacheData.data(ii).correction.backgroundSpdMeasuredAll = dataBackground.correction.SpdMeasuredAll;
-%             cacheData.data(ii).correction.backgroundNextPrimaryTruncatedLearningRateAll = dataBackground.correction.NextPrimaryTruncatedLearningRateAll;
-%             cacheData.data(ii).correction.backgroundDeltaPrimaryTruncatedLearningRateAll = dataBackground.correction.DeltaPrimaryTruncatedLearningRateAll;
-% 
-%             cacheData.data(ii).correction.modulationPrimaryUsedAll = dataModulation.correction.PrimaryUsedAll;
-%             cacheData.data(ii).correction.modulationSpdMeasuredAll = dataModulation.correction.SpdMeasuredAll;
-%             cacheData.data(ii).correction.modulationNextPrimaryTruncatedLearningRateAll = dataModulation.correction.NextPrimaryTruncatedLearningRateAll;
-%             cacheData.data(ii).correction.modulationDeltaPrimaryTruncatedLearningRateAll = dataModulation.correction.DeltaPrimaryTruncatedLearningRateAll;
-        else
-            cacheData.data(ii).describe = [];
-            cacheData.data(ii).backgroundPrimary = [];
-            cacheData.data(ii).differentialPositive = [];
-            cacheData.data(ii).differentialNegative = [];
-        end
-    end
-
 end
 
-
-
-
-
-
-
+end
