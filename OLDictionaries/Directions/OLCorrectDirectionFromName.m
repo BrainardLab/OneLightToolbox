@@ -85,7 +85,7 @@ iterativeSearch = parser.Results.iterativeSearch;
 %% Get cached direction data as well as calibration file
 [cacheData,calibration] = OLGetCacheAndCalData(cacheFileNameFullPath, correctionDescribe);
 
-%% Get directionStruct to correct
+%% Get the single directionStruct to correct
 directionStruct = cacheData.data(parser.Results.observerAgeInYrs);
 
 %% Correct direction struct
