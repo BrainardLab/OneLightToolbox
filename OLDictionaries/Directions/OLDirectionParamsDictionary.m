@@ -57,7 +57,7 @@ function dictionary = OLDirectionParamsDictionary()
 %                   modulation is now bipolar
 %	 01/25/18  jv	Extract defaults generation, validation of params.
 
-% Initialize dictionary
+%% Initialize dictionary
 dictionary = containers.Map();
 
 %% MaxMel_unipolar_275_80_667
@@ -68,21 +68,19 @@ dictionary = containers.Map();
 %
 % Bipolar contrast is specified to generate, but the result is a 400% 
 % unipolar contrast step up relative to the background.
-baseName = 'MaxMel';
-type = 'unipolar';
-
-params = OLDirectionParamsDefaults(type);
+params = OLDirectionParams_Unipolar;
+params.baseName = 'MaxMel';
 params.primaryHeadRoom = 0.01;
-params.baseModulationContrast = 4/6;
+params.baseModulationContrast = 2/3;
+params.fieldSizeDegrees = 27.5;
 params.pupilDiameterMm = 8.0;
 params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
 params.modulationContrast = [params.baseModulationContrast];
 params.whichReceptorsToIsolate = [4];
 params.whichReceptorsToIgnore = [];
 params.whichReceptorsToMinimize = [];
-params.backgroundType = 'optimized';
-params.backgroundName = OLMakeApproachDirectionBackgroundName('MelanopsinDirected',params);
-params.name = OLMakeApproachDirectionName(baseName,params);
+params.backgroundName = 'MelanopsinDirected_275_80_667';
+params.name = OLDirectionNameFromParams(params);
 params.cacheFile = ['Direction_' params.name '.mat'];
 if OLDirectionParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
@@ -94,21 +92,19 @@ end
 %   Field size: 27.5 deg
 %   Pupil diameter: 8 mm
 %   Bipolar contrast: 66.7%
-baseName = 'MaxMel';
-type = 'bipolar';
-
-params = OLDirectionParamsDefaults(type);
+params = OLDirectionParams_Bipolar;
+params.baseName = 'MaxMel';
 params.primaryHeadRoom = 0.01;
-params.baseModulationContrast = 4/6;
+params.baseModulationContrast = 2/3;
+params.fieldSizeDegrees = 27.5;
 params.pupilDiameterMm = 8.0;
 params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
 params.modulationContrast = [params.baseModulationContrast];
 params.whichReceptorsToIsolate = [4];
 params.whichReceptorsToIgnore = [];
 params.whichReceptorsToMinimize = [];
-params.backgroundType = 'optimized';
-params.backgroundName = OLMakeApproachDirectionBackgroundName('MelanopsinDirected',params);
-params.name = OLMakeApproachDirectionName(baseName,params);
+params.backgroundName = 'MelanopsinDirected_275_80_667';
+params.name = OLDirectionNameFromParams(params);
 params.cacheFile = ['Direction_' params.name '.mat'];
 if OLDirectionParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
@@ -124,21 +120,19 @@ end
 %
 % Bipolar contrast is specified to generate, but the result is a 400% unipolar
 % contrast step up relative to the background.
-baseName = 'MaxMel';
-type = 'unipolar';
-
-params = OLDirectionParamsDefaults(type);
+params = OLDirectionParams_Unipolar;
+params.baseName = 'MaxMel';
 params.primaryHeadRoom = 0.01;
-params.baseModulationContrast = 4/6;
+params.baseModulationContrast = 2/3;
+params.fieldSizeDegrees = 27.5;
 params.pupilDiameterMm = 6.0;
 params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
 params.modulationContrast = [params.baseModulationContrast];
 params.whichReceptorsToIsolate = [4];
 params.whichReceptorsToIgnore = [];
 params.whichReceptorsToMinimize = [];
-params.backgroundType = 'optimized';
-params.backgroundName = OLMakeApproachDirectionBackgroundName('MelanopsinDirected',params);
-params.name = OLMakeApproachDirectionName(baseName,params);
+params.backgroundName = 'MelanopsinDirected_275_60_667';
+params.name = OLDirectionNameFromParams(params);
 params.cacheFile = ['Direction_' params.name '.mat'];
 if OLDirectionParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
@@ -153,12 +147,10 @@ end
 %
 % Bipolar contrast is specified to generate, but the result is a 400% unipolar
 % contrast step up relative to the background.
-baseName = 'MaxMel';
-type = 'unipolar';
-
-params = OLDirectionParamsDefaults(type);
+params = OLDirectionParams_Unipolar;
+params.baseName = 'MaxMel';
 params.primaryHeadRoom = 0.01;
-params.baseModulationContrast = 4/6;
+params.baseModulationContrast = 2/3;
 params.fieldSizeDegrees = 60.0;
 params.pupilDiameterMm = 8.0;
 params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
@@ -166,9 +158,8 @@ params.modulationContrast = [params.baseModulationContrast];
 params.whichReceptorsToIsolate = [4];
 params.whichReceptorsToIgnore = [];
 params.whichReceptorsToMinimize = [];
-params.backgroundType = 'optimized';
-params.backgroundName = OLMakeApproachDirectionBackgroundName('MelanopsinDirected',params);
-params.name = OLMakeApproachDirectionName(baseName,params);
+params.backgroundName = 'MelanopsinDirected_600_80_667';
+params.name = OLDirectionNameFromParams(params);
 params.cacheFile = ['Direction_' params.name '.mat'];
 if OLDirectionParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
@@ -183,21 +174,19 @@ end
 %
 % Bipolar contrast is specified to generate, but the result is a 400% unipolar
 % contrast step up relative to the background.
-baseName = 'MaxLMS';
-type = 'unipolar';
-
-params = OLDirectionParamsDefaults(type);
+params = OLDirectionParams_Unipolar;
+params.baseName = 'MaxLMS';
 params.primaryHeadRoom = 0.01;
-params.baseModulationContrast = 4/6;
+params.baseModulationContrast = 2/3;
+params.fieldSizeDegrees = 27.5;
 params.pupilDiameterMm = 8.0;
 params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
 params.modulationContrast = [params.baseModulationContrast params.baseModulationContrast params.baseModulationContrast];
 params.whichReceptorsToIsolate = [1 2 3];
 params.whichReceptorsToIgnore = [];
 params.whichReceptorsToMinimize = [];
-params.backgroundType = 'optimized';
-params.backgroundName = OLMakeApproachDirectionBackgroundName('LMSDirected',params);
-params.name = OLMakeApproachDirectionName(baseName,params);
+params.backgroundName = 'LMSDirected_275_80_667';
+params.name = OLDirectionNameFromParams(params);
 params.cacheFile = ['Direction_' params.name '.mat'];
 if OLDirectionParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
@@ -213,21 +202,19 @@ end
 %
 % Bipolar contrast is specified to generate, but the result is a 400% unipolar
 % contrast step up relative to the background.
-baseName = 'MaxLMS';
-type = 'unipolar';
-
-params = OLDirectionParamsDefaults(type);
+params = OLDirectionParams_Unipolar;
+params.baseName = 'MaxLMS';
 params.primaryHeadRoom = 0.01;
-params.baseModulationContrast = 4/6;
+params.baseModulationContrast = 2/3;
+params.fieldSizeDegrees = 27.5;
 params.pupilDiameterMm = 6.0;
 params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
 params.modulationContrast = [params.baseModulationContrast params.baseModulationContrast params.baseModulationContrast];
 params.whichReceptorsToIsolate = [1 2 3];
 params.whichReceptorsToIgnore = [];
 params.whichReceptorsToMinimize = [];
-params.backgroundType = 'optimized';
-params.backgroundName = OLMakeApproachDirectionBackgroundName('LMSDirected',params);
-params.name = OLMakeApproachDirectionName(baseName,params);
+params.backgroundName = 'LMSDirected_275_60_667';
+params.name = OLDirectionNameFromParams(params);
 params.cacheFile = ['Direction_' params.name '.mat'];
 if OLDirectionParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
@@ -242,12 +229,10 @@ end
 %
 % Bipolar contrast is specified to generate, but the result is a 400% unipolar
 % contrast step up relative to the background.
-baseName = 'MaxLMS';
-type = 'unipolar';
-
-params = OLDirectionParamsDefaults(type);
+params = OLDirectionParams_Unipolar;
+params.baseName = 'MaxLMS';
 params.primaryHeadRoom = 0.01;
-params.baseModulationContrast = 4/6;
+params.baseModulationContrast = 2/3;
 params.fieldSizeDegrees = 60.0;
 params.pupilDiameterMm = 8.0;
 params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
@@ -255,67 +240,8 @@ params.modulationContrast = [params.baseModulationContrast params.baseModulation
 params.whichReceptorsToIsolate = [1 2 3];
 params.whichReceptorsToIgnore = [];
 params.whichReceptorsToMinimize = [];
-params.backgroundType = 'optimized';
-params.backgroundName = OLMakeApproachDirectionBackgroundName('LMSDirected',params);
-params.name = OLMakeApproachDirectionName(baseName,params);
-params.cacheFile = ['Direction_' params.name '.mat'];
-if OLDirectionParamsValidate(params)
-    % All validations OK. Add entry to the dictionary.
-    dictionary(params.name) = params;
-end
-
-%% MaxMel_unipolar_275_60_667
-% Direction for maximum unipolar contrast melanopsin step
-%   Field size: 27.5 deg
-%   Pupil diameter: 6 mm
-%   bipolar contrast: 66.7%
-%
-% Bipolar contrast is specified to generate, but the result is a 400% unipolar
-% contrast step up relative to the background.
-baseName = 'MaxMel';
-type = 'unipolar';
-
-params = OLDirectionParamsDefaults(type);
-params.primaryHeadRoom = 0.005;
-params.baseModulationContrast = 4/6;
-params.pupilDiameterMm = 6.0;
-params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
-params.modulationContrast = [params.baseModulationContrast];
-params.whichReceptorsToIsolate = [4];
-params.whichReceptorsToIgnore = [];
-params.whichReceptorsToMinimize = [];
-params.backgroundType = 'optimized';
-params.backgroundName = OLMakeApproachDirectionBackgroundName('MelanopsinDirected',params);
-params.name = OLMakeApproachDirectionName(baseName,params);
-params.cacheFile = ['Direction_' params.name '.mat'];
-if OLDirectionParamsValidate(params)
-    % All validations OK. Add entry to the dictionary.
-    dictionary(params.name) = params;
-end
-
-%% MaxLMS_unipolar_275_60_667
-% Direction for maximum unipolar contrast LMS step
-%   Field size: 27.5 deg
-%   Pupil diameter: 6 mm
-%   bipolar contrast: 66.7%
-%
-% Bipolar contrast is specified to generate, but the result is a 400% unipolar
-% contrast step up relative to the background.
-baseName = 'MaxLMS';
-type = 'unipolar';
-
-params = OLDirectionParamsDefaults(type);
-params.primaryHeadRoom = 0.005;
-params.baseModulationContrast = 4/6;
-params.pupilDiameterMm = 6.0;
-params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
-params.modulationContrast = [params.baseModulationContrast params.baseModulationContrast params.baseModulationContrast];
-params.whichReceptorsToIsolate = [1 2 3];
-params.whichReceptorsToIgnore = [];
-params.whichReceptorsToMinimize = [];
-params.backgroundType = 'optimized';
-params.backgroundName = OLMakeApproachDirectionBackgroundName('LMSDirected',params);
-params.name = OLMakeApproachDirectionName(baseName,params);
+params.backgroundName = 'LMSDirected_600_80_667';
+params.name = OLDirectionNameFromParams(params);
 params.cacheFile = ['Direction_' params.name '.mat'];
 if OLDirectionParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
@@ -326,16 +252,12 @@ end
 % Direction for maximum light flux step
 %   CIE x = .54, y = .38
 %   Flux factor = 5
-
-baseName = 'LightFlux';
-type = 'lightfluxchrom';
-
-params = OLDirectionParamsDefaults(type);
+params = OLDirectionParams_LightFluxChrom;
+params.baseName = 'LightFlux';
 params.lightFluxDesiredXY = [0.54,0.38];
 params.lightFluxDownFactor = 5;
-params.name = OLMakeApproachDirectionName(baseName,params);
-params.backgroundType = 'lightfluxchrom';
-params.backgroundName = OLMakeApproachDirectionBackgroundName('LightFlux',params);
+params.name = OLDirectionNameFromParams(params);
+params.backgroundName = 'LightFlux_540_380_50';
 params.cacheFile = ['Direction_' params.name '.mat'];
 if OLDirectionParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
@@ -346,21 +268,18 @@ end
 % Direction for maximum light flux step
 %   CIE x = .33, y = .33
 %   Flux factor = 2
-
-baseName = 'LightFlux';
-type = 'lightfluxchrom';
-
-params = OLDirectionParamsDefaults(type);
+params = OLDirectionParams_LightFluxChrom;
+params.baseName = 'LightFlux';
 params.lightFluxDesiredXY = [0.33,0.33];
 params.lightFluxDownFactor = 2;
-params.name = OLMakeApproachDirectionName(baseName,params);
-params.backgroundType = 'lightfluxchrom';
-params.backgroundName = OLMakeApproachDirectionBackgroundName('LightFlux',params);
+params.name = OLDirectionNameFromParams(params);
+params.backgroundName = 'LightFlux_330_330_20';
 params.cacheFile = ['Direction_' params.name '.mat'];
 if OLDirectionParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
 end
+
 end
 
 function backgroundName = OLMakeApproachDirectionBackgroundName(name,params)

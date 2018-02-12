@@ -63,8 +63,9 @@ for ii = 1:length(approachParams.directionNames)
     %
     % The approach parameters structure specifies some direction independent
     % information, such as the calibration names to be used.
-    directionParams = OLMergeBaseParamsWithParamsFromDictionaryEntry(approachParams, paramsDictionary, directionName);
-
+    %directionParams = OLMergeBaseParamsWithParamsFromDictionaryEntry(approachParams, paramsDictionary, directionName);
+    directionParams = OLDirectionParamsFromName(directionName);
+    
     % Create the cache object and filename
     olCache = OLCache(cacheDir, cal);
     [~, cacheFileName] = fileparts(directionParams.cacheFile);
@@ -94,10 +95,9 @@ for ii = 1:length(approachParams.directionNames)
         backgroundCacheFile = ['Background_' directionParams.backgroundName '.mat'];
         [backgroundCacheData,isStale] = backgroundOlCache.load(backgroundCacheFile);
         assert(~isStale,'Background cache file is stale, aborting.');
-        backgroundPrimary = backgroundCacheData.data(directionParams.backgroundObserverAge).backgroundPrimary;
         
         % Generate direction struct
-        directionStruct = OLDirectionNominalStructFromParams(directionParams,backgroundPrimary,cal);
+        directionStruct = OLDirectionNominalStructFromParams(directionParams,cal);
         
         cacheDataDirection.data = directionStruct;
         cacheDataDirection.directionParams = directionParams;
