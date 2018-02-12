@@ -1,5 +1,5 @@
 function correctedDirection = OLCorrectDirection(directionStruct, calibration, oneLight, radiometer, varargin)
-% Corrects primary values iteratively to attain predicted SPD
+% Corrects direction struct iteratively to attain predicted SPD
 %
 % Syntax:
 %   correctedDirectionStruct = OLCorrectDirection(directionStruct, calibration, OneLight, radiometer)
