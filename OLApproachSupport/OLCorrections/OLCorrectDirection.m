@@ -9,7 +9,7 @@ function correctedDirection = OLCorrectDirection(directionStruct, calibration, o
 %    Detailed explanation goes here
 %
 % Inputs:
-%    directionStruct    - a single struct defining a direction, with at 
+%    directionStruct    - a single struct defining a direction, with at
 %                         least the following fields:
 %                         * backgroundPrimary   : the primary values for
 %                                                 the background.
@@ -45,9 +45,9 @@ function correctedDirection = OLCorrectDirection(directionStruct, calibration, o
 %    learningRate           - Learning rate. Default is .8.
 %    learningRateDecrease   - Decrease learning rate over iterations?
 %                             Default is true.
-%    asympLearningRateFactor- If learningRateDecrease is true, the 
+%    asympLearningRateFactor- If learningRateDecrease is true, the
 %                             asymptotic learning rate is
-%                             (1-asympLearningRateFactor)*learningRate. 
+%                             (1-asympLearningRateFactor)*learningRate.
 %                             Default = .5.
 %    smoothness             - Smoothness parameter for OLSpdToPrimary.
 %                             Default .001.
@@ -87,7 +87,7 @@ directionNegativeInitial = directionStruct.backgroundPrimary + directionStruct.d
 
 %% Correct positive differential, but only if nonzero
 if any(directionStruct.differentialPositive)
-    [directionPositiveCorrected, dataDirectionPositive] = OLCorrectPrimaryValues(directionPositiveInitial,calibration,oneLight,radiometer,varargin{:}); 
+    [directionPositiveCorrected, dataDirectionPositive] = OLCorrectPrimaryValues(directionPositiveInitial,calibration,oneLight,radiometer,varargin{:});
 else
     directionPositiveCorrected = backgroundPrimaryCorrected;
     dataDirectionPositive = dataBackground;
@@ -95,7 +95,7 @@ end
 
 %% Correct negative differential, but only if nonzero
 if any(directionStruct.differentialNegative)
-    [directionNegativeCorrected, dataDirectionNegative] = OLCorrectPrimaryValues(directionNegativeInitial,calibration,oneLight,radiometer,varargin{:});    
+    [directionNegativeCorrected, dataDirectionNegative] = OLCorrectPrimaryValues(directionNegativeInitial,calibration,oneLight,radiometer,varargin{:});
 else
     directionNegativeCorrected = backgroundPrimaryCorrected;
     dataDirectionNegative = dataBackground;

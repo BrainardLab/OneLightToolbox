@@ -12,24 +12,26 @@ function SPD = OLMeasurePrimaryValues(primaryValues,calibration,oneLight,varargi
 %    information. Can handle any number of vectors.
 %
 % Inputs:
-%    primaryValues - PxN array of primary values, where P is the number of
-%                    primary values per spectrum, and N is the number of
-%                    spectra to validate (i.e., a column vector per
-%                    spectrum)
-%    calibration   - struct containing calibration information for oneLight
-%    oneLight      - a oneLight object to control a OneLight device. If
-%                    the oneLight object is simulated, the returned SPD is
-%                    predicted from just the calibration information.
-%    radiometer    - (OPTIONAL when simulating) radiometer object to 
-%                    control a spectroradiometer
-%    nAverage      - (OPTIONAL) number of measurements to average. 
-%                    Default 1.
+%    primaryValues    - PxN array of primary values, where P is the number
+%                       of primary values per spectrum, and N is the number
+%                       of spectra to validate (i.e., a column vector per
+%                       spectrum)
+%    calibration      - struct containing calibration information for 
+%                       oneLight
+%    oneLight         - a OneLight object to control a OneLight device. If
+%                       the oneLight object is simulated, the returned SPD
+%                       is predicted from just the calibration information.
+%    radiometer       - (OPTIONAL when simulating) radiometer object to 
+%                       control a spectroradiometer
 % Outputs:
-%    SPD           - nWlsxN array of spectral power, where N is the number
-%                    of vector of primary values to measure
+%    SPD              - nWlsxN array of spectral power, where N is the
+%                       number of vector of primary values to measure
 %
 % Optional key/value pairs:
-%    None.
+%    nAverage         - number of measurements to average. 
+%                       Default 1.
+%    temperatureProbe - LJTemperatureProbe object to drive a LabJack
+%                       temperature probe
 %
 % See also:
 %    OLTakeMeasurementOOC, OLValidatePrimary
@@ -43,7 +45,8 @@ parser.addRequired('primaryValues',@isnumeric);
 parser.addRequired('calibration',@isstruct);
 parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
 parser.addOptional('radiometer',[]);
-parser.addOptional('nAverage',1,@isnumeric);
+parser.addParameter('nAverage',1,@isnumeric);
+parser.addParameter('temperatureProbe',[],@(x) isempty(x) || isa(x,'LJTemperatureProbe'));
 parser.parse(primaryValues,calibration,oneLight,varargin{:});
 
 radiometer = parser.Results.radiometer;
@@ -61,6 +64,10 @@ if ~isempty(radiometer)
             
     % Loop over primary values vectors
     for p = 1:size(primaryValues,2)
+        
+        % TODO: Temperature measurement
+        
+        % Radiometeric measurement
         measurement = OLTakeMeasurementOOC(oneLight,[],radiometer,starts(p,:),stops(p,:),[],[true,false],parser.Results.nAverage);
         
         % Extract SPDs

@@ -22,6 +22,8 @@ function OLMakeDirectionCorrectedPrimaries(protocolParams, oneLight, radiometer,
 %     protocolParams         Protocol parameters structure.
 %
 % Optional key/value pairs
+%    temperatureProbe - LJTemperatureProbe object to drive a LabJack
+%                       temperature probe
 %     'verbose' (boolean)    Print out diagnostic information?
 %
 % See also: OLCorrectCacheFileOOC, OLGetCacheAndCalData.
@@ -39,6 +41,7 @@ p.addRequired('protocolParams',@isstruct);
 p.addRequired('oneLight',@(x) isa(x,'OneLight'));
 p.addRequired('radiometer',@(x) isempty(x) || isa(x,'Radiometer'));
 p.addParameter('verbose',true,@islogical);
+p.addParameter('temperatureProbe',[],@(x) isempty(x) || isa(x,'LJTemperatureProbe'));
 p.parse(protocolParams, oneLight, radiometer, varargin{:});
 
 %% Update session log file
@@ -60,24 +63,10 @@ if(~exist(correctedPrimariesDir,'dir'))
 end
 
 %% Obtain correction params from OLCorrectionParamsDictionary
-%
 % This is box specific, and specified as protocolParams.boxName
 corrD = OLCorrectionParamsDictionary();
 if (p.Results.verbose), fprintf('\nSpectrum seeking\n\tGetting correction params for %s\n', protocolParams.boxName); end
 correctionParams = corrD(protocolParams.boxName);
-
-%% Open up lab jack for temperature measurements
-if (~protocolParams.simulate.oneLight && protocolParams.takeTemperatureMeasurements)
-    % Gracefully attempt to open the LabJack.  If it doesn't work and the user OK's the
-    % change, then the takeTemperature measurements flag is set to false and we proceed.
-    % Otherwise it either worked (good) or we give up and throw an error.
-    [protocolParams.takeTemperatureMeasurements, quitNow, theLJdev] = OLCalibrator.OpenLabJackTemperatureProbe(protocolParams.takeTemperatureMeasurements);
-    if (quitNow)
-        error('Unable to get temperature measurements to work as requested');
-    end
-else
-    theLJdev = [];
-end
 
 %% Loop through and do correction for each desired direction.
 for corrD = 1:length(theDirections)
@@ -119,7 +108,6 @@ for corrD = 1:length(theDirections)
         
         % Save the cache
         olCache = OLCache(correctedPrimariesDir,calibration);
-        %protocolParams.modulationDirection = theDirections{corrD};
         cacheFile = fullfile(correctedPrimariesDir, sprintf('Direction_%s.mat', theDirections{corrD}));
         cacheData.protocolParams = protocolParams;
         olCache.save(cacheFile, cacheData);

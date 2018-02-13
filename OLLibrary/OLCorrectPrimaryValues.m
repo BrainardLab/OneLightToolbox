@@ -41,6 +41,8 @@ function [correctedPrimaryValues, detailedData] = OLCorrectPrimaryValues(nominal
 %                             Default .001.
 %    iterativeSearch        - Do iterative search with fmincon on each
 %                             measurement interation? Default is false.
+%    temperatureProbe       - LJTemperatureProbe object to drive a LabJack
+%                             temperature probe
 %
 % See also:
 %    OLValidatePrimaryValues
@@ -80,6 +82,7 @@ parser.addParameter('learningRateDecrease',true,@islogical);
 parser.addParameter('asympLearningRateFactor',0.5,@isscalar);
 parser.addParameter('smoothness', 0.001, @isscalar);
 parser.addParameter('iterativeSearch',false, @islogical);
+parser.addParameter('temperatureProbe',[],@(x) isempty(x) || isa(x,'LJTemperatureProbe'));
 parser.parse(nominalPrimaryValues,calibration,oneLight,varargin{:});
 
 nIterations = parser.Results.nIterations;
