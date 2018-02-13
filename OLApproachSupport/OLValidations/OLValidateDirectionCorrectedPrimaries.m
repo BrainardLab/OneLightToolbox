@@ -32,7 +32,7 @@ function protocolParams = OLValidateDirectionCorrectedPrimaries(ol,protocolParam
 OLSessionLog(protocolParams,mfilename,'StartEnd','start','PrePost',prePost);
 
 %% Cache files to validate
-theDirectionCacheFileNames = OLMakeDirectionCacheFileNames(protocolParams);
+theDirections = unqiue(protocolParams.directionNames);
 
 %% Input and output file locations.
 cacheDir = fullfile(getpref(protocolParams.protocol, 'DirectionCorrectedPrimariesBasePath'), protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
@@ -75,14 +75,16 @@ end
 % that use the same direction file, we only need to validate once per
 % direction.
 for ii = 1:protocolParams.nValidationsPerDirection
-    for dd = 1:length(theDirectionCacheFileNames)
+    for dd = 1:length(theDirections)
         
         % Do the validation if the flag is true.
         if (protocolParams.doCorrection(dd))
-            fprintf('\nValidation measurements, direction %d, %s, %s, measurement %d of %d, \n',dd,theDirectionCacheFileNames{dd},prePost,ii,protocolParams.nValidationsPerDirection);
+            theDirectionCacheFileName = sprintf('Direction_%s', protocolParams.directionNames{dd});
+            
+            fprintf('\nValidation measurements, direction %d, %s, %s, measurement %d of %d, \n',dd,theDirectionCacheFileName,prePost,ii,protocolParams.nValidationsPerDirection);
 
             % Take the measurement
-            results = OLValidateCacheFileOOC(fullfile(cacheDir,[theDirectionCacheFileNames{dd} '.mat']), ol, spectroRadiometerOBJ, S, theLJdev, ...
+            results = OLValidateCacheFileOOC(fullfile(cacheDir,[theDirectionCacheFileName '.mat']), ol, spectroRadiometerOBJ, S, theLJdev, ...
                 'approach',                     protocolParams.approach, ...
                 'simulate',                     protocolParams.simulate.oneLight, ...
                 'observerAgeInYrs',             protocolParams.observerAgeInYrs, ...
@@ -92,7 +94,7 @@ for ii = 1:protocolParams.nValidationsPerDirection
                 'verbose',                      protocolParams.verbose);
             
             % Save the validation information in an ordinary .mat file.  Append prePost and iteration number in name.
-            outputFile = fullfile(outDir,sprintf('%s_%s_%d.mat', theDirectionCacheFileNames{dd},prePost,ii));
+            outputFile = fullfile(outDir,sprintf('%s_%s_%d.mat', theDirectionCacheFileName,prePost,ii));
             results.protocolParams = protocolParams;
             save(outputFile,'results');
             if (protocolParams.verbose), fprintf('\tSaved validation results to %s\n', outputFile); end

@@ -45,8 +45,7 @@ p.parse(protocolParams, oneLight, radiometer, varargin{:});
 OLSessionLog(protocolParams,mfilename,'StartEnd','start');
 
 %% Grab the relevant directions name and get the cache file name
-theDirections = protocolParams.directionNames;
-directionCacheFileNames = OLMakeDirectionCacheFileNames(protocolParams);
+theDirections = unique(protocolParams.directionNames);
 
 %% Make sure we have booleans for all of the passed directions
 assert(numel(protocolParams.directionNames) == numel(protocolParams.correctBySimulation), 'protocolParams.correctBySimulation does not have the same length protocolParams.directionNames');
@@ -84,10 +83,9 @@ end
 for corrD = 1:length(theDirections)
         % Print out some information
         if (p.Results.verbose), fprintf('\n\tDirection: %s\n', theDirections{corrD}); end
-        if (p.Results.verbose), fprintf('\tObserver: %s\n', protocolParams.observerID); end
         
         % Get cached direction
-        nominalCacheFileName = fullfile(nominalPrimariesDir, [directionCacheFileNames{corrD} '.mat']);
+        nominalCacheFileName = fullfile(nominalPrimariesDir, sprintf('Direction_%s.mat', theDirections{corrD}));
         [cacheData,calibration] = OLGetCacheAndCalData(nominalCacheFileName, protocolParams);
         
         % Get directionStruct to correct
@@ -121,11 +119,11 @@ for corrD = 1:length(theDirections)
         
         % Save the cache
         olCache = OLCache(correctedPrimariesDir,calibration);
-        protocolParams.modulationDirection = theDirections{corrD};
-        protocolParams.cacheFile = fullfile(correctedPrimariesDir, directionCacheFileNames{corrD});
+        %protocolParams.modulationDirection = theDirections{corrD};
+        cacheFile = fullfile(correctedPrimariesDir, sprintf('Direction_%s.mat', theDirections{corrD}));
         cacheData.protocolParams = protocolParams;
-        olCache.save(protocolParams.cacheFile, cacheData);
-        if (p.Results.verbose), fprintf('\tCache saved to %s\n', protocolParams.cacheFile); end
+        olCache.save(cacheFile, cacheData);
+        if (p.Results.verbose), fprintf('\tCache saved to %s\n', cacheFile); end
 end
 
 %% Close the radiometer object
