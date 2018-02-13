@@ -86,22 +86,41 @@ for corrD = 1:length(theDirections)
         if (p.Results.verbose), fprintf('\n\tDirection: %s\n', theDirections{corrD}); end
         if (p.Results.verbose), fprintf('\tObserver: %s\n', protocolParams.observerID); end
         
-        % Correct the cache
-        if (p.Results.verbose), fprintf('\tStarting spectrum-seeking loop\n'); end
-        [cacheData, cal] = OLCorrectCacheFileOOC(sprintf('%s.mat', fullfile(nominalPrimariesDir, directionCacheFileNames{corrD})), oneLight, radiometer, ...
-            'approach',                     protocolParams.approach, ...
-            'observerAgeInYrs',             protocolParams.observerAgeInYrs, ...
-            'calibrationType',              protocolParams.calibrationType, ...
-            'learningRate',                 correctionParams.learningRate, ...
-            'learningRateDecrease',         correctionParams.learningRateDecrease, ...
-            'asympLearningRateFactor',      correctionParams.asympLearningRateFactor, ...
-            'smoothness',                   correctionParams.smoothness, ...
-            'iterativeSearch',              correctionParams.iterativeSearch, ...
-            'nIterations',                  correctionParams.nIterations);
+        % Get cached direction
+        nominalCacheFileName = fullfile(nominalPrimariesDir, [directionCacheFileNames{corrD} '.mat']);
+        [cacheData,calibration] = OLGetCacheAndCalData(nominalCacheFileName, protocolParams);
+        
+        % Get directionStruct to correct
+        nominalDirectionStruct = cacheData.data(protocolParams.observerAgeInYrs);
+        
+        % Correct direction struct
+        if (p.Results.verbose), fprintf('\tStarting spectrum-seeking loop\n'); end        
+        correctedDirectionStruct = OLCorrectDirection(nominalDirectionStruct, calibration, oneLight, radiometer,...
+            'nIterations', correctionParams.nIterations,...
+            'learningRate', correctionParams.learningRate,...
+            'learningRateDecrease',  correctionParams.learningRateDecrease,...
+            'asympLearningRateFactor', correctionParams.asympLearningRateFactor,...
+            'smoothness', correctionParams.smoothness,...
+            'iterativeSearch', correctionParams.iterativeSearch);
         if (p.Results.verbose), fprintf('\tSpectrum seeking loop finished!\n'); end
         
+        % Store information about corrected modulations for return.
+        % Since this routine only does the correction for one age, we set the
+        % data for that and zero out all the rest, just to avoid accidently
+        % thinking we have corrected spectra where we do not.
+        for ii = 1:length(cacheData.data)
+            if ii == protocolParams.observerAgeInYrs
+                cacheData.data(ii) = correctedDirectionStruct;
+            else
+                cacheData.data(ii).describe = [];
+                cacheData.data(ii).backgroundPrimary = [];
+                cacheData.data(ii).differentialPositive = [];
+                cacheData.data(ii).differentialNegative = [];
+            end
+        end
+        
         % Save the cache
-        olCache = OLCache(correctedPrimariesDir,cal);
+        olCache = OLCache(correctedPrimariesDir,calibration);
         protocolParams.modulationDirection = theDirections{corrD};
         protocolParams.cacheFile = fullfile(correctedPrimariesDir, directionCacheFileNames{corrD});
         cacheData.protocolParams = protocolParams;
