@@ -1,19 +1,24 @@
-function OLCheckPrimaryCorrection(protocolParams)
-%%OLCheckPrimaryCorrection  Check how well correction of primaries worked.
+function OLCheckPrimaryCorrection(correctionDebuggingData, calibration)
+% Check how well correction of primary values worked
 %
 % Syntax:
-%    OLCheckPrimaryCorrection(protocolParams)
+%    OLCheckPrimaryCorrection(correctionDebugginData)
 %
 % Description:
-%    This script analyzes the output of the procedure that tunes up the primaries based on 
-%    a measurement/update loop.  Its main purpose in life is to help us debug the procedure,
-%    running it would not be a normal part of operation, as long as the validations come out well.
+%    This script analyzes the debugging output of OLCorrectPrimaryValues,
+%    which tunes up the primaries based on a measurement/update loop.  Its
+%    main purpose in life is to help us debug the procedure, running it
+%    would not be a normal part of operation, as long as the validations
+%    come out well.
 %
 % Input:
-%      protocolParams (struct)               Parameters of the current protocol.
+%    correctionDebuggingData - output (second argout) of
+%                              OLCorrectPrimaryValues. 
+%    calibration             - struct containing calibration information
+%                              for OneLight, used to run correction
 %
 % Output:
-%      None.
+%    None.
 %
 % Optional key/value pairs:
 %    None.
@@ -21,56 +26,23 @@ function OLCheckPrimaryCorrection(protocolParams)
 % 06/18/17  dhb  Update header comment.  Rename.
 % 09/01/17  mab  Start generalizing by having it read protocol params.
 
-%% THIS NEEDS UPDATING TO WORK THROUGH MULTIPLE CORRECTED DIRECTIONS, ETC.
-%% IT IS CURRENTLY A QUICK UPDATE OF AN OLD ROUTINE.
-
 %% Start afresh with figures
 close all;
 
-%% Get some data to analyze
-%
-% This is hard coded in right now, until we mind-meld this code with our new approach approach.
-cacheBasePath = getpref(protocolParams.protocol, 'DirectionCorrectedPrimariesBasePath');
-load(fullfile(cacheBasePath, protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName, ['Direction_' protocolParams.directionNames{1} '.mat']));
-
-% Identify the box
-theBox = protocolParams.calibrationType;
-
-% Convert data to standardized naming for here
-eval(['theData = ' theBox ';  clear ' theBox ';']);
-
-%% Correction actually run?
-%
-% If not, we can't really do a full analysis
-if (~isfield(theData{1}.data,'correction'))
-    fprintf('Correction not actually run.  Not analyzing.\n');
-    fprintf('Could add a plot of primaries and nominal spectra here if desired.\n');
-    return;
-end
-
-%% Discover the observer age
-theObserverAgeIndex = find(~(cellfun(@isempty, {theData{1}.data.correction})));
-
 %% How many iterations were run?  And how many primaries were there?
-nIterations = size(theData{1}.data(theObserverAgeIndex).correction.backgroundSpdMeasuredAll, 2);
-nPrimaries = size(theData{1}.data(theObserverAgeIndex).correction.modulationPrimaryUsedAll, 1);
+nIterationsSpecified = correctionDebuggingData.nIterations;
+nIterationsMeasured = size(correctionDebuggingData.SPDMeasuredAll, 2);
+nPrimaries = size(correctionDebuggingData.PrimaryUsedAll, 1);
 
 %% What's the wavelength sampling?
 wls = SToWls([380 2 201]);
 
-%% Skipped primaries
-%
-% Not sure we need this
-nShortPrimariesSkip = theData{1}.cal.describe.nShortPrimariesSkip;
-nLongPrimariesSkip = theData{1}.cal.describe.nLongPrimariesSkip;
-
 %% Determine some axis limits
-%
 % Spectral power
-ylimMax = 1.1*max(max([theData{1}.data(theObserverAgeIndex).correction.modulationSpdMeasuredAll theData{1}.data(theObserverAgeIndex).correction.backgroundSpdMeasuredAll]));
+ylimMax = 1.1*max(max([correctionDebuggingData.SPDMeasuredAll]));
 
 %% Print some diagnostic information
-kScale = theData{1}.data(theObserverAgeIndex).correction.kScale;
+kScale = correctionDebuggingData.kScale;
 fprintf('Value of kScale: %0.2f\n',kScale);
 
 %% Start a diagnositic plot
@@ -78,38 +50,32 @@ contrastPlot = figure; clf; set(contrastPlot,'Position',[220,600 500 500]);
 backgroundPlot = figure; clf; set(backgroundPlot,'Position',[220 600 1150 725]);
 modulationPlot = figure; clf; set(modulationPlot,'Position',[220 600 1150 725]);
 
-%% Get the calibration file, for some checks
-cal = theData{1}.data(theObserverAgeIndex).cal;
-
 %% Clean up cal file primaries by zeroing out light we don't think is really there.    
 zeroItWLRangeMinus = 100;
 zeroItWLRangePlus = 100;
-cal = OLZeroCalPrimariesAwayFromPeak(cal,zeroItWLRangeMinus,zeroItWLRangePlus);
-
-%% Get correction parameters
-correctDescribe = theData{1}.data(theObserverAgeIndex).correctionDescribe;
+calibration = OLZeroCalPrimariesAwayFromPeak(calibration,zeroItWLRangeMinus,zeroItWLRangePlus);
 
 %% Plot what we got
 %
 % We multiply measurements by kScale to bring everything into a consistent space
-backgroundPrimaryInitial = theData{1}.data(theObserverAgeIndex).correction.backgroundPrimaryInitial;
-backgroundSpectrumDesired = theData{1}.data(theObserverAgeIndex).correction.backgroundSpdDesired;
+backgroundPrimaryInitial = correctionDebuggingData.backgroundPrimaryInitial;
+backgroundSpectrumDesired = correctionDebuggingData.backgroundSpdDesired;
 
-modulationSpectrumDesired = theData{1}.data(theObserverAgeIndex).correction.modulationSpdDesired;
-modulationPrimaryInitial = theData{1}.data(theObserverAgeIndex).correction.modulationPrimaryInitial;
+modulationSpectrumDesired = correctionDebuggingData.modulationSpdDesired;
+modulationPrimaryInitial = correctionDebuggingData.modulationPrimaryInitial;
 spectraMeasured = [];
 primariesUsed = [];
 primaryFig = figure;
 for ii = 1:nIterations
     % Pull out some data for convenience
-    backgroundSpectrumMeasuredScaled = kScale*theData{1}.data(theObserverAgeIndex).correction.backgroundSpdMeasuredAll(:,ii);
-    backgroundPrimaryUsed = theData{1}.data(theObserverAgeIndex).correction.backgroundPrimaryUsedAll(:,ii);
-    backgroundNextPrimaryTruncatedLearningRate = theData{1}.data(theObserverAgeIndex).correction.backgroundNextPrimaryTruncatedLearningRateAll(:,ii);
-    backgroundDeltaPrimaryTruncatedLearningRate  = theData{1}.data(theObserverAgeIndex).correction.backgroundDeltaPrimaryTruncatedLearningRateAll(:,ii);
+    backgroundSpectrumMeasuredScaled = kScale*correctionDebuggingData.backgroundSpdMeasuredAll(:,ii);
+    backgroundPrimaryUsed = correctionDebuggingData.backgroundPrimaryUsedAll(:,ii);
+    backgroundNextPrimaryTruncatedLearningRate = correctionDebuggingData.backgroundNextPrimaryTruncatedLearningRateAll(:,ii);
+    backgroundDeltaPrimaryTruncatedLearningRate  = correctionDebuggingData.backgroundDeltaPrimaryTruncatedLearningRateAll(:,ii);
     if (any(backgroundNextPrimaryTruncatedLearningRate ~= backgroundPrimaryUsed + backgroundDeltaPrimaryTruncatedLearningRate))
         error('Background Hmmm.');
     end
-    backgroundNextSpectrumPredictedTruncatedLearningRate = OLPredictSpdFromDeltaPrimaries(backgroundDeltaPrimaryTruncatedLearningRate,backgroundPrimaryUsed,backgroundSpectrumMeasuredScaled,cal);
+    backgroundNextSpectrumPredictedTruncatedLearningRate = OLPredictSpdFromDeltaPrimaries(backgroundDeltaPrimaryTruncatedLearningRate,backgroundPrimaryUsed,backgroundSpectrumMeasuredScaled,calibration);
       
     % Find delta primaries for next iter from scratch here.  This is to
     % verify that we know how we did it, so that we can then explore other
@@ -119,22 +85,22 @@ for ii = 1:nIterations
     else
         learningRateThisIter = correctDescribe.learningRate;
     end
-    backgroundDeltaPrimaryTruncatedLearningRateAgain = OLLinearDeltaPrimaries(backgroundPrimaryUsed,backgroundSpectrumMeasuredScaled,backgroundSpectrumDesired,learningRateThisIter,correctDescribe.smoothness,cal);
+    backgroundDeltaPrimaryTruncatedLearningRateAgain = OLLinearDeltaPrimaries(backgroundPrimaryUsed,backgroundSpectrumMeasuredScaled,backgroundSpectrumDesired,learningRateThisIter,correctDescribe.smoothness,calibration);
     if (correctDescribe.iterativeSearch)
         [backgroundDeltaPrimaryTruncatedLearningRateAgain,backgroundNextSpectrumPredictedTruncatedLearningRateAgain] = ...
-            OLIterativeDeltaPrimaries(backgroundDeltaPrimaryTruncatedLearningRateAgain,backgroundPrimaryUsed,backgroundSpectrumMeasuredScaled,backgroundSpectrumDesired,learningRateThisIter,cal);
+            OLIterativeDeltaPrimaries(backgroundDeltaPrimaryTruncatedLearningRateAgain,backgroundPrimaryUsed,backgroundSpectrumMeasuredScaled,backgroundSpectrumDesired,learningRateThisIter,calibration);
     end
     [backgroundDeltaPrimaryTruncatedLearningRateAgain1,backgroundNextSpectrumPredictedTruncatedLearningRateAgain1] = ...
-            OLIterativeDeltaPrimaries(backgroundPrimaryInitial-backgroundPrimaryUsed,backgroundPrimaryUsed,backgroundSpectrumMeasuredScaled,backgroundSpectrumDesired,learningRateThisIter,cal);         
+            OLIterativeDeltaPrimaries(backgroundPrimaryInitial-backgroundPrimaryUsed,backgroundPrimaryUsed,backgroundSpectrumMeasuredScaled,backgroundSpectrumDesired,learningRateThisIter,calibration);         
     
-    modulationSpectrumMeasuredScaled = kScale*theData{1}.data(theObserverAgeIndex).correction.modulationSpdMeasuredAll(:,ii);
-    modulationPrimaryUsed = theData{1}.data(theObserverAgeIndex).correction.modulationPrimaryUsedAll(:,ii);
-    modulationNextPrimaryTruncatedLearningRate = theData{1}.data(theObserverAgeIndex).correction.modulationNextPrimaryTruncatedLearningRateAll(:,ii);
-    modulationDeltaPrimaryTruncatedLearningRate  = theData{1}.data(theObserverAgeIndex).correction.modulationDeltaPrimaryTruncatedLearningRateAll(:,ii);
+    modulationSpectrumMeasuredScaled = kScale*correctionDebuggingData.SPDMeasuredAll(:,ii);
+    modulationPrimaryUsed = correctionDebuggingData.modulationPrimaryUsedAll(:,ii);
+    modulationNextPrimaryTruncatedLearningRate = correctionDebuggingData.modulationNextPrimaryTruncatedLearningRateAll(:,ii);
+    modulationDeltaPrimaryTruncatedLearningRate  = correctionDebuggingData.modulationDeltaPrimaryTruncatedLearningRateAll(:,ii);
     if (any(modulationNextPrimaryTruncatedLearningRate ~= modulationPrimaryUsed + modulationDeltaPrimaryTruncatedLearningRate))
         error('Nodulation Hmmm.');
     end
-    modulationNextSpectrumPredictedTruncatedLearningRate = OLPredictSpdFromDeltaPrimaries(modulationDeltaPrimaryTruncatedLearningRate,modulationPrimaryUsed,modulationSpectrumMeasuredScaled,cal);
+    modulationNextSpectrumPredictedTruncatedLearningRate = OLPredictSpdFromDeltaPrimaries(modulationDeltaPrimaryTruncatedLearningRate,modulationPrimaryUsed,modulationSpectrumMeasuredScaled,calibration);
     
     % We can build up a correction matrix for predcition of delta spds from
     % delta primaries, based on what we've measured so far.
@@ -144,11 +110,11 @@ for ii = 1:nIterations
     else
         spectraMeasured = [spectraMeasured backgroundSpectrumMeasuredScaled modulationSpectrumMeasuredScaled];
         primariesUsed = [primariesUsed backgroundPrimaryUsed modulationPrimaryUsed];
-        spectraPredicted = cal.computed.pr650M*primariesUsed+cal.computed.pr650MeanDark(:,ones(size(primariesUsed,2),1));
+        spectraPredicted = calibration.computed.pr650M*primariesUsed+calibration.computed.pr650MeanDark(:,ones(size(primariesUsed,2),1));
         for kk = 1:size(spectraMeasured,2)
-            primariesRecovered(:,kk) = lsqnonneg(cal.computed.pr650M,spectraMeasured(:,kk)-cal.computed.pr650MeanDark);
+            primariesRecovered(:,kk) = lsqnonneg(calibration.computed.pr650M,spectraMeasured(:,kk)-calibration.computed.pr650MeanDark);
         end
-        spectraPredictedFromRecovered = cal.computed.pr650M*primariesRecovered+cal.computed.pr650MeanDark(:,ones(size(primariesUsed,2),1));
+        spectraPredictedFromRecovered = calibration.computed.pr650M*primariesRecovered+calibration.computed.pr650MeanDark(:,ones(size(primariesUsed,2),1));
         
         whichPrimaries = [25,35,48];
         theColors = ['r' 'g' 'b' 'k' 'c'];
@@ -330,10 +296,10 @@ for ii = 1:nIterations
     drawnow;
     
     % Report some things we might want to know
-    nZeroBgSettings(ii) = length(find(theData{1}.data(theObserverAgeIndex).correction.backgroundPrimaryUsedAll(:,ii) == 0));
-    nOneBgSettings(ii) = length(find(theData{1}.data(theObserverAgeIndex).correction.backgroundPrimaryUsedAll(:,ii) == 1));
-    nZeroModSettings(ii) = length(find(theData{1}.data(theObserverAgeIndex).correction.modulationPrimaryUsedAll(:,ii) == 0));
-    nOneModSettings(ii) = length(find(theData{1}.data(theObserverAgeIndex).correction.modulationPrimaryUsedAll(:,ii) == 1));
+    nZeroBgSettings(ii) = length(find(correctionDebuggingData.backgroundPrimaryUsedAll(:,ii) == 0));
+    nOneBgSettings(ii) = length(find(correctionDebuggingData.backgroundPrimaryUsedAll(:,ii) == 1));
+    nZeroModSettings(ii) = length(find(correctionDebuggingData.modulationPrimaryUsedAll(:,ii) == 0));
+    nOneModSettings(ii) = length(find(correctionDebuggingData.modulationPrimaryUsedAll(:,ii) == 1));
     fprintf('Iteration %d\n',ii);
     fprintf('\tNumber zero bg primaries: %d, one bg primaries: %d, zero mod primaries: %d, one mod primaries: %d\n',nZeroBgSettings(ii),nOneBgSettings(ii),nZeroModSettings(ii),nOneModSettings(ii));
     
