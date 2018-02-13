@@ -60,7 +60,7 @@ function [cacheData, calibration] = OLCorrectCacheFileOOC(cacheFileNameFullPath,
 parser = inputParser;
 parser.addRequired('cachFileNameFullPath',@ischar)
 parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
-parser.addOptional('radiometer',[],@(x) isempty(x) || isa(x,'Radiometer'));
+parser.addRequired('radiometer',@(x) isempty(x) || isa(x,'Radiometer'));
 parser.addParameter('approach','', @isstr);
 parser.addParameter('observerAgeInYrs', 32, @isscalar);
 parser.addParameter('calibrationType','', @isstr);

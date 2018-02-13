@@ -1,4 +1,4 @@
-function OLMakeDirectionCorrectedPrimaries(oneLight,protocolParams,varargin)
+function OLMakeDirectionCorrectedPrimaries(protocolParams, oneLight, radiometer, varargin)
 %%OLMakeDirectionCorrectedPrimaries  Make the corrected primaries from the nominal primaries
 %
 % Syntax:
@@ -35,8 +35,11 @@ function OLMakeDirectionCorrectedPrimaries(oneLight,protocolParams,varargin)
 
 %% Parse input to get key/value pairs
 p = inputParser;
+p.addRequired('protocolParams',@isstruct);
+p.addRequired('oneLight',@(x) isa(x,'OneLight'));
+p.addRequired('radiometer',@(x) isempty(x) || isa(x,'Radiometer'));
 p.addParameter('verbose',true,@islogical);
-p.parse(varargin{:});
+p.parse(protocolParams, oneLight, radiometer, varargin{:});
 
 %% Update session log file
 OLSessionLog(protocolParams,mfilename,'StartEnd','start');
@@ -63,13 +66,6 @@ end
 corrD = OLCorrectionParamsDictionary();
 if (p.Results.verbose), fprintf('\nSpectrum seeking\n\tGetting correction params for %s\n', protocolParams.boxName); end
 correctionParams = corrD(protocolParams.boxName);
-
-%% Open up a radiometer object
-if (~protocolParams.simulate.radiometer)
-    radiometer = OLOpenSpectroRadiometerObj('PR-670');
-else
-    radiometer = [];
-end
 
 %% Open up lab jack for temperature measurements
 if (~protocolParams.simulate.oneLight && protocolParams.takeTemperatureMeasurements)
