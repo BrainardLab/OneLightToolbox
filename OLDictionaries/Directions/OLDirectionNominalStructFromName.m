@@ -1,8 +1,9 @@
-function directionStruct = OLDirectionNominalStructFromName(directionName,backgroundPrimary,calibration,varargin)
+function directionStruct = OLDirectionNominalStructFromName(directionName,calibration,varargin)
 % Generate a parameterized direction from the given parameters
 %
 % Syntax:
-%   directionStruct = OLDirectionNominalFromStruct(directionParameters, backgroundPrimary, calibration)
+%   directionStruct = OLDirectionNominalFromStruct(directionParameters, calibration)
+%   directionStruct = OLDirectionNominalFromStruct(directionParameters, calibration, backgroundPrimary)
 %   directionStruct = OLDirectionNominalFromStruct(..., 'verbose', true)
 %
 % Description:
@@ -16,8 +17,10 @@ function directionStruct = OLDirectionNominalStructFromName(directionName,backgr
 % Inputs:
 %    directionName     - String name of a set of parameters for a direction
 %                        stored in OLDirectionParamsDictionary.
-%    backgroundPrimary - the primary values for the background
 %    calibration       - OneLight calibration struct
+%    backgroundPrimary - [OPTIONAL] the primary values for the background.
+%                        If not provided, will use background parameters
+%                        specified in directionParams of dictionary entry
 %
 % Outputs:
 %    directionStruct   - a 1x60 struct array (one struct per observer age
@@ -54,5 +57,5 @@ function directionStruct = OLDirectionNominalStructFromName(directionName,backgr
 % History:
 %    01/31/18  jv  wrote it
 directionParams = OLDirectionParamsFromName(directionName);
-directionStruct = OLDirectionNominalStructFromParams(directionParams, backgroundPrimary, calibration, varargin{:});
+directionStruct = OLDirectionNominalStructFromParams(directionParams, calibration, varargin{:});
 end

@@ -144,9 +144,7 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
                 % Use backgroundPrimary specified in function call
                 currentBackgroundPrimary = parser.Results.backgroundPrimary;
             end
-            
-            backgroundSpd = OLPrimaryToSpd(calibration, currentBackgroundPrimary);
-            
+                       
             %% Make direction
             modulationPrimarySignedPositive = currentBackgroundPrimary*directionParams.lightFluxDownFactor;
             differentialPositive = modulationPrimarySignedPositive - currentBackgroundPrimary;
@@ -172,7 +170,7 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
                 
                 % Description
                 directionStruct(observerAgeInYears).describe.observerAge = observerAgeInYears;
-                directionStruct(observerAgeInYears).describe.params = directionParams;
+                directionStruct(observerAgeInYears).describe.directionParams = directionParams;
                 directionStruct(observerAgeInYears).describe.SPDAmbient = zeros(size(backgroundSpd,1),1);
                 directionStruct(observerAgeInYears).describe.NominalSPDBackground = backgroundSpd;
                 directionStruct(observerAgeInYears).describe.NominalSPDPositiveModulation = nominalSPDPositive;

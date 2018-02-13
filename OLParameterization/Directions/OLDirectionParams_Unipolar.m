@@ -164,17 +164,16 @@ classdef OLDirectionParams_Unipolar < OLDirectionParams
                 % Use backgroundPrimary specified in function call
                 backgroundPrimary = parser.Results.backgroundPrimary;
             end
-            
-            backgroundSpd = OLPrimaryToSpd(calibration, backgroundPrimary);
 
             %% Make direction information for each observer age
             for observerAgeInYears = parser.Results.observerAge
                 % Set currentBackgroundPrimary for iteration
                 currentBackgroundPrimary = backgroundPrimary;
+                backgroundSPD = OLPrimaryToSpd(calibration, currentBackgroundPrimary);
                 
                 % Get fraction bleached for background we're actually using
                 if (directionParams.doSelfScreening)
-                    fractionBleached = OLEstimateConePhotopigmentFractionBleached(S,backgroundSpd,directionParams.pupilDiameterMm,directionParams.fieldSizeDegrees,observerAgeInYears,directionParams.photoreceptorClasses);
+                    fractionBleached = OLEstimateConePhotopigmentFractionBleached(S,backgroundSPD,directionParams.pupilDiameterMm,directionParams.fieldSizeDegrees,observerAgeInYears,directionParams.photoreceptorClasses);
                 else
                     fractionBleached = zeros(1,length(directionParams.photoreceptorClasses));
                 end
@@ -209,7 +208,7 @@ classdef OLDirectionParams_Unipolar < OLDirectionParams
                 end
 
                 %% Calculate SPDs
-                backgroundSpd = OLPrimaryToSpd(calibration, currentBackgroundPrimary);
+                backgroundSPD = OLPrimaryToSpd(calibration, currentBackgroundPrimary);
                 nominalSPDPositive = OLPrimaryToSpd(calibration, modulationPrimarySignedPositive);
                 nominalSPDNegative = OLPrimaryToSpd(calibration, modulationPrimarySignedNegative);
 
@@ -222,9 +221,9 @@ classdef OLDirectionParams_Unipolar < OLDirectionParams
 
                 % Description
                 directionStruct(observerAgeInYears).describe.observerAge = observerAgeInYears;
-                directionStruct(observerAgeInYears).describe.params = directionParams;
+                directionStruct(observerAgeInYears).describe.directionParams = directionParams;
                 directionStruct(observerAgeInYears).describe.SPDAmbient = ambientSpd;
-                directionStruct(observerAgeInYears).describe.NominalSPDBackground = backgroundSpd;
+                directionStruct(observerAgeInYears).describe.NominalSPDBackground = backgroundSPD;
                 directionStruct(observerAgeInYears).describe.NominalSPDPositiveModulation = nominalSPDPositive;
                 directionStruct(observerAgeInYears).describe.NominalSPDNegativeModulation = nominalSPDNegative;
             end
