@@ -20,11 +20,7 @@ classdef OLDirectionParams_Bipolar < OLDirectionParams
     end
     
     methods
-        function obj = OLDirectionParams_Bipolar
-            obj.type = 'bipolar';
-            obj.name = '';
-            obj.cacheFile = '';
-            
+        function obj = OLDirectionParams_Bipolar           
             obj.primaryHeadRoom = .005;
         end
         
@@ -36,8 +32,8 @@ classdef OLDirectionParams_Bipolar < OLDirectionParams
             % Generate a parameterized direction from the given parameters
             %
             % Syntax:
-            %   directionStruct = OLDirectionNominalStructFromParams(directionParameters, calibration)
-            %   directionStruct = OLDirectionNominalStructFromParams(directionParameters, calibration, backgroundPrimary)            
+            %   directionStruct = OLDirectionNominalStructFromParams(OLDirectionParams_Bipolar, calibration)
+            %   directionStruct = OLDirectionNominalStructFromParams(OLDirectionParams_Bipolar, calibration, backgroundPrimary)            
             %   directionStruct = OLDirectionNominalStructFromParams(..., 'observerAge', obseverAge)
             %
             % Description:
@@ -121,7 +117,6 @@ classdef OLDirectionParams_Bipolar < OLDirectionParams
             parser.addRequired('directionParams',@(x) isstruct(x) || isa(x,'OLDirectionParams'));
             parser.addRequired('calibration',@isstruct);
             parser.addOptional('backgroundPrimary',[],@isnumeric);
-            parser.addParameter('verbose',false,@islogical);
             parser.addParameter('observerAge',1:60,@isnumeric);
             parser.parse(directionParams,calibration,varargin{:});
                       

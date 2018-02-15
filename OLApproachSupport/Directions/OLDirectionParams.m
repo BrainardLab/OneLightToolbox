@@ -20,22 +20,16 @@ classdef OLDirectionParams < matlab.mixin.Heterogeneous
 % History:
 %    02/07/18  jv  wrote it.
    
-properties (SetAccess = immutable)
-    dictionaryType = 'Direction'; 
-end
-
 properties
-    type
-    baseName
-    name
-    cacheFile
-    backgroundPrimary = []
-    backgroundParams = []
-    backgroundName = ''
-end    
-properties
+    baseName = '';
+    name = '';
+    
+    backgroundPrimary = [];
+    backgroundParams = [];
+    backgroundName = '';
+    
     useAmbient = true;
-    primaryHeadRoom = 0.005
+    primaryHeadRoom = 0.005;
 end
 
 methods (Abstract) 

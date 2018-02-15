@@ -30,8 +30,8 @@ classdef OLBackgroundParams_Optimized < OLBackgroundParams
         pupilDiameterMm(1,1) = 8.0;                                         % Pupil diameter used in background seeking. Affects fundamentals.
         backgroundObserverAge(1,1) = 32;                                    % Observer age used in background seeking. Affects fundamentals.
         maxPowerDiff(1,1) = 0.1;                                            % Smoothing parameter for routine that finds backgrounds.
-        modulationContrast = [4/6];                                         % Vector of constrasts sought in isolation.
-        whichReceptorsToIsolate = {[4]};                                    % Which receptor classes are not being silenced.
+        modulationContrast = [];                                         % Vector of constrasts sought in isolation.
+        whichReceptorsToIsolate = {[]};                                    % Which receptor classes are not being silenced.
         whichReceptorsToIgnore = {[]};                                      % Receptor classes ignored in calculations.
         whichReceptorsToMinimize = {[]};                                    % These receptors are minimized in contrast, subject to other constraints.
         directionsYoked = [0];                                              % See ReceptorIsolate.
@@ -41,7 +41,6 @@ classdef OLBackgroundParams_Optimized < OLBackgroundParams
     methods
         function obj = OLBackgroundParams_Optimized
             obj = obj@OLBackgroundParams;
-            obj.type = 'optimized';
         end
         
         function name = OLBackgroundNameFromParams(params)
@@ -181,45 +180,18 @@ classdef OLBackgroundParams_Optimized < OLBackgroundParams
                 property = ('whichReceptorsToIsolate');
                 assert(iscell(params.(property)),'Value must be cell');
                 mustBeNonempty(params.(property));
-%                 mustBeInteger(params.(property));
-%                 mustBePositive(params.(property));
-%                 mustBeLessThanOrEqual(params.(property), numel(params.photoreceptorClasses));
-%                 assert(numel(unique(params.(property))) == numel(params.(property)),...
-%                     'DuplicateReceptorIsolateSpecification','Contains duplicate specification for a receptor');
                 
                 % Validate modulationContrast
                 property = ('modulationContrast');
                 mustBeNonempty(params.(property));
-%                 assert(numel(unique(params.(property))) == numel(params.(property)),...
-%                     'DuplicateReceptorIsolateSpecification','Contains duplicate specification for a receptor');                
                 
                 % Validate whichReceptorsToMinimize
                 property = ('whichReceptorsToMinimize');
-                assert(iscell(params.(property)),'Value must be cell');
-%                 mustBeInteger(params.(property));
-%                 mustBePositive(params.(property));
-%                 mustBeLessThanOrEqual(params.(property), numel(params.photoreceptorClasses)); 
-%                 assert(numel(unique(params.whichReceptorsToIsolate)) == numel(params.whichReceptorsToIsolate),...
-%                     'DuplicateReceptorIsolateSpecification','Contains duplicate specification for a receptor');                
+                assert(iscell(params.(property)),'Value must be cell');     
                 
                 % Validate whichReceptorsToIgnore
                 property = ('whichReceptorsToIgnore');
                 assert(iscell(params.(property)),'Value must be cell');          
-%                 mustBeInteger(params.(property));
-%                 mustBePositive(params.(property));
-%                 mustBeLessThanOrEqual(params.(property), numel(params.photoreceptorClasses)); 
-%                 assert(numel(unique(params.whichReceptorsToIsolate)) == numel(params.whichReceptorsToIsolate),...
-%                     'DuplicateReceptorIsolateSpecification','Contains duplicate specification for a receptor');                
-                
-                % Validate that no receptors have been assigned both
-                % isolate, ignore, minimize
-%                 assert(isempty(intersect(params.whichReceptorsToMinimize,intersect(params.whichReceptorsToIsolate,params.whichReceptorsToIgnore))),...
-%                     'DuplicateReceptorIsolateSpecification','whichReceptorsToIsolate/Minimize/Ignore contain duplicate receptors');
-                
-                % Validate that all receptors have been assigned isolate,
-                % ignore or minimize
-%                 assert(numel([params.whichReceptorsToIsolate,params.whichReceptorsToMinimize,params.whichReceptorsToIgnore])==numel(params.photoreceptorClasses),...
-%                     'whichReceptorsToIsolate/Minimize/Ignore do not contain a specification for every receptor');
                 
                 % Validate directionsYokedAbs
                 property = ('directionsYokedAbs');

@@ -25,7 +25,6 @@ classdef OLBackgroundParams_LightFluxChrom < OLBackgroundParams
     methods
         function obj = OLBackgroundParams_LightFluxChrom
             obj = obj@OLBackgroundParams;
-            obj.type = 'lightfluxchrom';
         end
 
         function name = OLBackgroundNameFromParams(params)

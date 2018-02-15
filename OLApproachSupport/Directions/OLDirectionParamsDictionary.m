@@ -56,6 +56,7 @@ function dictionary = OLDirectionParamsDictionary()
 %              jv   Renamed direction types: pulse is now unipolar,
 %                   modulation is now bipolar
 %	 01/25/18  jv	Extract defaults generation, validation of params.
+%    02/15/18  jv   Parameters are now objects
 
 %% Initialize dictionary
 dictionary = containers.Map();
@@ -81,7 +82,6 @@ params.whichReceptorsToIgnore = [];
 params.whichReceptorsToMinimize = [];
 params.backgroundName = 'MelanopsinDirected_275_80_667';
 params.name = OLDirectionNameFromParams(params);
-params.cacheFile = ['Direction_' params.name '.mat'];
 if OLDirectionParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
@@ -105,7 +105,6 @@ params.whichReceptorsToIgnore = [];
 params.whichReceptorsToMinimize = [];
 params.backgroundName = 'MelanopsinDirected_275_80_667';
 params.name = OLDirectionNameFromParams(params);
-params.cacheFile = ['Direction_' params.name '.mat'];
 if OLDirectionParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
@@ -133,7 +132,6 @@ params.whichReceptorsToIgnore = [];
 params.whichReceptorsToMinimize = [];
 params.backgroundName = 'MelanopsinDirected_275_60_667';
 params.name = OLDirectionNameFromParams(params);
-params.cacheFile = ['Direction_' params.name '.mat'];
 if OLDirectionParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
@@ -160,7 +158,6 @@ params.whichReceptorsToIgnore = [];
 params.whichReceptorsToMinimize = [];
 params.backgroundName = 'MelanopsinDirected_600_80_667';
 params.name = OLDirectionNameFromParams(params);
-params.cacheFile = ['Direction_' params.name '.mat'];
 if OLDirectionParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
@@ -187,7 +184,6 @@ params.whichReceptorsToIgnore = [];
 params.whichReceptorsToMinimize = [];
 params.backgroundName = 'LMSDirected_275_80_667';
 params.name = OLDirectionNameFromParams(params);
-params.cacheFile = ['Direction_' params.name '.mat'];
 if OLDirectionParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
@@ -215,7 +211,6 @@ params.whichReceptorsToIgnore = [];
 params.whichReceptorsToMinimize = [];
 params.backgroundName = 'LMSDirected_275_60_667';
 params.name = OLDirectionNameFromParams(params);
-params.cacheFile = ['Direction_' params.name '.mat'];
 if OLDirectionParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
@@ -242,7 +237,6 @@ params.whichReceptorsToIgnore = [];
 params.whichReceptorsToMinimize = [];
 params.backgroundName = 'LMSDirected_600_80_667';
 params.name = OLDirectionNameFromParams(params);
-params.cacheFile = ['Direction_' params.name '.mat'];
 if OLDirectionParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
@@ -258,7 +252,6 @@ params.lightFluxDesiredXY = [0.54,0.38];
 params.lightFluxDownFactor = 5;
 params.name = OLDirectionNameFromParams(params);
 params.backgroundName = 'LightFlux_540_380_50';
-params.cacheFile = ['Direction_' params.name '.mat'];
 if OLDirectionParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
@@ -274,39 +267,9 @@ params.lightFluxDesiredXY = [0.33,0.33];
 params.lightFluxDownFactor = 2;
 params.name = OLDirectionNameFromParams(params);
 params.backgroundName = 'LightFlux_330_330_20';
-params.cacheFile = ['Direction_' params.name '.mat'];
 if OLDirectionParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
 end
 
-end
-
-function backgroundName = OLMakeApproachDirectionBackgroundName(name,params)
-% Figure out the name of the background to be used for a direction
-%
-% Syntax:
-%   backgroundName = OLMakeApproachDirectionBackgroundName(name,params)
-% 
-% Description:
-%   Local function so that we can make the background file name from the
-%   backgroundType filed in the direction parameters structure.  A little
-%   ugly, but probably sufficiently localized that it is OK.
-%
-% Inputs:
-%    name           - Name of the direction
-%    params         - Parameters of the direction, as tehy will be 
-%                     specified in the dictionary.
-%
-% Outputs:
-%    backgroundName - string with the name of the background to be used for
-%                     the given direction
-%
-% Optional key/value pairs:
-%    None.
-%
-% See also:
-%    OLBackgroundParamsDictionary, 
-params.type = params.backgroundType;
-backgroundName = OLMakeApproachBackgroundName(name,params);
 end

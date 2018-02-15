@@ -3,7 +3,6 @@ classdef OLDirectionParams_Unipolar < OLDirectionParams
 %   Detailed explanation goes here
     
     properties  
-        whichReceptorGenerator = 'SSTPhotoreceptorSensitivity';
         photoreceptorClasses = {'LConeTabulatedAbsorbance'  'MConeTabulatedAbsorbance'  'SConeTabulatedAbsorbance'  'Melanopsin'};
         fieldSizeDegrees(1,1) = 27.5;
         pupilDiameterMm(1,1) = 8.0;
@@ -22,10 +21,6 @@ classdef OLDirectionParams_Unipolar < OLDirectionParams
     
     methods
         function obj = OLDirectionParams_Unipolar
-            obj.type = 'unipolar';
-            obj.name = '';
-            obj.cacheFile = '';
-            
             obj.primaryHeadRoom = .005;
         end
         
@@ -38,7 +33,7 @@ classdef OLDirectionParams_Unipolar < OLDirectionParams
             %
             % Syntax:
             %   directionStruct = OLDirectionNominalStructFromParams(OLDirectionParams_Unipolar, calibration)
-            %   directionStruct = OLDirectionNominalStructFromParams(OLDirectionParams_Bipolar, calibration, backgroundPrimary)            
+            %   directionStruct = OLDirectionNominalStructFromParams(OLDirectionParams_Unipolar, calibration, backgroundPrimary)            
             %   directionStruct = OLDirectionNominalStructFromParams(..., 'observerAge', obseverAge)
             %
             % Description:

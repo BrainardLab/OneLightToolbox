@@ -79,7 +79,6 @@ params.whichReceptorsToMinimize = {[]};
 params.directionsYoked = [0];
 params.directionsYokedAbs = [0];
 params.name = OLBackgroundNameFromParams(params);
-params.cacheFile = ['Background_' params.name  '.mat'];
 if OLBackgroundParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
@@ -107,7 +106,6 @@ params.whichReceptorsToMinimize = {[]};
 params.directionsYoked = [0];
 params.directionsYokedAbs = [0];
 params.name = OLBackgroundNameFromParams(params);
-params.cacheFile = ['Background_' params.name  '.mat'];
 if OLBackgroundParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
@@ -135,7 +133,6 @@ params.whichReceptorsToMinimize = {[]};
 params.directionsYoked = [1];
 params.directionsYokedAbs = [0];
 params.name = OLBackgroundNameFromParams(params);
-params.cacheFile = ['Background_' params.name  '.mat'];
 if OLBackgroundParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
@@ -163,7 +160,6 @@ params.whichReceptorsToMinimize = {[]};
 params.directionsYoked = [1];
 params.directionsYokedAbs = [0];
 params.name = OLBackgroundNameFromParams(params);
-params.cacheFile = ['Background_' params.name  '.mat'];
 if OLBackgroundParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
@@ -190,7 +186,6 @@ params.whichReceptorsToMinimize = {[]};
 params.directionsYoked = [0];
 params.directionsYokedAbs = [0];
 params.name = OLBackgroundNameFromParams(params);
-params.cacheFile = ['Background_' params.name  '.mat'];
 if OLBackgroundParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
@@ -217,7 +212,6 @@ params.whichReceptorsToMinimize = {[]};
 params.directionsYoked = [1];
 params.directionsYokedAbs = [0];
 params.name = OLBackgroundNameFromParams(params);
-params.cacheFile = ['Background_' params.name  '.mat'];
 if OLBackgroundParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
@@ -231,7 +225,6 @@ params.baseName = 'LightFlux';
 params.lightFluxDesiredXY = [0.54,0.38];
 params.lightFluxDownFactor = 5;
 params.name = OLBackgroundNameFromParams(params);
-params.cacheFile = ['Background_' params.name  '.mat'];
 if OLBackgroundParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
@@ -245,7 +238,6 @@ params.baseName = 'LightFlux';
 params.lightFluxDesiredXY = [0.33,0.33];
 params.lightFluxDownFactor = 2;
 params.name = OLBackgroundNameFromParams(params);
-params.cacheFile = ['Background_' params.name  '.mat'];
 if OLBackgroundParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;

@@ -21,15 +21,9 @@ classdef OLBackgroundParams < matlab.mixin.Heterogeneous
 %    02/07/18  jv  wrote it.
 
 
-properties (SetAccess = immutable)
-    dictionaryType = 'Background';
-end
-
 properties
     name
     baseName;
-    type
-    cacheFile;
     useAmbient = true;                 % Use measured ambient in calculations if true. If false, set ambient to zero.
 	primaryHeadRoom = 0.01;            % How close to edge of [0-1] primary gamut do we want to get?    
 end

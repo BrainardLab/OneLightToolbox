@@ -3,18 +3,13 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
 %   Detailed explanation goes here
     
     properties
-        lightFluxDesiredXY(1,2) = [0.5400 0.3800];                         % Modulation chromaticity.
-        lightFluxDownFactor(1,1) = 5;                                      % Size of max flux increase from background
-        %backgroundObserverAge = 32;
+        lightFluxDesiredXY(1,2) = [0.333 0.333];                           % Modulation chromaticity.
+        lightFluxDownFactor(1,1) = 0;                                      % Size of max flux increase from background
     end    
     
     methods
         function obj = OLDirectionParams_LightFluxChrom  
-            obj.type = 'lightfluxchrom';
-            obj.baseName = 'LightFluxChrom';
-            obj.name = '';
-            obj.cacheFile = '';
-                      
+            obj.baseName = 'LightFluxChrom';                   
             obj.primaryHeadRoom = .01;
         end
         
