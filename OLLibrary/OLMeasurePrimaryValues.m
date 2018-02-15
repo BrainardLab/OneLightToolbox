@@ -32,9 +32,6 @@ function [SPD, temperatures] = OLMeasurePrimaryValues(primaryValues,calibration,
 %                       Default 1.
 %    temperatureProbe - LJTemperatureProbe object to drive a LabJack
 %                       temperature probe
-%
-% See also:
-%    OLTakeMeasurementOOC, OLValidatePrimary
 
 % History:
 %    12/14/17  jv  created.
