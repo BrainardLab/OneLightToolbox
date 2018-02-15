@@ -55,7 +55,7 @@ radiometer = parser.Results.radiometer;
 predictedSPDs = OLPrimaryToSpd(calibration,primaryValues);
 
 %% Measure SPD(s)
-measurement = OLMeasurePrimaryValues(primaryValues,calibration,oneLight,radiometer,parser.Results.nAverage);
+measurement = OLMeasurePrimaryValues(primaryValues,calibration,oneLight,radiometer,'nAverage',parser.Results.nAverage,'temperatureProbe',parser.Results.temperatureProbe);
 
 %% Analyze and output
 SPD = [];
