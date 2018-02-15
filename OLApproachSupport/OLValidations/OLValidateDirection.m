@@ -1,10 +1,13 @@
-function [SPDs, actualContrast, predictedContrast] = OLValidateDirection(directionStruct, calibration, oneLight, radiometer, varargin)
+function [validation, SPDs, actualContrast, predictedContrast] = OLValidateDirection(directionStruct, calibration, oneLight, radiometer, varargin)
 % Validate SPDs and contrasts of direction (background + differentials)
 %
 % Syntax:
-%   SPDs = OLValidateDirection(directionStruct, calibration, oneLight, radiometer)
-%   SPDs = OLValidateDirection(directionStruct, calibration, SimulatedOneLight)
-%   [SPDs, actualContast, predictedContrast] = OLValidateDirection(..., receptors)
+%   validation = OLValidateDirection(directionStruct, calibration, oneLight, radiometer)
+%   [validation, SPDs] = OLValidateDirection(directionStruct, calibration, oneLight, radiometer)
+%   [...] = OLValidateDirection(directionStruct, calibration, SimulatedOneLight)
+%   [...] = OLValidateDirection(...,'nAverage', nAverage)
+%   [..., actualContast, predictedContrast] = OLValidateDirection(..., 'receptors', receptors)
+%   [...] = OLValidateDirection(...,'LJTemperatureProbe', LJTemperatureProbe)
 %
 % Description:
 %    Measures the SPDs of the background, maximum positive contrast and
@@ -32,10 +35,10 @@ function [SPDs, actualContrast, predictedContrast] = OLValidateDirection(directi
 %                        OneLight device, can be real or simulated
 %    radiometer        - radiometer object to control a spectroradiometer.
 %                        Can be passed empty when simulating.
-%    receptors         - [OPTIONAL] an SSTReceptor object, specifying the
-%                        receptors on which to calculate contrasts.
 %
 % Outputs:
+%    validation        - Labeled compilation of outputs (see below) that
+%                        to be added to directionStruct.describe.
 %    SPDs              - 1x3 struct-array, with one struct for each of
 %                        backgroundprimary, maxPositive and maxNegative,
 %                        with the fields:
@@ -52,9 +55,11 @@ function [SPDs, actualContrast, predictedContrast] = OLValidateDirection(directi
 %                        Requires optional argument 'receptors'.
 %
 % Optional key/value pairs:
-%    nAverage         - number of measurements to average. Default 1.
-%    temperatureProbe - LJTemperatureProbe object to drive a LabJack
-%                       temperature probe
+%    receptors         - an SSTReceptor object, specifying the
+%                        receptors on which to calculate contrasts.
+%    nAverage          - number of measurements to average. Default 1.
+%    temperatureProbe  - TODO: LJTemperatureProbe object to drive a LabJack
+%                        temperature probe
 %
 % See also:
 %    OLValidatePrimaryValues, OLMeasurePrimaryValues, SPDToReceptorContrast
@@ -89,6 +94,11 @@ primaries = [backgroundPrimary, maxPositive, maxNegative];
 %% Measure
 SPDs = OLValidatePrimaryValues(primaries,calibration,oneLight,radiometer, varargin{:});
 
+% Write directionStruct.describe output
+validation.backgroundSPD = SPDs(1);
+validation.positiveSPD = SPDs(2);
+validation.negativeSPD = SPDs(3);
+
 %% Calculate nominal and actual contrast
 if ~isempty(receptors)
     predictedContrastPos = SPDToReceptorContrast([SPDs([1 2]).predictedSPD],receptors);
@@ -98,6 +108,10 @@ if ~isempty(receptors)
     actualContrastPos = SPDToReceptorContrast([SPDs([1 2]).measuredSPD],receptors);
     actualContrastNeg = SPDToReceptorContrast([SPDs([1 3]).measuredSPD],receptors);
     actualContrast = [actualContrastPos(:,1) actualContrastNeg(:,1)];
+    
+    % Write directionStruct.describe output
+    validation.actualContrast = actualContrast;
+    validation.predictedContrast = predictedContrast;
 end
 
 end
