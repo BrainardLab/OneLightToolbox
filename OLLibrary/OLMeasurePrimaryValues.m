@@ -1,4 +1,4 @@
-function SPD = OLMeasurePrimaryValues(primaryValues,calibration,oneLight,varargin)
+function [SPD, temperatures] = OLMeasurePrimaryValues(primaryValues,calibration,oneLight,varargin)
 % Measure the SPD put out by the given primary values vector(s)
 %
 % Syntax:
@@ -64,14 +64,17 @@ if ~isempty(radiometer)
             
     % Loop over primary values vectors
     for p = 1:size(primaryValues,2)
-        
-        % TODO: Temperature measurement
-        
-        % Radiometeric measurement
-        measurement = OLTakeMeasurementOOC(oneLight,[],radiometer,starts(p,:),stops(p,:),[],[true,false],parser.Results.nAverage);
-        
-        % Extract SPDs
-        SPD = [SPD reshape(measurement.pr650.spectrum(:),[numel(measurement.pr650.spectrum),1])];
+        for i = 1:parser.Results.nAverage
+            SPDall = [];
+            
+            oneLight.setMirrors(starts(p,:),stops(p,:));
+
+            % TODO: Temperature measurement
+
+            % Radiometeric measurement
+            SPDall(:,i) = radiometer.measure();
+        end
+        SPD = mean(SPDall,2);
     end
     
     % Turn all mirrors off
