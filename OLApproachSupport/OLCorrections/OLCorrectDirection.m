@@ -105,6 +105,7 @@ end
 correctedDirection.backgroundPrimary = backgroundPrimaryCorrected;
 correctedDirection.differentialPositive = directionPositiveCorrected - backgroundPrimaryCorrected;
 correctedDirection.differentialNegative = directionNegativeCorrected - backgroundPrimaryCorrected;
+correctedDirection.calibration = calibration;
 correctedDirection.describe.correction.background = dataBackground;
 correctedDirection.describe.correction.directionPositive = dataDirectionPositive;
 correctedDirection.describe.correction.directionNegative = dataDirectionNegative;
