@@ -1,195 +1,163 @@
-function [correctedPrimaryValues, primariesCorrectedAll, deltaPrimariesCorrectedAll, measuredSpd, measuredSpdRaw, predictedSpd, varargout] = OLCorrectPrimaryValues(cal, cal0, primaryValues, NIter, lambda, NDFilter, meterType, spectroRadiometerOBJ, spectroRadiometerOBJWillShutdownAfterMeasurement, varargin)
-% [correctedPrimaryValues, primariesCorrectedAll, deltaPrimariesCorrectedAll, measuredSpd, measuredSpdRaw, predictedSpd, varargout] = OLCorrectPrimaryValues(cal, cal0, primaryValues, NIter, lambda, NDFilter, meterType, spectroRadiometerOBJ, spectroRadiometerOBJWillShutdownAfterMeasurement, varargin);
+function [correctedPrimaryValues, detailedData] = OLCorrectPrimaryValues(nominalPrimaryValues, calibration, oneLight, radiometer, varargin)
+% Corrects primary values iteratively to attain predicted SPD
 %
-% This function corrects abunch of primary settings.
-% varargin (keyword-value)  - A few keywords which determine the behavior.
-%                             'takeTemperatureMeasurements' false  Whether
-%                             to take temperature measurements (requires a
-%                             connected LabJack dev with a temperature
-%                             probe). If set to true, the varagout{1} will
-%                             contain the temperature data
+% Syntax:
+%   correctedPrimaryValues = OLCorrectPrimaryValues(nominalPrimaryValues, calibration, OneLight, radiometer)
+%   correctedPrimaryValues = OLCorrectPrimaryValues(nominalPrimaryValues, calibration, SimulatedOneLight)
+%  [correctedPrimaryValues, detailedData] = OLCorrectPrimaryValues(...)
 %
-% 10/8/16   ms      Wrote it.
-% 10/20/16 npc      Added ability to record temperature measurements
+% Description:
+%    Detailed explanation goes here
+%
+% Inputs:
+%    nominalPrimaryValues   - PxN array of primary values, where P is the
+%                             number of primary values per spectrum, and N
+%                             is the number of spectra to validate (i.e., a
+%                             column vector per spectrum)
+%    calibration            - struct containing calibration for oneLight
+%    oneLight               - a OneLight device driver object to control a
+%                             OneLight device, can be real or simulated
+%    radiometer             - Radiometer object to control a
+%                             spectroradiometer. Can be passed empty when
+%                             simulating
+%
+% Outputs:
+%    correctedPrimaryValues - PxN array of primary values, where P is the
+%                             number of primary values per spectrum, and N
+%                             is the number of spectra to validate (i.e., a
+%                             column vector per spectrum)
+%    detailedData           - A ton of data, for debugging purposes.
+%
+% Optional key/value pairs:
+%    nIterations            - Number of iterations. Default is 20.
+%    learningRate           - Learning rate. Default is .8.
+%    learningRateDecrease   - Decrease learning rate over iterations?
+%                             Default is true.
+%    asympLearningRateFactor- If learningRateDecrease is true, the 
+%                             asymptotic learning rate is
+%                             (1-asympLearningRateFactor)*learningRate. 
+%                             Default = .5.
+%    smoothness             - Smoothness parameter for OLSpdToPrimary.
+%                             Default .001.
+%    iterativeSearch        - Do iterative search with fmincon on each
+%                             measurement interation? Default is false.
+%    temperatureProbe       - LJTemperatureProbe object to drive a LabJack
+%                             temperature probe
+%
+% See also:
+%    OLValidatePrimaryValues
+%
 
-% Parse the input
-p = inputParser;
-p.addParameter('takeTemperatureMeasurements', false, @islogical);
-p.parse(varargin{:});
-takeTemperatureMeasurements = p.Results.takeTemperatureMeasurements;
+% History:
+%    02/09/18  jv  extracted from OLCorrectCacheFileOOC.
+%
 
-try
-    %% Open the spectrometer
-    % All variables assigned in the following if (isempty(..)) block (except
-    % spectroRadiometerOBJ) must be declared as persistent
-    persistent S
-    persistent nAverage
-    persistent theMeterTypeID
-    if (isempty(spectroRadiometerOBJ))
-        % Open up the radiometer if this is the first cache file we validate
-        try
-            switch (meterType)
-                case 'PR-650',
-                    theMeterTypeID = 1;
-                    S = [380 4 101];
-                    nAverage = 1;
-                    
-                    % Instantiate a PR650 object
-                    spectroRadiometerOBJ  = PR650dev(...
-                        'verbosity',        1, ...       % 1 -> minimum verbosity
-                        'devicePortString', [] ...       % empty -> automatic port detection)
-                        );
-                    spectroRadiometerOBJ.setOptions('syncMode', 'OFF');
-                    
-                case 'PR-670',
-                    theMeterTypeID = 5;
-                    S = [380 2 201];
-                    nAverage = 1;
-                    
-                    % Instantiate a PR670 object
-                    spectroRadiometerOBJ  = PR670dev(...
-                        'verbosity',        1, ...       % 1 -> minimum verbosity
-                        'devicePortString', [] ...       % empty -> automatic port detection)
-                        );
-                    
-                    % Set options Options available for PR670:
-                    spectroRadiometerOBJ.setOptions(...
-                        'verbosity',        1, ...
-                        'syncMode',         'OFF', ...      % choose from 'OFF', 'AUTO', [20 400];
-                        'cyclesToAverage',  1, ...          % choose any integer in range [1 99]
-                        'sensitivityMode',  'STANDARD', ... % choose between 'STANDARD' and 'EXTENDED'.  'STANDARD': (exposure range: 6 - 6,000 msec, 'EXTENDED': exposure range: 6 - 30,000 msec
-                        'exposureTime',     'ADAPTIVE', ... % choose between 'ADAPTIVE' (for adaptive exposure), or a value in the range [6 6000] for 'STANDARD' sensitivity mode, or a value in the range [6 30000] for the 'EXTENDED' sensitivity mode
-                        'apertureSize',     '1 DEG' ...   % choose between '1 DEG', '1/2 DEG', '1/4 DEG', '1/8 DEG'
-                        );
-                otherwise,
-                    error('Unknown meter type');
-            end
-            
-        catch err
-            if (~isempty(spectroRadiometerOBJ))
-                spectroRadiometerOBJ.shutDown();
-                openSpectroRadiometerOBJ = [];
-            end
-            keyboard;
-            rethrow(err);
-        end
-        
-        % Attempt to open the LabJack temperature sensing device
-        if (takeTemperatureMeasurements)
-            % Gracefully attempt to open the LabJack
-            [takeTemperatureMeasurements, quitNow, theLJdev] = OLCalibrator.OpenLabJackTemperatureProbe(takeTemperatureMeasurements);
-            if (quitNow)
-                return;
-            end
-        end
-    end
-    openSpectroRadiometerOBJ = spectroRadiometerOBJ;
-    
-    % Populate the filter with ones if it is passed as empty
-    if isempty(NDFilter)
-        NDFilter = ones(S(3), 1);
+% Examples:
+%{
+    %% Test under simulation
+    % Get calibration
+    demoCalFolder = fullfile(tbLocateToolbox('OneLightToolbox'),'OLDemoCal');
+    calibration = OLGetCalibrationStructure('CalibrationFolder',demoCalFolder,'CalibrationType','OLDemoCal');
+
+    % Define inputs
+    primaryValues = .5 * ones([calibration.describe.numWavelengthBands,1]);
+    oneLight = OneLight('simulate',true);
+
+    % Correct
+    [correctedPrimaryValues, data] = OLCorrectPrimaryValues(primaryValues,calibration,oneLight,[]);
+    assert(all(correctedPrimaryValues == primaryValues));
+    assert(all(data.correction.SpdMeasuredAll(:,end) == OLPrimaryToSpd(calibration, primaryValues)));
+%}
+
+%% Input validation
+parser = inputParser;
+parser.addRequired('primaryValues',@isnumeric);
+parser.addRequired('calibration',@isstruct);
+parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
+parser.addOptional('radiometer',[],@(x) isempty(x) || isa(x,'Radiometer'));
+parser.addParameter('receptors',[],@(x) isa(x,'SSTReceptor'));
+parser.addParameter('nIterations',20,@isscalar);
+parser.addParameter('learningRate', 0.8, @isscalar);
+parser.addParameter('learningRateDecrease',true,@islogical);
+parser.addParameter('asympLearningRateFactor',0.5,@isscalar);
+parser.addParameter('smoothness', 0.001, @isscalar);
+parser.addParameter('iterativeSearch',false, @islogical);
+parser.addParameter('temperatureProbe',[],@(x) isempty(x) || isa(x,'LJTemperatureProbe'));
+parser.parse(nominalPrimaryValues,calibration,oneLight,varargin{:});
+
+nIterations = parser.Results.nIterations;
+learningRate = parser.Results.learningRate;
+learningRateDecrease = parser.Results.learningRateDecrease;
+asympLearningRateFactor = parser.Results.asympLearningRateFactor;
+smoothness = parser.Results.smoothness;
+iterativeSearch = parser.Results.iterativeSearch;
+
+%% Target (predicted) SPD
+targetSPD = OLPrimaryToSpd(calibration, nominalPrimaryValues);
+
+%% Correct
+NextPrimaryTruncatedLearningRate = nominalPrimaryValues; % initialize
+for iter = 1:nIterations
+    % Take the measurements
+    primariesThisIter = NextPrimaryTruncatedLearningRate;
+    measuredSPD = OLMeasurePrimaryValues(primariesThisIter,calibration,oneLight,radiometer);
+  
+    % If first time through, figure out a scaling factor from the first
+    % measurement which puts the measured spectrum into the same range as
+    % the predicted spectrum. This deals with fluctuations with absolute
+    % light level.
+    if iter == 1
+        kScale = measuredSPD \ targetSPD;
     end
     
-    % Determine how many settings we need to correct
-    NPrimaryValues = size(primaryValues, 2);
-    
-    %% Determine which meters to measure with
-    % It is probably a safe assumption that we will not validate a cache file
-    % with the Omni with respect to a calibration that was done without the
-    % Omni. Therefore, we read out the toggle directly from the calibration
-    % file. First entry is PR-6xx and is always true. Second entry is omni and
-    % can be on or off, depending on content of calibration.
-    meterToggle = [1 0];
-    
-    % Open up the OneLight
-    ol = OneLight;
-    
-    % Print out some information
-    fprintf('\n- <strong>Starting correction procedure</strong>...');
-    iter = 1;
-    while iter <= NIter
-        fprintf('\n\n* Iteration\t <strong>%g / %g</strong>', iter, NIter);
-        % Iterate over the primary values to correct
-        for ii = 1:NPrimaryValues
-            fprintf('\n  * Primary\t <strong>%g / %g</strong> ...', ii, NPrimaryValues);
-            % Pull out the primary values
-            if iter == 1
-                primaries = primaryValues(:, ii);
-            else
-                primaries = primariesCorrectedAll{ii}(:, iter-1);
-            end
-            
-            % Predict the spectra
-            if iter == 1
-                % Make a prediction
-                predictedSpdRaw(:, ii) = cal.computed.pr650M*primaries + cal.computed.pr650MeanDark;
-                % Incorporate the filter
-                predictedSpd(:, ii) = predictedSpdRaw(:, ii) ./ NDFilter;
-            end
-            
-            % Convert the primaries to mirror settings.
-            settings = OLPrimaryToSettings(cal0, primaries);
-            
-            % Compute the start/stop mirrors.
-            [starts, stops] = OLSettingsToStartsStops(cal0, settings);
-            
-            % Take measurement
-            tmpMeas = OLTakeMeasurementOOC(ol, [], spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
-            measuredSpdRaw{ii}(:, iter) = tmpMeas.pr650.spectrum;
-            measuredSpd{ii}(:, iter) = measuredSpdRaw{ii}(:, iter);
-            
-            % Figure out a scaling factor from the first measurement
-            % which puts the measured spectrum into the same range as
-            % the predicted spectrum. This deals with fluctuations with
-            % absolute light level.
-            if iter == 1 && ii == 1
-                % Determine the scale factor
-                kScale = measuredSpd{ii}(:, iter) \ predictedSpd(:, ii);
-            end
-            
-            % Infer the primaries
-            deltaPrimaryInferred = OLSpdToPrimary(cal0, (kScale * measuredSpd{ii}(:, iter))-predictedSpd(:, ii), ...
-                'differentialMode', true);
-            primariesCorrected = primaries - lambda * deltaPrimaryInferred;
-            primariesCorrected(primariesCorrected > 1) = 1;
-            primariesCorrected(primariesCorrected < 0) = 0;
-            primariesCorrectedAll{ii}(:, iter) = primariesCorrected;
-            deltaPrimariesCorrectedAll{ii}(:, iter) = deltaPrimaryInferred;
-            
-            % Add the filter back in
-            measuredSpd{ii}(:, iter) = measuredSpd{ii}(:, iter) .* NDFilter;
-            
-            % Take temperature
-            if (takeTemperatureMeasurements)
-                [status, temperatureData.measuredSPD{ii}(iter,:)] = theLJdev.measure();
-            end
-        
-            % Some status info.
-            fprintf('Done.');
-        end
-        
-        % Increment
-        iter = iter+1;
-    end
-    fprintf('\n- <strong>Correction done.</strong>')
-    
-    %% Assemble the values to be returned
-    for ii = 1:NPrimaryValues
-        correctedPrimaryValues(:, ii) = primariesCorrectedAll{ii}(:, end);
+    % Set learning rate to use this iteration
+    if learningRateDecrease
+        learningRateThisIter = learningRate*(1-(iter-1)*asympLearningRateFactor/(nIterations-1));
+    else
+        learningRateThisIter = learningRate;
     end
     
-    %% Return temperature data if so specified
-    if (takeTemperatureMeasurements)
-        varargout{1} = temperatureData;
+    % Find delta primaries using small signal linear methods.
+    DeltaPrimaryTruncatedLearningRate = OLLinearDeltaPrimaries(primariesThisIter,kScale*measuredSPD,targetSPD,learningRateThisIter,smoothness,calibration);
+    
+    % Optionally use fmincon to improve the truncated learning
+    % rate delta primaries by iterative search.
+    if iterativeSearch
+        DeltaPrimaryTruncatedLearningRate = OLIterativeDeltaPrimaries(DeltaPrimaryTruncatedLearningRate,primariesThisIter,kScale*measuredSPD,targetSPD,learningRateThisIter,calibration);
     end
     
-    % Shutdown the spectrometer
-    spectroRadiometerOBJ.shutDown();
+    % Compute and store the settings to use next time through
+    NextPrimaryTruncatedLearningRate = primariesThisIter + DeltaPrimaryTruncatedLearningRate;
     
-catch e
-    if (~isempty(spectroRadiometerOBJ))
-        spectroRadiometerOBJ.shutDown();
-        openSpectroRadiometerOBJ = [];
-    end
-    rethrow(e)
+    % Save the information for this iteration in a convenient form for later.
+    SpdMeasuredAll(:,iter) = measuredSPD;
+    PrimaryUsedAll(:,iter) = primariesThisIter;
+    NextPrimaryTruncatedLearningRateAll(:,iter) = NextPrimaryTruncatedLearningRate;
+    DeltaPrimaryTruncatedLearningRateAll(:,iter) = DeltaPrimaryTruncatedLearningRate;
+end
+
+%% Store information about correction for return
+% Business end
+correctedPrimaryValues = NextPrimaryTruncatedLearningRateAll(:, end);
+
+% Metadata, e.g., parameters. While I'm not a fan of including input
+% parameters in output, it is relevant here because we might have used
+% defaults.
+detailedData.nIterations = nIterations;
+detailedData.learningRate = learningRate;
+detailedData.learningRateDecrease = learningRateDecrease;
+detailedData.asympLearningRateFactor = asympLearningRateFactor;
+detailedData.smoothness = smoothness;
+detailedData.iterativeSearch = iterativeSearch;
+
+% Store target spectra and initial primaries used.  This information is
+% useful for debugging the seeking procedure.
+detailedData.initialPrimaryValues = nominalPrimaryValues;
+detailedData.targetSPD = targetSPD;
+detailedData.kScale = kScale;
+detailedData.primaryUsedAll = PrimaryUsedAll;
+detailedData.SPDMeasuredAll = SpdMeasuredAll;
+detailedData.NextPrimaryTruncatedLearningRateAll = NextPrimaryTruncatedLearningRateAll;
+detailedData.DeltaPrimaryTruncatedLearningRateAll = DeltaPrimaryTruncatedLearningRateAll;
+detailedData.correctedPrimaryValues = correctedPrimaryValues;
 end

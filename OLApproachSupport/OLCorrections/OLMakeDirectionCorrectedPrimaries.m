@@ -1,4 +1,4 @@
-function OLMakeDirectionCorrectedPrimaries(ol,protocolParams,varargin)
+function OLMakeDirectionCorrectedPrimaries(protocolParams, oneLight, radiometer, varargin)
 %%OLMakeDirectionCorrectedPrimaries  Make the corrected primaries from the nominal primaries
 %
 % Syntax:
@@ -22,6 +22,8 @@ function OLMakeDirectionCorrectedPrimaries(ol,protocolParams,varargin)
 %     protocolParams         Protocol parameters structure.
 %
 % Optional key/value pairs
+%    temperatureProbe - LJTemperatureProbe object to drive a LabJack
+%                       temperature probe
 %     'verbose' (boolean)    Print out diagnostic information?
 %
 % See also: OLCorrectCacheFileOOC, OLGetCacheAndCalData.
@@ -32,25 +34,22 @@ function OLMakeDirectionCorrectedPrimaries(ol,protocolParams,varargin)
 % 09/25/17 dhb       Change name of the flag that determines whether corrections get done to correctBySimulation.
 %                    The sense of this is flipped from the old name, and this flip was implemented in the call to
 %                    OLCorrectCacheFileOOC, where a ~ was added to the value for the 'doCorretion' flag.
+% 02/13/18 jv        Inserted OLCorrectCacheFileOOC in here. Cleanup.
 
 %% Parse input to get key/value pairs
 p = inputParser;
+p.addRequired('protocolParams',@isstruct);
+p.addRequired('oneLight',@(x) isa(x,'OneLight'));
+p.addRequired('radiometer',@(x) isempty(x) || isa(x,'Radiometer'));
 p.addParameter('verbose',true,@islogical);
-p.parse(varargin{:});
+p.addParameter('temperatureProbe',[],@(x) isempty(x) || isa(x,'LJTemperatureProbe'));
+p.parse(protocolParams, oneLight, radiometer, varargin{:});
 
 %% Update session log file
 OLSessionLog(protocolParams,mfilename,'StartEnd','start');
-
-%% Grab the relevant directions name and get the cache file name
-theDirections = protocolParams.directionNames;
-directionCacheFileNames = OLMakeDirectionCacheFileNames(protocolParams);
-
-%% Make sure we have booleans for all of the passed directions
-assert(numel(protocolParams.directionNames) == numel(protocolParams.correctBySimulation), 'protocolParams.correctBySimulation does not have the same length protocolParams.directionNames');
-theCorrectBySimulation = protocolParams.correctBySimulation;
+if (p.Results.verbose), fprintf('\nSpectrum seeking\n'); end
 
 %% Get dir where the nominal and corrected primaries live
-%
 % Need to change over to use the directly specified preference rather than to build it up.
 nominalPrimariesDir =  fullfile(getpref(protocolParams.approach, 'DirectionNominalPrimariesPath'));
 correctedPrimariesDir = fullfile(getpref(protocolParams.protocol, 'DirectionCorrectedPrimariesBasePath'), protocolParams.observerID, protocolParams.todayDate, protocolParams.sessionName);
@@ -59,78 +58,57 @@ if(~exist(correctedPrimariesDir,'dir'))
 end
 
 %% Obtain correction params from OLCorrectionParamsDictionary
-%
 % This is box specific, and specified as protocolParams.boxName
-corrD = OLCorrectionParamsDictionary();
-if (p.Results.verbose), fprintf('\nSpectrum seeking\n\tGetting correction params for %s\n', protocolParams.boxName); end
-correctionParams = corrD(protocolParams.boxName);
+correctionsDict = OLCorrectionParamsDictionary();
+if (p.Results.verbose), fprintf('\tGetting correction params for %s\n', protocolParams.boxName); end
+correctionParams = correctionsDict(protocolParams.boxName);
 
-%% Open up a radiometer object
-if (~protocolParams.simulate.oneLight)
-    [spectroRadiometerOBJ,S] = OLOpenSpectroRadiometerObj('PR-670');
-else
-    spectroRadiometerOBJ = [];
-    S = [];
-end
-
-%% Open up lab jack for temperature measurements
-if (~protocolParams.simulate.oneLight & protocolParams.takeTemperatureMeasurements)
-    % Gracefully attempt to open the LabJack.  If it doesn't work and the user OK's the
-    % change, then the takeTemperature measurements flag is set to false and we proceed.
-    % Otherwise it either worked (good) or we give up and throw an error.
-    [protocolParams.takeTemperatureMeasurements, quitNow, theLJdev] = OLCalibrator.OpenLabJackTemperatureProbe(protocolParams.takeTemperatureMeasurements);
-    if (quitNow)
-        error('Unable to get temperature measurements to work as requested');
-    end
-else
-    theLJdev = [];
-end
-
-%% Loop through and do correction for each desired direction.
-
-for corrD = 1:length(theDirections)
-    if (protocolParams.doCorrectionAndValidationFlag{corrD})
-        % Print out some information
-        if (p.Results.verbose), fprintf('\n\tDirection: %s\n', theDirections{corrD}); end
-        if (p.Results.verbose), fprintf('\tObserver: %s\n', protocolParams.observerID); end
-        
-        % Correct the cache
-        if (p.Results.verbose), fprintf('\tStarting spectrum-seeking loop\n'); end
-        [cacheData, cal] = OLCorrectCacheFileOOC(sprintf('%s.mat', fullfile(nominalPrimariesDir, directionCacheFileNames{corrD})), ol, spectroRadiometerOBJ, S, theLJdev, ...
-            'approach',                     protocolParams.approach, ...
-            'simulate',                     protocolParams.simulate.oneLight, ...
-            'doCorrection',                 ~theCorrectBySimulation(corrD), ...
-            'observerAgeInYrs',             protocolParams.observerAgeInYrs, ...
-            'calibrationType',              protocolParams.calibrationType, ...
-            'takeTemperatureMeasurements',  protocolParams.takeTemperatureMeasurements, ...
-            'learningRate',                 correctionParams.learningRate, ...
-            'learningRateDecrease',         correctionParams.learningRateDecrease, ...
-            'asympLearningRateFactor',      correctionParams.asympLearningRateFactor, ...
-            'smoothness',                   correctionParams.smoothness, ...
-            'iterativeSearch',              correctionParams.iterativeSearch, ...
-            'nIterations',                  correctionParams.nIterations, ...
-            'verbose',                      p.Results.verbose);
-        if (p.Results.verbose), fprintf('\tSpectrum seeking loop finished!\n'); end
-        
-        % Save the cache
-        olCache = OLCache(correctedPrimariesDir,cal);
-        protocolParams.modulationDirection = theDirections{corrD};
-        protocolParams.cacheFile = fullfile(correctedPrimariesDir, directionCacheFileNames{corrD});
-        cacheData.protocolParams = protocolParams;
-        olCache.save(protocolParams.cacheFile, cacheData);
-        if (p.Results.verbose), fprintf('\tCache saved to %s\n', protocolParams.cacheFile); end
-    end
-end
-%% Close the radiometer object
-if (~protocolParams.simulate.oneLight)
-    if (~isempty(spectroRadiometerOBJ))
-        spectroRadiometerOBJ.shutDown();
+%% Loop over directions and do correction
+for directionName = unique(protocolParams.directionNames)
+    
+    % Print out some information
+    if (p.Results.verbose), fprintf('\n\tDirection: %s\n',directionName{:}); end
+    
+    % Get cached direction
+    nominalCacheFileName = fullfile(nominalPrimariesDir, sprintf('Direction_%s.mat', directionName{:}));
+    [cacheData,calibration] = OLGetCacheAndCalData(nominalCacheFileName, protocolParams);
+    
+    % Get directionStruct to correct
+    nominalDirectionStruct = cacheData.data(protocolParams.observerAgeInYrs);
+    
+    % Correct direction struct
+    if (p.Results.verbose), fprintf('\tStarting spectrum-seeking loop\n'); end
+    correctedDirectionStruct = OLCorrectDirection(nominalDirectionStruct, calibration, oneLight, radiometer,...
+        'nIterations', correctionParams.nIterations,...
+        'learningRate', correctionParams.learningRate,...
+        'learningRateDecrease',  correctionParams.learningRateDecrease,...
+        'asympLearningRateFactor', correctionParams.asympLearningRateFactor,...
+        'smoothness', correctionParams.smoothness,...
+        'iterativeSearch', correctionParams.iterativeSearch);
+    if (p.Results.verbose), fprintf('\tSpectrum seeking loop finished!\n'); end
+    
+    % Store information about corrected modulations for return.
+    % Since this routine only does the correction for one age, we set the
+    % data for that and zero out all the rest, just to avoid accidently
+    % thinking we have corrected spectra where we do not.
+    for ii = 1:length(cacheData.data)
+        if ii == protocolParams.observerAgeInYrs
+            cacheData.data(ii) = correctedDirectionStruct;
+        else
+            cacheData.data(ii).describe = [];
+            cacheData.data(ii).backgroundPrimary = [];
+            cacheData.data(ii).differentialPositive = [];
+            cacheData.data(ii).differentialNegative = [];
+        end
     end
     
-    if (~isempty(theLJdev))
-        theLJdev.close;
-    end
+    % Save the cache
+    olCache = OLCache(correctedPrimariesDir,calibration);
+    cacheFile = fullfile(correctedPrimariesDir, sprintf('Direction_%s.mat', directionName{:}));
+    cacheData.protocolParams = protocolParams;
+    olCache.save(cacheFile, cacheData);
+    if (p.Results.verbose), fprintf('\tCache saved to %s\n', cacheFile); end
 end
 
 %% Update session log info
-protocolParams = OLSessionLog(protocolParams,mfilename,'StartEnd','end');
+OLSessionLog(protocolParams,mfilename,'StartEnd','end');

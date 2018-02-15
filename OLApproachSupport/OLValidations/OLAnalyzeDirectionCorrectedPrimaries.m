@@ -33,7 +33,7 @@ function OLAnalyzeDirectionCorrectedPrimaries(protocolParams,prePost)
 % 09/25/17 dhb   Respect flag that keeps us from doing each direction file more than once.
 
 %% Cache files to validate
-theDirectionCacheFileNames = OLMakeDirectionCacheFileNames(protocolParams);
+theDirections = unqiue(protocolParams.directionNames);
 
 %% Input and output file locations.
 directionDir = getpref(protocolParams.approach, 'DirectionNominalPrimariesPath');
@@ -47,16 +47,18 @@ end
 % Loop over directions. Respect the flag, as when the protocol contains
 % multiple trial types that use the same direction file, we only need to
 % validate once per direction.
-for dd = 1:length(theDirectionCacheFileNames)
+for dd = 1:length(theDirections)
     % Do the report if the flag is true.
-    if (protocolParams.doCorrectionAndValidationFlag{dd})
-        fprintf('\nReporting on validation, direction %d, %s, %s\n',dd,theDirectionCacheFileNames{dd},prePost);
+    if (protocolParams.doCorrection(dd))
+        theDirectionCacheFileName = sprintf('Direction_%s', protocolParams.directionNames{dd});
+        
+        fprintf('\nReporting on validation, direction %d, %s, %s\n',dd,theDirectionCacheFileName,prePost);
         
         % Loop over validations within direction
         for ii = 1:protocolParams.nValidationsPerDirection
             
             % Load the validation information
-            validationFile = fullfile(validationDir,sprintf('%s_%s_%d.mat', theDirectionCacheFileNames{dd},prePost,ii));
+            validationFile = fullfile(validationDir,sprintf('%s_%s_%d.mat', theDirectionCacheFileName,prePost,ii));
             validationResults{ii,dd} = load(validationFile,'results');
             
             % Get wavelength sampling and receptor spectral sensitivities on first
@@ -68,7 +70,7 @@ for dd = 1:length(theDirectionCacheFileNames)
                 % Get the names of the relevant photoreceptor classes for this direction
                 %
                 % Load the cache file for the direction being validated
-                nominalDirectionFile = fullfile(directionDir, [theDirectionCacheFileNames{dd} '.mat']);
+                nominalDirectionFile = fullfile(directionDir, [theDirectionCacheFileName '.mat']);
                 directionCacheData = OLGetCacheAndCalData(nominalDirectionFile,protocolParams);
                 
                 % Grab cell array of photoreceptor classes.  Use what was in the direction file
