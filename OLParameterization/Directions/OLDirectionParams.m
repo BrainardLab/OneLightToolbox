@@ -36,9 +36,6 @@ end
 properties
     useAmbient = true;
     primaryHeadRoom = 0.005
-
-    correctionPowerLevels = [0 1];
-    validationPowerLevels = [0 1];      
 end
 
 methods (Abstract) 

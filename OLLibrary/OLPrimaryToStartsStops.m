@@ -75,7 +75,7 @@ function [starts, stops] = OLPrimaryToStartsStops(primaryValues, calibration, va
     
     % Sinusoidal flicker
     timebase = linspace(0,5,200*20);     % 20 seconds sampled at 200 hz
-    temporalWaveform = ones(1,numel(timebase));     % rectify, powerlevels are [0-1]
+    temporalWaveform = ones(1,numel(timebase));     % rectify, differentialScalars are [0-1]
 
     %% Combine primary and temporal waveform
 	primaryValues = .5 * ones(P,1);      % all primaries half-on
@@ -105,7 +105,7 @@ function [starts, stops] = OLPrimaryToStartsStops(primaryValues, calibration, va
     % Sinusoidal flicker
     timebase = linspace(0,5,200*20);     % 20 seconds sampled at 200 hz
     sinewave = sin(2*pi*10*timebase);    % 10 Hz sinewave carrier
-    flickerWaveform = abs(sinewave);     % rectify, powerlevels are [0-1]
+    flickerWaveform = abs(sinewave);     % rectify, differentialScalars are [0-1]
 
     %% Combine primary and temporal waveform
 	primaryValues = .5 * ones(P,1);      % all primaries half-on

@@ -48,7 +48,7 @@ function primaryWaveform = OLPrimaryWaveform(primaryValues, waveform, varargin)
     % Set up temporal waveform
     timebase = linspace(0,5,200*5); % 5 seconds sampled at 200 hz
     sinewave = sin(2*pi*timebase);  % sinewave carrier
-    waveform = abs(sinewave);       % rectify, powerlevels are [0-1]
+    waveform = abs(sinewave);       % rectify, differentialScalars are [0-1]
     
     % Create primary waveform
     primaryValues = ones(54,1);     % 54 primaries, all full-on
@@ -61,12 +61,12 @@ function primaryWaveform = OLPrimaryWaveform(primaryValues, waveform, varargin)
     
     % Steady background
     backgroundPrimary = .5 * ones(54,1); % 54 primaries half-on
-    backgroundWaveform = ones(1,200*5);  % same powerlevel throughout
+    backgroundWaveform = ones(1,200*5);  % same differentialScalar throughout
 
     % Sinusoidal flicker
     examplePrimary = linspace(0,1,54)';  % some primary
     sinewave = sin(2*pi*timebase);       % sinewave carrier
-    flickerWaveform = abs(sinewave);     % rectify, powerlevels are [0-1]
+    flickerWaveform = abs(sinewave);     % rectify, differentialScalars are [0-1]
 
     % Create primary waveform
     primaryValues = [backgroundPrimary, examplePrimary]; % horizontal cat

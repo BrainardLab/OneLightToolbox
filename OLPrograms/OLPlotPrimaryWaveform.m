@@ -42,7 +42,7 @@ X = (1:size(primaryWaveform,2))';
 % Y is a columnvector of ones(length(x),1), i.e., ones(size(primary,2),1)
 Y = ones(size(primaryWaveform,2),1);
 
-% Z is a columnvector of powerlevels, of length size(primary,2), obviously.
+% Z is a columnvector of differentialScalars, of length size(primary,2), obviously.
 Z = primaryWaveform(1,:)';
 
 % To generalise this to multiple lines (i.e. multiple primaries):

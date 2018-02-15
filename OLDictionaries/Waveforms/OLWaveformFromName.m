@@ -15,7 +15,7 @@ function [waveform, timestep, waveformDuration] = OLWaveformFromName(waveformNam
 %                       stored in OLWaveformParamsDictionary.
 %
 % Outputs:
-%    waveform         - a 1xt rowvector of powerlevel in range [0,1] at each 
+%    waveform         - a 1xt rowvector of differentialScalar in range [0,1] at each 
 %                       timepoint.
 %    timestep         - Timestep used to generate waveform
 %    waveformDuration - Duration of the total waveform in seconds, at the
