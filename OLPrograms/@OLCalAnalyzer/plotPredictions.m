@@ -58,8 +58,8 @@ function plotPredictions(obj, varargin)
     
     reconstructedPrimaryActivationsPreCalibration  = pinv(designMatrix) * (measuredSPDpreCalibration  - obj.cal.computed.pr650MeanDark);
     reconstructedPrimaryActivationsPostCalibration = pinv(designMatrix) * (measuredSPDpostCalibration - obj.cal.computed.pr650MeanDark);
-    reconstructedSettingsPreCalibration  = OLPrimaryToSettings(obj.cal, reconstructedPrimaryActivationsPreCalibration);
-    reconstructedSettingsPostCalibration = OLPrimaryToSettings(obj.cal, reconstructedPrimaryActivationsPostCalibration);
+%     reconstructedSettingsPreCalibration  = OLPrimaryToSettings(obj.cal, reconstructedPrimaryActivationsPreCalibration);
+%     reconstructedSettingsPostCalibration = OLPrimaryToSettings(obj.cal, reconstructedPrimaryActivationsPostCalibration);
         
 %     % The settings/reconstructed settings plot
 %     hFig = figure; clf;
