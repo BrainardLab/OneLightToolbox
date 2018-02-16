@@ -99,4 +99,18 @@ if OLWaveformParamsValidate(params)
     dictionary(params.name) = params;
 end
 
+%% MaxContrastSquarewave
+modulationName = 'MaxContrastSquarewave';
+type = 'squarewave';
+
+params = OLWaveformParamsDefaults(type);
+params.name = modulationName;
+params.stimulusDuration = 1;
+params.cosineWindowDurationSecs = 0.5;
+
+if OLWaveformParamsValidate(params)
+    % All validations OK. Add entry to the dictionary.
+    dictionary(params.name) = params;
+end
+
 end

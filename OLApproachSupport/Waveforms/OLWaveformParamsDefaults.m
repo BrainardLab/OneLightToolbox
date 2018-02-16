@@ -60,7 +60,18 @@ switch params.type
         % Cone noise parameters. 
         params.coneNoise = 0;                        % Set to 1 for cone noise
         params.coneNoiseFrequency = -1;              % Frequency of cone noise    
-    
+
+    case 'squarewave'
+        % Sinusoidal bipolar flicker.
+       
+        % Frequency and phase
+        params.frequency = 2;                       % Frequency in Hz
+        params.phaseDegs = 0;                       % Phase in degrees
+        
+        % Cone noise parameters. 
+        params.coneNoise = 0;                        % Set to 1 for cone noise
+        params.coneNoiseFrequency = -1;              % Frequency of cone noise    
+        
     case 'pulse'
         % Unipolar pulse.  
         % Frequency and phase have no meaning.

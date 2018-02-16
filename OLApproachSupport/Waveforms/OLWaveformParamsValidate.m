@@ -71,6 +71,11 @@ switch (params.type)
         assert((isfield(params, 'phaseDegs')                && isnumeric(params.phaseDegs)),                sprintf('params.phaseDegs does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'coneNoise')                && isnumeric(params.coneNoise)),                sprintf('params.coneNoise does not exist or it does not contain a numeric value.'));
         assert((isfield(params, 'coneNoiseFrequency')       && isnumeric(params.coneNoiseFrequency)),       sprintf('params.coneNoiseFrequency does not exist or it does not contain a numeric value.'));
+    case 'squarewave'
+        assert((isfield(params, 'frequency')                && isnumeric(params.frequency)),                sprintf('params.frequency does not exist or it does not contain a numeric value.'));
+        assert((isfield(params, 'phaseDegs')                && isnumeric(params.phaseDegs)),                sprintf('params.phaseDegs does not exist or it does not contain a numeric value.'));
+        assert((isfield(params, 'coneNoise')                && isnumeric(params.coneNoise)),                sprintf('params.coneNoise does not exist or it does not contain a numeric value.'));
+        assert((isfield(params, 'coneNoiseFrequency')       && isnumeric(params.coneNoiseFrequency)),       sprintf('params.coneNoiseFrequency does not exist or it does not contain a numeric value.'));
     otherwise
         error('Unknown modulation starts/stops type');
 end

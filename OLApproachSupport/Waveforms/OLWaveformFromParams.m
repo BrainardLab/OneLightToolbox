@@ -55,17 +55,25 @@ switch waveformParams.type
         % Pulse: a step of some unipolar contrast in some direction, from a
         % background, and returning back to that background. Can be
         % windowed.
-        waveform = waveformParams.contrast*ones(1,length(timebase));
+        waveform = ones(1,length(timebase));
         
     case 'sinusoid'
         % Sinusoid: a bipolar variation of some contrast in some direction,
         % from a background, and returning back to that background. Can be
         % windowed.
-        waveform = waveformParams.contrast*sin(2*pi*waveformParams.frequency*timebase+(pi/180)*waveformParams.phaseDegs);
-        
+        waveform = sin(2*pi*waveformParams.frequency*timebase+(pi/180)*waveformParams.phaseDegs);
+    
+    case 'squarewave'
+        % Squarewave: a bipolar variation of some contrast in some direction,
+        % from a background, and returning back to that background. Can be
+        % windowed.
+        waveform = sin(2*pi*waveformParams.frequency*timebase+(pi/180)*waveformParams.phaseDegs);
+        waveform = waveform + 1 > 1;
+
     otherwise
         error('Unknown waveform type specified');
 end
+waveform = waveformParams.contrast * waveform;
 
 %% Windowing
 % At present all windows are half-cosine.
