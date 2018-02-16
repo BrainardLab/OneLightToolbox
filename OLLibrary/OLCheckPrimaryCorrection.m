@@ -38,16 +38,22 @@ ylimMax = 1.1*max(max([correctionDebuggingData.SPDMeasuredAll]));
 
 %% Print some diagnostic information
 kScale = correctionDebuggingData.kScale;
-fprintf('<strong>kScale               :</strong> %0.2f\n', kScale);
+fprintf('<strong>kScale                    :</strong> %0.2f\n', kScale);
 
 nIterationsSpecified = correctionDebuggingData.nIterations;
-fprintf('<strong>nIterations specified:</strong> %0.2f\n', nIterationsSpecified);
+fprintf('<strong>nIterations specified     :</strong> %0.2f\n', nIterationsSpecified);
 
 nIterationsMeasured = size(correctionDebuggingData.SPDMeasuredAll, 2);
-fprintf('<strong>nIterations measured :</strong> %0.2f\n', nIterationsMeasured);
+fprintf('<strong>nIterations measured      :</strong> %0.2f\n', nIterationsMeasured);
 
 nPrimaries = size(correctionDebuggingData.primaryUsedAll, 1);
-fprintf('<strong>Number of device primaries  :</strong> %0.2f\n', nPrimaries);
+fprintf('<strong>Number of device primaries:</strong> %0.2f\n', nPrimaries);
+
+iterativeSearch = correctionDebuggingData.iterativeSearch;
+labels = {'no','yes'};
+fprintf('<strong>Iterative search          :</strong> %s\n', labels{iterativeSearch+1});
+
+
 
 %% Start a diagnositic plot
 Plot = figure; clf; set(Plot,'Position',[220 600 1150 725]);
@@ -135,9 +141,17 @@ for ii = 1:nIterationsMeasured
 %         plot([0 1],[0 1],'k:');
 %         xlabel('Primaries Used'); ylabel('Primaries Recovered');
 %         xlim([0 1]); ylim([-1 1]);
-    end 
+    end
     
-    %% Tracking plot
+    % Report some things we might want to know
+    nZeroPrimaries(ii) = length(find(correctionDebuggingData.primaryUsedAll(:,ii) == 0));
+    nOnePrimaries(ii) = length(find(correctionDebuggingData.primaryUsedAll(:,ii) == 1));
+    fprintf('<strong>Iteration %d:</strong>\n',ii);
+    fprintf('\t<strong>Learning rate:</strong> %0.4f\n',learningRateThisIter);
+    fprintf('\t<strong>number 0 primaries</strong>: %d<strong>, 1 primaries</strong>: %d\n',nZeroPrimaries(ii),nOnePrimaries(ii));
+    fprintf('\t<strong>total abs delta SPD:</strong>%0.4f\n',sum(abs(targetSPD-spectrumMeasuredScaled)));
+    
+    % Tracking plot
     % Black is the spectrum our little heart desires.
     % Green is what we measured.
     % Red is what our procedure thinks we'll get on the next iteration.
@@ -239,14 +253,7 @@ for ii = 1:nIterationsMeasured
 %     xlabel('Iteration #'); xlim([0 nIterations+1]);
 %     ylabel('Mel Contrast');
     
-    %% Force draw
-    
-    % Report some things we might want to know
-    nZeroSettings(ii) = length(find(correctionDebuggingData.primaryUsedAll(:,ii) == 0));
-    nOneSettings(ii) = length(find(correctionDebuggingData.primaryUsedAll(:,ii) == 1));
-    fprintf('Iteration %d\n',ii);
-    fprintf('\tNumber zero primaries: %d, one primaries: %d\n',nZeroSettings(ii),nOneSettings(ii));
-    
+    % Force draw
     commandwindow;
     gcf; drawnow;
     pause;
