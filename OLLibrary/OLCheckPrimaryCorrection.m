@@ -91,7 +91,6 @@ for ii = 1:nIterationsMeasured
     end
     nextSpectrumPredictedTruncatedLearningRateAgain1 = OLPredictSpdFromDeltaPrimaries(deltaPrimaryTruncatedLearningRateAgain,primaryUsed,spectrumMeasuredScaled,calibration);
 
-    
     % We can build up a correction matrix for predcition of delta spds from
     % delta primaries, based on what we've measured so far.
     if (ii == 1)
@@ -149,16 +148,18 @@ for ii = 1:nIterationsMeasured
     plot(wls,spectrumMeasuredScaled,'k','LineWidth',3);
     xlabel('Wavelength'); ylabel('SPD Power'); title(sprintf('SPD, iter %d',ii));
     legend({'Initial','Desired','Measured'},'Location','NorthWest');
+    xlim([min(wls),max(wls)]);
 
     % Black is the initial primaries we started with
     % Green is what we used to measure the spectra on this iteration.
     % Blue is the primaries we'll ask for next iteration.
     subplot(2,2,2); hold on
-    stem(1:nPrimaries,initialPrimaryValues,'k:','LineWidth',3);
-    stem(1:nPrimaries,primaryUsed,'g','LineWidth',2);
-    stem(1:nPrimaries,nextPrimaryTruncatedLearningRate,'b','LineWidth',2);
+    stem(1:nPrimaries,initialPrimaryValues,'r:','LineWidth',1);
+    stem(1:nPrimaries,primaryUsed,'k','LineWidth',2);
+    stem(1:nPrimaries,nextPrimaryTruncatedLearningRate,'b:','LineWidth',1);
     xlabel('Primary Number'); ylabel('Primary Value'); title(sprintf('Primary values, iter %d',ii));
     legend({'Initial','Used','Next'},'Location','NorthEast');
+    xlim([1, nPrimaries]);
     
     % Green is the difference between what we want and what we measured.
     % Black is what we predicted it would be on this iteration.
@@ -181,16 +182,17 @@ for ii = 1:nIterationsMeasured
     xlabel('Wavelength'); ylabel('Delta Spd Power'); title(sprintf('SPD Deltas, iter %d',ii));
     legend(labels,'Location','NorthWest');
     DeltaPredictedLastTime = targetSPD-nextSpectrumPredictedTruncatedLearningRate;
-    ylim([-10e-2 10e-2]);
+    ylim([-10e-3 10e-3]);
+    xlim([min(wls),max(wls)]);
     
     % Green is the difference between the primaries we will ask for on the
     % next iteration and those we just used.
     subplot(2,2,4); hold on
-    stem(1:nPrimaries,nextPrimaryTruncatedLearningRate-primaryUsed,'g','LineWidth',2);
+    stem(1:nPrimaries,nextPrimaryTruncatedLearningRate-primaryUsed,'b','LineWidth',2);
     ylim([-0.5 0.5]);
     xlabel('Primary Number'); ylabel('Primary Value');
     title('Delta primary for next iteration');
-    
+    xlim([1, nPrimaries]);
     
 %     % Compute contrasts
 % 

@@ -130,7 +130,7 @@ for iter = 1:nIterations
     NextPrimaryTruncatedLearningRate = primariesThisIter + DeltaPrimaryTruncatedLearningRate;
     
     % Save the information for this iteration in a convenient form for later.
-    SpdMeasuredAll(:,iter) = measuredSPD;
+    SPDMeasuredAll(:,iter) = measuredSPD;
     PrimaryUsedAll(:,iter) = primariesThisIter;
     NextPrimaryTruncatedLearningRateAll(:,iter) = NextPrimaryTruncatedLearningRate;
     DeltaPrimaryTruncatedLearningRateAll(:,iter) = DeltaPrimaryTruncatedLearningRate;
@@ -156,7 +156,8 @@ detailedData.initialPrimaryValues = nominalPrimaryValues;
 detailedData.targetSPD = targetSPD;
 detailedData.kScale = kScale;
 detailedData.primaryUsedAll = PrimaryUsedAll;
-detailedData.SPDMeasuredAll = SpdMeasuredAll;
+detailedData.SPDMeasuredAll = SPDMeasuredAll;
+detailedData.deltaSPDMeasuredAll = SPDMeasuredAll - targetSPD;
 detailedData.NextPrimaryTruncatedLearningRateAll = NextPrimaryTruncatedLearningRateAll;
 detailedData.DeltaPrimaryTruncatedLearningRateAll = DeltaPrimaryTruncatedLearningRateAll;
 detailedData.correctedPrimaryValues = correctedPrimaryValues;
