@@ -130,15 +130,16 @@ for iter = 1:nIterations
     NextPrimaryTruncatedLearningRate = primariesThisIter + DeltaPrimaryTruncatedLearningRate;
     
     % Save the information for this iteration in a convenient form for later.
-    SPDMeasuredAll(:,iter) = measuredSPD;
-    PrimaryUsedAll(:,iter) = primariesThisIter;
-    NextPrimaryTruncatedLearningRateAll(:,iter) = NextPrimaryTruncatedLearningRate;
-    DeltaPrimaryTruncatedLearningRateAll(:,iter) = DeltaPrimaryTruncatedLearningRate;
+    SPDMeasured(:,iter) = measuredSPD;
+    RMSQE(:,iter) = sqrt(mean((targetSPD-kScale*measuredSPD).^2));
+    PrimaryUsed(:,iter) = primariesThisIter;
+    DeltaPrimaryTruncatedLearningRate(:,iter) = DeltaPrimaryTruncatedLearningRate;
+    NextPrimaryTruncatedLearningRate(:,iter) = NextPrimaryTruncatedLearningRate;
 end
 
 %% Store information about correction for return
 % Business end
-correctedPrimaryValues = NextPrimaryTruncatedLearningRateAll(:, end);
+correctedPrimaryValues = NextPrimaryTruncatedLearningRate(:, end);
 
 % Metadata, e.g., parameters. While I'm not a fan of including input
 % parameters in output, it is relevant here because we might have used
@@ -155,10 +156,11 @@ detailedData.iterativeSearch = iterativeSearch;
 detailedData.initialPrimaryValues = nominalPrimaryValues;
 detailedData.targetSPD = targetSPD;
 detailedData.kScale = kScale;
-detailedData.primaryUsedAll = PrimaryUsedAll;
-detailedData.SPDMeasuredAll = SPDMeasuredAll;
-detailedData.deltaSPDMeasuredAll = SPDMeasuredAll - targetSPD;
-detailedData.NextPrimaryTruncatedLearningRateAll = NextPrimaryTruncatedLearningRateAll;
-detailedData.DeltaPrimaryTruncatedLearningRateAll = DeltaPrimaryTruncatedLearningRateAll;
+detailedData.primaryUsed = PrimaryUsed;
+detailedData.SPDMeasured = SPDMeasured;
+detailedData.deltaSPDMeasured = SPDMeasured - targetSPD;
+detailedData.RMSQE = RMSQE;
+detailedData.NextPrimaryTruncatedLearningRate = NextPrimaryTruncatedLearningRate;
+detailedData.DeltaPrimaryTruncatedLearningRate = DeltaPrimaryTruncatedLearningRate;
 detailedData.correctedPrimaryValues = correctedPrimaryValues;
 end

@@ -34,7 +34,7 @@ wls = SToWls([380 2 201]);
 
 %% Determine some axis limits
 % Spectral power
-ylimMax = 1.1*max(max([correctionDebuggingData.SPDMeasuredAll]));
+ylimMax = 1.1*max(max([correctionDebuggingData.SPDMeasured]));
 
 %% Print some diagnostic information
 kScale = correctionDebuggingData.kScale;
@@ -43,20 +43,18 @@ fprintf('<strong>kScale                    :</strong> %0.2f\n', kScale);
 nIterationsSpecified = correctionDebuggingData.nIterations;
 fprintf('<strong>nIterations specified     :</strong> %0.2f\n', nIterationsSpecified);
 
-nIterationsMeasured = size(correctionDebuggingData.SPDMeasuredAll, 2);
+nIterationsMeasured = size(correctionDebuggingData.SPDMeasured, 2);
 fprintf('<strong>nIterations measured      :</strong> %0.2f\n', nIterationsMeasured);
 
-nPrimaries = size(correctionDebuggingData.primaryUsedAll, 1);
+nPrimaries = size(correctionDebuggingData.primaryUsed, 1);
 fprintf('<strong>Number of device primaries:</strong> %0.2f\n', nPrimaries);
 
 iterativeSearch = correctionDebuggingData.iterativeSearch;
 labels = {'no','yes'};
 fprintf('<strong>Iterative search          :</strong> %s\n', labels{iterativeSearch+1});
 
-
-
 %% Start a diagnositic plot
-Plot = figure; clf; set(Plot,'Position',[220 600 1150 725]);
+Plot = figure; clf;
 
 %% Clean up cal file primaries by zeroing out light we don't think is really there.    
 zeroItWLRangeMinus = 100;
@@ -68,15 +66,15 @@ calibration = OLZeroCalPrimariesAwayFromPeak(calibration,zeroItWLRangeMinus,zero
 initialPrimaryValues = correctionDebuggingData.initialPrimaryValues;
 targetSPD = correctionDebuggingData.targetSPD;
 
-SPDMeasuredAll = [];
-primaryUsedAll = [];
+SPDMeasured = [];
+primaryUsed = [];
 
 for ii = 1:nIterationsMeasured
     % Pull out some data for convenience
-    spectrumMeasuredScaled = kScale*correctionDebuggingData.SPDMeasuredAll(:,ii);
-    primaryUsed = correctionDebuggingData.primaryUsedAll(:,ii);
-    nextPrimaryTruncatedLearningRate = correctionDebuggingData.NextPrimaryTruncatedLearningRateAll(:,ii);
-    deltaPrimaryTruncatedLearningRate  = correctionDebuggingData.DeltaPrimaryTruncatedLearningRateAll(:,ii);
+    spectrumMeasuredScaled = kScale*correctionDebuggingData.SPDMeasured(:,ii);
+    primaryUsed = correctionDebuggingData.primaryUsed(:,ii);
+    nextPrimaryTruncatedLearningRate = correctionDebuggingData.NextPrimaryTruncatedLearningRate(:,ii);
+    deltaPrimaryTruncatedLearningRate  = correctionDebuggingData.DeltaPrimaryTruncatedLearningRate(:,ii);
     if (any(nextPrimaryTruncatedLearningRate ~= primaryUsed + deltaPrimaryTruncatedLearningRate))
         error('Background Hmmm.');
     end
@@ -144,12 +142,12 @@ for ii = 1:nIterationsMeasured
     end
     
     % Report some things we might want to know
-    nZeroPrimaries(ii) = length(find(correctionDebuggingData.primaryUsedAll(:,ii) == 0));
-    nOnePrimaries(ii) = length(find(correctionDebuggingData.primaryUsedAll(:,ii) == 1));
+    nZeroPrimaries(ii) = length(find(correctionDebuggingData.primaryUsed(:,ii) == 0));
+    nOnePrimaries(ii) = length(find(correctionDebuggingData.primaryUsed(:,ii) == 1));
     fprintf('<strong>Iteration %d:</strong>\n',ii);
     fprintf('\t<strong>Learning rate:</strong> %0.4f\n',learningRateThisIter);
     fprintf('\t<strong>number 0 primaries</strong>: %d<strong>, 1 primaries</strong>: %d\n',nZeroPrimaries(ii),nOnePrimaries(ii));
-    fprintf('\t<strong>total abs delta SPD:</strong>%0.4f\n',sum(abs(targetSPD-spectrumMeasuredScaled)));
+    fprintf('\t<strong>RMSQE:</strong>%0.4f\n',correctionDebuggingData.RMSQE);
     
     % Tracking plot
     % Black is the spectrum our little heart desires.
@@ -255,7 +253,7 @@ for ii = 1:nIterationsMeasured
     
     % Force draw
     commandwindow;
-    gcf; drawnow;
+    drawnow;
     pause;
     
 end
