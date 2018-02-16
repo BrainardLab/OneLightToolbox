@@ -74,8 +74,9 @@ parser.addRequired('direction',@isstruct);
 parser.addRequired('calibration',@isstruct);
 parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
 parser.addOptional('radiometer',[],@(x) isempty(x) || isa(x,'Radiometer'));
-parser.addOptional('receptors',[],@(x) isa(x,'SSTReceptor'));
-parser.KeepUnmatched = true; % allows fastforwarding of kwargs to OLCorrectPrimaryValues
+parser.addParameter('receptors',[],@(x) isa(x,'SSTReceptor'));
+parser.addParameter('nAverage',1,@isnumeric);
+parser.addParameter('temperatureProbe',[],@(x) isempty(x) || isa(x,'LJTemperatureProbe'));
 parser.parse(directionStruct,calibration,oneLight,radiometer,varargin{:});
 
 %% Check if calculating contrasts
@@ -92,7 +93,7 @@ maxNegative = backgroundPrimary + directionStruct.differentialNegative;
 primaries = [backgroundPrimary, maxPositive, maxNegative];
 
 %% Measure
-SPDs = OLValidatePrimaryValues(primaries,calibration,oneLight,radiometer, varargin{:});
+SPDs = OLValidatePrimaryValues(primaries,calibration,oneLight,radiometer, 'nAverage', parser.Results.nAverage, 'temperatureProbe', parser.Results.temperatureProbe);
 
 % Write directionStruct.describe output
 validation.backgroundSPD = SPDs(1);
