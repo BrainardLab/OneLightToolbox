@@ -71,7 +71,7 @@ if ~isempty(radiometer)
             % Radiometeric measurement
             SPDall(:,i) = radiometer.measure();
         end
-        SPD = mean(SPDall,2);
+        SPD(:,p) = mean(SPDall,2);
     end
     
     % Turn all mirrors off
