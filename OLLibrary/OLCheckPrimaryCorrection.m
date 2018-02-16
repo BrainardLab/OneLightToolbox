@@ -138,8 +138,7 @@ for ii = 1:nIterationsMeasured
 %         xlim([0 1]); ylim([-1 1]);
     end 
     
-    %% Background tracking plot
-    %
+    %% Tracking plot
     % Black is the spectrum our little heart desires.
     % Green is what we measured.
     % Red is what our procedure thinks we'll get on the next iteration.
@@ -148,7 +147,7 @@ for ii = 1:nIterationsMeasured
     plot(wls,initialSPD,'r:','LineWidth',2);
     plot(wls,targetSPD,'g:','LineWidth',2);
     plot(wls,spectrumMeasuredScaled,'k','LineWidth',3);
-    xlabel('Wavelength'); ylabel('Spd Power'); title(sprintf('Background Spd, iter %d',ii));
+    xlabel('Wavelength'); ylabel('SPD Power'); title(sprintf('SPD, iter %d',ii));
     legend({'Initial','Desired','Measured'},'Location','NorthWest');
 
     % Black is the initial primaries we started with
@@ -158,29 +157,31 @@ for ii = 1:nIterationsMeasured
     stem(1:nPrimaries,initialPrimaryValues,'k:','LineWidth',3);
     stem(1:nPrimaries,primaryUsed,'g','LineWidth',2);
     stem(1:nPrimaries,nextPrimaryTruncatedLearningRate,'b','LineWidth',2);
-    xlabel('Primary Number'); ylabel('Primary Value'); title(sprintf('Background Primary, iter %d',ii));
+    xlabel('Primary Number'); ylabel('Primary Value'); title(sprintf('Primary values, iter %d',ii));
     legend({'Initial','Used','Next'},'Location','NorthEast');
     
     % Green is the difference between what we want and what we measured.
     % Black is what we predicted it would be on this iteration.
     % Red is what we think it will be on the the next iteration.
     subplot(2,2,3); hold on 
-    plot(wls,targetSPD-spectrumMeasuredScaled,'g','LineWidth',5);
+    plot(wls,targetSPD-spectrumMeasuredScaled,'k','LineWidth',3);
+    plot(wls,targetSPD-nextSpectrumPredictedTruncatedLearningRate,'b:','LineWidth',2);
+    plot(wls,targetSPD-nextSpectrumPredictedTruncatedLearningRateAgain1,'b:','LineWidth',  2);
+    labels = {'Measured Current Delta','Predicted Next Delta','Predicted Other Start'};
+    if (correctionDebuggingData.iterativeSearch)
+        plot(wls,targetSPD-nextSpectrumPredictedTruncatedLearningRateAgain,'k:','LineWidth',2);
+    end
     if (ii > 1)
-        plot(wls,DeltaPredictedLastTime,'k:','LineWidth',5);
+        plot(wls,DeltaPredictedLastTime,'r:','LineWidth',2);
+        labels = [labels 'Predicted Current Delta'];
     else
         plot(NaN,NaN);
     end
-    plot(wls,targetSPD-nextSpectrumPredictedTruncatedLearningRate,'r','LineWidth',5);
-    plot(wls,targetSPD-nextSpectrumPredictedTruncatedLearningRateAgain1,'c','LineWidth',  3);
-    if (correctionDebuggingData.iterativeSearch)
-        plot(wls,targetSPD-nextSpectrumPredictedTruncatedLearningRateAgain,'k:','LineWidth',1);
-    end
     title('Predicted delta spectrum on next iteration');
-    xlabel('Wavelength'); ylabel('Delta Spd Power'); title(sprintf('Spd Deltas, iter %d',ii));
-    legend({'Measured Current Delta','Predicted Current Delta','Predicted Next Delta','Predicted Other Start'},'Location','NorthWest');
+    xlabel('Wavelength'); ylabel('Delta Spd Power'); title(sprintf('SPD Deltas, iter %d',ii));
+    legend(labels,'Location','NorthWest');
     DeltaPredictedLastTime = targetSPD-nextSpectrumPredictedTruncatedLearningRate;
-    ylim([-10e-4 10e-4]);
+    ylim([-10e-2 10e-2]);
     
     % Green is the difference between the primaries we will ask for on the
     % next iteration and those we just used.
