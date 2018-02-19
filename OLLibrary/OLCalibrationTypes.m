@@ -63,6 +63,7 @@ classdef OLCalibrationTypes
         BoxARandomizedLongCableBEyePiece2_ND01('OLBoxARandomizedLongCableBEyePiece2_ND01');
         BoxARandomizedLongCableAEyePiece1_ND01('OLBoxARandomizedLongCableAEyePiece1_ND01');
         BoxBRandomizedLongCableBEyePiece2_ND01('OLBoxBRandomizedLongCableBEyePiece2_ND01');
+        BoxAShortCableCEyePiece1_ND04('OLBoxAShortCableCEyePiece1_ND04');
         
         % Note: Short RandomizedShortCableA is the collimating lens cable w/o collimating lens.
         BoxCRandomizedShortCableAEyePiece1_ND05('OLBoxCRandomizedShortCableAEyePiece1_ND05');
