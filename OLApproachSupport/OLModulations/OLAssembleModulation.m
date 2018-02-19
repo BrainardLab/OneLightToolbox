@@ -122,6 +122,6 @@ modulation = struct();
 modulation.waveformMatrix = waveformMatrix;
 modulation.primaryValues = primaryValues;
 modulation.primaryWaveform = primaryWaveform;
-modulation.nominalSPDs = nominalSPDs;
+modulation.predictedSPDs = nominalSPDs;
 modulation.starts = starts;
 modulation.stops = stops;
