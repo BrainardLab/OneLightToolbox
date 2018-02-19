@@ -133,13 +133,13 @@ for iter = 1:nIterations
     SPDMeasured(:,iter) = measuredSPD;
     RMSQE(:,iter) = sqrt(mean((targetSPD-kScale*measuredSPD).^2));
     PrimaryUsed(:,iter) = primariesThisIter;
-    DeltaPrimaryTruncatedLearningRate(:,iter) = DeltaPrimaryTruncatedLearningRate;
-    NextPrimaryTruncatedLearningRate(:,iter) = NextPrimaryTruncatedLearningRate;
+    DeltaPrimaryTruncatedLearningRateAll(:,iter) = DeltaPrimaryTruncatedLearningRate;
+    NextPrimaryTruncatedLearningRateAll(:,iter) = NextPrimaryTruncatedLearningRate;
 end
 
 %% Store information about correction for return
 % Business end
-correctedPrimaryValues = NextPrimaryTruncatedLearningRate(:, end);
+correctedPrimaryValues = NextPrimaryTruncatedLearningRateAll(:, end);
 
 % Metadata, e.g., parameters. While I'm not a fan of including input
 % parameters in output, it is relevant here because we might have used
@@ -160,7 +160,7 @@ detailedData.primaryUsed = PrimaryUsed;
 detailedData.SPDMeasured = SPDMeasured;
 detailedData.deltaSPDMeasured = SPDMeasured - targetSPD;
 detailedData.RMSQE = RMSQE;
-detailedData.NextPrimaryTruncatedLearningRate = NextPrimaryTruncatedLearningRate;
-detailedData.DeltaPrimaryTruncatedLearningRate = DeltaPrimaryTruncatedLearningRate;
+detailedData.NextPrimaryTruncatedLearningRate = NextPrimaryTruncatedLearningRateAll;
+detailedData.DeltaPrimaryTruncatedLearningRate = DeltaPrimaryTruncatedLearningRateAll;
 detailedData.correctedPrimaryValues = correctedPrimaryValues;
 end
