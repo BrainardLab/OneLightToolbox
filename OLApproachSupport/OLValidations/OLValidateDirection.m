@@ -74,16 +74,22 @@ parser.addRequired('direction',@isstruct);
 parser.addRequired('calibration',@isstruct);
 parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
 parser.addOptional('radiometer',[],@(x) isempty(x) || isa(x,'Radiometer'));
-parser.addParameter('receptors',[],@(x) isa(x,'SSTReceptor'));
+parser.addParameter('receptors',[],@(x) isa(x,'SSTReceptor') || isnumeric(x));
+parser.addParameter('receptorStrings',{},@iscell);
 parser.addParameter('nAverage',1,@isnumeric);
 parser.addParameter('temperatureProbe',[],@(x) isempty(x) || isa(x,'LJTemperatureProbe'));
 parser.parse(directionStruct,calibration,oneLight,radiometer,varargin{:});
 
 %% Check if calculating contrasts
 receptors = parser.Results.receptors;
+receptorStrings = parser.Results.receptorStrings;
 if nargout > 1
     assert(~isempty(receptors),'OneLightToolbox:ApproachSupport:OLValidateDirection:NoReceptors',...
         'No receptors specified to calculate contrast on');
+end
+if isnumeric(receptors)
+    assert(~isempty(receptorStrings),'OneLightToolbox:ApproachSupport:OLValidateDirection:NoreceptorStrings',...
+        'T_receptors specified, but no receptorStrings specified');
 end
 
 %% Get background primary and max primaries
@@ -100,8 +106,8 @@ validation.backgroundSPD = SPDs(1);
 validation.positiveSPD = SPDs(2);
 validation.negativeSPD = SPDs(3);
 
-%% Calculate nominal and actual contrast
-if ~isempty(receptors)
+%% Calculate nominal and actual contrast using SSTReceptor object
+if ~isempty(receptors) && isa(receptors,'SSTReceptor')
     predictedContrastPos = SPDToReceptorContrast([SPDs([1 2]).predictedSPD],receptors);
     predictedContrastNeg = SPDToReceptorContrast([SPDs([1 3]).predictedSPD],receptors);
     predictedContrast = [predictedContrastPos(:,1) predictedContrastNeg(:,1)];
@@ -113,6 +119,25 @@ if ~isempty(receptors)
     % Write directionStruct.describe output
     validation.actualContrast = actualContrast;
     validation.predictedContrast = predictedContrast;
+end
+
+%% Calculate nominal and actual contrast using T_receptors matrix
+if ~isempty(receptors) && isnumeric(receptors)
+    [predictedContrastPos, predictedPostReceptoralPos] = ComputeAndReportContrastsFromSpds("",receptorStrings,receptors,SPDs(1).predictedSPD,SPDs(2).predictedSPD,'verbose',false);
+    [predictedContrastNeg, predictedPostReceptoralNeg] = ComputeAndReportContrastsFromSpds("",receptorStrings,receptors,SPDs(1).predictedSPD,SPDs(3).predictedSPD,'verbose',false);
+    predictedContrast = [predictedContrastPos predictedContrastNeg];
+    predictedContrastPostReceptoral = [predictedPostReceptoralPos, predictedPostReceptoralNeg];
+    
+    [actualContrastPos, actualPostReceptoralPos] = ComputeAndReportContrastsFromSpds("",receptorStrings,receptors,SPDs(1).measuredSPD,SPDs(2).measuredSPD,'verbose',false);
+    [actualContrastNeg, actualPostReceptoralNeg] = ComputeAndReportContrastsFromSpds("",receptorStrings,receptors,SPDs(1).measuredSPD,SPDs(3).measuredSPD,'verbose',false);
+    actualContrast = [actualContrastPos actualContrastNeg];
+    actualContrastPostReceptoral = [actualPostReceptoralPos, actualPostReceptoralNeg];
+    
+    % Write directionStruct.describe output
+    validation.actualContrast = actualContrast;
+    validation.predictedContrast = predictedContrast;
+    validation.predictedContrastPostReceptoral = predictedContrastPostReceptoral;
+    validation.actualContrastPostReceptoral = actualContrastPostReceptoral;
 end
 
 end
