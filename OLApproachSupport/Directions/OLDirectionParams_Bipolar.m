@@ -4,6 +4,7 @@ classdef OLDirectionParams_Bipolar < OLDirectionParams
     
     properties
         photoreceptorClasses = {'LConeTabulatedAbsorbance'  'MConeTabulatedAbsorbance'  'SConeTabulatedAbsorbance'  'Melanopsin'};
+        T_receptors = [];
         fieldSizeDegrees(1,1) = 27.5;
         pupilDiameterMm(1,1) = 8.0;
         maxPowerDiff(1,1) = 0.1;
@@ -176,11 +177,11 @@ classdef OLDirectionParams_Bipolar < OLDirectionParams
                 lambdaMaxShift = [];
 
                 % Construct the receptor matrix based on the bleaching fraction to this background.
-                T_receptors = GetHumanPhotoreceptorSS(S,directionParams.photoreceptorClasses,directionParams.fieldSizeDegrees,observerAgeInYears,directionParams.pupilDiameterMm,lambdaMaxShift,fractionBleached);
+                directionParams.T_receptors = GetHumanPhotoreceptorSS(S,directionParams.photoreceptorClasses,directionParams.fieldSizeDegrees,observerAgeInYears,directionParams.pupilDiameterMm,lambdaMaxShift,fractionBleached);
 
                 % Isolate the receptors by calling the ReceptorIsolate
                 initialPrimary = currentBackgroundPrimary;
-                modulationPrimarySignedPositive = ReceptorIsolate(T_receptors, directionParams.whichReceptorsToIsolate, ...
+                modulationPrimarySignedPositive = ReceptorIsolate(directionParams.T_receptors, directionParams.whichReceptorsToIsolate, ...
                     directionParams.whichReceptorsToIgnore,directionParams.whichReceptorsToMinimize,B_primary,currentBackgroundPrimary,...
                     initialPrimary,directionParams.whichPrimariesToPin,directionParams.primaryHeadRoom,directionParams.maxPowerDiff,...
                     desiredContrasts,ambientSpd);
