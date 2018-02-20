@@ -133,7 +133,7 @@ if ~isempty(receptors) && isnumeric(receptors)
     actualContrast = [actualContrastPos actualContrastNeg];
     actualContrastPostReceptoral = [actualPostReceptoralPos, actualPostReceptoralNeg];
     
-    % Write directionStruct.describe output
+    % Add to output struct
     validation.actualContrast = actualContrast;
     validation.predictedContrast = predictedContrast;
     validation.predictedContrastPostReceptoral = predictedContrastPostReceptoral;
@@ -144,12 +144,8 @@ end
 load T_xyz1931
 S = calibration.describe.S;
 T_xyz = SplineCmf(S_xyz1931,683*T_xyz1931,S);
-predictedBackgroundLuminance = T_xyz(2,:)*SPDs(1).predictedSPD;
-actualBackgroundLuminance = T_xyz(2,:)*SPDs(1).measuredSPD;
 
-% write directionStruct.describe to summarize
-validation.predictedBackgroundLuminance = predictedBackgroundLuminance;
-validation.actualBackgroundLuminance = actualBackgroundLuminance;
-
+validation.predictedLuminances = T_xyz(2,:) * [SPDs(:).predictedSPD];
+validation.actualLuminances = T_xyz(2,:) * [SPDs(:).measuredSPD];
 
 end
