@@ -140,4 +140,16 @@ if ~isempty(receptors) && isnumeric(receptors)
     validation.actualContrastPostReceptoral = actualContrastPostReceptoral;
 end
 
+%% Calculate background luminance
+load T_xyz1931
+S = calibration.describe.S;
+T_xyz = SplineCmf(S_xyz1931,683*T_xyz1931,S);
+predictedBackgroundLuminance = T_xyz(2,:)*SPDs(1).predictedSPD;
+actualBackgroundLuminance = T_xyz(2,:)*SPDs(1).measuredSPD;
+
+% write directionStruct.describe to summarize
+validation.predictedBackgroundLuminance = predictedBackgroundLuminance;
+validation.actualBackgroundLuminance = actualBackgroundLuminance;
+
+
 end
