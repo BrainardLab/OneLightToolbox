@@ -116,7 +116,7 @@ try
             % Get a good integration time for omni
             ol.setAll(true);
             od.IntegrationTime = od.findIntegrationTime(100, 2, 100);
-            od.IntegrationTime = round(0.85*od.IntegrationTime);
+            od.IntegrationTime = round(0.5*od.IntegrationTime);
             fprintf('- Using integration time of %d microseconds.\n', od.IntegrationTime);
             ol.setAll(false);
                       

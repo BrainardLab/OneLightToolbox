@@ -125,20 +125,20 @@ if meterToggle(2)
     if verboseInfo
         fprintf('> [%s] Starting Omni measurement...\n', datestr(now));
     end
+    omniSpectrumSaturated = false;
     for i = 1:nAverage
         try
             radMeas = od.getSpectrum' / od.IntegrationTime;
+            radMeasAvg = radMeasAvg + radMeas;
         catch e
             omniSpectrumSaturated = true;
         end
-        radMeasAvg = radMeasAvg + radMeas;
     end
     meas.omni.spectrum = radMeasAvg/nAverage;
     meas.omni.integrationTime = od.IntegrationTime;
     if verboseInfo
         fprintf('> [%s] Done with Omni measurement...\n', datestr(now));
     end
-    omniSpectrumSaturated = false;
 else
     meas.omni = [];
     omniSpectrumSaturated = [];
