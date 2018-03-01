@@ -38,8 +38,8 @@ void mexFunction(int nlhs,      /* number of output (return) arguments */
 
 	/* Create an 1x1 array of unsigned 32-bit integer to store the status  */
     /* This will be the first output argument */
-    const int dims[] = {1, 1};
-    int nDims = 2;
+    const size_t dims[] = {1, 1};
+    size_t nDims = 2;
     plhs[0] = mxCreateNumericArray(nDims, dims, mxINT32_CLASS, mxREAL);
     int *status;
     status = (int *) mxGetData(plhs[0]);
@@ -1055,7 +1055,7 @@ long eTCConfig(HANDLE Handle, long *aEnableTimers, long *aEnableCounters, long T
     if(aEnableCounters[1] != 0)
     enableMask += 16;  //Bit 4: Enable Counter1
 
-    if(aEnableCounters[0] |= 0)
+    if(aEnableCounters[0] != 0)
     enableMask += 8;  //Bit 3: Enable Counter0
 
     numTimers = 0;
