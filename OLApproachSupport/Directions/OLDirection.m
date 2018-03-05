@@ -52,66 +52,59 @@ classdef OLDirection < handle
     
     %% Overloaded operators, to allow for direction algebra
     methods
-        function out = uplus(this)
-            % Overload the +a operator
-            out = this.differentialPositive;
-        end
-        function out = uminus(this)
-            % Overload the -a operator
-            out = this.differentialNegative;
-        end
-        
-        function out = mtimes(a,b)
-            % Overload the a*b operator
+        function out = times(a,b)
+            % Overload the .* (elementwise multiplication) operator
+            %
+            % One of the operators has to be numerical, the other has to be
+            % an (array of) OLDirection(s)
+            %
+            %   X.*Y denotes element-by-element multiplication. X and Y
+            %   must have compatible sizes. In the simplest cases, they can
+            %   be the same size or one can be a scalar. Two inputs have
+            %   compatible sizes if, for every dimension, the dimension
+            %   sizes of the inputs are either the same or one of them is
+            %   1.
             
-            % Figure out which argument is the OLDirection
+            % Input validation
             if isa(a,'OLDirection')
-                scalars = b(:);
-                this = a;
+                assert(isnumeric(b),'OneLightToolbox:OLDirection:times:InvalidInput','One input has to be numerical.');
+                directions = a;
+                scalars = b;
+            elseif isnumeric(a)
+                assert(isa(b,'OLDirection'),'OneLightToolbox:OLDirection:times:InvalidInput','One input has to be an OLDirection object.');
+                directions = b;
+                scalars = a;
             else
-                scalars = a(:);
-                this = b;
+                error('OneLightToolbox:OLDirection:times:InvalidInput','One input has to be numerical.');
             end
+            assert(iscolumn(scalars) || isrow(scalars),'OneLightToolbox:OLDirection:times:InvalidInput','Can currently only handle 1-dimensional vectors of scalars.');
+            assert(iscolumn(directions) || isrow(directions),'OneLightToolbox:OLDirection:times:InvalidInput','Can currently only handle 1-dimensional array of OLDirections.');
             
-            % Do the scaling
-            out = zeros(size(this.differentialPositive,1),numel(scalars));
-            if any(scalars > 0)
-                out(:,scalars > 0) = scalars(scalars > 0) .* +this;
-            end
-            if any(scalars < 0)
-                out(:,scalars < 0) = scalars(scalars < 0) .* -this;
+            % Fencepost output
+            out = OLDirection.empty();
+            
+            % Create scaled directions
+            d = 1;
+            for s = scalars
+                out = [out OLDirection(directions(d).background,s*directions(d).differentialPositive,s*directions(d).differentialNegative,directions(d).calibration,directions(d).describe)];
+                if ~isscalar(directions)
+                    d = d+1;
+                end
             end
         end
         
+        function mtimes(a,b)
+            error('Undefined operator ''*'' for input arguments of type ''OLDirection''. Are you trying to use ''.*''?');
+        end
         
         function out = plus(a,b)
-            % Overload the a+b operator
+            % Overload the a+b (addition) operator
             
-            % Figure out which argument is the OLDirection
-            if isa(a,'OLDirection')
-                additives = b;
-                this = a;
-            else
-                additives = a;
-                this = b;
-            end
-            
-            out = +this + additives;
         end
         
         function out = minus(a,b)
             % Overload the a-b operator
             
-            % Figure out which argument is the OLDirection
-            if isa(a,'OLDirection')
-                additives = b;
-                this = a;
-            else
-                additives = a;
-                this = b;
-            end
-            
-            out = -this - additives;
         end
     end
     
