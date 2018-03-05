@@ -1,27 +1,27 @@
 classdef OLDirection < handle
-% Class defining a direction for use with OneLight devices
-%
-% Description:
-%    A direction of modulation, is a direction (vector) in primary space
-%    that corresponds to some desired direction in spectral or receptor
-%    space. An OLDirection object defines a direction as 2 vector
-%    componenents in primary space: the positive differential vector, and
-%    the negative differential vector. The positive and negative component
-%    of the direction are defined separately, because they can be
-%    asymmetric. Since these specifications are device/calibration
-%    dependent, the OLDirection object also stores a OneLight calibration
-%    struct. 
-
-% History:
-%    03/02/18  jv  wrote it.
-
+    % Class defining a direction for use with OneLight devices
+    %
+    % Description:
+    %    A direction of modulation, is a direction (vector) in primary space
+    %    that corresponds to some desired direction in spectral or receptor
+    %    space. An OLDirection object defines a direction as 2 vector
+    %    componenents in primary space: the positive differential vector, and
+    %    the negative differential vector. The positive and negative component
+    %    of the direction are defined separately, because they can be
+    %    asymmetric. Since these specifications are device/calibration
+    %    dependent, the OLDirection object also stores a OneLight calibration
+    %    struct.
+    
+    % History:
+    %    03/02/18  jv  wrote it.
+    
     properties
         differentialPositive;
         differentialNegative;
         calibration;
         describe;
-    end
         background;
+    end
     
     %% Constructor
     methods
@@ -33,11 +33,11 @@ classdef OLDirection < handle
             
             % Parse input
             parser = inputParser();
+            parser.addRequired('background',@(x) isa(x,'OLDirection') || isnumeric(x));
             parser.addRequired('differentialPositive',@isnumeric);
             parser.addRequired('differentialNegative',@isnumeric);
             parser.addRequired('calibration',@isstruct);
-            parser.addOptional('describe',@isstruct);
-            parser.addRequired('background',@(x) isa(x,'OLDirection') || isnumeric(x));
+            parser.addOptional('describe',struct(),@isstruct);
             parser.StructExpand = false;
             parser.parse(background, differentialPositive, differentialNegative, calibration, varargin{:});
             
@@ -51,7 +51,7 @@ classdef OLDirection < handle
     end
     
     %% Overloaded operators, to allow for direction algebra
-    methods 
+    methods
         function out = uplus(this)
             % Overload the +a operator
             out = this.differentialPositive;
@@ -83,7 +83,7 @@ classdef OLDirection < handle
             end
         end
         
-
+        
         function out = plus(a,b)
             % Overload the a+b operator
             
