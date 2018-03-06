@@ -177,14 +177,38 @@ classdef OLDirection < handle
             % Determine equality
             %
             %
-            assert(isa(A,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Input have to be OLDirection');
-            assert(isa(B,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Input have to be OLDirection');
-            assert(all(AreStructsEqualOnFields(A.calibration.describe,B.calibration.describe,'calID')),'OneLightToolbox:OLDirection:plus:InvalidInput','Directions have different calibrations');
+            assert(isa(A,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be OLDirection');
+            assert(isa(B,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be OLDirection');
+            
+            % Compare if calibrations match
+            outCal = matchingCalibration(A,B);
             
             % Check if differentials match
-            out = all(A.differentialPositive == B.differentialPositive) && ...
-                all(A.differentialNegative == B.differentialNegative);
+            outDiffs = all([A.differentialPositive] == [B.differentialPositive]) & ...
+                  all([A.differentialNegative] == [B.differentialNegative]);   
+              
+            % Combine
+            out = outCal & outDiffs;
         end
+    end
+    
+    
+    methods
+        function out = matchingCalibration(A,B)
+            % Determine if OLDirections share a calibration
+            assert(isa(A,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be OLDirection');
+            assert(isa(B,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be OLDirection');        
+
+            % Check if calibrations match
+            Acalibrations = [A.calibration];
+            Bcalibrations = [B.calibration];
+            Acalibrations = [Acalibrations.describe];
+            Bcalibrations = [Bcalibrations.describe];
+            Acalibrations = {Acalibrations.calID};
+            Bcalibrations = {Bcalibrations.calID};
+            out = strcmp(Acalibrations,Bcalibrations);
+        end
+        
     end
     
 end
