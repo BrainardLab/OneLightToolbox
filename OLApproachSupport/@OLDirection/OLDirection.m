@@ -242,7 +242,10 @@ classdef OLDirection < handle
             Bcalibrations = {Bcalibrations.calID};
             out = strcmp(Acalibrations,Bcalibrations);
         end
-        
+    end
+    
+    methods
+        OLValidateDirection(direction, background, oneLight, radiometer, varargin)        
     end
     
 end
