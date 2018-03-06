@@ -20,12 +20,11 @@ classdef OLDirection < handle
         differentialNegative;
         calibration;
         describe;
-        background;
     end
     
     %% Constructor
     methods
-        function this = OLDirection(background, differentialPositive, differentialNegative, calibration, varargin)
+        function this = OLDirection(differentialPositive, differentialNegative, calibration, varargin)
             % Constructor for OLDirection objects
             %
             %
@@ -39,14 +38,13 @@ classdef OLDirection < handle
             parser.addRequired('calibration',@isstruct);
             parser.addOptional('describe',struct(),@isstruct);
             parser.StructExpand = false;
-            parser.parse(background, differentialPositive, differentialNegative, calibration, varargin{:});
+            parser.parse(differentialPositive, differentialNegative, calibration, varargin{:});
             
             % Assign
             this.differentialPositive = differentialPositive;
             this.differentialNegative = differentialNegative;
             this.calibration = calibration;
             this.describe = parser.Results.describe;
-            this.background = background;
         end
     end
     
