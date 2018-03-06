@@ -32,7 +32,6 @@ classdef OLDirection < handle
             
             % Parse input
             parser = inputParser();
-            parser.addRequired('background',@(x) isa(x,'OLDirection') || isnumeric(x));
             parser.addRequired('differentialPositive',@isnumeric);
             parser.addRequired('differentialNegative',@isnumeric);
             parser.addRequired('calibration',@isstruct);
