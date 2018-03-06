@@ -94,8 +94,8 @@ classdef OLDirection < handle
                 
                 % Create new direction
                 newDescribe = struct('createdFrom',struct('a',direction,'b',s,'operator','.*'),'correction',[],'validation',[]);
-                direction = OLDirection(direction.background,s*direction.differentialPositive,s*direction.differentialNegative,direction.calibration,newDescribe);
-                out = [out direction];
+                newDirection = OLDirection(direction.background,s*direction.differentialPositive,s*direction.differentialNegative,direction.calibration,newDescribe);
+                out = [out newDirection];
             end
         end
         
@@ -107,8 +107,8 @@ classdef OLDirection < handle
             % Add OLDirections; overloads the a+b (addition) operator
             
             % Input validation
-            assert(isa(A,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Input have to be OLDirection');
-            assert(isa(B,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Input have to be OLDirection');
+            assert(isa(A,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be OLDirection');
+            assert(isa(B,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be OLDirection');
             assert(all(size(A) == size(B)) || (isscalar(A) || isscalar(B)),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be the same size, or one input must be scalar');
             
             % Fencepost output
@@ -176,8 +176,8 @@ classdef OLDirection < handle
             % Subtract OLDirections; overloads the a-b (subtract) operator
             
             % Input validation
-            assert(isa(A,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Input have to be OLDirection');
-            assert(isa(B,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Input have to be OLDirection');
+            assert(isa(A,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be OLDirection');
+            assert(isa(B,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be OLDirection');
             assert(all(size(A) == size(B)) || (isscalar(A) || isscalar(B)),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be the same size, or one input must be scalar');
             
             % Fencepost output
