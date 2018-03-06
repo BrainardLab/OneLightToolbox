@@ -52,8 +52,8 @@ classdef OLDirection < handle
     
     %% Overloaded operators, to allow for direction algebra
     methods
-        function out = times(a,b)
-            % Overload the .* (elementwise multiplication) operator
+        function out = times(A,B)
+            % Scale OLDirection; overloads the .* operator
             %
             % One of the operators has to be numerical, the other has to be
             % an (array of) OLDirection(s)
@@ -66,14 +66,14 @@ classdef OLDirection < handle
             %   1.
             
             % Input validation
-            if isa(a,'OLDirection')
-                assert(isnumeric(b),'OneLightToolbox:OLDirection:times:InvalidInput','One input has to be numerical.');
-                directions = a;
-                scalars = b;
-            elseif isnumeric(a)
-                assert(isa(b,'OLDirection'),'OneLightToolbox:OLDirection:times:InvalidInput','One input has to be an OLDirection object.');
-                directions = b;
-                scalars = a;
+            if isa(A,'OLDirection')
+                assert(isnumeric(B),'OneLightToolbox:OLDirection:times:InvalidInput','One input has to be numerical.');
+                directions = A;
+                scalars = B;
+            elseif isnumeric(A)
+                assert(isa(B,'OLDirection'),'OneLightToolbox:OLDirection:times:InvalidInput','One input has to be an OLDirection object.');
+                directions = B;
+                scalars = A;
             else
                 error('OneLightToolbox:OLDirection:times:InvalidInput','One input has to be numerical.');
             end
@@ -86,25 +86,104 @@ classdef OLDirection < handle
             % Create scaled directions
             d = 1;
             for s = scalars
-                out = [out OLDirection(directions(d).background,s*directions(d).differentialPositive,s*directions(d).differentialNegative,directions(d).calibration,directions(d).describe)];
+                % Get the current direction
+                direction = directions(d);
                 if ~isscalar(directions)
                     d = d+1;
+                end
+                
+                % Create new direction
+                newDescribe = struct('createdFrom',struct('a',direction,'b',s,'operator','.*'),'correction',[],'validation',[]);
+                direction = OLDirection(direction.background,s*direction.differentialPositive,s*direction.differentialNegative,direction.calibration,newDescribe);
+                out = [out direction];
+            end
+        end
+        
+        function varargout = mtimes(~,~) %#ok<STOUT>
+            error('Undefined operator ''*'' for input arguments of type ''OLDirection''. Are you trying to use ''.*''?');
+        end
+        
+        function out = plus(A,B)
+            % Add OLDirections; overloads the a+b (addition) operator
+            
+            % Input validation
+            assert(isa(A,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Input have to be OLDirection');
+            assert(isa(B,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Input have to be OLDirection');
+            assert(all(size(A) == size(B)) || (isscalar(A) || isscalar(B)),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be the same size, or one input must be scalar');
+            
+            % Fencepost output
+            out = OLDirection.empty();
+            
+            % Do additions
+            if numel(A) == 1 && numel(B) == 1
+                % Add 2 directions
+                assert(all(AreStructsEqualOnFields(A.calibration.describe,B.calibration.describe,'calID')),'OneLightToolbox:OLDirection:plus:InvalidInput','Directions have different calibrations');
+                newDescribe = struct('createdFrom',struct('a',A,'b',B,'operator','plus'),'correction',[],'validation',[]);
+                out = OLDirection([],A.differentialPositive+B.differentialPositive,A.differentialNegative+B.differentialNegative,A.calibration,newDescribe);
+            elseif all(size(A) == size(B))
+                % Sizes match, send each pair to be added.
+                for i = 1:numel(A)
+                    out = [out plus(A(i),B(i))];
+                end
+            elseif ~isscalar(A)
+                % A is not scalar, loop over A
+                for i = 1:numel(A)
+                    out = [out plus(A(i),B)];
+                end
+            elseif ~isscalar(B)
+                % B is not scalar, loop over B
+                for i = 1:numel(B)
+                    out = [out plus(A,B(i))];
                 end
             end
         end
         
-        function mtimes(a,b)
-            error('Undefined operator ''*'' for input arguments of type ''OLDirection''. Are you trying to use ''.*''?');
+        function out = minus(A,B)
+            % Subtract OLDirections; overloads the a-b (subtract) operator
+            
+            % Input validation
+            assert(isa(A,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Input have to be OLDirection');
+            assert(isa(B,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Input have to be OLDirection');
+            assert(all(size(A) == size(B)) || (isscalar(A) || isscalar(B)),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be the same size, or one input must be scalar');
+            
+            % Fencepost output
+            out = OLDirection.empty();
+            
+            % Do subtractions (recursively if necessary)
+            if numel(A) == 1 && numel(B) == 1
+                % Subtract 2 directions
+                assert(all(AreStructsEqualOnFields(A.calibration.describe,B.calibration.describe,'calID')),'OneLightToolbox:OLDirection:plus:InvalidInput','Directions have different calibrations');
+                newDescribe = struct('createdFrom',struct('a',A,'b',B,'operator','minus'),'correction',[],'validation',[]);
+                out = OLDirection([],A.differentialPositive-B.differentialPositive,A.differentialNegative-B.differentialNegative,A.calibration,newDescribe);
+            elseif all(size(A) == size(B))
+                % Sizes match, send each pair to be subtractd.
+                for i = 1:numel(A)
+                    out = [out minus(A(i),B(i))];
+                end
+            elseif ~isscalar(A)
+                % A is not scalar, loop over A
+                for i = 1:numel(A)
+                    out = [out minus(A(i),B)];
+                end
+            elseif ~isscalar(B)
+                % B is not scalar, loop over B
+                for i = 1:numel(B)
+                    out = [out minus(A,B(i))];
+                end
+            end
         end
         
-        function out = plus(a,b)
-            % Overload the a+b (addition) operator
+        function out = eq(A,B)
+            % Determine equality
+            %
+            %
+            assert(isa(A,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Input have to be OLDirection');
+            assert(isa(B,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Input have to be OLDirection');
+            assert(all(AreStructsEqualOnFields(A.calibration.describe,B.calibration.describe,'calID')),'OneLightToolbox:OLDirection:plus:InvalidInput','Directions have different calibrations');
             
-        end
-        
-        function out = minus(a,b)
-            % Overload the a-b operator
-            
+            % Check if differentials match
+            out = all(A.differentialPositive == B.differentialPositive) && ...
+                all(A.differentialNegative == B.differentialNegative);
         end
     end
     
