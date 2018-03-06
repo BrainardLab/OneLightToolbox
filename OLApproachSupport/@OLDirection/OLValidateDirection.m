@@ -88,6 +88,8 @@ parser.addParameter('temperatureProbe',[],@(x) isempty(x) || isa(x,'LJTemperatur
 parser.parse(direction,background,oneLight,varargin{:});
 assert(isscalar(direction) && isscalar(background),'OneLightToolbox:OLDirection:ValidateDirection:NonScalar',...
     'Can currently only validate a single OLDirection at a time');
+assert(all(matchingCalibration(direction,background)),'OneLightToolbox:OLDirection:ValidateDirection:UnequalCalibration',...
+    'Directions and backgrounds do not share a calibration');
 radiometer = parser.Results.radiometer;
 
 validation.time = now;
