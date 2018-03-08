@@ -91,7 +91,7 @@ classdef OLDirection < handle
                 
                 % Create new direction
                 newDescribe = struct('createdFrom',struct('a',direction,'b',s,'operator','.*'),'correction',[],'validation',[]);
-                newDirection = OLDirection(direction.background,s*direction.differentialPositive,s*direction.differentialNegative,direction.calibration,newDescribe);
+                newDirection = OLDirection(s*direction.differentialPositive,s*direction.differentialNegative,direction.calibration,newDescribe);
                 out = [out newDirection];
             end
         end
@@ -116,7 +116,7 @@ classdef OLDirection < handle
                 % Add 2 directions
                 assert(all(AreStructsEqualOnFields(A.calibration.describe,B.calibration.describe,'calID')),'OneLightToolbox:OLDirection:plus:InvalidInput','Directions have different calibrations');
                 newDescribe = struct('createdFrom',struct('a',A,'b',B,'operator','plus'),'correction',[],'validation',[]);
-                out = OLDirection([],A.differentialPositive+B.differentialPositive,A.differentialNegative+B.differentialNegative,A.calibration,newDescribe);
+                out = OLDirection(A.differentialPositive+B.differentialPositive,A.differentialNegative+B.differentialNegative,A.calibration,newDescribe);
             elseif all(size(A) == size(B))
                 % Sizes match, send each pair to be added.
                 for i = 1:numel(A)
@@ -185,7 +185,7 @@ classdef OLDirection < handle
                 % Subtract 2 directions
                 assert(all(AreStructsEqualOnFields(A.calibration.describe,B.calibration.describe,'calID')),'OneLightToolbox:OLDirection:plus:InvalidInput','Directions have different calibrations');
                 newDescribe = struct('createdFrom',struct('a',A,'b',B,'operator','minus'),'correction',[],'validation',[]);
-                out = OLDirection([],A.differentialPositive-B.differentialPositive,A.differentialNegative-B.differentialNegative,A.calibration,newDescribe);
+                out = OLDirection(A.differentialPositive-B.differentialPositive,A.differentialNegative-B.differentialNegative,A.calibration,newDescribe);
             elseif all(size(A) == size(B))
                 % Sizes match, send each pair to be subtractd.
                 for i = 1:numel(A)
