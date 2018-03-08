@@ -240,12 +240,7 @@ classdef OLDirection < handle
             out = strcmp(Acalibrations,Bcalibrations);
         end
     end
-    
-    %% Methods defined in separate files
-    methods
-        OLValidateDirection(direction, background, oneLight, radiometer, varargin)  
-    end
-    
+       
     %% Static methods
     methods (Static)
         function direction = NullDirection(calibration)
