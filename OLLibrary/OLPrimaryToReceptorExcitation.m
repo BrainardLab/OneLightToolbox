@@ -1,5 +1,5 @@
 function [excitation, SPD] = OLPrimaryToReceptorExcitation(primaryValues, calibration, receptors, varargin)
-% Calculates receptor excitations from primary values
+% Predicts receptor excitations from primary values
 %
 % Syntax:
 %   excitation = OLPrimaryToReceptorExcitation(primaryValues, calibration, T_receptors);
@@ -8,8 +8,8 @@ function [excitation, SPD] = OLPrimaryToReceptorExcitation(primaryValues, calibr
 %
 % Description:
 %    Takes in one or more vector of primary values, and a set of receptors
-%    (sensitivities), and returns the excitation of each receptor type to
-%    each vector of primary values.
+%    (sensitivities), and returns the predicted excitation of each receptor
+%    type to each vector of primary values.
 %
 % Inputs:
 %    primaryValues - PxN matrix, where P is the number of device primaries,
@@ -26,10 +26,10 @@ function [excitation, SPD] = OLPrimaryToReceptorExcitation(primaryValues, calibr
 %                      T.T_energyNormalized matrix will be used
 %
 % Outputs:
-%    excitation    - RxN matrix of excitations of the R receptors for each
-%                    of the N vectors of primary values.
-%    SPD           - Spectral power distribution for each of the N vectors
-%                    of primary values
+%    excitation    - RxN matrix of predicted excitations of the R receptors
+%                    for each of the N vectors of primary values.
+%    SPD           - Predicted spectral power distribution for each of the
+%                    N vectors of primary values
 %
 % Optional key/value pairs:
 %    differentialMode - (true/false). Do not add in the dark light and

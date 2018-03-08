@@ -1,23 +1,22 @@
 function [contrasts, excitationDiff, excitation, SPD] = OLPrimaryToReceptorContrast(primaryValues, calibration, receptors, varargin)
-% Calculates receptor excitations from primary values
+% Predicts receptor contrast from primary values
 %
 % Syntax:
 %   contrasts = OLPrimaryToReceptorContrast(primaryValues, calibration, T_receptors);
 %   contrasts = OLPrimaryToReceptorContrast(primaryValues, calibration, SSTReceptors);
 %   [contrast, excitationDiff, excitation] = OLPrimaryToReceptorContrast(...);
-%   [..., SPD] = OLPrimaryToReceptorContrast(...);
+%   [contrast, excitationDiff, excitation, SPD] = OLPrimaryToReceptorContrast(...);
 %
 % Description:
 %    Takes in vectors of primary values, and a set of receptors
-%    (sensitivities), and returns the contrast on each receptor type to
-%    between each pair of vector of primary values.
+%    (sensitivities), and returns the predicted contrast on each receptor
+%    type to between each pair of vector of primary values.
 %
 % Inputs:
 %    primaryValues   - PxN matrix, where P is the number of device
 %                      primaries, and N is the number of vectors of primary
-%                      values.
-%                      Those values out of range are truncated to be in
-%                      range.
+%                      values. Those values out of range [0-1] are
+%                      truncated to be in range.
 %    calibration     - OneLight calibration struct
 %    receptors       - either:
 %                      - RxnWls matrix (T_receptors) of R receptor
@@ -26,17 +25,18 @@ function [contrasts, excitationDiff, excitation, SPD] = OLPrimaryToReceptorContr
 %                        T.T_energyNormalized matrix will be used
 %
 % Outputs:
-%    contrasts       - NxNxR matrix of contrasts (one NxN matrix per
-%                      receptor type), where contrasts(i,j,R) =
+%    contrasts       - NxNxR matrix of predicted contrasts (one NxN matrix
+%                      per receptor type), where contrasts(i,j,R) =
 %                      excitationDiff(i,j,R) / excitation(R,i)
-%    excitationDiff  - NxNxR matrix of differences in excitations (one NxN
-%                      matrix per receptor type), where
+%    excitationDiff  - NxNxR matrix of differences in predicted excitations
+%                      (one NxN matrix per receptor type), where
 %                      excitationDiff(i,j,R) = excitation(R,j) -
 %                      excitation(R,i).
-%    excitation      - RxN matrix of excitations of the R receptors for
-%                      each of the N vectors of primary values.
-%    SPD             - Spectral power distribution for each of the N
-%                      vectors of primary values
+%    excitation      - RxN matrix of predicted excitations of the R
+%                      receptors for each of the N vectors of primary
+%                      values.
+%    SPD             - Predicted spectral power distribution for each of the
+%                      N vectors of primary values
 %
 % Optional key/value pairs:
 %    None.
@@ -55,6 +55,7 @@ function [contrasts, excitationDiff, excitation, SPD] = OLPrimaryToReceptorContr
 %    In the case that only 1 vector of of primary values is passed,
 %    excitationDiff and contrasts are returned as nWlsx1 columnvectors of
 %    NaNs.
+%    * TODO: implement differential vs. absolute primary values. 
 %
 % See also:
 %    OLPrimaryToSPD, OLPrimaryToReceptorExcitation, SPDToReceptorExcitation
