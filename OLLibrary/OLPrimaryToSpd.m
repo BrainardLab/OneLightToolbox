@@ -1,24 +1,26 @@
-function spd = OLPrimaryToSpd(calibration, primary, varargin)
-% Converts a set of OneLight primary values to the predicted spd
-% 
+function SPD = OLPrimaryToSpd(calibration, primary, varargin)
+% Predict spectral power distribution from primar values
+%
 % Syntax:
-%   spd = OLPrimaryToSpd(primary, calibration);
-%   spd = OLPrimaryToSpd(primary, calibration, 'differentialMode', true);
+%   SPD = OLPrimaryToSpd(primary, calibration);
+%   SPD = OLPrimaryToSpd(primary, calibration, 'differentialMode', true);
 %
 % Description:
-%    Convert a primary for the OneLight into a predicted SPD
+%    Takes in vectors of primary values, and a OneLight calibration, and
+%    returns the spectral power distribution predicted from the calibration
+%    for each vector of primary values.
 %
 % Inputs:
 %    primary     - PxN matrix, where P is the number of primaries, and N is
-%                  the number of vectors of primary values. Each should be 
-%                  in range [0-1] for normal mode and [-1,1] for 
-%                  differential mode (see  below). Those values out of 
+%                  the number of vectors of primary values. Each should be
+%                  in range [0-1] for normal mode and [-1,1] for
+%                  differential mode (see  below). Those values out of
 %                  range are truncated to be in range.
-%    calibration - OneLight calibration file (must be valid, i.e., been 
+%    calibration - OneLight calibration struct (must be valid, i.e., been
 %                  processed by OLInitCal)
 %
 % Outputs:
-%    spd         - Spectral power distribution(s) predicted from the 
+%    SPD         - Spectral power distribution(s) predicted from the
 %                  primary values and calibration information
 %
 % Optional key/value pairs:
@@ -27,7 +29,7 @@ function spd = OLPrimaryToSpd(calibration, primary, varargin)
 %                         [-1,1] rather than [0,1]. Default false.
 %
 % See also:
-%    OLSpdToPrimary, OLPrimaryToSettings, OLSettingsToStartsStops, 
+%    OLSpdToPrimary, OLPrimaryToSettings, OLSettingsToStartsStops,
 %    OLSpdToPrimaryTest
 
 % History:
@@ -35,6 +37,7 @@ function spd = OLPrimaryToSpd(calibration, primary, varargin)
 %    06/05/17  dhb  Clean up comments.  Differential mode was enforcing
 %                   primaries into range [0,1] which was wrong.  Fixed.
 %    12/08/17  jv   put header comment in ISETBIO convention.
+%    03/08/18  jv   clarified header comment.
 
 % Parse input
 p = inputParser;
@@ -49,15 +52,15 @@ assert(isfield(calibration, 'computed'),...
     'The calibration file needs to be processed by OLInitCal.');
 
 % Predict spd from calibration fields
-% 
+%
 % Allowable primary range depends on whether differential mode is true or
 % not.
 if (p.Results.differentialMode)
     primary(primary < -1) = -1;
     primary(primary > 1) = 1;
-    spd = calibration.computed.pr650M * primary;
+    SPD = calibration.computed.pr650M * primary;
 else
     primary(primary < 0) = 0;
     primary(primary > 1) = 1;
-    spd = calibration.computed.pr650M * primary + calibration.computed.pr650MeanDark;
+    SPD = calibration.computed.pr650M * primary + calibration.computed.pr650MeanDark;
 end
