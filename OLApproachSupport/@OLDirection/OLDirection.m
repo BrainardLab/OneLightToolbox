@@ -223,7 +223,7 @@ classdef OLDirection < handle
         end
     end
     
-    
+    %% 
     methods
         function out = matchingCalibration(A,B)
             % Determine if OLDirections share a calibration
@@ -241,8 +241,23 @@ classdef OLDirection < handle
         end
     end
     
+    %% Methods defined in separate files
     methods
-        OLValidateDirection(direction, background, oneLight, radiometer, varargin)        
+        OLValidateDirection(direction, background, oneLight, radiometer, varargin)  
+    end
+    
+    %% Static methods
+    methods (Static)
+        function direction = NullDirection(calibration)
+            nPrimaries = calibration.describe.numWavelengthBands;
+            newDescribe = struct('NullDirection','NullDirection');
+            direction = OLDirection(zeros(nPrimaries,1),zeros(nPrimaries,1),calibration, newDescribe);
+        end
+        function direction = FullOnDirection(calibration)
+            nPrimaries = calibration.describe.numWavelengthBands;
+            newDescribe = struct('FullOnDirection','FullOnDirection');
+            direction = OLDirection(ones(nPrimaries,1),ones(nPrimaries,1),calibration, newDescribe);
+        end
     end
     
 end

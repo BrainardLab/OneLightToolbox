@@ -70,7 +70,7 @@ function [validation, SPDs, actualContrast, predictedContrast] = OLValidateDirec
 %
 % See also:
 %    OLValidatePrimaryValues, OLMeasurePrimaryValues, SPDToReceptorContrast
-%
+
 % History:
 %    02/05/18  jv  wrote it based on OLValidatePrimaryValues
 %    03/06/18  jv  adapted to work with OLDirection objects
