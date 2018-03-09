@@ -1,5 +1,5 @@
-function primaryWaveform = OLPrimaryWaveform(direction, waveform, varargin)
-% Combine OLDirection and waveform into waveform-matrix of primaries
+function primaryWaveform = OLPrimaryWaveform(directions, waveforms, varargin)
+% Combine OLDirections and waveforms into waveform-matrix of primaries
 %
 % Syntax:
 %   primaryWaveform = OLPrimaryWaveform(OLDirection, waveform)
@@ -9,18 +9,17 @@ function primaryWaveform = OLPrimaryWaveform(direction, waveform, varargin)
 % Description:
 %
 % Inputs:
-%    direction       - OLDirection object specifying the direction to
+%    directions      - OLDirection object specifying the directions to
 %                      create primary waveform for.
-%    waveform        - The waveform of temporal modulation, in a Nxt matrix
-%                      power levels for each of the N basis functions at
-%                      each timepoint t.
+%    waveforms       - Waveforms of temporal modulation, in a Nxt matrix
+%                      of scalars for each of the N directions at each
+%                      timepoint t.
 %
 % Outputs:
 %    primaryWaveform - The primary values at each timepoint t, in a Pxt
-%                      matrix. If multiple primary basis vectors were and
-%                      corresponding waveforms were passed in (i.e. N > 1),
-%                      these have been combined into a single
-%                      waveform-matrix.
+%                      matrix. If multiple directions and corresponding
+%                      waveforms were passed in (i.e. N > 1), these have
+%                      been combined into a single waveform-matrix.
 %
 % Optional key/value pairs:
 %    differential    - Boolean flag for treating primary values as
@@ -49,15 +48,19 @@ parser.addRequired('direction',@(x) isa(x,'OLDirection'));
 parser.addRequired('waveform',@isnumeric);
 parser.addParameter('differential',true,@islogical);
 parser.addParameter('truncateGamut',false,@islogical);
-parser.parse(direction,waveform,varargin{:});
+parser.parse(directions,waveforms,varargin{:});
+assert(size(waveforms,1) == numel(directions),'OneLightToolbox:OLApproachSupport:OLPrimaryWaveform:MismatchedSizes',...
+    'Number of directions does not match number of waveforms');
+assert(matchingCalibration(directions),'OneLightToolbox:OLApproachSupport:OLPrimaryWaveform:MismatchedCalibrations',...
+    'Directions do not share a calibration');
 
-%% Parse waveform into positive and negative components
-waveformPos = (waveform >= 0) .* waveform;
-waveformNeg = (waveform < 0) .* -waveform;
-waveform = [waveformPos; waveformNeg];
+%% Parse waveforms into positive and negative components
+waveformsPos = (waveforms >= 0) .* waveforms;
+waveformsNeg = (waveforms < 0) .* -waveforms;
+waveforms = [waveformsPos; waveformsNeg];
 
 %% Matrix multiplication
-primaryWaveform = [direction.differentialPositive, direction.differentialNegative] * waveform;
+primaryWaveform = [[directions.differentialPositive], [directions.differentialNegative]] * waveforms;
 
 %% Check gamut
 gamut = [0 1] - [parser.Results.differential 0]; % set gamut limits
