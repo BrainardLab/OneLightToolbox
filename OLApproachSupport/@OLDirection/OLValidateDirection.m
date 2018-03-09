@@ -21,21 +21,8 @@ function [validation, SPDs, actualContrast, predictedContrast] = OLValidateDirec
 %    field of the OLDirection.
 %
 % Inputs:
-%    direction         - OLDirection object, with at least the following
-%                        properties:
-%                        * differentialPositive: the difference in primary
-%                                                values to be added to the
-%                                                background primary to
-%                                                create the positive
-%                                                direction
-%                        * differentialNegative: the difference in primary
-%                                                values to be added to the
-%                                                background primary to
-%                                                create the negative
-%                                                direction
-%                        * calibration         : OneLight calibration
-%                                                struct
-%                        * describe            : struct with metadata
+%    direction         - OLDirection object specifying the direction to
+%                        validate.
 %    background        - OLDirection object specifying the background
 %                        around which to validate.
 %    oneLight          - a oneLight device driver object to control a

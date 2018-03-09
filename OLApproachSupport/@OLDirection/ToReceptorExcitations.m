@@ -15,8 +15,8 @@ function excitations = ToReceptorExcitations(direction, receptors)
 %    this OLDirection.
 %
 % Inputs:
-%    direction  - OLDirection object specifying the direction in primary
-%                 space
+%    direction  - OLDirection object specifying the direction to predict 
+%                 excitations for.
 %    receptors  - either:
 %                 - RxnWls matrix (T_receptors) of R receptor sensitivities
 %                   sampled at nWls wavelength bands

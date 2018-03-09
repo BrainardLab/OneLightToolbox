@@ -9,23 +9,10 @@ function correctedDirection = OLCorrectDirection(direction, background, oneLight
 %    Detailed explanation goes here
 %
 % Inputs:
-%    direction          - OLDirection object, with at least the following
-%                         properties:
-%                         * differentialPositive: the difference in primary
-%                                                 values to be added to the
-%                                                 background primary to
-%                                                 create the positive
-%                                                 direction
-%                         * differentialNegative: the difference in primary
-%                                                 values to be added to the
-%                                                 background primary to
-%                                                 create the negative
-%                                                 direction
-%                         * calibration         : OneLight calibration
-%                                                 struct
-%                         * describe            : struct with metadata
+%    direction          - OLDirection object specifying the direction to
+%                         correct.
 %    background         - OLDirection object specifying the background
-%                         around which to validate.
+%                         around which to correct.
 %    oneLight           - a OneLight device driver object to control a
 %                         OneLight device, can be real or simulated
 %    radiometer         - Radiometer object to control a

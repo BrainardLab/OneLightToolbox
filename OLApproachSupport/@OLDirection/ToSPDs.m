@@ -20,8 +20,8 @@ function SPDs = ToSPDs(direction, varargin)
 %    background +- the direction.
 %
 % Inputs:
-%    direction  - an OLDirection object specifying the direction in primary
-%                 space
+%    direction  - OLDirection object specifying the direction to predict 
+%                 SPDs for.
 %    background - [OPTIONAL] an OLDirection object specifying the
 %                 background in primary space
 %
