@@ -3,6 +3,7 @@ function primaryWaveform = OLPrimaryWaveform(primaryValues, waveform, varargin)
 %
 % Syntax:
 %   primaryWaveform = OLPrimaryWaveform(primaryValues, waveform)
+%   primaryWaveform = OLPrimaryWaveform(...,'truncateGamut',true)
 %
 % Description:
 %
