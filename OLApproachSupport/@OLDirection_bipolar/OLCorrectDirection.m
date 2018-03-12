@@ -49,8 +49,8 @@ function correctedDirection = OLCorrectDirection(direction, background, oneLight
 
 %% Input validation
 parser = inputParser;
-parser.addRequired('direction',@(x) isa(x,'OLDirection'));
-parser.addRequired('background',@(x) isa(x,'OLDirection'));
+parser.addRequired('direction',@(x) isa(x,'OLDirection_bipolar'));
+parser.addRequired('background',@(x) isa(x,'OLDirection_unipolar'));
 parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
 parser.addOptional('radiometer',[],@(x) isempty(x) || isa(x,'Radiometer'));
 parser.KeepUnmatched = true; % allows fastforwarding of kwargs to OLCorrectPrimaryValues
@@ -65,8 +65,8 @@ correction.time = now;
 correction.background = background;
 
 %% Get initial primaries directionPositive, directionNegative
-primaryPositiveInitial = background.differentialPositive + direction.differentialPositive;
-primaryNegativeInitial = background.differentialPositive + direction.differentialNegative;
+primaryPositiveInitial = background.differentialPrimaryValues + direction.differentialPositive;
+primaryNegativeInitial = background.differentialPrimaryValues + direction.differentialNegative;
 
 %% Correct positive differential, but only if nonzero
 if any(direction.differentialPositive)
@@ -75,7 +75,7 @@ else
     primaryPositiveCorrected = primaryPositiveInitial;
     dataPrimaryPositive = [];
 end
-correctedDifferentialPositive = primaryPositiveCorrected - background.differentialPositive;
+correctedDifferentialPositive = primaryPositiveCorrected - background.differentialPrimaryValues;
 
 %% Correct negative differential, but only if nonzero
 if any(direction.differentialNegative)
@@ -84,12 +84,12 @@ else
     primaryNegativeCorrected = primaryNegativeInitial;
     dataPrimaryNegative = [];
 end
-correctedDifferentialNegative = primaryNegativeCorrected - background.differentialPositive;
+correctedDifferentialNegative = primaryNegativeCorrected - background.differentialPrimaryValues;
 
 %% Assign to OLDirection
 newDescribe.createdFrom = struct('operator','correction','nominal',direction);
 newDescribe.correction.dataPositiveCorrection = dataPrimaryPositive;
 newDescribe.correction.dataNegativeCorrection = dataPrimaryNegative;
 
-correctedDirection = OLDirection(background,correctedDifferentialPositive,correctedDifferentialNegative,direction.calibration,newDescribe);
+correctedDirection = OLDirection_bipolar(correctedDifferentialPositive,correctedDifferentialNegative,direction.calibration,newDescribe);
 end

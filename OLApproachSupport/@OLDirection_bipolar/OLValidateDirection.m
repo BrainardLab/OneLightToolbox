@@ -64,8 +64,8 @@ function [validation, SPDs, actualContrast, predictedContrast] = OLValidateDirec
 
 %% Input validation
 parser = inputParser;
-parser.addRequired('direction',@(x) isa(x,'OLDirection'));
-parser.addRequired('background',@(x) isa(x,'OLDirection'));
+parser.addRequired('direction',@(x) isa(x,'OLDirection_bipolar'));
+parser.addRequired('background',@(x) isa(x,'OLDirection_unipolar'));
 parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
 parser.addOptional('radiometer',[],@(x) isempty(x) || isa(x,'Radiometer'));
 parser.addParameter('receptors',[],@(x) isa(x,'SSTReceptor') || isnumeric(x));
@@ -95,7 +95,7 @@ if ~isempty(receptors) && isnumeric(receptors)
 end
 
 %% Get background primary and max primaries
-backgroundPrimary = background.differentialPositive;
+backgroundPrimary = background.differentialPrimaryValues;
 positive = backgroundPrimary + direction.differentialPositive;
 negative = backgroundPrimary + direction.differentialNegative;
 primaries = [backgroundPrimary, positive, negative];
