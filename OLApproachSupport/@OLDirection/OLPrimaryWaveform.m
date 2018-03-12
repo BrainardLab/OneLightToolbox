@@ -51,7 +51,7 @@ parser.addParameter('truncateGamut',false,@islogical);
 parser.parse(directions,waveforms,varargin{:});
 assert(size(waveforms,1) == numel(directions),'OneLightToolbox:OLApproachSupport:OLPrimaryWaveform:MismatchedSizes',...
     'Number of directions does not match number of waveforms');
-assert(matchingCalibration(directions(1), directions(2:end)),'OneLightToolbox:OLApproachSupport:OLPrimaryWaveform:MismatchedCalibrations',...
+assert(all(matchingCalibration(directions(1), directions(2:end))),'OneLightToolbox:OLApproachSupport:OLPrimaryWaveform:MismatchedCalibrations',...
     'Directions do not share a calibration');
 
 %% Parse waveforms into positive and negative components
@@ -59,8 +59,21 @@ waveformsPos = (waveforms >= 0) .* waveforms;
 waveformsNeg = (waveforms < 0) .* -waveforms;
 waveforms = [waveformsPos; waveformsNeg];
 
+%% Assemble primary values matrix
+% initialize empty primary values matrix
+primaryValues = zeros([directions(1).calibration.describe.numWavelengthBands, numel(directions)*2]);
+for i = 1:numel(directions)
+    if isa(directions(i),'OLDirection_unipolar')
+        primaryValues(:,i) = any(waveformsPos(i,:)) * directions(i).differentialPrimaryValues;
+        primaryValues(:,numel(directions)+i) = any(waveformsNeg(i,:)) * -directions(i).differentialPrimaryValues;
+    else
+        primaryValues(:,i) = directions(i).differentialPositive;
+        primaryValues(:,numel(directions)+i) = directions(i).differentialNegative;
+    end
+end
+
 %% Matrix multiplication
-primaryWaveform = [[directions.differentialPositive], [directions.differentialNegative]] * waveforms;
+primaryWaveform = primaryValues * waveforms;
 
 %% Check gamut
 gamut = [0 1] - [parser.Results.differential 0]; % set gamut limits

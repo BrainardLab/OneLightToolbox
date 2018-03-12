@@ -1,4 +1,4 @@
-classdef (Abstract) OLDirection  < handle
+classdef (Abstract) OLDirection < handle & matlab.mixin.Heterogeneous
     % Class defining a direction for use with OneLight devices
     %
     % Description:
@@ -51,7 +51,7 @@ classdef (Abstract) OLDirection  < handle
             newSize(dim) = 1;
             
             % Fencepost output
-            out = OLDirection.empty();
+            out = OLDirection_unipolar.empty();
             
             % Sum
             if dim == 1
@@ -63,7 +63,10 @@ classdef (Abstract) OLDirection  < handle
     end
     
     %% 
-    methods
+    methods (Sealed)
+        primaryWaveform = OLPrimaryWaveform(directions, waveforms, varargin);
+        modulation = OLAssembleModulation(directions, waveforms, varargin);
+
         function out = matchingCalibration(A,B)
             % Determine if OLDirections share a calibration
             assert(isa(A,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be OLDirection');
