@@ -1,4 +1,4 @@
-classdef OLDirection < handle
+classdef (Abstract) OLDirection  < handle
     % Class defining a direction for use with OneLight devices
     %
     % Description:
@@ -60,41 +60,6 @@ classdef OLDirection < handle
                 out(:,1) = plus(A(:,1),A(:,2:end));
             end
         end
-        
-        function out = minus(A,B)
-            % Subtract OLDirections; overloads the a-b (subtract) operator
-            
-            % Input validation
-            assert(isa(A,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be OLDirection');
-            assert(isa(B,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be OLDirection');
-            assert(all(size(A) == size(B)) || (isscalar(A) || isscalar(B)),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be the same size, or one input must be scalar');
-            
-            % Fencepost output
-            out = OLDirection.empty();
-            
-            % Do subtractions (recursively if necessary)
-            if numel(A) == 1 && numel(B) == 1
-                % Subtract 2 directions
-                assert(all(AreStructsEqualOnFields(A.calibration.describe,B.calibration.describe,'calID')),'OneLightToolbox:OLDirection:plus:InvalidInput','Directions have different calibrations');
-                newDescribe = struct('createdFrom',struct('a',A,'b',B,'operator','minus'),'correction',[],'validation',[]);
-                out = OLDirection(A.differentialPositive-B.differentialPositive,A.differentialNegative-B.differentialNegative,A.calibration,newDescribe);
-            elseif all(size(A) == size(B))
-                % Sizes match, send each pair to be subtractd.
-                for i = 1:numel(A)
-                    out = [out minus(A(i),B(i))];
-                end
-            elseif ~isscalar(A)
-                % A is not scalar, loop over A
-                for i = 1:numel(A)
-                    out = [out minus(A(i),B)];
-                end
-            elseif ~isscalar(B)
-                % B is not scalar, loop over B
-                for i = 1:numel(B)
-                    out = [out minus(A,B(i))];
-                end
-            end
-        end 
     end
     
     %% 

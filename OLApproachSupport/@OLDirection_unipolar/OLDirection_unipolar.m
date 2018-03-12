@@ -23,12 +23,9 @@ classdef OLDirection_unipolar < OLDirection
     %% Constructor
     methods
         function this = OLDirection_unipolar(differentialPrimaryValues, calibration, varargin)
-            % Constructor for OLDirection objects
-            %
-            %
-            %
+            % Constructor for OLDirection_unipolar objects
             
-            % Parse input
+            % Input validation
             parser = inputParser();
             parser.addRequired('differentialPrimaryValues',@isnumeric);
             parser.addRequired('calibration',@isstruct);
@@ -40,7 +37,7 @@ classdef OLDirection_unipolar < OLDirection
             this.differentialPrimaryValues = differentialPrimaryValues;
             this.calibration = calibration;
             this.describe = parser.Results.describe;
-        end        
+        end
     end
     
     %% Overloaded operators
@@ -57,23 +54,13 @@ classdef OLDirection_unipolar < OLDirection
             
             % Check if differentials match
             outDiffs = all([A.differentialPrimaryValues] == [B.differentialPrimaryValues]);
-              
+            
             % Combine
             out = outCal & outDiffs;
         end
         
         function out = times(A,B)
             % Scale OLDirection; overloads the .* operator
-            %
-            % One of the operators has to be numerical, the other has to be
-            % an (array of) OLDirection_unipolar(s)
-            %
-            %   X.*Y denotes element-by-element multiplication. X and Y
-            %   must have compatible sizes. In the simplest cases, they can
-            %   be the same size or one can be a scalar. Two inputs have
-            %   compatible sizes if, for every dimension, the dimension
-            %   sizes of the inputs are either the same or one of them is
-            %   1.
             
             % Input validation
             if isa(A,'OLDirection')
@@ -110,11 +97,44 @@ classdef OLDirection_unipolar < OLDirection
         end
         
         function out = plus(A,B)
-            % Add OLDirection_unipolar; overloads the a+b (addition) operator
+            % Add OLDirections; overloads the a+b (addition) operator
+            %
+            % Syntax:
+            %   summedUnipolar = plus(A_unipolar, B_unipolar)
+            %   summedUnipolar = plus(A_unipolar, B_bipolar)
+            %   summedUnipolar = A_unipolar + B_unipolar
+            %   summedUnipolar = A_unipolar + B_bipolar
+            %   summedUnipolar = A_unipolar.plus(B_unipolar)
+            %   summedUnipolar = A_unipolar.plus(B_bipolar)
+            %
+            % Description:
+            %    Adds an OLDirection_unipolar object to another OLDirection
+            %    object. When adding two unipolar objects, their
+            %    differentialPrimaryValues properties are summed. When
+            %    adding a unipolar to a bipolar object, the unipolar's
+            %    differentialPrimaryValues are added to
+            %    differentialPositive property of the bipolar direction.
+            %    The output is always an OLDirection_unipolar object.
+            %
+            % Inputs:
+            %    A              - OLDirection_unipolar object
+            %    B              - OLDirection_unipolar, or
+            %                     OLDirection_bipolar, object
+            %
+            % Outputs:
+            %    summedUnipolar - a new OLDirection_unipolar object,
+            %                     with the summed
+            %                     differentialPrimaryValues
+            %
+            % Optional key/value pairs:
+            %    None.
+            %
+            % See also:
+            %    OLDirection, OLDirection_unipolar, OLDirection_bipolar
             
             % Input validation
-            assert(isa(A,'OLDirection_unipolar'),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be OLDirection_unipolar');
-            assert(isa(B,'OLDirection_unipolar'),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be OLDirection_unipolar');
+            assert(isa(A,'OLDirection_unipolar'),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be OLDirection');
+            assert(isa(B,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be OLDirection');
             assert(all(size(A) == size(B)) || (isscalar(A) || isscalar(B)),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be the same size, or one input must be scalar');
             assert(all(matchingCalibration(A,B)),'OneLightToolbox:OLDirection:plus:InvalidInput','Directions have different calibrations');
             
@@ -125,7 +145,12 @@ classdef OLDirection_unipolar < OLDirection
             if numel(A) == 1 && numel(B) == 1
                 % Add 2 directions
                 newDescribe = struct('createdFrom',struct('a',A,'b',B,'operator','plus'),'correction',[],'validation',[]);
-                out = OLDirection_unipolar(A.differentialPrimaryValues+B.differentialPrimaryValues,A.calibration,newDescribe);
+                if isa(B,'OLDirection_bipolar')
+                    Bdifferential = B.differentialPositive;
+                else
+                    Bdifferential = B.differentialPrimaryValues;
+                end
+                out = OLDirection_unipolar(A.differentialPrimaryValues+Bdifferential,A.calibration,newDescribe);
             elseif all(size(A) == size(B))
                 % Sizes match, send each pair to be added.
                 for i = 1:numel(A)
@@ -145,11 +170,45 @@ classdef OLDirection_unipolar < OLDirection
         end
         
         function out = minus(A,B)
-            % Subtract OLDirection_unipolar; overloads the a-b (subtract) operator
+            % Subtract OLDirections; overloads the a-b (subtract) operator
+            %
+            % Syntax:
+            %   subtractedUnipolar = minus(A_unipolar, B_unipolar)
+            %   subtractedUnipolar = minus(A_unipolar, B_bipolar)
+            %   subtractedUnipolar = A_unipolar - B_unipolar
+            %   subtractedUnipolar = A_unipolar - B_bipolar
+            %   subtractedUnipolar = A_unipolar.minus(B_unipolar)
+            %   subtractedUnipolar = A_unipolar.minus(B_bipolar)
+            %
+            % Description:
+            %    Subtracts an OLDirection_unipolar object from another
+            %    OLDirection object. When subracting two unipolar objects,
+            %    their differentialPrimaryValues properties are subtracted.
+            %    When subtractin a unipolar from a bipolar object, the
+            %    bipolar's differentialNegative property is subtracted from
+            %    the differentialPrimaryValues property of the unipolar
+            %    direction. The output is always an OLDirection_unipolar
+            %    object.
+            %
+            % Inputs:
+            %    A                  - OLDirection_unipolar object
+            %    B                  - OLDirection_unipolar, or
+            %                         OLDirection_bipolar, object
+            %
+            % Outputs:
+            %    subtractedUnipolar - a new OLDirection_unipolar object,
+            %                         with the summed
+            %                         differentialPrimaryValues
+            %
+            % Optional key/value pairs:
+            %    None.
+            %
+            % See also:
+            %    OLDirection, OLDirection_unipolar, OLDirection_bipolar
             
             % Input validation
             assert(isa(A,'OLDirection_unipolar'),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be OLDirection_unipolar');
-            assert(isa(B,'OLDirection_unipolar'),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be OLDirection_unipolar');
+            assert(isa(B,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be OLDirection');
             assert(all(size(A) == size(B)) || (isscalar(A) || isscalar(B)),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be the same size, or one input must be scalar');
             assert(all(matchingCalibration(A,B)),'OneLightToolbox:OLDirection:plus:InvalidInput','Directions have different calibrations');
             
@@ -160,7 +219,12 @@ classdef OLDirection_unipolar < OLDirection
             if numel(A) == 1 && numel(B) == 1
                 % Subtract 2 directions
                 newDescribe = struct('createdFrom',struct('a',A,'b',B,'operator','minus'),'correction',[],'validation',[]);
-                out = OLDirection_unipolar(A.differentialPrimaryValues-B.differentialPrimaryValues,A.calibration,newDescribe);
+                if isa(B,'OLDirection_bipolar')
+                    Bdifferential = B.differentialPositive;
+                else
+                    Bdifferential = B.differentialPrimaryValues;
+                end
+                out = OLDirection_unipolar(A.differentialPrimaryValues-Bdifferential,A.calibration,newDescribe);
             elseif all(size(A) == size(B))
                 % Sizes match, send each pair to be subtractd.
                 for i = 1:numel(A)
@@ -177,9 +241,9 @@ classdef OLDirection_unipolar < OLDirection
                     out = [out minus(A,B(i))];
                 end
             end
-        end 
+        end
     end
-        
+    
     %% Static methods
     methods (Static)
         function direction = Null(calibration)
@@ -192,7 +256,6 @@ classdef OLDirection_unipolar < OLDirection
             newDescribe = struct('FullOnDirection','FullOnDirection');
             direction = OLDirection_unipolar(ones(nPrimaries,1),calibration, newDescribe);
         end
-    end    
+    end
     
 end
-

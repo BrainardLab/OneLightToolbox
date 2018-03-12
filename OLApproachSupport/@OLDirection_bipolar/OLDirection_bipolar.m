@@ -24,11 +24,8 @@ classdef OLDirection_bipolar < OLDirection
     methods
         function this = OLDirection_bipolar(differentialPositive, differentialNegative, calibration, varargin)
             % Constructor for OLDirection_bipolar objects
-            %
-            %
-            %
             
-            % Parse input
+            % Input validation
             parser = inputParser();
             parser.addRequired('differentialPositive',@isnumeric);
             parser.addRequired('differentialNegative',@isnumeric);
@@ -42,15 +39,13 @@ classdef OLDirection_bipolar < OLDirection
             this.differentialNegative = differentialNegative;
             this.calibration = calibration;
             this.describe = parser.Results.describe;
-        end        
+        end
     end
     
     %% Overloaded
     methods
         function out = eq(A,B)
             % Determine equality
-            %
-            %
             assert(isa(A,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be OLDirection');
             assert(isa(B,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be OLDirection');
             
@@ -59,24 +54,14 @@ classdef OLDirection_bipolar < OLDirection
             
             % Check if differentials match
             outDiffs = all([A.differentialPositive] == [B.differentialPositive]) & ...
-                  all([A.differentialNegative] == [B.differentialNegative]);   
-              
+                all([A.differentialNegative] == [B.differentialNegative]);
+            
             % Combine
             out = outCal & outDiffs;
-        end        
+        end
         
         function out = times(A,B)
             % Scale OLDirection; overloads the .* operator
-            %
-            % One of the operators has to be numerical, the other has to be
-            % an (array of) OLDirection_bipolar(s)
-            %
-            %   X.*Y denotes element-by-element multiplication. X and Y
-            %   must have compatible sizes. In the simplest cases, they can
-            %   be the same size or one can be a scalar. Two inputs have
-            %   compatible sizes if, for every dimension, the dimension
-            %   sizes of the inputs are either the same or one of them is
-            %   1.
             
             % Input validation
             if isa(A,'OLDirection')
