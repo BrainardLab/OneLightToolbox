@@ -46,18 +46,9 @@ classdef OLDirection_bipolar < OLDirection
     methods
         function out = eq(A,B)
             % Determine equality
-            assert(isa(A,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be OLDirection');
-            assert(isa(B,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be OLDirection');
-            
-            % Compare if calibrations match
-            outCal = matchingCalibration(A,B);
-            
-            % Check if differentials match
-            outDiffs = all([A.differentialPositive] == [B.differentialPositive]) & ...
-                all([A.differentialNegative] == [B.differentialNegative]);
-            
-            % Combine
-            out = outCal & outDiffs;
+            out = eq@OLDirection(A,B) && ...% same class, calibrations match
+                ( all([A.differentialPositive] == [B.differentialPositive]) && ...% positive differentials match
+                  all([A.differentialNegative] == [B.differentialNegative]) ); % negative differentials match
         end
         
         function out = times(A,B)

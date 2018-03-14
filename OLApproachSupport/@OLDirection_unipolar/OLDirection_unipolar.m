@@ -44,19 +44,8 @@ classdef OLDirection_unipolar < OLDirection
     methods
         function out = eq(A,B)
             % Determine equality
-            %
-            %
-            assert(isa(A,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be OLDirection');
-            assert(isa(B,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be OLDirection');
-            
-            % Compare if calibrations match
-            outCal = matchingCalibration(A,B);
-            
-            % Check if differentials match
-            outDiffs = all([A.differentialPrimaryValues] == [B.differentialPrimaryValues]);
-            
-            % Combine
-            out = outCal & outDiffs;
+            out = eq@OLDirection(A,B) && ...% same class, calibrations match
+                all([A.differentialPrimaryValues] == [B.differentialPrimaryValues]); % differentials match
         end
         
         function out = times(A,B)

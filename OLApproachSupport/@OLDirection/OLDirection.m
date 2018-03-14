@@ -26,7 +26,19 @@ classdef (Abstract) OLDirection < handle & matlab.mixin.Heterogeneous
         function varargout = mtimes(~,~) %#ok<STOUT>
             error('Undefined operator ''*'' for input arguments of type ''OLDirection''. Are you trying to use ''.*''?');
         end
+        
+        function out = eq(A,B)
+            % Determine equality
+            assert(isa(A,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be OLDirection.');
+            assert(isa(B,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be OLDirection.');            
                 
+            if ~strcmp(class(A),class(B))
+                out = false;
+            else
+                out = matchingCalibration(A,B);
+            end
+        end
+        
         function out = sum(varargin)
             % Sum of array elements
             %
