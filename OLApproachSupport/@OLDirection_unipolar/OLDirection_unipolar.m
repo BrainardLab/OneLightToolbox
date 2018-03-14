@@ -170,10 +170,11 @@ classdef OLDirection_unipolar < OLDirection
             %   subtractedUnipolar = A_unipolar.minus(B_bipolar)
             %
             % Description:
-            %    Subtracts an OLDirection_unipolar object from another
-            %    OLDirection object. When subracting two unipolar objects,
-            %    their differentialPrimaryValues properties are subtracted.
-            %    When subtractin a unipolar from a bipolar object, the
+            %    Subtracts an OLDirection object (B, righthand side) from
+            %    OLDirection_unipolar object (A, left hand side). When
+            %    subracting two unipolar objects, their
+            %    differentialPrimaryValues properties are subtracted. When
+            %    subtracting a bipolar from a unipolar object, the
             %    bipolar's differentialNegative property is subtracted from
             %    the differentialPrimaryValues property of the unipolar
             %    direction. The output is always an OLDirection_unipolar
@@ -186,7 +187,7 @@ classdef OLDirection_unipolar < OLDirection
             %
             % Outputs:
             %    subtractedUnipolar - a new OLDirection_unipolar object,
-            %                         with the summed
+            %                         with the subtracted
             %                         differentialPrimaryValues
             %
             % Optional key/value pairs:
@@ -209,7 +210,7 @@ classdef OLDirection_unipolar < OLDirection
                 % Subtract 2 directions
                 newDescribe = struct('createdFrom',struct('a',A,'b',B,'operator','minus'),'correction',[],'validation',[]);
                 if isa(B,'OLDirection_bipolar')
-                    Bdifferential = B.differentialPositive;
+                    Bdifferential = B.differentialNegative;
                 else
                     Bdifferential = B.differentialPrimaryValues;
                 end
