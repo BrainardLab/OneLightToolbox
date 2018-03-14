@@ -51,8 +51,10 @@ parser.addParameter('truncateGamut',false,@islogical);
 parser.parse(directions,waveforms,varargin{:});
 assert(size(waveforms,1) == numel(directions),'OneLightToolbox:OLApproachSupport:OLPrimaryWaveform:MismatchedSizes',...
     'Number of directions does not match number of waveforms');
-assert(all(matchingCalibration(directions(1), directions(2:end))),'OneLightToolbox:OLApproachSupport:OLPrimaryWaveform:MismatchedCalibrations',...
+if ~isscalar(directions)
+    assert(all(matchingCalibration(directions(1), directions(2:end))),'OneLightToolbox:OLApproachSupport:OLPrimaryWaveform:MismatchedCalibrations',...
     'Directions do not share a calibration');
+end
 
 %% Parse waveforms into positive and negative components
 waveformsPos = (waveforms >= 0) .* waveforms;

@@ -52,8 +52,6 @@ parser.addRequired('waveforms',@isnumeric);
 parser.parse(directions,waveforms,varargin{:});
 assert(size(waveforms,1) == numel(directions),'OneLightToolbox:OLApproachSupport:OLPrimaryWaveform:MismatchedSizes',...
     'Number of directions does not match number of waveforms');
-assert(all(matchingCalibration(directions(1),directions(2:end))),'OneLightToolbox:OLApproachSupport:OLPrimaryWaveform:MismatchedCalibrations',...
-    'Directions do not share a calibration');
 
 %% Create primary waveform matrix, predict SPDs
 % OLPrimaryWaveform will do the matrix multiplication for us.
