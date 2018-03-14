@@ -214,7 +214,7 @@ classdef OLDirection_unipolar < OLDirection
                 else
                     Bdifferential = B.differentialPrimaryValues;
                 end
-                out = OLDirection_unipolar(A.differentialPrimaryValues-Bdifferential,A.calibration,newDescribe);
+                out = OLDirection_unipolar(A.differentialPrimaryValues+Bdifferential,A.calibration,newDescribe);
             elseif all(size(A) == size(B))
                 % Sizes match, send each pair to be subtractd.
                 for i = 1:numel(A)
