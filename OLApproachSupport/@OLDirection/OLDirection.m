@@ -44,6 +44,7 @@ classdef (Abstract) OLDirection < handle & matlab.mixin.Heterogeneous
     methods (Sealed)
         primaryWaveform = OLPrimaryWaveform(directions, waveforms, varargin);
         modulation = OLAssembleModulation(directions, waveforms, varargin);
+        [excitations, SPDs] = ToReceptorExcitations(direction, receptors);
 
         function out = matchingCalibration(A,B)
             % Determine if OLDirections share a calibration
