@@ -38,40 +38,6 @@ classdef (Abstract) OLDirection < handle & matlab.mixin.Heterogeneous
                 out = matchingCalibration(A,B);
             end
         end
-        
-        function out = sum(varargin)
-            % Sum of array elements
-            %
-            % Sums array of OLDirections
-            
-            % Input validation
-            parser = inputParser;
-            parser.addRequired('A',@(x) isa(x,'OLDirection'));
-            parser.addOptional('dim',0,@isnumeric);
-            parser.parse(varargin{:});
-            A = parser.Results.A;
-            
-            % Determine dimension to sum over
-            if ~parser.Results.dim
-                dim = find(size(A) > 1,1);
-            else
-                dim = parser.Results.dim;
-            end
-            
-            % Determine new size
-            newSize = size(A);
-            newSize(dim) = 1;
-            
-            % Fencepost output
-            out = OLDirection_unipolar.empty();
-            
-            % Sum
-            if dim == 1
-                out(1,:) = plus(A(1,:),A(2:end,:));
-            elseif dim == 2
-                out(:,1) = plus(A(:,1),A(:,2:end));
-            end
-        end
     end
     
     %% 
