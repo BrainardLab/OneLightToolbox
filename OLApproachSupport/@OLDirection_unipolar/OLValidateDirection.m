@@ -179,6 +179,7 @@ validation.time = [validation.time now];
 for i = 1:numel(direction)
     % Extract information for just this direction(i)
     validationForDirection.time = validation.time;
+    validationForDirection.primaryValues = direction(i).differentialPrimaryValues;
     validationForDirection.SPDdesired = validation.SPDdesired(:,i);
     validationForDirection.SPDpredicted = validation.SPDpredicted(:,i);
     validationForDirection.SPDmeasured = validation.SPDmeasured(:,i);
