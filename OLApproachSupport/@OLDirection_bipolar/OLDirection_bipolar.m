@@ -30,7 +30,7 @@ classdef OLDirection_bipolar < OLDirection
             parser.addRequired('differentialPositive',@isnumeric);
             parser.addRequired('differentialNegative',@isnumeric);
             parser.addRequired('calibration',@isstruct);
-            parser.addOptional('describe',struct(),@isstruct);
+            parser.addOptional('describe',struct('createdFrom',struct('constructor','construtor','arguments',{differentialPrimaryValues,calibration,varargin}),'correction',[],'validation',[]),@isstruct);
             parser.StructExpand = false;
             parser.parse(differentialPositive, differentialNegative, calibration, varargin{:});
             

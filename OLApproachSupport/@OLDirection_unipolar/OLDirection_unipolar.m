@@ -29,7 +29,7 @@ classdef OLDirection_unipolar < OLDirection
             parser = inputParser();
             parser.addRequired('differentialPrimaryValues',@isnumeric);
             parser.addRequired('calibration',@isstruct);
-            parser.addOptional('describe',struct(),@isstruct);
+            parser.addOptional('describe',struct('createdFrom',struct('constructor','construtor','arguments',{differentialPrimaryValues,calibration,varargin}),'correction',[],'validation',[]),@isstruct);
             parser.StructExpand = false;
             parser.parse(differentialPrimaryValues, calibration, varargin{:});
             
