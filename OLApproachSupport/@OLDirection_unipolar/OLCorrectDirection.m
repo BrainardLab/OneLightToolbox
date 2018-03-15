@@ -18,7 +18,7 @@ function correctedDirection = OLCorrectDirection(direction, oneLight, varargin)
 %                         simulating
 %
 % Outputs:
-%    correctedDirection - a new, corrected OLDirection, with the corrected
+%    correctedDirection - the corrected OLDirection, with the corrected
 %                         primaries. Additional meta- and
 %                         debugging-information got added to the structure
 %                         in the 'describe' property.
@@ -44,6 +44,7 @@ function correctedDirection = OLCorrectDirection(direction, oneLight, varargin)
 % History:
 %    02/09/18  jv  created around OLCorrectPrimaryValues, based on
 %                  OLCorrectCacheFileOOC.
+%    03/15/18  jv  adapted for OLDirection_unipolar objects.
 
 %% Input validation
 parser = inputParser;
@@ -58,17 +59,29 @@ assert(isscalar(direction),'OneLightToolbox:OLDirection:ValidateDirection:NonSca
 %     'Directions and backgrounds do not share a calibration');
 radiometer = parser.Results.radiometer;
 
-correction.time = now;
+time = now;
+
+%% Copy nominal primary into separate object
+nominalDirection = OLDirection_unipolar(direction.differentialPrimaryValues,direction.calibration,direction.describe);
+nominalDirection.SPDdesired = direction.SPDdesired;
 
 %% Correct differential primary values
 [correctedDifferentialPrimaryValues, correctionData] = OLCorrectPrimaryValues(direction.differentialPrimaryValues,direction.calibration,oneLight,radiometer,varargin{:});
 
-%% Assign to OLDirection
-newDescribe.createdFrom = struct('operator','correction','nominal',direction);
-newDescribe.correction.dataPositiveCorrection = correctionData;
-correctedDirection = OLDirection_unipolar(correctedDifferentialPrimaryValues,direction.calibration,newDescribe);
+%% Update original OLDirection
+% Update business end
+direction.differentialPrimaryValues = correctedDifferentialPrimaryValues;
+direction.SPDdesired = nominalDirection.SPDdesired;
 
-%% Save desired SPD in new direction
-correctedDirection.SPDdesired = direction.SPDdesired;
+% Update describe
+correctionDescribe = correctionData;
+correctionDescribe.time = [time now];
+
+% Add to direction.describe; append if correction already present
+if ~isfield(direction.describe,'correction') || isempty(direction.describe.correction)
+    direction.describe.correction = correctionDescribe;
+else
+    direction.describe.corection = [direction.describe.correction correctionDescribe];
+end
 
 end
