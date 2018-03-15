@@ -158,16 +158,10 @@ if ~isempty(receptors)
     validation.excitationDesired = excitations.desiredExcitation;
     validation.excitationPredicted = excitations.predictedExcitation;
     validation.excitationActual = excitations.actualExcitation;
-    validation.postReceptoralDesired = []; 
-    validation.postReceptoralPredicted = [];
-    validation.postReceptoralActual = [];
 else
     validation.excitationDesired = [];
     validation.excitationPredicted = [];
     validation.excitationActual = [];
-    validation.postReceptoralDesired = []; 
-    validation.postReceptoralPredicted = [];
-    validation.postReceptoralActual = [];
 end
 
 %% Calculate direction luminance
