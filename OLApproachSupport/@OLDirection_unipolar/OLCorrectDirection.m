@@ -53,35 +53,42 @@ parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
 parser.addOptional('radiometer',[],@(x) isempty(x) || isa(x,'Radiometer'));
 parser.KeepUnmatched = true; % allows fastforwarding of kwargs to OLCorrectPrimaryValues
 parser.parse(direction,oneLight,varargin{:});
-assert(isscalar(direction),'OneLightToolbox:OLDirection:ValidateDirection:NonScalar',...
-    'Can currently only validate a single OLDirection at a time');
-% assert(all(matchingCalibration(direction,background)),'OneLightToolbox:OLDirection:ValidateDirection:UnequalCalibration',...
-%     'Directions and backgrounds do not share a calibration');
 radiometer = parser.Results.radiometer;
 
-time = now;
-
-%% Copy nominal primary into separate object
-nominalDirection = OLDirection_unipolar(direction.differentialPrimaryValues,direction.calibration,direction.describe);
-nominalDirection.SPDdesired = direction.SPDdesired;
-
-%% Correct differential primary values
-[correctedDifferentialPrimaryValues, correctionData] = OLCorrectPrimaryValues(direction.differentialPrimaryValues,direction.calibration,oneLight,radiometer,varargin{:});
-
-%% Update original OLDirection
-% Update business end
-direction.differentialPrimaryValues = correctedDifferentialPrimaryValues;
-direction.SPDdesired = nominalDirection.SPDdesired;
-
-% Update describe
-correctionDescribe = correctionData;
-correctionDescribe.time = [time now];
-
-% Add to direction.describe; append if correction already present
-if ~isfield(direction.describe,'correction') || isempty(direction.describe.correction)
-    direction.describe.correction = correctionDescribe;
+if ~isscalar(direction)
+    %% Dispatch correction for each direction
+	correctedDirection = [];
+    for i = 1:numel(direction)
+        correctedDirection = [correctedDirection, direction(i).OLCorrectDirection(oneLight,varargin{:})];
+    end
 else
-    direction.describe.corection = [direction.describe.correction correctionDescribe];
+    time = now;
+
+    %% Copy nominal primary into separate object
+    nominalDirection = OLDirection_unipolar(direction.differentialPrimaryValues,direction.calibration,direction.describe);
+    nominalDirection.SPDdesired = direction.SPDdesired;
+
+    %% Correct differential primary values
+    [correctedDifferentialPrimaryValues, correctionData] = OLCorrectPrimaryValues(direction.differentialPrimaryValues,direction.calibration,oneLight,radiometer,varargin{:});
+
+    %% Update original OLDirection
+    % Update business end
+    direction.differentialPrimaryValues = correctedDifferentialPrimaryValues;
+    direction.SPDdesired = nominalDirection.SPDdesired;
+
+    % Update describe
+    correctionDescribe = correctionData;
+    correctionDescribe.time = [time now];
+
+    % Add to direction.describe; append if correction already present
+    if ~isfield(direction.describe,'correction') || isempty(direction.describe.correction)
+        direction.describe.correction = correctionDescribe;
+    else
+        direction.describe.correction = [direction.describe.correction correctionDescribe];
+    end
+    
+    % Return direction
+    correctedDirection = direction;
 end
 
 end
