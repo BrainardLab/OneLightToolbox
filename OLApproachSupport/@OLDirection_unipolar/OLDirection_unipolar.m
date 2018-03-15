@@ -37,6 +37,8 @@ classdef OLDirection_unipolar < OLDirection
             this.differentialPrimaryValues = differentialPrimaryValues;
             this.calibration = calibration;
             this.describe = parser.Results.describe;
+            
+            this.SPDdesired = this.ToPredictedSPD;
         end
     end
     
