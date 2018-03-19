@@ -18,7 +18,7 @@ classdef (Abstract) OLDirection < handle & matlab.mixin.Heterogeneous
     
     properties
         calibration;
-        SPDdesired;
+        SPDdifferentialDesired;
         describe;
     end
       
