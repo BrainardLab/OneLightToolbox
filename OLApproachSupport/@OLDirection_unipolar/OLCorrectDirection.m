@@ -1,4 +1,4 @@
-function correctedDirection = OLCorrectDirection(direction, oneLight, varargin)
+function correctedDirection = OLCorrectDirection(direction, background, oneLight, varargin)
 % Corrects OLDirection iteratively to attain predicted SPD
 %
 % Syntax:
@@ -49,10 +49,11 @@ function correctedDirection = OLCorrectDirection(direction, oneLight, varargin)
 %% Input validation
 parser = inputParser;
 parser.addRequired('direction',@(x) isa(x,'OLDirection_unipolar'));
+parser.addRequired('background',@(x) isa(x,'OLDirection_unipolar'));
 parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
 parser.addOptional('radiometer',[],@(x) isempty(x) || isa(x,'Radiometer'));
 parser.KeepUnmatched = true; % allows fastforwarding of kwargs to OLCorrectPrimaryValues
-parser.parse(direction,oneLight,varargin{:});
+parser.parse(direction,background,oneLight,varargin{:});
 radiometer = parser.Results.radiometer;
 
 if ~isscalar(direction)
@@ -62,23 +63,29 @@ if ~isscalar(direction)
         correctedDirection = [correctedDirection, direction(i).OLCorrectDirection(oneLight,varargin{:})];
     end
 else
+    %% Correct a single direction
     time = now;
 
     %% Copy nominal primary into separate object
     nominalDirection = OLDirection_unipolar(direction.differentialPrimaryValues,direction.calibration,direction.describe);
-    nominalDirection.SPDdesired = direction.SPDdesired;
-
+    nominalDirection.SPDdifferentialDesired = direction.SPDdifferentialDesired;
+   
     %% Correct differential primary values
-    [correctedDifferentialPrimaryValues, correctionData] = OLCorrectPrimaryValues(direction.differentialPrimaryValues,direction.calibration,oneLight,radiometer,varargin{:});
-
+    nominalCombinedPrimaryValues = direction.differentialPrimaryValues+background.differentialPrimaryValues;
+    [correctedCombinedPrimaryValues, correctionData] = OLCorrectPrimaryValues(nominalCombinedPrimaryValues,direction.calibration,oneLight,radiometer,varargin{:});
+    
     %% Update original OLDirection
     % Update business end
-    direction.differentialPrimaryValues = correctedDifferentialPrimaryValues;
-    direction.SPDdesired = nominalDirection.SPDdesired;
+    direction.differentialPrimaryValues = correctedCombinedPrimaryValues-background.differentialPrimaryValues;
+    direction.SPDdifferentialDesired = nominalDirection.SPDdifferentialDesired;
 
     % Update describe
     correctionDescribe = correctionData;
     correctionDescribe.time = [time now];
+    correctionDescribe.background = background; 
+    correctionDescribe.nominalDirection = nominalDirection;
+    correctionDescribe.nominalCombinedPrimaryValues = nominalCombinedPrimaryValues;
+    correctionDescribe.correctedCombinedPrimaryValues = correctedCombinedPrimaryValues;
 
     % Add to direction.describe; append if correction already present
     if ~isfield(direction.describe,'correction') || isempty(direction.describe.correction)
