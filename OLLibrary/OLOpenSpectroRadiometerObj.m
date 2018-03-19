@@ -46,11 +46,11 @@ try
     end
 
 catch err
-    if (~isempty(spectroRadiometerOBJ))
+    if (exist('spectroRadiometerOBJ','var') && ~isempty(spectroRadiometerOBJ))
         spectroRadiometerOBJ.shutDown();
     end
-    SendEmail(emailRecipient, 'OLValidateCacheFileOOC Failed', ...
-        ['Calibration failed with the following error' 10 err.message]);
+%     SendEmail(emailRecipient, 'OLValidateCacheFileOOC Failed', ...
+%         ['Calibration failed with the following error' 10 err.message]);
     keyboard;
     rethrow(err);
 end
