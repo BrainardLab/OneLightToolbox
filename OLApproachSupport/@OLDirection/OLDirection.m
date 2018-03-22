@@ -21,9 +21,9 @@ classdef (Abstract) OLDirection < handle & matlab.mixin.Heterogeneous
         SPDdifferentialDesired;
         describe;
     end
-      
+    
     %% Overloaded operators, to allow for direction algebra
-    methods   
+    methods
         function varargout = mtimes(~,~) %#ok<STOUT>
             error('Undefined operator ''*'' for input arguments of type ''OLDirection''. Are you trying to use ''.*''?');
         end
@@ -31,8 +31,8 @@ classdef (Abstract) OLDirection < handle & matlab.mixin.Heterogeneous
         function out = eq(A,B)
             % Determine equality
             assert(isa(A,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be OLDirection.');
-            assert(isa(B,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be OLDirection.');            
-                
+            assert(isa(B,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be OLDirection.');
+            
             if ~strcmp(class(A),class(B))
                 out = false;
             else
@@ -41,18 +41,29 @@ classdef (Abstract) OLDirection < handle & matlab.mixin.Heterogeneous
         end
     end
     
-    %% 
+    %%
+    methods (Static, Access = protected)
+        function obj = getDefaultScalarElement
+            calibration.describe.numWavelengthBands = 0;
+            calibration.raw = struct();
+            calibration.calID = '';
+            calibration.computed.pr650M = [];
+            obj = OLDirection_unipolar.Null(calibration);
+        end
+    end
+    
+    %%
     methods (Sealed)
         primaryWaveform = OLPrimaryWaveform(directions, waveforms, varargin);
         modulation = OLAssembleModulation(directions, waveforms, varargin);
         [excitations, SPDs] = ToReceptorExcitations(direction, receptors);
         [contrast, excitation, excitationDiff] = ToReceptorContrast(direction, receptors);
-
+        
         function out = matchingCalibration(A,B)
             % Determine if OLDirections share a calibration
             assert(isa(A,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be OLDirection');
-            assert(isa(B,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be OLDirection');        
-
+            assert(isa(B,'OLDirection'),'OneLightToolbox:OLDirection:plus:InvalidInput','Inputs have to be OLDirection');
+            
             % Check if calibrations match
             Acalibrations = [A.calibration];
             Bcalibrations = [B.calibration];
