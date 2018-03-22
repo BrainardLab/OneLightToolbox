@@ -35,7 +35,7 @@ classdef OLDirectionParams_Unipolar < OLDirectionParams
             % Syntax:
             %   directionStruct = OLDirectionNominalStructFromParams(OLDirectionParams_Unipolar, calibration)
             %   directionStruct = OLDirectionNominalStructFromParams(OLDirectionParams_Unipolar, calibration, backgroundPrimary)            
-            %   directionStruct = OLDirectionNominalStructFromParams(..., 'observerAge', obseverAge)
+            %   directionStruct = OLDirectionNominalStructFromParams(..., 'observerAge', observerAge)
             %
             % Description:
             %
@@ -228,6 +228,62 @@ classdef OLDirectionParams_Unipolar < OLDirectionParams
             if numel(parser.Results.observerAge == 1)
                 directionStruct = directionStruct(parser.Results.observerAge);
             end
+        end       
+        
+        function [direction, background] = OLDirectionNominalFromParams(directionParams, calibration, varargin)
+            % Generate a parameterized OLDirection object from the given parameters
+            %
+            % Syntax:
+            %   direction = OLDirectionNominalFromParams(OLDirectionParams_unipolar, calibration)
+            %   [direction, background] = OLDirectionNominalFromParams(OLDirectionParams_unipolar, calibration)            
+            %   direction = OLDirectionNominalFromParams(OLDirectionParams_unipolar, calibration, backgroundPrimary)            
+            %   direction = OLDirectionNominalFromParams(..., 'observerAge', observerAge)
+            %
+            % Description:
+            %
+            % Inputs:
+            %    directionParams   - OLDirectionParams_Unipolar object
+            %                        defining the parameters for a unipolar
+            %                        direction
+            %    calibration       - OneLight calibration struct
+            %    backgroundPrimary - [OPTIONAL] the primary values for the
+            %                        background. If not passed, will try
+            %                        and construct background from primary,
+            %                        params, or name stored in
+            %                        directionParams
+            %
+            % Outputs:
+            %    direction         - an OLDirection_unipolar object
+            %                        corresponding to the parameterized
+            %                        direction
+            %    background        - an OLDirection_unipolar object
+            %                        corresponding to the optimized
+            %                        background for the parameterized
+            %                        direction
+            %
+            % Optional key/value pairs:
+            %    observerAge       - (vector of) observer age(s) to
+            %                        generate direction struct for. When
+            %                        numel(observerAge > 1), output
+            %                        directionStruct will still be of size
+            %                        [1,60], so that the index is the
+            %                        observerAge. When numel(observerAge ==
+            %                        1), directionStruct will be a single
+            %                        struct. Default is 20:60.
+            %
+            % See also:
+            %    OLDirection_unipolar
+            %    OLBackgroundNominalPrimaryFromParams, 
+            %    OLDirectionParamsDictionary
+
+            % History:
+            %    01/31/18  jv  wrote it, based on OLWaveformFromParams and
+            %                  OLReceptorIsolateMakeDirectionNominalPrimaries
+            %    02/12/18  jv  inserted in OLDirectionParams_ classes.  
+            %    03/22/18  jv  adapted to produce OLDirection objects
+            directionStruct = OLDirectionNominalStructFromParams(directionParams, calibration, varargin{:});
+            direction = OLDirection_unipolar(directionStruct.differentialPositive, calibration, directionStruct.describe);
+            background = OLDirection_unipolar(directionStruct.backgroundPrimary, calibration, directionStruct.describe);
         end
         
         function valid = OLDirectionParamsValidate(directionParams)
