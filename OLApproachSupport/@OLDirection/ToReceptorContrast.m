@@ -61,7 +61,7 @@ parser.addRequired('receptors',@(x) isnumeric(x) || isa(x,'SSTReceptor'));
 parser.parse(directions, receptors);
 
 %% Get excitations
-excitation = ToReceptorExcitations(directions,receptors);
+excitation = ToReceptorExcitation(directions,receptors);
 
 %% Get contrasts
 [contrasts, excitationDiff] = ReceptorExcitationToReceptorContrast(excitation);
