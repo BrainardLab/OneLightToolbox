@@ -19,6 +19,8 @@ classdef OLDirection_bipolar < OLDirection
     properties
         differentialPositive;
         differentialNegative;
+        SPDdifferentialPositiveDesired;
+        SPDdifferentialNegativeDesired;
     end
     
     methods
@@ -40,7 +42,7 @@ classdef OLDirection_bipolar < OLDirection
             this.calibration = calibration;
             this.describe = parser.Results.describe;
             
-            this.SPDdifferentialDesired = this.ToPredictedSPD;
+            SPDdifferentialDesired = this.ToPredictedSPD;
         end
     end
     
