@@ -40,6 +40,11 @@ classdef OLDirection_unipolar < OLDirection
             
             this.SPDdifferentialDesired = this.ToPredictedSPD;
         end
+        
+        function new = copy(direction)
+            % Return an unlinked copy of given direction
+            new = OLDirection_unipolar(direction.differentialPrimaryValues, direction.calibration, direction.describe);
+        end
     end
     
     %% Overloaded operators

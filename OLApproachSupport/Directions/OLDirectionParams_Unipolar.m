@@ -255,6 +255,7 @@ classdef OLDirectionParams_Unipolar < OLDirectionParams
                 %% Create direction object
                 describe.observerAge = observerAgeInYears;
                 describe.directionParams = directionParams;
+                describe.backgroundNominal = background.copy();
                 describe.background = background;
                 direction(observerAgeInYears) = OLDirection_unipolar(differentialPrimaryValues, calibration, describe);
                 
