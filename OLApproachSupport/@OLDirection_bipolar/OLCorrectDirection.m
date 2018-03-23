@@ -1,18 +1,18 @@
 function correctedDirection = OLCorrectDirection(direction, background, oneLight, varargin)
-% Corrects OLDirection iteratively to attain predicted SPD
+% Corrects OLDirection_bipolar iteratively to attain predicted SPD
 %
 % Syntax:
-%   correctedDirection = OLCorrectDirection(OLDirection, OneLight, radiometer)
-%   correctedDirection = OLCorrectDirection(OLDirection, SimulatedOneLight)
+%   correctedDirection = OLCorrectDirection(OLDirection_bipolar, background, OneLight, radiometer)
+%   correctedDirection = OLCorrectDirection(OLDirection_bipolar, background, SimulatedOneLight)
 %
 % Description:
 %    Detailed explanation goes here
 %
 % Inputs:
-%    direction          - OLDirection object specifying the direction to
-%                         correct
+%    direction          - OLDirection_bipolar object specifying the
+%                         direction to correct.
 %    background         - OLDirection_unipolar object specifying the
-%                         background to correct the direction around
+%                         background to correct the direction around.
 %    oneLight           - a OneLight device driver object to control a
 %                         OneLight device, can be real or simulated
 %    radiometer         - Radiometer object to control a
@@ -50,7 +50,7 @@ function correctedDirection = OLCorrectDirection(direction, background, oneLight
 
 %% Input validation
 parser = inputParser;
-parser.addRequired('direction',@(x) isa(x,'OLDirection_unipolar'));
+parser.addRequired('direction',@(x) isa(x,'OLDirection_bipolar'));
 parser.addRequired('background',@(x) isa(x,'OLDirection_unipolar'));
 parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
 parser.addOptional('radiometer',[],@(x) isempty(x) || isa(x,'Radiometer'));
@@ -88,22 +88,31 @@ else
     % background primary values no longer correspond to the desired
     % combined SPD. Instead, convert the desiredCombinedSPD to some initial
     % primary values predicted to produce it, and correct those.
-    nominalCombinedPrimaryValues = OLSpdToPrimary(direction.calibration,desiredCombinedSPD);
-    [correctedCombinedPrimaryValues, correctionData] = OLCorrectPrimaryValues(nominalCombinedPrimaryValues,direction.calibration,oneLight,radiometer,varargin{:});
+    nominalCombinedPrimaryValuesPositive = OLSpdToPrimary(direction.calibration,desiredCombinedSPD(:,1));
+    [correctedCombinedPrimaryValuesPositive, correctionDataPositive] = OLCorrectPrimaryValues(nominalCombinedPrimaryValuesPositive,direction.calibration,oneLight,radiometer,varargin{:});
+    
+    nominalCombinedPrimaryValuesNegative = OLSpdToPrimary(direction.calibration,desiredCombinedSPD(:,1));   
+    [correctedCombinedPrimaryValuesNegative, correctionDataNegative] = OLCorrectPrimaryValues(nominalCombinedPrimaryValuesNegative,direction.calibration,oneLight,radiometer,varargin{:});
     
     %% Update original OLDirection
     % Update business end
-    direction.differentialPrimaryValues = correctedCombinedPrimaryValues-background.differentialPrimaryValues;
+    direction.differentialPositive = correctedCombinedPrimaryValuesPositive-background.differentialPrimaryValues;
+    direction.differentialNegative = correctedCombinedPrimaryValuesNegative-background.differentialPrimaryValues;
     direction.SPDdifferentialDesired = nominalDirection.SPDdifferentialDesired;
 
     % Update describe
-    correctionDescribe = correctionData;
-    correctionDescribe.time = [time now];
-    correctionDescribe.background = background; 
-    correctionDescribe.nominalDirection = nominalDirection;
-    correctionDescribe.nominalCombinedPrimaryValues = nominalCombinedPrimaryValues;
-    correctionDescribe.correctedCombinedPrimaryValues = correctedCombinedPrimaryValues;
-
+    correctionDescribe = [correctionDataPositive, correctionDataNegative];
+    correctionDescribe(1).time = [time now];
+    correctionDescribe(2).time = [time now];
+    correctionDescribe(1).background = background; 
+    correctionDescribe(2).background = background; 
+    correctionDescribe(1).nominalDirection = nominalDirection;
+    correctionDescribe(2).nominalDirection = nominalDirection;    
+    correctionDescribe(1).nominalCombinedPrimaryValues = nominalCombinedPrimaryValuesPositive;
+    correctionDescribe(1).correctedCombinedPrimaryValues = correctedCombinedPrimaryValuesPositive;
+    correctionDescribe(2).nominalCombinedPrimaryValues = nominalCombinedPrimaryValuesNegative;
+    correctionDescribe(2).correctedCombinedPrimaryValues = correctedCombinedPrimaryValuesNegative;
+    
     % Add to direction.describe; append if correction already present
     if ~isfield(direction.describe,'correction') || isempty(direction.describe.correction)
         direction.describe.correction = correctionDescribe;
