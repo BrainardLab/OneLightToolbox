@@ -147,6 +147,7 @@ classdef OLDirection_unipolar < OLDirection
                     Bdifferential = B.differentialPrimaryValues;
                 end
                 out = OLDirection_unipolar(A.differentialPrimaryValues+Bdifferential,A.calibration,newDescribe);
+                out.SPDdifferentialDesired = A.SPDdifferentialDesired + B.SPDdifferentialDesired(:,1);
             elseif all(size(A) == size(B))
                 % Sizes match, send each pair to be added.
                 for i = 1:numel(A)
@@ -218,10 +219,13 @@ classdef OLDirection_unipolar < OLDirection
                 newDescribe = struct('createdFrom',struct('a',A,'b',B,'operator','minus'),'correction',[],'validation',[]);
                 if isa(B,'OLDirection_bipolar')
                     Bdifferential = B.differentialNegative;
+                    BSPD = B.SPDdifferentialDesired(:,2);
                 else
-                    Bdifferential = B.differentialPrimaryValues;
+                    Bdifferential = -B.differentialPrimaryValues;
+                    BSPD = -B.SPDdifferentialDesired;                    
                 end
                 out = OLDirection_unipolar(A.differentialPrimaryValues+Bdifferential,A.calibration,newDescribe);
+                out.SPDdifferentialDesired = A.SPDdifferentialDesired + BSPD;
             elseif all(size(A) == size(B))
                 % Sizes match, send each pair to be subtractd.
                 for i = 1:numel(A)
