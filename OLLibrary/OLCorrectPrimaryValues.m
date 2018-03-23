@@ -29,9 +29,6 @@ function [correctedPrimaryValues, detailedData] = OLCorrectPrimaryValues(nominal
 %    detailedData           - A ton of data, for debugging purposes.
 %
 % Optional key/value pairs:
-%    targetSPD              - Desired Spectral Power Distribution to
-%                             correct to. Default is to predict from
-%                             primary values.
 %    nIterations            - Number of iterations. Default is 20.
 %    learningRate           - Learning rate. Default is .8.
 %    learningRateDecrease   - Decrease learning rate over iterations?
@@ -78,7 +75,7 @@ parser.addRequired('primaryValues',@isnumeric);
 parser.addRequired('calibration',@isstruct);
 parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
 parser.addOptional('radiometer',[],@(x) isempty(x) || isa(x,'Radiometer'));
-parser.addParameter('targetSPD',[],@isnumeric);
+parser.addParameter('receptors',[],@(x) isa(x,'SSTReceptor'));
 parser.addParameter('nIterations',20,@isscalar);
 parser.addParameter('learningRate', 0.8, @isscalar);
 parser.addParameter('learningRateDecrease',true,@islogical);
@@ -96,11 +93,7 @@ smoothness = parser.Results.smoothness;
 iterativeSearch = parser.Results.iterativeSearch;
 
 %% Target (predicted) SPD
-if isempty(parser.Results.targetSPD)
-    targetSPD = OLPrimaryToSpd(calibration, nominalPrimaryValues);
-else
-    targetSPD = parser.Results.targetSPD;
-end
+targetSPD = OLPrimaryToSpd(calibration, nominalPrimaryValues);
 
 %% Correct
 NextPrimaryTruncatedLearningRate = nominalPrimaryValues; % initialize
