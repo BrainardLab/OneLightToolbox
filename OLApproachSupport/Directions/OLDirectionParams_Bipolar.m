@@ -180,7 +180,7 @@ classdef OLDirectionParams_Bipolar < OLDirectionParams
             parser = inputParser();
             parser.addRequired('directionParams',@(x) isstruct(x) || isa(x,'OLDirectionParams'));
             parser.addRequired('calibration',@isstruct);
-            parser.addOptional('background',[],@isnumeric);
+            parser.addOptional('background',[],@(x) isa(x,'OLDirection_unipolar'));
             parser.addParameter('verbose',false,@islogical);
             parser.addParameter('observerAge',1:60,@isnumeric);
             parser.parse(directionParams,calibration,varargin{:});
