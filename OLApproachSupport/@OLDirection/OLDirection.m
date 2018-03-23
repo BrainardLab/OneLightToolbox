@@ -41,7 +41,7 @@ classdef (Abstract) OLDirection < handle & matlab.mixin.Heterogeneous
         end
     end
     
-    %%
+    %% Get default Scalar element (to initialize empty arrays)
     methods (Static, Access = protected)
         function obj = getDefaultScalarElement
             calibration.describe.numWavelengthBands = 0;
