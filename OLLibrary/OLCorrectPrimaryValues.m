@@ -93,7 +93,8 @@ smoothness = parser.Results.smoothness;
 iterativeSearch = parser.Results.iterativeSearch;
 
 %% Target (predicted) SPD
-targetSPD = OLPrimaryToSpd(calibration, nominalPrimaryValues);
+% also add in the Mean Dark light ('differentialMode' = true)
+targetSPD = OLPrimaryToSpd(calibration, nominalPrimaryValues, 'differentialMode', false);
 
 %% Correct
 NextPrimaryTruncatedLearningRate = nominalPrimaryValues; % initialize
