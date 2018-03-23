@@ -19,8 +19,6 @@ classdef OLDirection_bipolar < OLDirection
     properties
         differentialPositive;
         differentialNegative;
-        SPDdifferentialPositiveDesired;
-        SPDdifferentialNegativeDesired;
     end
     
     methods
@@ -42,11 +40,16 @@ classdef OLDirection_bipolar < OLDirection
             this.calibration = calibration;
             this.describe = parser.Results.describe;
             
-            SPDdifferentialDesired = this.ToPredictedSPD;
+            this.SPDdifferentialDesired = this.ToPredictedSPD;
+        end
+        
+        function new = copy(direction)
+            % Return an unlinked copy of given direction
+            new = OLDirection_bipolar(direction.differentialPositive, direction.differentialNegative, direction.calibration, direction.describe);
         end
     end
     
-    %% Overloaded
+    %% Overloaded operators
     methods
         function out = eq(A,B)
             % Determine equality
@@ -92,4 +95,5 @@ classdef OLDirection_bipolar < OLDirection
             end
         end
     end
+    
 end
