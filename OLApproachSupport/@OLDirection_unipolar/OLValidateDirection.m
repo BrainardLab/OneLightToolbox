@@ -176,7 +176,7 @@ else
     SPDs(3).error = SPDdifferentialDesired - SPDdifferentialMeasured;
 
     %% Calculate nominal and actual excitation
-    if ~isempty(receptors)
+    if ~isempty(receptors)       
         excitations.desired = SPDToReceptorExcitation([SPDs.desiredSPD],receptors);
         excitations.predicted = SPDToReceptorExcitation([SPDs.predictedSPD],receptors);
         excitations.actual = SPDToReceptorExcitation([SPDs.measuredSPD],receptors);
@@ -189,6 +189,7 @@ else
         %         ComputePostreceptoralContrastsFromLMSContrasts(predictedContrastNeg(1:3,1))];
 
         % Write direction.describe.validation output
+        validation.receptors = receptors;
         validation.excitationDesired = excitations.desired;
         validation.excitationPredicted = excitations.predicted;
         validation.excitationActual = excitations.actual;
@@ -196,6 +197,7 @@ else
         validation.contrastPredicted = contrasts.predicted;
         validation.contrastActual = contrasts.actual;
     else
+        validation.receptors = [];
         validation.excitationDesired = [];
         validation.excitationPredicted = [];
         validation.excitationActual = [];
