@@ -54,6 +54,7 @@ parser.addRequired('direction',@(x) isa(x,'OLDirection_unipolar'));
 parser.addRequired('background',@(x) isa(x,'OLDirection_unipolar'));
 parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
 parser.addOptional('radiometer',[],@(x) isempty(x) || isa(x,'Radiometer'));
+parser.addParameter('smoothness',.001,@isnumeric);
 parser.KeepUnmatched = true; % allows fastforwarding of kwargs to OLCorrectPrimaryValues
 parser.parse(direction,background,oneLight,varargin{:});
 radiometer = parser.Results.radiometer;
@@ -88,7 +89,7 @@ else
     % background primary values no longer correspond to the desired
     % combined SPD. Instead, convert the desiredCombinedSPD to some initial
     % primary values predicted to produce it, and correct those.
-    nominalCombinedPrimaryValues = OLSpdToPrimary(direction.calibration,desiredCombinedSPD,'lambda',0.001);
+    nominalCombinedPrimaryValues = OLSpdToPrimary(direction.calibration,desiredCombinedSPD,'lambda',parser.Results.smoothness);
     [correctedCombinedPrimaryValues, correctionData] = OLCorrectPrimaryValues(nominalCombinedPrimaryValues,direction.calibration,oneLight,varargin{:});
     
     %% Update original OLDirection
