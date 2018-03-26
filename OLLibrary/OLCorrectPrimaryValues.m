@@ -139,8 +139,8 @@ for iter = 1:nIterations
 end
 
 %% Store information about correction for return
-% Business end
-correctedPrimaryValues = NextPrimaryTruncatedLearningRateAll(:, end);
+% Business end: pick primary values with lowest RMSQE
+correctedPrimaryValues = NextPrimaryTruncatedLearningRateAll(:, find(RMSQE == min(RMSQE),1));
 
 % Metadata, e.g., parameters. While I'm not a fan of including input
 % parameters in output, it is relevant here because we might have used
