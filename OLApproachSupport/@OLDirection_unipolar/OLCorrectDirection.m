@@ -88,8 +88,8 @@ else
     % background primary values no longer correspond to the desired
     % combined SPD. Instead, convert the desiredCombinedSPD to some initial
     % primary values predicted to produce it, and correct those.
-    nominalCombinedPrimaryValues = OLSpdToPrimary(direction.calibration,desiredCombinedSPD);
-    [correctedCombinedPrimaryValues, correctionData] = OLCorrectPrimaryValues(nominalCombinedPrimaryValues,direction.calibration,oneLight,radiometer,varargin{:});
+    nominalCombinedPrimaryValues = OLSpdToPrimary(direction.calibration,desiredCombinedSPD,'lambda',0.001);
+    [correctedCombinedPrimaryValues, correctionData] = OLCorrectPrimaryValues(nominalCombinedPrimaryValues,direction.calibration,oneLight,varargin{:});
     
     %% Update original OLDirection
     % Update business end
