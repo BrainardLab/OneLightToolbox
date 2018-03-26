@@ -53,6 +53,8 @@ function dictionary = OLBackgroundParamsDictionary()
 %    07/22/17  dhb  No more modulationDirection field.
 %    01/25/18  jv   Extract default params generation, validation.
 %    02/07/18  jv   Updated to use OLBackgroundParams objects
+%    03/26/18  jv, dhb Fix type in modulationContrast field of
+%                   LMSDirected_LMS_275_60_667.
 
 % Initialize dictionary
 dictionary = containers.Map();
@@ -205,7 +207,7 @@ params.baseModulationContrast = 4/6;
 params.primaryHeadRoom = 0.005;
 params.pupilDiameterMm = 6;
 params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
-params.modulationContrast = {[4/6 4/6 /46]};
+params.modulationContrast = {[4/6 4/6 4/6]};
 params.whichReceptorsToIsolate = {[1 2 3]};
 params.whichReceptorsToIgnore = {[]};
 params.whichReceptorsToMinimize = {[]};
