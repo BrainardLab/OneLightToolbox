@@ -12,7 +12,7 @@ function availableCalTypes = OLGetAvailableCalibrationTypes(varargin)
 %                                          in the result of
 %                                          getpref('OneLightToolbox', 'OneLightCalData'). 
 %
-% See also OLCalibrationTypes, OLGetCalibrationStructure.
+% See also OLGetCalibrationStructure.
 
 % 06/06/17  dhb  Wrote it.
 
@@ -29,21 +29,21 @@ else
     calFolder = params.CalibrationFolder;
 end
     
-%% Get the list of possible calibration types.
-calTypes = enumeration('OLCalibrationTypes');
+%% Get the list of calibration files.
+calList = dir(fullfile(calFolder,'OL*.mat'));
 
 %% Figure out the available calibration types
 %
 % That is, those where there is an actual calibration file in the calibration folder.
 numAvailableCalTypes = 0;
-for i = 1:length(calTypes)
-    fName = [calFolder, filesep, calTypes(i).CalFileName, '.mat'];
+for i = 1:length(calList)
+    fName = fullfile(calFolder,calList(i).name);
     
     % If there is a calibration file associated with the calibration type,
     % store it as an available calibration type.
     if exist(fName, 'file')
         numAvailableCalTypes = numAvailableCalTypes + 1;
-        availableCalTypes(numAvailableCalTypes) = calTypes(i); %#ok<AGROW>
+        availableCalTypes{numAvailableCalTypes} = calList(i).name(3:end-4); %#ok<AGROW>
     end
 end
 
