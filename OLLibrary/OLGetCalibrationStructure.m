@@ -7,27 +7,21 @@ function cal = OLGetCalibrationStructure(varargin)
 %   cal = OLGetCalibrationStructure('CalibrationType','BoxDRandomizedLongCableAStubby1_ND02','CalibrationDate','latest');
 %   cal = OLGetCalibrationStructure('CalibrationType','BoxDRandomizedLongCableAStubby1_ND02','CalibrationDate','08-May-2017 12:30:33');
 %
-% We reference calibration files by their calibration file type.  These are
-% enumerated in the class OLCalibrationType, so you need to edit the class
-% definition file (OLCalibrationType.m in OneLightToolbox) when you want to
-% add a calibration type.  The enumeration assocaites a calibration
-% filename with each type.  Typically these are the same as each other, but
-% the level of indirection allows for some flexibility.
+% We reference calibration files by their calibration file type.
 %
 % By default, this function looks for calibration files in the directory
 % specified by getpref('OneLightToolbox', 'OneLightCalData').  You can override
 % this by passing a CalibrationFolder key/value pair.
 %
 % With no arguments, this function prompts user to specify an available
-% calibration type and a date. The available types are a subset of what is
-% in the enumeration corresponding to types where there is an actual
-% calibration file in the specified calibration folder.
+% calibration type and a date. The available types are the ones where there
+% is a calibration file in the current directory.
 %
 % The calibration type and date can also be specified with optional
 % key/value pairs, so that you can avoid the prompts if you want.
 %
-% Calibration types are specified by an enumeration, which the options
-% defined in 'OLCalibrationTypes'.
+% Calibration types just the calibration filename without the initial 'OL'.
+% Calibration filenames must begin with 'OL' and end in '.mat'
 %
 % We typically set the 'OneLight' preferences in a local hook file, which
 % is exectuted by ToolboxToolbox via tbUseProject.
@@ -44,7 +38,7 @@ function cal = OLGetCalibrationStructure(varargin)
 %                                          in the result of
 %                                          getpref('OneLightToolbox', 'OneLightCalData').
 %
-% See also: OLCalibrationTypes.
+% See also: OLGetAvailableCalibrationTypes.
 
 %
 % 4/4/13    dhb, ms  Pulled out of a calling program as separate function.
@@ -52,6 +46,9 @@ function cal = OLGetCalibrationStructure(varargin)
 % 6/6/17    dhb      Greatly expanded comments.
 %           dhb      Added 'CalibrationFolder' key/value pair.
 % 01/29/18  dhb, jv  Respect calFolder set at start.
+% 03/27/18  dhb      Got rid of the enumeration.  Function behavior is the
+%                    same, except that available types are deduced from
+%                    what is in the calibration folder.
 
 %% Parse key/value pairs
 p = inputParser;
@@ -67,9 +64,6 @@ if (isempty(params.CalibrationFolder))
 else
     calFolder = params.CalibrationFolder;
 end
-    
-% Get the list of possible calibration types.
-calTypes = enumeration('OLCalibrationTypes');
 
 % Figure out the available calibration types, that is those 
 % where there is an actual calibration file in the calibration folder.
@@ -102,10 +96,10 @@ if (isempty(params.CalibrationType))
     end
     
     % Extract the calibration file name.
-    cal = availableCalTypes(calIndex).CalFileName;
+    cal = availableCalTypes{calIndex};
 else
     for i = 1:numAvailableCalTypes
-        if (strcmp(params.CalibrationType,availableCalTypes(i).char))
+        if (strcmp(params.CalibrationType,availableCalTypes{i}))
             calIndex = i;
             break;
         end
@@ -116,7 +110,7 @@ else
     end
     
     % Extract the calibration file name.
-    cal = availableCalTypes(calIndex).CalFileName;
+    cal = availableCalTypes{calIndex};
 end
 
 % If we only have the name of the calibration file, prompt for the version
@@ -124,7 +118,7 @@ end
 calIndex = 0;
 if ischar(cal)
     % Get all the calibration data.
-    [~, cals] = LoadCalFile(cal, [], calFolder);
+    [~, cals] = LoadCalFile(['OL' cal], [], calFolder);
     
     % Have the user select a calibration if there is more than 1 and we
     % didn't pass which one we wanted.
