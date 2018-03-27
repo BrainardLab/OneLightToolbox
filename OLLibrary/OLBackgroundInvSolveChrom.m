@@ -1,5 +1,8 @@
-function backgroundPrimary = OLBackgroundInvSolveChrom(cal, desiredChromaticity)
-%OLBackgroundInvSolveChrom  Find OneLight background of desired chromaticity
+function backgroundPrimary = OLBackgroundInvSolveChrom(cal, desiredChromaticity, varargin)
+% Find OneLight background of desired chromaticity
+%
+% Syntax:
+%   backgroundPrimary = OLBackgroundInvSolveChrom(cal, desiredChromaticity)
 %
 % Describe:
 %   Function to find a OneLight background spectrum of a desired
@@ -12,13 +15,23 @@ function backgroundPrimary = OLBackgroundInvSolveChrom(cal, desiredChromaticity)
 %
 % Outputs:
 %   backgroundPrimary     Primary settings for the obtained background.
+%
+% Optional key/value pairs:
+%   'PrimaryHeadroom'     Scalar.  Headroom to leave on primaries.  Default
+%                         0.1
+%
 
-% 5/22/15   ms      Wrote it.
-% 6/29/17   dhb     Clean up.
+% 05/22/15  ms      Wrote it.
+% 06/29/17  dhb     Clean up.
+% 03/27/18  dhb     Add 'PrimaryHeadroom' key/value pair.
+
+%% Input parser
+p = inputParser;
+p.addParameter('PrimaryHeadroom',0.1,@isscalar);
+p.parse(varargin{:});
 
 %% Set up some parameters
 S = cal.describe.S;
-wls = SToWls(S);
 
 %% Load 1931 CIE functions
 load T_xyz1931
@@ -70,7 +83,7 @@ xyY_targetCheck = xyY_s*w;
 % Stay within gamut constraints
 options = optimset('fmincon');
 options = optimset(options,'Diagnostics','off','Display','off','LargeScale','off','Algorithm','active-set', 'MaxIter', 10000, 'MaxFunEvals', 100000, 'TolFun', 1e-10, 'TolCon', 1e-10, 'TolX', 1e-10);
-maxHeadroom = 0.1;
+maxHeadroom = p.Results.PrimaryHeadroom;
 vub = ones(size(B_primary, 2), 1)-maxHeadroom;
 vlb = ones(size(B_primary, 2), 1)*maxHeadroom;
 x = fmincon(@(x) ObjFunction(x, B_primary, ambientSpd, T_xyz),B*w,[],[],[],[],vlb,vub,@(x)ChromaticityNonlcon(x, B_primary, T_xyz, xy_target),options);
