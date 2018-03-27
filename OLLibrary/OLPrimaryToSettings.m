@@ -32,20 +32,25 @@ function settings = OLPrimaryToSettings(cal, primary, varargin)
 %                                     effective primary.  These are also in the range [0,1].
 %                                     NSpectra is the number of spectra to process.
 % Optional Key-Value Pairs:
-%  'verbose' - true/false (default false). Provide more diagnostic output.
-%  'checkoutofrange' - true/false (default true). Throw error if any passed
-%                      primaries are out of the [0-1] range.
+%  'verbose'               - true/false (default false). Provide more diagnostic output.
+%  'checkoutofrange'      - true/false (default true). Throw error if any passed
+%                           primaries are out of the [0-1] range.
+%  'primarytolerance'     - scalar (default 1e-6). Primaries can be this
+%                           much out of gamut and it will truncate them
+%                           into gamut without complaining.
 
 % 1/17/14  dhb, ms   Improved comments.
 % 1/20/14  dhb, ms   Optimistically think that we've fixed this for full gamma table.
 % 2/16/14  dhb       Convert to take input and output for each primery, not for each mirror.
 % 06/05/17 dhb       Convert to input parser key/value pair.
 % 01/24/18 dhb, jv   Add 'checkoutofrange' key and make default true.
+% 
 
 %% Parse the input
 p = inputParser;
 p.addParameter('verbose', false, @islogical);
 p.addParameter('checkoutofrange', true, @islogical);
+p.addParameter('primarytolerance',1e-6, @isscalar);
 p.parse(varargin{:});
 params = p.Results;
 
@@ -61,8 +66,11 @@ if (size(primary,1) ~= cal.describe.numWavelengthBands)
 end
 
 %% Check input range
+primaryTolerance = params.primarytolerance;
+primary(primary > 1 & primary < 1 + primaryTolerance) = 1;
+primary(primary < 0 & primary > -primaryTolerance) = 0;
 if (p.Results.checkoutofrange && (any(primary(:) > 1) || any(primary(:) < 0) ))
-    error('At least primary value is out of range [0,1]');
+    error('At one least primary value is out of range [0,1]');
 end
 
 %% Gamma correct

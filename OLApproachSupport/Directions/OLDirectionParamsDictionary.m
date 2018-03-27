@@ -121,7 +121,7 @@ end
 % contrast step up relative to the background.
 params = OLDirectionParams_Unipolar;
 params.baseName = 'MaxMel';
-params.primaryHeadRoom = 0.01;
+params.primaryHeadRoom = 0.0;
 params.baseModulationContrast = 2/3;
 params.fieldSizeDegrees = 27.5;
 params.pupilDiameterMm = 6.0;
@@ -227,7 +227,7 @@ end
 % contrast step up relative to the background.
 params = OLDirectionParams_Unipolar;
 params.baseName = 'MaxLMS';
-params.primaryHeadRoom = 0.01;
+params.primaryHeadRoom = 0.0;
 params.baseModulationContrast = 2/3;
 params.fieldSizeDegrees = 27.5;
 params.pupilDiameterMm = 6.0;
