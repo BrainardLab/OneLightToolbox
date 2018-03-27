@@ -182,35 +182,44 @@ classdef OLDirectionParams_Unipolar < OLDirectionParams
 
                 % Isolate the receptors by calling the ReceptorIsolate
                 initialPrimary = currentBackgroundPrimary;
-                modulationPrimarySignedPositive = ReceptorIsolate(directionParams.T_receptors, directionParams.whichReceptorsToIsolate, ...
+                modulationPrimarySignedPositiveRaw = ReceptorIsolate(directionParams.T_receptors, directionParams.whichReceptorsToIsolate, ...
                     directionParams.whichReceptorsToIgnore,directionParams.whichReceptorsToMinimize,B_primary,currentBackgroundPrimary,...
                     initialPrimary,directionParams.whichPrimariesToPin,directionParams.primaryHeadRoom,directionParams.maxPowerDiff,...
                     desiredContrasts,ambientSpd);
 
-                differentialPositive = modulationPrimarySignedPositive - currentBackgroundPrimary;
+                differentialPositive = modulationPrimarySignedPositiveRaw - currentBackgroundPrimary;
                 differentialNegative = -1 * differentialPositive;
 
-                % Unipolar direction, so negative arm becomes
-                % background primary
-                currentBackgroundPrimary = currentBackgroundPrimary + differentialNegative;
-                differentialPositive = modulationPrimarySignedPositive - currentBackgroundPrimary;
+                % Unipolar direction, so negative arm of modulation becomes background primary
+                primaryTolerance = 1e-6;
+                unipolarBackgroundPrimary = currentBackgroundPrimary + differentialNegative;
+                unipolarBackgroundPrimary(unipolarBackgroundPrimary > 1 & unipolarBackgroundPrimary < 1+primaryTolerance) = 1;
+                unipolarBackgroundPrimary(unipolarBackgroundPrimary < 0 & unipolarBackgroundPrimary > -primaryTolerance) = 0;
+                if (any(unipolarBackgroundPrimary > 1) || any(unipolarBackgroundPrimary < 0) )
+                    error('unipolarBackgroundPrimary out of [0,1] gamut.')
+                end
+                
+                differentialPositive = modulationPrimarySignedPositiveRaw - unipolarBackgroundPrimary;
                 differentialNegative = 0 * differentialPositive;
                 
-                %% Check gamut
-                modulationPrimarySignedPositive = currentBackgroundPrimary + differentialPositive;
-                modulationPrimarySignedNegative = currentBackgroundPrimary + differentialNegative;
+                % Check gamut
+                modulationPrimarySignedPositive = unipolarBackgroundPrimary + differentialPositive;
+                modulationPrimarySignedNegative = unipolarBackgroundPrimary + differentialNegative;
+                modulationPrimarySignedPositive(modulationPrimarySignedPositive > 1 & modulationPrimarySignedPositive < 1+primaryTolerance) = 1;
+                modulationPrimarySignedPositive(modulationPrimarySignedPositive < 0 & modulationPrimarySignedPositive > -primaryTolerance) = 0;
+                modulationPrimarySignedNegative(modulationPrimarySignedNegative > 1 & modulationPrimarySignedNegative < 1+primaryTolerance) = 1;
+                modulationPrimarySignedNegative(modulationPrimarySignedNegative < 0 & modulationPrimarySignedNegative > -primaryTolerance) = 0;
                 if any(modulationPrimarySignedNegative > 1) || any(modulationPrimarySignedNegative < 0)  || any(modulationPrimarySignedPositive > 1)  || any(modulationPrimarySignedPositive < 0)
-                    error('Out of bounds.')
+                    error('Modulation primaries out of [0,1] gamut.')
                 end
 
-                %% Calculate SPDs
-                backgroundSPD = OLPrimaryToSpd(calibration, currentBackgroundPrimary);
+                % Calculate SPDs
+                backgroundSPD = OLPrimaryToSpd(calibration, unipolarBackgroundPrimary);
                 nominalSPDPositive = OLPrimaryToSpd(calibration, modulationPrimarySignedPositive);
                 nominalSPDNegative = OLPrimaryToSpd(calibration, modulationPrimarySignedNegative);
 
-                %% Assign all the fields
-                % Business end
-                directionStruct(observerAgeInYears).backgroundPrimary = currentBackgroundPrimary;              
+                % Assign all the fields
+                directionStruct(observerAgeInYears).backgroundPrimary = unipolarBackgroundPrimary;              
                 directionStruct(observerAgeInYears).differentialPositive = differentialPositive;                            
                 directionStruct(observerAgeInYears).differentialNegative = differentialNegative;            
                 directionStruct(observerAgeInYears).calibration = calibration;

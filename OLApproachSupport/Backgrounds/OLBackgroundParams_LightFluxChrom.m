@@ -65,7 +65,7 @@ classdef OLBackgroundParams_LightFluxChrom < OLBackgroundParams
             parser.parse(params,calibration);
             
             % Generate background
-            maxBackgroundPrimary = OLBackgroundInvSolveChrom(calibration, params.lightFluxDesiredXY);
+            maxBackgroundPrimary = OLBackgroundInvSolveChrom(calibration, params.lightFluxDesiredXY, 'PrimaryHeadroom', params.primaryHeadRoom);
             backgroundPrimary = maxBackgroundPrimary/params.lightFluxDownFactor;
         end
         

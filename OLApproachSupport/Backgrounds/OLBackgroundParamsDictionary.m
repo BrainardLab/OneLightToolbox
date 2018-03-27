@@ -178,7 +178,7 @@ end
 params = OLBackgroundParams_Optimized;
 params.baseName = 'MelanopsinDirected';
 params.baseModulationContrast = 4/6;
-params.primaryHeadRoom = 0.01;
+params.primaryHeadRoom = 0.00;
 params.pupilDiameterMm = 6;
 params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
 params.modulationContrast = [4/6];
@@ -204,7 +204,7 @@ end
 params = OLBackgroundParams_Optimized;
 params.baseName = 'LMSDirected';
 params.baseModulationContrast = 4/6;
-params.primaryHeadRoom = 0.005;
+params.primaryHeadRoom = 0.00;
 params.pupilDiameterMm = 6;
 params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
 params.modulationContrast = {[4/6 4/6 4/6]};
@@ -226,6 +226,21 @@ params = OLBackgroundParams_LightFluxChrom;
 params.baseName = 'LightFlux';
 params.lightFluxDesiredXY = [0.54,0.38];
 params.lightFluxDownFactor = 5;
+params.primaryHeadRoom = 0.00;
+params.name = OLBackgroundNameFromParams(params);
+if OLBackgroundParamsValidate(params)
+    % All validations OK. Add entry to the dictionary.
+    dictionary(params.name) = params;
+end
+
+%% LightFlux_540_380_55
+% Background at xy = [0.54,0.38] that allows light flux pulses to increase
+% a factor of 5 within gamut
+params = OLBackgroundParams_LightFluxChrom;
+params.baseName = 'LightFlux';
+params.lightFluxDesiredXY = [0.54,0.38];
+params.lightFluxDownFactor = 5.5;
+params.primaryHeadRoom = 0.00;
 params.name = OLBackgroundNameFromParams(params);
 if OLBackgroundParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
