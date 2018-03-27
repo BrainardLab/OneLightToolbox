@@ -272,6 +272,31 @@ end
 
 
 
+%% MaxLMS_bipolar_275_60_667
+% Direction for maximum bipolar contrast LMS step
+%   Field size: 27.5 deg
+%   Pupil diameter: 6 mm -- for use with 6 mm artificial pupil with
+%   pupillometry
+%   bipolar contrast: 66.7%
+%
+params = OLDirectionParams_Bipolar;
+params.baseName = 'MaxLMS';
+params.primaryHeadRoom = 0.01;
+params.baseModulationContrast = 2/3;
+params.fieldSizeDegrees = 27.5;
+params.pupilDiameterMm = 6.0;
+params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
+params.modulationContrast = [params.baseModulationContrast params.baseModulationContrast params.baseModulationContrast];
+params.whichReceptorsToIsolate = [1 2 3];
+params.whichReceptorsToIgnore = [];
+params.whichReceptorsToMinimize = [];
+params.backgroundName = 'LMSDirected_275_60_667';
+params.name = OLDirectionNameFromParams(params);
+if OLDirectionParamsValidate(params)
+    % All validations OK. Add entry to the dictionary.
+    dictionary(params.name) = params;
+end
+
 %% MaxLMS_unipolar_600_80_667
 % Direction for maximum unipolar contrast LMS step
 %   Field size: 60.0 deg
