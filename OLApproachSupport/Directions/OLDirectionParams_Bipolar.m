@@ -1,6 +1,6 @@
 classdef OLDirectionParams_Bipolar < OLDirectionParams
-% Parameter-object for Bipolar directions
-%   Detailed explanation goes here
+    % Parameter-object for Bipolar directions
+    %   Detailed explanation goes here
     
     properties
         photoreceptorClasses = {'LConeTabulatedAbsorbance'  'MConeTabulatedAbsorbance'  'SConeTabulatedAbsorbance'  'Melanopsin'};
@@ -21,7 +21,7 @@ classdef OLDirectionParams_Bipolar < OLDirectionParams
     end
     
     methods
-        function obj = OLDirectionParams_Bipolar           
+        function obj = OLDirectionParams_Bipolar
             obj.primaryHeadRoom = .005;
         end
         
@@ -30,11 +30,13 @@ classdef OLDirectionParams_Bipolar < OLDirectionParams
         end
         
         function directionStruct = OLDirectionNominalStructFromParams(directionParams, calibration, varargin)
+            % DEPRECATED! USE OLDIRECTIONNOMINALFROMPARAMS INSTEAD
+            
             % Generate a parameterized direction from the given parameters
             %
             % Syntax:
             %   directionStruct = OLDirectionNominalStructFromParams(OLDirectionParams_Bipolar, calibration)
-            %   directionStruct = OLDirectionNominalStructFromParams(OLDirectionParams_Bipolar, calibration, backgroundPrimary)            
+            %   directionStruct = OLDirectionNominalStructFromParams(OLDirectionParams_Bipolar, calibration, backgroundPrimary)
             %   directionStruct = OLDirectionNominalStructFromParams(..., 'observerAge', obseverAge)
             %
             % Description:
@@ -105,29 +107,91 @@ classdef OLDirectionParams_Bipolar < OLDirectionParams
             %    None.
             %
             % See also:
-            %    OLBackgroundNominalPrimaryFromParams, 
+            %    OLBackgroundNominalPrimaryFromParams,
             %    OLDirectionParamsDictionary
-
+            
             % History:
             %    01/31/18  jv  wrote it, based on OLWaveformFromParams and
             %                  OLReceptorIsolateMakeDirectionNominalPrimaries
             %    02/12/18  jv  inserted in OLDirectionParams_ classes.
+            %    03/22/18  jv  deprecated, moved to
+            %                  OLDirectionNominalFromParams. Keep as
+            %                  wrapper around that method, for legacy.
+            
+            warning('This function has been deprecated! Use OLDirectionNominalFromParams instead');
+            [direction, background] = OLDirectionNominalFromParams(directionParams, calibration, varargin{:});
+            directionStruct.backgroundPrimary = background.differentialPrimaryValues;
+            directionStruct.differentialPositive = direction.differentialPositive;
+            directionStruct.differentialNegative = direction.differentialNegative;
+            directionStruct.calibration = calibration;
+            directionStruct.describe = direction.describe;
+        end
+        
+        function [direction, background] = OLDirectionNominalFromParams(directionParams, calibration, varargin)
+            % Generate a parameterized OLDirection object from the given parameters
+            %
+            % Syntax:
+            %   direction = OLDirectionNominalFromParams(OLDirectionParams_bipolar, calibration)
+            %   [direction, background] = OLDirectionNominalFromParams(OLDirectionParams_bipolar, calibration)
+            %   direction = OLDirectionNominalFromParams(OLDirectionParams_bipolar, calibration, background)
+            %   direction = OLDirectionNominalFromParams(..., 'observerAge', observerAge)
+            %
+            % Description:
+            %
+            % Inputs:
+            %    directionParams - OLDirectionParams_bipolar object
+            %                      defining the parameters for a unipolar
+            %                      direction
+            %    calibration     - OneLight calibration struct
+            %    background      - [OPTIONAL] OLDirection_unipolar object
+            %                      specifying the background to build this
+            %                      direction around
+            %
+            % Outputs:
+            %    direction       - an OLDirection_bipolar object
+            %                      corresponding to the parameterized
+            %                      direction
+            %    background      - an OLDirection_unipolar object
+            %                      corresponding to the optimized
+            %                      background for the parameterized
+            %                      direction
+            %
+            % Optional key/value pairs:
+            %    observerAge     - (vector of) observer age(s) to
+            %                      generate direction for. When
+            %                      numel(observerAge > 1), output
+            %                      directionStruct will still be of size
+            %                      [1,60], so that the index is the
+            %                      observerAge. When numel(observerAge ==
+            %                      1), directionStruct will be a single
+            %                      struct. Default is 20:60.
+            %
+            % See also:
+            %    OLDirection_bipolar, OLBackgroundNominalFromParams,
+            %    OLDirectionParamsDictionary
+            
+            % History:
+            %    01/31/18  jv  wrote it, based on OLWaveformFromParams and
+            %                  OLReceptorIsolateMakeDirectionNominalPrimaries
+            %    02/12/18  jv  inserted in OLDirectionParams_ classes.
+            %    03/22/18  jv  adapted to produce OLDirection objects
             
             %% Input validation
             parser = inputParser();
             parser.addRequired('directionParams',@(x) isstruct(x) || isa(x,'OLDirectionParams'));
             parser.addRequired('calibration',@isstruct);
-            parser.addOptional('backgroundPrimary',[],@isnumeric);
+            parser.addOptional('background',[],@(x) isa(x,'OLDirection_unipolar'));
+            parser.addParameter('verbose',false,@islogical);
             parser.addParameter('observerAge',1:60,@isnumeric);
             parser.parse(directionParams,calibration,varargin{:});
-                      
+            
             %% Set some params
             % Pull out the 'M' matrix
             B_primary = calibration.computed.pr650M;
             
             % Wavelength sampling
             S = calibration.describe.S;
-
+            
             % Assign a zero 'ambientSpd' variable if we're not using the
             % measured ambient.
             if directionParams.useAmbient
@@ -138,90 +202,81 @@ classdef OLDirectionParams_Bipolar < OLDirectionParams
             
             % Peg desired contrasts
             desiredContrasts = directionParams.modulationContrast;
-
-            %% Get / make background primary
-            if isempty(parser.Results.backgroundPrimary) % No primary specified in call            
-                if isempty(directionParams.backgroundPrimary) % No primary specified in params
-                    if isempty(directionParams.backgroundParams) % No background params specified
-                        assert(isprop(directionParams,'backgroundName') && ~isempty(directionParams.backgroundName),'No backgroundPrimary, backgroundParams, or backgroundName specified')
+            
+            %% Get / make background
+            if isempty(parser.Results.background) % No primary specified in call
+                if isempty(directionParams.background) % No primary specified in params
+                    if isempty(directionParams.backgroundParams) % No params specified
+                        assert(isprop(directionParams,'backgroundName') && ~isempty(directionParams.backgroundName),'No background, backgroundParams, or backgroundName specified')
                         
                         % Get backgroundParams from stored name
                         directionParams.backgroundParams = OLBackgroundParamsFromName(directionParams.backgroundName);
                     end
                     
                     % Make backgroundPrimary from params
-                    directionParams.backgroundPrimary = OLBackgroundNominalPrimaryFromParams(directionParams.backgroundParams, calibration);
+                    directionParams.background = OLBackgroundNominalFromParams(directionParams.backgroundParams, calibration);
                 end
                 
-                % Use backgroundPrimary stored in directionParams
-                backgroundPrimary = directionParams.backgroundPrimary;
+                % Use background stored in directionParams
+                background = directionParams.background;
             else
-                % Use backgroundPrimary specified in function call
-                backgroundPrimary = parser.Results.backgroundPrimary;
-            end
-
-            %% Make direction information for each observer age
-            for observerAgeInYears = parser.Results.observerAge
-                % Set currentBackgroundPrimary for iteration
-                currentBackgroundPrimary = backgroundPrimary;
-                backgroundSPD = OLPrimaryToSpd(calibration, currentBackgroundPrimary);
-                
-                % Get fraction bleached for background we're actually using
-                if (directionParams.doSelfScreening)
-                    fractionBleached = OLEstimateConePhotopigmentFractionBleached(S,backgroundSPD,directionParams.pupilDiameterMm,directionParams.fieldSizeDegrees,observerAgeInYears,directionParams.photoreceptorClasses);
-                else
-                    fractionBleached = zeros(1,length(directionParams.photoreceptorClasses));
-                end
-
-                % Get lambda max shift.  Currently not passed but could be.
-                lambdaMaxShift = [];
-
-                % Construct the receptor matrix based on the bleaching fraction to this background.
-                directionParams.T_receptors = GetHumanPhotoreceptorSS(S,directionParams.photoreceptorClasses,directionParams.fieldSizeDegrees,observerAgeInYears,directionParams.pupilDiameterMm,lambdaMaxShift,fractionBleached);
-
-                % Isolate the receptors by calling the ReceptorIsolate
-                initialPrimary = currentBackgroundPrimary;
-                modulationPrimarySignedPositive = ReceptorIsolate(directionParams.T_receptors, directionParams.whichReceptorsToIsolate, ...
-                    directionParams.whichReceptorsToIgnore,directionParams.whichReceptorsToMinimize,B_primary,currentBackgroundPrimary,...
-                    initialPrimary,directionParams.whichPrimariesToPin,directionParams.primaryHeadRoom,directionParams.maxPowerDiff,...
-                    desiredContrasts,ambientSpd);
-
-                differentialPositive = modulationPrimarySignedPositive - currentBackgroundPrimary;
-                differentialNegative = -1 * differentialPositive;
-
-                %% Check gamut
-                modulationPrimarySignedPositive = currentBackgroundPrimary + differentialPositive;
-                modulationPrimarySignedNegative = currentBackgroundPrimary + differentialNegative;
-                if any(modulationPrimarySignedNegative > 1) || any(modulationPrimarySignedNegative < 0)  || any(modulationPrimarySignedPositive > 1)  || any(modulationPrimarySignedPositive < 0)
-                    error('Out of bounds.')
-                end
-
-                %% Calculate SPDs
-                backgroundSPD = OLPrimaryToSpd(calibration, currentBackgroundPrimary);
-                nominalSPDPositive = OLPrimaryToSpd(calibration, modulationPrimarySignedPositive);
-                nominalSPDNegative = OLPrimaryToSpd(calibration, modulationPrimarySignedNegative);
-
-                %% Assign all the fields
-                % Business end
-                directionStruct(observerAgeInYears).backgroundPrimary = currentBackgroundPrimary;              
-                directionStruct(observerAgeInYears).differentialPositive = differentialPositive;                            
-                directionStruct(observerAgeInYears).differentialNegative = differentialNegative;            
-                directionStruct(observerAgeInYears).calibration = calibration;
-
-                % Description
-                directionStruct(observerAgeInYears).describe.observerAge = observerAgeInYears;
-                directionStruct(observerAgeInYears).describe.directionParams = directionParams;
-                directionStruct(observerAgeInYears).describe.SPDAmbient = ambientSpd;
-                directionStruct(observerAgeInYears).describe.NominalSPDBackground = backgroundSPD;
-                directionStruct(observerAgeInYears).describe.NominalSPDPositiveModulation = nominalSPDPositive;
-                directionStruct(observerAgeInYears).describe.NominalSPDNegativeModulation = nominalSPDNegative;
+                % Use background specified in function call
+                background = parser.Results.background;
             end
             
-            %% If a single age was specified, pull out just that struct.
-            if numel(parser.Results.observerAge == 1)
-                directionStruct = directionStruct(parser.Results.observerAge);
+            backgroundSPD = background.ToPredictedSPD;
+            
+            %% Set up receptors
+            % Get fraction bleached for background we're actually using
+            if (directionParams.doSelfScreening)
+                fractionBleached = OLEstimateConePhotopigmentFractionBleached(S,backgroundSPD,directionParams.pupilDiameterMm,directionParams.fieldSizeDegrees,observerAgeInYears,directionParams.photoreceptorClasses);
+            else
+                fractionBleached = zeros(1,length(directionParams.photoreceptorClasses));
+            end
+            
+            % Get lambda max shift. Currently not passed but could be.
+            lambdaMaxShift = [];
+            
+            for observerAgeInYears = parser.Results.observerAge
+                % Construct the receptor matrix based on the bleaching fraction to this background.
+                directionParams.T_receptors = GetHumanPhotoreceptorSS(S,directionParams.photoreceptorClasses,directionParams.fieldSizeDegrees,observerAgeInYears,directionParams.pupilDiameterMm,lambdaMaxShift,fractionBleached);
+                
+                %% Determine primary values for modulation positive endpoint
+                initialPrimary = background.differentialPrimaryValues;
+                modulationPrimaryPositive = ReceptorIsolate(directionParams.T_receptors, directionParams.whichReceptorsToIsolate, ...
+                    directionParams.whichReceptorsToIgnore,directionParams.whichReceptorsToMinimize,B_primary,background.differentialPrimaryValues,...
+                    initialPrimary,directionParams.whichPrimariesToPin,directionParams.primaryHeadRoom,directionParams.maxPowerDiff,...
+                    desiredContrasts,ambientSpd);
+                
+                %% Convert to unipolar direction
+                % Negative arm becomes background primary
+                differentialPositive = modulationPrimaryPositive - background.differentialPrimaryValues;
+                differentialNegative = -differentialPositive;
+                
+                %% Create direction object
+                describe.observerAge = observerAgeInYears;
+                describe.directionParams = directionParams;
+                describe.backgroundNominal = background.copy();                
+                describe.background = background;
+                direction(observerAgeInYears) = OLDirection_bipolar(differentialPositive, differentialNegative, calibration, describe);
+                
+                %% Check gamut
+                modulationPositive = background + direction(observerAgeInYears);
+                modulationNegative = background - direction(observerAgeInYears);
+                if any(modulationPositive.differentialPrimaryValues > 1)  || any(modulationPositive.differentialPrimaryValues < 0)
+                    error('Out of bounds.')
+                end
+                if any(modulationNegative.differentialPrimaryValues > 1)  || any(modulationNegative.differentialPrimaryValues < 0)
+                    error('Out of bounds.')
+                end
+            end
+            
+            if numel(parser.Results.observerAge) == 1
+                % Return just the single OLDirection
+                direction = direction(parser.Results.observerAge);
             end
         end
+        
         
         function valid = OLDirectionParamsValidate(directionParams)
             valid = true;

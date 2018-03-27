@@ -3,6 +3,7 @@ function primaryWaveform = OLPrimaryWaveform(primaryValues, waveform, varargin)
 %
 % Syntax:
 %   primaryWaveform = OLPrimaryWaveform(primaryValues, waveform)
+%   primaryWaveform = OLPrimaryWaveform(...,'differential',true)
 %   primaryWaveform = OLPrimaryWaveform(...,'truncateGamut',true)
 %
 % Description:
@@ -25,12 +26,16 @@ function primaryWaveform = OLPrimaryWaveform(primaryValues, waveform, varargin)
 %                      waveform-matrix.
 %
 % Optional key/value pairs:
-%    truncateGamut   - Boolean flag for truncating the output to be within
-%                      gamut (i.e outside range [0,1]. If false, and output
-%                      is out of gamut, will throw an error. If true, and
-%                      output is out of gamut, will throw a warning, and
-%                      proceed to truncate output to be in gamut. Default
+%    differential    - Boolean flag for treating primary values as
+%                      differentials, i.e. in range [-1, +1]. Default
 %                      false.
+%    truncateGamut   - Boolean flag for truncating the output to be within
+%                      gamut (i.e outside range [0,1] if 'differential' =
+%                      false, [-1,1] if 'differential' = true). If false,
+%                      and output is out of gamut, will throw an error. If
+%                      true, and output is out of gamut, will throw a
+%                      warning, and proceed to truncate output to be in
+%                      gamut. Default false.
 %
 % Examples are provided in the source code.
 %
@@ -38,7 +43,7 @@ function primaryWaveform = OLPrimaryWaveform(primaryValues, waveform, varargin)
 %    None.
 %
 % See also:
-%
+%    OLPlotPrimaryWaveform
 
 % History:
 %    01/29/18  jv  wrote it.
@@ -79,18 +84,20 @@ function primaryWaveform = OLPrimaryWaveform(primaryValues, waveform, varargin)
 parser = inputParser();
 parser.addRequired('primaryValues',@isnumeric);
 parser.addRequired('waveform',@isnumeric);
-parser.addOptional('truncateGamut',false,@islogical);
+parser.addParameter('differential',false,@islogical);
+parser.addParameter('truncateGamut',false,@islogical);
 parser.parse(primaryValues,waveform,varargin{:});
 
 %% Matrix multiplication
 primaryWaveform = primaryValues * waveform;
 
 %% Check gamut
-if any(any(primaryWaveform < -1e-10 | primaryWaveform > 1+1e-10))
+gamut = [0 1] - [parser.Results.differential 0]; % set gamut limits
+if any(primaryWaveform(:) < gamut(1)-1e-10 | primaryWaveform(:) > gamut(2)+1e-10)
     if parser.Results.truncateGamut
         warning('OneLightToolbox:OLPrimaryWaveform:OutOfGamut','Primary waveform is out of gamut somewhere. This will be truncated');
-        primaryWaveform(primaryWaveform < 0) = 0;
-        primaryWaveform(primaryWaveform > 1) = 1;
+        primaryWaveform(primaryWaveform < gamut(1)) = gamut(1);
+        primaryWaveform(primaryWaveform > gamut(2)) = gamut(2);
     else
         error('OneLightToolbox:OLPrimaryWaveform:OutOfGamut','Primary waveform is out of gamut somewhere.');
     end

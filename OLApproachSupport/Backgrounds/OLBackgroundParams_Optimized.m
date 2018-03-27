@@ -47,7 +47,7 @@ classdef OLBackgroundParams_Optimized < OLBackgroundParams
         	name = sprintf('%s_%d_%d_%d',params.baseName,round(10*params.fieldSizeDegrees),round(10*params.pupilDiameterMm),round(1000*params.baseModulationContrast));
         end
         
-        function backgroundPrimary = OLBackgroundNominalPrimaryFromParams(params,calibration)
+        function backgroundPrimary = OLBackgroundNominalPrimaryFromParams(params, calibration)
             % Generate nominal primary for these parameters, for calibration
             %
             % Syntax:
@@ -122,6 +122,48 @@ classdef OLBackgroundParams_Optimized < OLBackgroundParams
             
             %% Pull out what we want
             backgroundPrimary = optimizedBackgroundPrimaries{1};
+        end
+        
+        function background = OLBackgroundNominalFromParams(params, calibration)
+            % Generate nominal background for given parameters, for calibration
+            %
+            % Syntax:
+            %   background = OLBackgroundNominalFromParams(OLBackgroundParams_optimized,calibration);
+            %
+            % Description:
+            %    Generate the nominal primary values that would correspond
+            %    to the given parameter, under the given calibration.
+            %
+            %    These backgrounds get optimized according to the
+            %    parameters in the structure.  Backgrounds are optimized
+            %    with respect to a backgroundObserverAge year old observer,
+            %    and no correction for photopigment bleaching is applied.
+            %    We are just trying to get pretty good backgrounds, so we
+            %    don't need to fuss with small effects.
+            %
+            % Inputs:
+            %    params            - OLBackgroundParams_optimized
+            %                        defining the parameters for this
+            %                        optimized background.
+            %    calibration       - OneLight calibration struct
+            %
+            % Outputs:
+            %    background        - an OLDirection_unipolar object
+            %                        corresponding to the optimized
+            %                        background for the parameterized
+            %                        direction 
+            %
+            % Optional key/value pairs:
+            %    None.
+            %            
+            % See also:
+            %    OLDirection_unipolar, OLDirectionNominalFromParams
+            
+            % History:
+            %    03/22/18  jv  OLDirection_unipolar from backgroundParams
+            backgroundPrimary = OLBackgroundNominalPrimaryFromParams(params,calibration);
+            background = OLDirection_unipolar(backgroundPrimary,calibration);
+            background.describe.params = params;
         end
         
         function valid = OLBackgroundParamsValidate(params)
