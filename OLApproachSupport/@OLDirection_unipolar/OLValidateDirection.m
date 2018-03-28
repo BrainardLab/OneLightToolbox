@@ -65,6 +65,8 @@ function [validation, SPDs, excitations, contrasts] = OLValidateDirection(direct
 %    nAverage         - number of measurements to average. Default 1.
 %    temperatureProbe - TODO: LJTemperatureProbe object to drive a
 %                       LabJack temperature probe
+%    label            - user-defined string to label validation with (ends
+%                       up in validation.label)
 %
 % See also:
 %    OLValidatePrimaryValues, OLMeasurePrimaryValues, SPDToReceptorContrast
@@ -79,14 +81,12 @@ function [validation, SPDs, excitations, contrasts] = OLValidateDirection(direct
 
 %% Input validation
 parser = inputParser;
-parser.addRequired('direction',@(x) isa(x,'OLDirection_unipolar'));
-parser.addRequired('background',@(x) isempty(x) || isa(x,'OLDirection_unipolar'));
-parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
 parser.addOptional('radiometer',[],@(x) isempty(x) || isa(x,'Radiometer'));
 parser.addParameter('receptors',[],@(x) isa(x,'SSTReceptor') || isnumeric(x));
 parser.addParameter('nAverage',1,@isnumeric);
 parser.addParameter('temperatureProbe',[],@(x) isempty(x) || isa(x,'LJTemperatureProbe'));
-parser.parse(direction,background,oneLight,varargin{:});
+parser.addParameter('label',"");
+parser.parse(varargin{:});
 
 % Check if calculating contrasts
 receptors = parser.Results.receptors;
@@ -101,7 +101,14 @@ if ~isscalar(direction)
         'Number of backgrounds must equal number of directions');
     validation = [];   
     for i = 1:numel(direction)
-        validation = [validation OLValidateDirection(direction(i),background(i),oneLight,varargin{:})];
+        args = parser.Results;
+        if ~isempty(parser.Results.label)
+            assert(numel(args.label) == numel(direction),'OneLightToolbox:ApproachSupport:OLValidateDirection:MismatchSize',...
+                'Number of labels does not equal number of directions');
+            args.label = string(args.label);
+            args.label = args.label(i);
+        end
+        validation = [validation OLValidateDirection(direction(i),background(i), oneLight, args)];
     end
 else
     %% Validate single direction
@@ -218,12 +225,13 @@ else
 
     %% Append to each directions .describe.validation
     validation.time = [validation.time now];
+    validation.label = parser.Results.label;
 
     % Extract information for just this direction(i)
     validation.SPDbackground = SPDs(1);
     validation.SPDcombined = SPDs(2);
     validation.SPDdifferential = SPDs(3);
-
+    
     % Add to direction(i).describe; append if validations already present
     if ~isfield(direction.describe,'validation') || isempty(direction.describe.validation)
         direction.describe.validation = validation;
