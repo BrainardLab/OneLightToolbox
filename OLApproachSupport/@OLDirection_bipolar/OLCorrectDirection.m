@@ -37,7 +37,7 @@ function correctedDirection = OLCorrectDirection(direction, background, oneLight
 %    smoothness             - Smoothness parameter for OLSpdToPrimary.
 %                             Default .001.
 %    iterativeSearch        - Do iterative search with fmincon on each
-%                             measurement interation? Default is false.
+%                             measurement interation? Default is true.
 %
 % See also:
 %    OLCorrectPrimaryValues, OLValidateDirection, OLValidatePrimaryValues

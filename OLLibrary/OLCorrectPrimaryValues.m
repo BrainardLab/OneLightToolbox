@@ -40,7 +40,7 @@ function [correctedPrimaryValues, detailedData] = OLCorrectPrimaryValues(nominal
 %    smoothness             - Smoothness parameter for OLSpdToPrimary.
 %                             Default .001.
 %    iterativeSearch        - Do iterative search with fmincon on each
-%                             measurement interation? Default is false.
+%                             measurement interation? Default is true.
 %    temperatureProbe       - LJTemperatureProbe object to drive a LabJack
 %                             temperature probe
 %
@@ -81,7 +81,7 @@ parser.addParameter('learningRate', 0.8, @isscalar);
 parser.addParameter('learningRateDecrease',true,@islogical);
 parser.addParameter('asympLearningRateFactor',0.5,@isscalar);
 parser.addParameter('smoothness', 0.001, @isscalar);
-parser.addParameter('iterativeSearch',false, @islogical);
+parser.addParameter('iterativeSearch',true, @islogical);
 parser.addParameter('temperatureProbe',[],@(x) isempty(x) || isa(x,'LJTemperatureProbe'));
 parser.parse(nominalPrimaryValues,calibration,oneLight,varargin{:});
 
