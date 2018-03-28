@@ -75,7 +75,6 @@ parser.addRequired('primaryValues',@isnumeric);
 parser.addRequired('calibration',@isstruct);
 parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
 parser.addOptional('radiometer',[],@(x) isempty(x) || isa(x,'Radiometer'));
-parser.addParameter('receptors',[],@(x) isa(x,'SSTReceptor'));
 parser.addParameter('nIterations',20,@isscalar);
 parser.addParameter('learningRate', 0.8, @isscalar);
 parser.addParameter('learningRateDecrease',true,@islogical);
