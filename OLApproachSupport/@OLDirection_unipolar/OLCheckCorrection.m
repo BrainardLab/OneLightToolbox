@@ -62,79 +62,15 @@ Plot = figure();
 initialPrimaryValues = correction.initialPrimaryValues;
 targetSPD = correction.targetSPD;
 
-SPDMeasuredAll = [];
-primaryUsedAll = [];
-
 for ii = 1:nIterationsMeasured
     % Pull out some data for convenience
     spectrumMeasuredScaled = kScale*correction.SPDMeasured(:,ii);
     primaryUsed = correction.primaryUsed(:,ii);
     nextPrimaryTruncatedLearningRate = correction.NextPrimaryTruncatedLearningRate(:,ii);
     deltaPrimaryTruncatedLearningRate  = correction.DeltaPrimaryTruncatedLearningRate(:,ii);
-    if (any(nextPrimaryTruncatedLearningRate ~= primaryUsed + deltaPrimaryTruncatedLearningRate))
-        error('Background Hmmm.');
-    end
-    nextSpectrumPredictedTruncatedLearningRate = OLPredictSpdFromDeltaPrimaries(deltaPrimaryTruncatedLearningRate,primaryUsed,spectrumMeasuredScaled,calibration);
       
-    % Find delta primaries for next iter from scratch here.  This is to
-    % verify that we know how we did it, so that we can then explore other
-    % methods of doing so.
-    if (correction.learningRateDecrease)
-        learningRateThisIter = correction.learningRate*(1-(ii-1)*0.75/(correction.nIterations-1));
-    else
-        learningRateThisIter = correction.learningRate;
-    end
-    deltaPrimaryTruncatedLearningRateAgain = OLLinearDeltaPrimaries(primaryUsed,spectrumMeasuredScaled,targetSPD,learningRateThisIter,correction.smoothness,calibration);
-    if (correction.iterativeSearch)
-        [deltaPrimaryTruncatedLearningRateAgain,nextSpectrumPredictedTruncatedLearningRateAgain] = ...
-            OLIterativeDeltaPrimaries(deltaPrimaryTruncatedLearningRateAgain,primaryUsed,spectrumMeasuredScaled,targetSPD,learningRateThisIter,calibration);
-    end
-    nextSpectrumPredictedTruncatedLearningRateAgain1 = OLPredictSpdFromDeltaPrimaries(deltaPrimaryTruncatedLearningRateAgain,primaryUsed,spectrumMeasuredScaled,calibration);
-
-    % We can build up a correction matrix for predcition of delta spds from
-    % delta primaries, based on what we've measured so far.
     if (ii == 1)
         initialSPD = spectrumMeasuredScaled;
-    else
-        SPDMeasuredAll = [SPDMeasuredAll spectrumMeasuredScaled];
-        primaryUsedAll = [primaryUsedAll primaryUsed];
-        spectraPredicted = calibration.computed.pr650M*primaryUsedAll+calibration.computed.pr650MeanDark(:,ones(size(primaryUsedAll,2),1));
-        for kk = 1:size(SPDMeasuredAll,2)
-            primariesRecovered(:,kk) = lsqnonneg(calibration.computed.pr650M,SPDMeasuredAll(:,kk)-calibration.computed.pr650MeanDark);
-        end
-        spectraPredictedFromRecovered = calibration.computed.pr650M*primariesRecovered+calibration.computed.pr650MeanDark(:,ones(size(primaryUsedAll,2),1));
-        
-%         whichPrimaries = [25,35,48];
-%         theColors = ['r' 'g' 'b' 'k' 'c'];
-%         figure(primaryFig); clf; hold on
-%         for kk = 1:length(whichPrimaries)
-%             whichColor = rem(kk,length(theColors)) + 1;
-%             plot(primaryUsedAll(whichPrimaries(kk),:),primariesRecovered(whichPrimaries(kk),:),theColors(whichColor),'LineWidth',3);
-%         end
-%         plot([0 1],[0 1],'k:');
-%         xlabel('Primaries Used'); ylabel('Primaries Recovered');
-%         xlim([0 1]); ylim([-1 1]);
-%         
-%         figure; clf; 
-%         lastFigIndex = 0;
-%         for kk = 1:2
-%             subplot(1,2,kk); hold on;
-%             plot(SPDMeasuredAll(:,lastFigIndex+kk),'ro');
-%             plot(spectraPredicted(:,lastFigIndex+kk) ,'bx');
-%             plot(spectraPredictedFromRecovered(:,lastFigIndex+kk),'r');
-%         end 
-%         lastFigIndex = lastFigIndex + 2;
-%         
-%         whichPrimaries = [25,35,48];
-%         theColors = ['r' 'g' 'b' 'k' 'c'];
-%         figure(primaryFig); clf; hold on
-%         for kk = 1:length(whichPrimaries)
-%             whichColor = rem(kk,length(theColors)) + 1;
-%             plot(primaryUsedAll(whichPrimaries(kk),:),primariesRecovered(whichPrimaries(kk),:),theColors(whichColor),'LineWidth',3);
-%         end
-%         plot([0 1],[0 1],'k:');
-%         xlabel('Primaries Used'); ylabel('Primaries Recovered');
-%         xlim([0 1]); ylim([-1 1]);
     end
     
     % Report some things we might want to know
@@ -148,20 +84,20 @@ for ii = 1:nIterationsMeasured
     figure(Plot);
     
     %% SPD: measured, desired
-    % Black is the spectrum our little heart desires.
-    % Green is what we measured.
-    % Red is what our procedure thinks we'll get on the next iteration.
+    % Red is the initial measured SPD (before any correction)
+    % Green is the desired SPD
+    % Black is the SPD measured this iteration
     subplot(3,2,1); cla; hold on;
     plot(wls,initialSPD,'r:','LineWidth',2);
-    plot(wls,targetSPD,'g:','LineWidth',2);
     plot(wls,spectrumMeasuredScaled,'k','LineWidth',3);
+    plot(wls,targetSPD,'g:','LineWidth',2);
     xlabel('Wavelength'); ylabel('SPD Power'); title(sprintf('SPD, iter %d',ii));
-    legend({'Initial','Desired','Measured'},'Location','NorthWest');
+    legend({'Initial','Measured','Desired'},'Location','NorthWest');
     xlim([min(wls),max(wls)]);
 
     %% Primaries: used, initial, next
-    % Black is the initial primaries we started with
-    % Green is what we used to measure the spectra on this iteration.
+    % Red is the initial primaries we started with
+    % Black is what we used to measure the spectra on this iteration.
     % Blue is the primaries we'll ask for next iteration.
     subplot(3,2,2); cla; hold on;
     stem(1:nPrimaries,initialPrimaryValues,'r:','LineWidth',1);
@@ -172,32 +108,25 @@ for ii = 1:nIterationsMeasured
     xlim([1, nPrimaries]);
     
     %% Delta SPD: measured current, predicted next
-    % Green is the difference between what we want and what we measured.
-    % Black is what we predicted it would be on this iteration.
-    % Red is what we think it will be on the the next iteration.
+    % Black is the difference between what we want and what we measured.
+    % Red is what we got last iteration.
     subplot(3,2,3); cla; hold on 
     plot(wls,targetSPD-spectrumMeasuredScaled,'k','LineWidth',3);
-    plot(wls,targetSPD-nextSpectrumPredictedTruncatedLearningRate,'b:','LineWidth',2);
-    plot(wls,targetSPD-nextSpectrumPredictedTruncatedLearningRateAgain1,'r:','LineWidth',  2);
-    labels = {'Measured Current Delta','Predicted Next Delta','Predicted Other Start'};
-    if (correction.iterativeSearch)
-        plot(wls,targetSPD-nextSpectrumPredictedTruncatedLearningRateAgain,'k:','LineWidth',2);
-    end
     if (ii > 1)
-        plot(wls,DeltaPredictedLastTime,'r:','LineWidth',2);
-        labels = [labels 'Predicted Current Delta'];
+        plot(wls,previousDelta,'r:','LineWidth',2);
+        labels = {'Current Delta','Previous Delta'};
     else
-        plot(NaN,NaN);
+        labels = {'Current Delta','Previous Delta'};
     end
-    title('Predicted delta spectrum on next iteration');
-    xlabel('Wavelength'); ylabel('Delta Spd Power'); title(sprintf('SPD Deltas, iter %d',ii));
+    title(sprintf('Delta SPD on iter %d',ii));
+    xlabel('Wavelength'); ylabel('Delta SPD Power'); title(sprintf('SPD Deltas, iter %d',ii));
     legend(labels,'Location','NorthWest');
-    DeltaPredictedLastTime = targetSPD-nextSpectrumPredictedTruncatedLearningRate;
+    previousDelta = targetSPD-spectrumMeasuredScaled;
     ylim([-10e-3 10e-3]);
     xlim([min(wls),max(wls)]);
     
     %% Delta primaries: used next
-    % Green is the difference between the primaries we will ask for on the
+    % Blue is the difference between the primaries we will ask for on the
     % next iteration and those we just used.
     subplot(3,2,4); cla; hold on
     stem(1:nPrimaries,nextPrimaryTruncatedLearningRate-primaryUsed,'b','LineWidth',2);
