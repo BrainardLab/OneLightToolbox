@@ -67,8 +67,12 @@ for ii = 1:nIterationsMeasured
     spectrumMeasuredScaled = kScale*correction.SPDMeasured(:,ii);
     primaryUsed = correction.primaryUsed(:,ii);
     nextPrimaryTruncatedLearningRate = correction.NextPrimaryTruncatedLearningRate(:,ii);
-    deltaPrimaryTruncatedLearningRate  = correction.DeltaPrimaryTruncatedLearningRate(:,ii);
-      
+    if (correction.learningRateDecrease)
+        learningRateThisIter = correction.learningRate*(1-(ii-1)*0.75/(correction.nIterations-1));
+    else
+        learningRateThisIter = correction.learningRate;
+    end
+    
     if (ii == 1)
         initialSPD = spectrumMeasuredScaled;
     end
@@ -116,7 +120,7 @@ for ii = 1:nIterationsMeasured
         plot(wls,previousDelta,'r:','LineWidth',2);
         labels = {'Current Delta','Previous Delta'};
     else
-        labels = {'Current Delta','Previous Delta'};
+        labels = {'Current Delta'};
     end
     title(sprintf('Delta SPD on iter %d',ii));
     xlabel('Wavelength'); ylabel('Delta SPD Power'); title(sprintf('SPD Deltas, iter %d',ii));
@@ -135,16 +139,21 @@ for ii = 1:nIterationsMeasured
     title('Delta primary for next iteration');
     xlim([1, nPrimaries]);
     
+    %% RMSQE
+    subplot(3,2,5); cla; hold on
+    plot(1:ii,correction.RMSQE(1:ii));
+    title('Root mean squared error (desired SPD - measured SPD)');
+    xlim([0,nIterationsMeasured]); xticks(0:nIterationsMeasured);
+    
     %% Contrast
     if ~isempty(receptors)
-        subplot(3,1,3); hold on;
+        subplot(3,1,3); cla; hold on;
         
         backgroundSPD = correction.background.SPDdifferentialDesired;
         desiredContrast = SPDToReceptorContrast([backgroundSPD, targetSPD],receptors);
         measuredContrast = SPDToReceptorContrast([kScale*backgroundSPD, spectrumMeasuredScaled],receptors);
-        predictedNextContrast = SPDToReceptorContrast([kScale*backgroundSPD, nextSpectrumPredictedTruncatedLearningRate],receptors);
         
-        plot([ii ii+1],[measuredContrast(:,1) predictedNextContrast(:,1)]);
+        plot(1:ii,measuredContrast(:,1:ii));
         
         if ii == 1
             xlim([0,nIterationsMeasured]); xticks(0:nIterationsMeasured);
