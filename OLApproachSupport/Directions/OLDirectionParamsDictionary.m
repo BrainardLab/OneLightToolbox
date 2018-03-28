@@ -368,4 +368,31 @@ if OLDirectionParamsValidate(params)
     dictionary(params.name) = params;
 end
 
+%% MaxMelLMS_unipolar_275_60_667
+% Direction for maximum unipolar contrast melanopsin step
+%   Field size: 27.5 deg
+%   Pupil diameter: 6 mm -- for use with 6 mm artificial pupil as part of
+%   pupillometry
+%   bipolar contrast: 66.7%
+%
+% Bipolar contrast is specified to generate, but the result is a 400% unipolar
+% contrast step up relative to the background.
+params = OLDirectionParams_Unipolar;
+params.baseName = 'MaxMelLMS';
+params.primaryHeadRoom = 0.0;
+params.baseModulationContrast = 2/3;
+params.fieldSizeDegrees = 27.5;
+params.pupilDiameterMm = 6.0;
+params.photoreceptorClasses = {'LConeTabulatedAbsorbance','MConeTabulatedAbsorbance','SConeTabulatedAbsorbance','Melanopsin'};
+params.modulationContrast = [params.baseModulationContrast params.baseModulationContrast params.baseModulationContrast params.baseModulationContrast];
+params.whichReceptorsToIsolate = [1, 2, 3, 4];
+params.whichReceptorsToIgnore = [];
+params.whichReceptorsToMinimize = [];
+params.backgroundName = 'MelanopsinDirected_275_60_667';
+params.name = OLDirectionNameFromParams(params);
+if OLDirectionParamsValidate(params)
+    % All validations OK. Add entry to the dictionary.
+    dictionary(params.name) = params;
+end
+
 end
