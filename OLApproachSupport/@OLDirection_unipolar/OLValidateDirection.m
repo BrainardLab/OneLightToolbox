@@ -194,7 +194,10 @@ else
 
         %     predictedContrastPostreceptoral = [ComputePostreceptoralContrastsFromLMSContrasts(predictedContrastPos(1:3,1)),...
         %         ComputePostreceptoralContrastsFromLMSContrasts(predictedContrastNeg(1:3,1))];
-
+        % placeholder as we add the ability to calculate postreceptoral
+        % contrast
+        validation.postreceptoralContrastActual = [];
+        
         % Write direction.describe.validation output
         validation.receptors = receptors;
         validation.excitationDesired = excitations.desired;
