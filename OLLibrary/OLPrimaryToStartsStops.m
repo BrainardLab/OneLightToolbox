@@ -136,8 +136,8 @@ parser.addParameter('tolerance',1e-6,@isnumeric);
 parser.parse(primaryValues,calibration,varargin{:});
 
 primaryTolerance = parser.Results.tolerance;
-primary(primary > 1 & primary < 1 + primaryTolerance) = 1;
-primary(primary < 0 & primary > -primaryTolerance) = 0;
+primaryValues(primaryValues > 1 & primaryValues < 1 + primaryTolerance) = 1;
+primaryValues(primaryValues < 0 & primaryValues > -primaryTolerance) = 0;
 if any(primaryValues(:)<0) || any(primaryValues(:)>1)
     if parser.Results.checkoutofrange
         error('OneLightToolbox:OLPrimaryToStartsStops:OutOfRange','At least one primary value is out of range [0,1]');
