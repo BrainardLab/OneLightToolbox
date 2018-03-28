@@ -178,12 +178,12 @@ else
     SPDs(2).desiredSPD = SPDcombinedDesired(:,1);  % positive direction
     SPDs(3).desiredSPD = SPDcombinedDesired(:,2);  % negative direction
 
-    %% Determine differential SPD, add to SPDs struct array
+    %% Determine differential SPDs, add to SPDs struct array
     SPDdifferentialMeasured = [SPDs(2).measuredSPD - SPDs(1).measuredSPD, SPDs(3).measuredSPD - SPDs(1).measuredSPD];
-    SPDs(3).desiredSPD = SPDdifferentialDesired;
-    SPDs(3).predictedSPD = direction.ToPredictedSPD;
-    SPDs(3).measuredSPD = SPDdifferentialMeasured;
-    SPDs(3).error = SPDdifferentialDesired - SPDdifferentialMeasured;
+    SPDs(4).desiredSPD = SPDdifferentialDesired;
+    SPDs(4).predictedSPD = direction.ToPredictedSPD;
+    SPDs(4).measuredSPD = SPDdifferentialMeasured;
+    SPDs(4).error = SPDdifferentialDesired - SPDdifferentialMeasured;
 
     %% Calculate nominal and actual excitation
     if ~isempty(receptors)        
@@ -191,9 +191,9 @@ else
         excitations.predicted = SPDToReceptorExcitation([SPDs.predictedSPD],receptors);
         excitations.actual = SPDToReceptorExcitation([SPDs.measuredSPD],receptors);
 
-        contrasts.desired = ReceptorExcitationToReceptorContrast(excitations.desired(:,1:2));
-        contrasts.predicted = ReceptorExcitationToReceptorContrast(excitations.predicted(:,1:2));
-        contrasts.actual = ReceptorExcitationToReceptorContrast(excitations.actual(:,1:2));
+        contrasts.desired = [ReceptorExcitationToReceptorContrast(excitations.desired(:,1:2)) ReceptorExcitationToReceptorContrast(excitations.desired(:,[1 3]))];
+        contrasts.predicted = [ReceptorExcitationToReceptorContrast(excitations.predicted(:,1:2)) ReceptorExcitationToReceptorContrast(excitations.predicted(:,[1 3]))];
+        contrasts.actual = [ReceptorExcitationToReceptorContrast(excitations.actual(:,1:2)) ReceptorExcitationToReceptorContrast(excitations.predicted(:,[1 3]))];
 
         %     predictedContrastPostreceptoral = [ComputePostreceptoralContrastsFromLMSContrasts(predictedContrastPos(1:3,1)),...
         %         ComputePostreceptoralContrastsFromLMSContrasts(predictedContrastNeg(1:3,1))];
