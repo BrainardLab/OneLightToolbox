@@ -135,7 +135,7 @@ parser.addParameter('checkoutofrange',true,@islogical);
 parser.addParameter('tolerance',1e-6,@isnumeric);
 parser.parse(primaryValues,calibration,varargin{:});
 
-primaryTolerance = params.tolerance;
+primaryTolerance = parser.Results.tolerance;
 primary(primary > 1 & primary < 1 + primaryTolerance) = 1;
 primary(primary < 0 & primary > -primaryTolerance) = 0;
 if any(primaryValues(:)<0) || any(primaryValues(:)>1)
