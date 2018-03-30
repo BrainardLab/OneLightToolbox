@@ -1,19 +1,23 @@
-function [contrasts, excitation, excitationDiff] = ToDesiredReceptorContrast(directions, receptors)
-% Calculates contrast on photoreceptors between OLDirections
+function [contrasts, excitation, excitationDiff] = ToDesiredReceptorContrast(direction, background, receptors)
+% Calculates contrast on photoreceptors between OLDirections' desired SPDs
 %
 % Syntax:
-%   contrasts = direction.ToReceptorExcitations(T_receptors)
-%   contrasts = direction.ToReceptorExcitations(SSTReceptors)
-%   contrasts = ToReceptorExcitations(direction, ...)
-%   contrasts = ToReceptorExcitations([direction1 direction2], ...)
+%   contrasts = ToDesiredReceptorContrast(direction, background, SSTReceptor)
+%   contrasts = ToDesiredReceptorContrast(direction, background, T_receptors)
+%   contrasts = direction.ToDesiredReceptorContrast(background, ...)
 %   [contrasts, excitation, excitationDiff] = ...
 %
 % Description:
-%    Predicts the contrast on the specified receptors, by the OLDirections.
+%    Predicts from desired differential SPDs of OLDirection, contrasts
+%    compared to background. Takes dark level into account. If desired
+%    differential SPD is not defined in object, predicts from primary
+%    values.
 %
 % Inputs:
-%    direction      - OLDirection object(array) specifying the direction to
-%                     predict excitations for.
+%    direction      - OLDirection_unipolar specifying the direction to
+%                     predict contrast for
+%    background     - OLDirection_unipolar specifying the background to 
+%                     predict contrast on 
 %    receptors      - either:
 %                     - RxnWls matrix (T_receptors) of R receptor
 %                       sensitivities sampled at nWls wavelength bands
@@ -21,32 +25,15 @@ function [contrasts, excitation, excitationDiff] = ToDesiredReceptorContrast(dir
 %                       T.T_energyNormalized matrix will be used
 %
 % Outputs:
-%    contrasts      - NxNxR matrix of contrasts (one NxN
-%                     matrix per receptor type), where contrasts(i,j,R) =
-%                     excitationDiff(i,j,R) / excitation(R,i)
-%    excitation     - RxN matrix of excitations of each receptor type to
-%                     each SPD
-%    excitationDiff - NxNxR matrix of differences in excitations (one NxN
-%                     matrix per receptor type), where
-%                     excitationDiff(i,j,R) = excitation(R,j) -
-%                     excitation(R,i).
+%    contrasts      - Rx1 vector of contrasts on R receptors of direction 
+%                     on background
+%    excitation     - Rx2 matrix of excitations of each receptor type to
+%                     direction, and background
+%    excitationDiff - Rx1 matrix of difference in excitation of each
+%                     receptor type between direction and background
 %
 % Optional key/value pairs:
 %    None.
-%
-% Notes:
-%    In the case that only 2 directions are passed (e.g., a background
-%    and a direction), the outputs are simplified as follows:
-%       excitationDiff - Rx2 matrix, where the first column is the
-%                      excitation(R,j) - reponse(R,i), and the second column
-%                      the inverse
-%       contrasts    - Rx2 matrix, where the first column is the contrast
-%                      relative to the first SPD, and the second column is
-%                      the contrast relative to the second SPD.
-%
-%    In the case that only 1 direction is passed, excitation is returned as
-%    normal, but excitationDiff and contrasts are returned as Rx1
-%    columnvectors of NaNs.
 %
 % See also:
 %    SPDToReceptorExcitation; ReceptorExcitationToReceptorContrast
@@ -56,14 +43,31 @@ function [contrasts, excitation, excitationDiff] = ToDesiredReceptorContrast(dir
 
 %% Input validation
 parser = inputParser;
-parser.addRequired('directions',@(x) isa(x,'OLDirection'));
+parser.addRequired('direction',@(x) isa(x,'OLDirection_unipolar'));
+parser.addRequired('background',@(x) isa(x,'OLDirection_unipolar'));
 parser.addRequired('receptors',@(x) isnumeric(x) || isa(x,'SSTReceptor'));
-parser.parse(directions, receptors);
+parser.parse(direction, background, receptors);
+assert(matchingCalibration(direction,background),'OneLightToolbox:ApproachSupport:OLValidateDirection:MismatchedCalibration',...
+       'Direction and background do not share a calibration.');
 
-%% Get excitations
-excitation = ToReceptorExcitation(directions,receptors);
+%% Get background SPD
+if isempty(background.SPDdifferentialDesired)
+    desiredBackgroundSPD = background.ToPredictedSPD;
+else
+    desiredBackgroundSPD = background.SPDdifferentialDesired;
+end
 
-%% Get contrasts
-[contrasts, excitationDiff] = ReceptorExcitationToReceptorContrast(excitation);
+%% Add dark light
+desiredBackgroundSPD = desiredBackgroundSPD + background.calibration.computed.pr650MeanDark;
 
+%% Get combined direction + background SPD
+if isempty(direction.SPDdifferentialDesired)
+    desiredCombinedSPD = direction.ToPredictedSPD + desiredBackgroundSPD;
+else
+    desiredCombinedSPD = direction.SPDdifferentialDesired + desiredBackgroundSPD;
+end
+
+%% Calculate contrast
+[contrasts, excitation, excitationDiff] = SPDToReceptorContrast([desiredBackgroundSPD desiredCombinedSPD],receptors);
+contrasts = contrasts(:,1);
 end
