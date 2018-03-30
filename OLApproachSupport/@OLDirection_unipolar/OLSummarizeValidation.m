@@ -35,15 +35,26 @@ validations = direction.describe.validation;
 contrastDesired = [];
 contrastActual = [];
 for i = 1:numel(validations)
+    % scale SPDs
+    kScale = [validations(i).SPDbackground.desiredSPD; validations(i).SPDcombined.desiredSPD]' ...
+        / [validations(i).SPDbackground.measuredSPD; validations(i).SPDcombined.measuredSPD]';
+    
+    % calculate contrast
     contrastDesired = [contrastDesired, validations(i).contrastDesired(:,1)];
     contrastActual = [contrastActual, validations(i).contrastActual(:,1)];
-    figure(i)
-    plot(validations(i).SPDbackground.desiredSPD,'k--'); hold on;
-    plot(validations(i).SPDbackground.measuredSPD,'k-');
-    plot(validations(i).SPDcombined.desiredSPD,'g--');
-    plot(validations(i).SPDcombined.measuredSPD,'g-');
+    
+    % plot
+    wls = MakeItWls(direction.calibration.describe.S);
+    figure()
+    plot(wls,validations(i).SPDbackground.desiredSPD,'k--'); hold on;
+    plot(wls,kScale*validations(i).SPDbackground.measuredSPD,'k-');
+    plot(wls,validations(i).SPDcombined.desiredSPD,'g--');
+    plot(wls,kScale*validations(i).SPDcombined.measuredSPD,'g-');
     legend({'background desired','background measured',...
         'direction desired', 'direction measured'});
+    title(sprintf('Validation %d',i));
+    xlabel('Wavelength (nm)');
+    ylabel('Spectral power');
 end
 
 figure();
@@ -52,5 +63,8 @@ for r = 1:size(contrastDesired,1)
     subplot(1,size(contrastDesired,1),r); hold on;
     bar(contrastActual(r,:),'k'); hold on;
     plot(contrastDesired(r,:),'g');
-    ylim([-5,5]);
+    ylim(max(abs(ylim)) * [-1.1 1.1]);
+    title(sprintf('Contrast on receptor %d',r));
+    ylabel('contrast');
+    xlabel('validation');
 end
