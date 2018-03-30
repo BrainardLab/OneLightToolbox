@@ -2,13 +2,18 @@ function [ output_args ] = OLCheckCorrection(direction, varargin)
 % Steps through correction data to help evaluate OLDirection correction
 %
 % Syntax:
+%   OLCheckCorrection(direction)
+%   direction.OLCheckCorrection;
+%   OLCheckCorrection(direction, receptors)
+%   direction.OLCheckCorrection(receptors)
 %
 % Description:
-%   Detailed explanation goes here
+%    Detailed explanation goes here
 %
 % Input:
 %    direction - OLDirection_unipolar object
-%    receptors - 
+%    receptors - SSTReceptor object, or T_receptors matrix, defining
+%                fundamentals of the receptors to calculate contrast on
 %
 % Output:
 %    None.
@@ -21,6 +26,7 @@ function [ output_args ] = OLCheckCorrection(direction, varargin)
 
 % History:
 %    03/28/18  jv  wrote it.
+%    03/30/18  jv  added RMSE plot, contrast figure
 
 %% Input validation
 parser = inputParser;
@@ -48,15 +54,15 @@ iterativeSearch = correction.iterativeSearch;
 labels = {'no','yes'};
 fprintf('<strong>Iterative search          :</strong> %s\n', labels{iterativeSearch+1});
 
-%% Clean up cal file primaries by zeroing out light we don't think is really there.    
+%% Clean up cal file primaries by zeroing out light we don't think is really there.
 zeroItWLRangeMinus = 100;
 zeroItWLRangePlus = 100;
 calibration = OLZeroCalPrimariesAwayFromPeak(direction.calibration,zeroItWLRangeMinus,zeroItWLRangePlus);
 wls = MakeItWls(calibration.describe.S);
 
 %% Plot what we got
-
 Plot = figure();
+ContrastPlot = figure();
 
 % We multiply measurements by kScale to bring everything into a consistent space
 initialPrimaryValues = correction.initialPrimaryValues;
@@ -91,6 +97,7 @@ for ii = 1:nIterationsMeasured
     % Red is the initial measured SPD (before any correction)
     % Green is the desired SPD
     % Black is the SPD measured this iteration
+    figure(Plot);
     subplot(3,2,1); cla; hold on;
     plot(wls,initialSPD,'r:','LineWidth',2);
     plot(wls,spectrumMeasuredScaled,'k','LineWidth',3);
@@ -98,7 +105,7 @@ for ii = 1:nIterationsMeasured
     xlabel('Wavelength'); ylabel('SPD Power'); title(sprintf('SPD, iter %d',ii));
     legend({'Initial','Measured','Desired'},'Location','NorthWest');
     xlim([min(wls),max(wls)]);
-
+    
     %% Primaries: used, initial, next
     % Red is the initial primaries we started with
     % Black is what we used to measure the spectra on this iteration.
@@ -114,7 +121,7 @@ for ii = 1:nIterationsMeasured
     %% Delta SPD: measured current, predicted next
     % Black is the difference between what we want and what we measured.
     % Red is what we got last iteration.
-    subplot(3,2,3); cla; hold on 
+    subplot(3,2,3); cla; hold on
     plot(wls,targetSPD-spectrumMeasuredScaled,'k','LineWidth',3);
     if (ii > 1)
         plot(wls,previousDelta,'r:','LineWidth',2);
@@ -140,75 +147,57 @@ for ii = 1:nIterationsMeasured
     xlim([1, nPrimaries]);
     
     %% RMSQE
-    subplot(3,2,5); cla; hold on
+    subplot(3,1,3); cla; hold on
     plot(1:ii,correction.RMSQE(1:ii));
     title('Root mean squared error (desired SPD - measured SPD)');
     xlim([0,nIterationsMeasured]); xticks(0:nIterationsMeasured);
     
-    %% Contrast
+    %% Contrast over iterations
+    %     if ~isempty(receptors)
+    %         subplot(3,1,3); cla; hold on;
+    %
+    %         backgroundSPD = correction.background.SPDdifferentialDesired;
+    %         desiredContrast = SPDToReceptorContrast([backgroundSPD, targetSPD],receptors);
+    %         measuredContrastThisIter = SPDToReceptorContrast([kScale*backgroundSPD, spectrumMeasuredScaled],receptors);
+    %         if ii == 1
+    %             measuredContrast = measuredContrastThisIter;
+    %         else
+    %         	measuredContrast = [measuredContrast, measuredContrastThisIter(:,1)];
+    %         end
+    %
+    %         plot(1:ii,measuredContrast(:,1:ii));
+    %
+    %         xlim([0,nIterationsMeasured]); xticks(0:nIterationsMeasured);
+    %         ylim([-4 4]);
+    %         plot([0,nIterationsMeasured],[0 0],'k:');
+    %         plot(repmat([0,nIterationsMeasured],[size(receptors,1) 1])',[desiredContrast(:,1)'; desiredContrast(:,1)'],'--');
+    %     end
+    
+    %% Contrasts in separate figure
     if ~isempty(receptors)
-        subplot(3,1,3); cla; hold on;
-        
+        % Calculate contrasts
         backgroundSPD = correction.background.SPDdifferentialDesired;
         desiredContrast = SPDToReceptorContrast([backgroundSPD, targetSPD],receptors);
-        measuredContrast = SPDToReceptorContrast([kScale*backgroundSPD, spectrumMeasuredScaled],receptors);
-        
-        plot(1:ii,measuredContrast(:,1:ii));
-        
+        contrastActual = SPDToReceptorContrast([kScale*backgroundSPD, spectrumMeasuredScaled],receptors);
         if ii == 1
-            xlim([0,nIterationsMeasured]); xticks(0:nIterationsMeasured);
-            ylim([-4 4]);
-            plot([0,nIterationsMeasured],[0 0],'k:');
-            plot(repmat([0,nIterationsMeasured],[size(receptors,1) 1])',[desiredContrast(:,1)'; desiredContrast(:,1)'],'--');
+            contrastActualPrevious = zeros(numel(desiredContrast),1);
         end
-    end    
-         
-%     % Compute contrasts
-% 
-%     % NEED TO GET PHOTORECEPTORS FROM DIRECTION CACHE FILE AND/OR GENERATE THEM.  SEE
-%     % OLAnalyzeDirectionCorrectedPrimaries for the basic way this looks.  THEN SHOULD
-%     % BE ABLE TO PLOT CONTRASTS PRETTY EASILY.
-%     %
-%     % Grab cell array of photoreceptor classes.  Use what was in the direction file
-%     % if it is there, otherwise standard L, M, S and Mel.
-%     %
-%     % This might not be the most perfect check for what is stored with the nominal direction primaries,
-%     % but until it breaks we'll go with it.
-%     if false %isfield(directionCacheData.directionParams,'photoreceptorClasses')
-%         if (directionCacheData.data(protocolParams.observerAgeInYrs).describe.params.fieldSizeDegrees ~=  protocolParams.fieldSizeDegrees)
-%             error('Field size used for direction does not match that specified in protocolPrams.');
-%         end
-%         if (directionCacheData.data(protocolParams.observerAgeInYrs).describe.params.pupilDiameterMm ~=  protocolParams.pupilDiameterMm)
-%             error('Pupil diameter used for direction does not match that specified in protocolPrams.');
-%         end
-%         photoreceptorClasses = directionCacheData.data(protocolParams.observerAgeInYrs).describe.photoreceptors;
-%         T_receptors = directionCacheData.data(protocolParams.observerAgeInYrs).describe.T_receptors;
-%     else
-%         S = [380 2 201];
-%         photoreceptorClasses = {'LConeTabulatedAbsorbance'  'MConeTabulatedAbsorbance'  'SConeTabulatedAbsorbance'  'Melanopsin'};
-%         T_receptors = GetHumanPhotoreceptorSS(S,photoreceptorClasses,protocolParams.fieldSizeDegrees,protocolParams.observerAgeInYrs,protocolParams.pupilDiameterMm,[],[]);
-%     end
-% 
-%     Receptors = T_receptors*SpectrumMeasuredScaled;
-%     modulationReceptors = T_receptors*modulationSpectrumMeasuredScaled;
-%     contrasts(:,ii) = (modulationReceptors-Receptors) ./ Receptors;
-%     
-%     % Contrast figure
-%     figure(contrastPlot);
-%     subplot(1,2,1);
-%     hold off;
-%     plot(1:ii, 100*contrasts(1, 1:ii), '-sr', 'MarkerFaceColor', 'r'); hold on
-%     plot(1:ii, 100*contrasts(2, 1:ii), '-sg', 'MarkerFaceColor', 'g');
-%     plot(1:ii, 100*contrasts(3, 1:ii), '-sb', 'MarkerFaceColor', 'b');
-%     xlabel('Iteration #'); xlim([0 nIterations+1]);
-%     ylabel('LMS Contrast'); %ylim(]);
-%     subplot(1,2,2);
-%     hold off;
-%     plot(1:ii,contrasts(4, 1:ii), '-sc', 'MarkerFaceColor', 'c'); hold on
-%     xlabel('Iteration #'); xlim([0 nIterations+1]);
-%     ylabel('Mel Contrast');
+        
+        figure(ContrastPlot);
+        for r = 1:size(desiredContrast,1)
+            % subplot per receptor
+            subplot(1,size(desiredContrast,1),r); cla;
+            bar([desiredContrast(r,1), contrastActualPrevious(r), contrastActual(r)],'k'); hold on;
+            ylim(max(abs(ylim)) * [-1.1 1.1]);
+            title(sprintf('Contrast on receptor %d',r));
+            xticklabels({'desired','last iter','current'});
+            ylabel('contrast');
+        end
+        
+        contrastActualPrevious = contrastActual;
+    end
     
-    % Force draw
+    %% Force draw
     commandwindow;
     drawnow;
     pause;
