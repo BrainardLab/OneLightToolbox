@@ -150,7 +150,9 @@ for ii = 1:nIterationsMeasured
     subplot(3,1,3); cla; hold on
     plot(1:ii,correction.RMSQE(1:ii));
     title('Root mean squared error (desired SPD - measured SPD)');
-    xlim([0,nIterationsMeasured]); xticks(0:nIterationsMeasured);
+    xlim([0,nIterationsMeasured+1]); xticks(0:nIterationsMeasured);
+    ylabel('RMSE');
+    xlabel('Iteration');
     
     %% Contrast over iterations
     %     if ~isempty(receptors)
@@ -167,10 +169,10 @@ for ii = 1:nIterationsMeasured
     %
     %         plot(1:ii,measuredContrast(:,1:ii));
     %
-    %         xlim([0,nIterationsMeasured]); xticks(0:nIterationsMeasured);
+    %         xlim([0,nIterationsMeasured+1]); xticks(0:nIterationsMeasured);
     %         ylim([-4 4]);
-    %         plot([0,nIterationsMeasured],[0 0],'k:');
-    %         plot(repmat([0,nIterationsMeasured],[size(receptors,1) 1])',[desiredContrast(:,1)'; desiredContrast(:,1)'],'--');
+    %         plot([0,nIterationsMeasured+1],[0 0],'k:');
+    %         plot(repmat([1,nIterationsMeasured],[size(receptors,1) 1])',[desiredContrast(:,1)'; desiredContrast(:,1)'],'--');
     %     end
     
     %% Contrasts in separate figure
