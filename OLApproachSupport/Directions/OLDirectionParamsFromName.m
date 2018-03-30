@@ -30,6 +30,7 @@ function directionParams = OLDirectionParamsFromName(directionName)
 
 % History:
 %    01/31/18  jv  Wrote it.
+
 directionParamsDictionary = OLDirectionParamsDictionary;
 directionParams = directionParamsDictionary(directionName);
 end
