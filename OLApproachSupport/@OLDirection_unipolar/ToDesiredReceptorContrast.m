@@ -1,4 +1,4 @@
-function [contrasts, excitation, excitationDiff] = ToReceptorContrast(directions, receptors)
+function [contrasts, excitation, excitationDiff] = ToDesiredReceptorContrast(directions, receptors)
 % Calculates contrast on photoreceptors between OLDirections
 %
 % Syntax:
