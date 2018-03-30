@@ -20,8 +20,15 @@ function [validation, SPDs, excitations, contrasts] = OLValidateDirection(direct
 %    a given set of receptors, and contrasts on receptors between multiple
 %    directions.
 %
-%    Saves this validation by appending it to the the describe.validation
-%    field of the OLDirection.
+%    Two (sets of) excitations, receptor contrasts and postreceptoral
+%    contrasts are returned:
+%     1) the desired (nominal) excitations/contrasts, calculated from the
+%        desired SPDs of the direction and background
+%     2) the actual excitations/contrasts, calculated from the measured
+%        SPDs
+%
+%    This method save a validation by appending it to the the
+%    describe.validation field of the OLDirection.
 %
 % Inputs:
 %    direction   - OLDirection_unipolar object specifying the direction to
@@ -185,34 +192,36 @@ else
     %% Calculate nominal and actual excitation
     if ~isempty(receptors)       
         excitations.desired = SPDToReceptorExcitation([SPDs.desiredSPD],receptors);
-        excitations.predicted = SPDToReceptorExcitation([SPDs.predictedSPD],receptors);
+        %excitations.predicted = SPDToReceptorExcitation([SPDs.predictedSPD],receptors);
         excitations.actual = SPDToReceptorExcitation([SPDs.measuredSPD],receptors);
 
         contrasts.desired = ReceptorExcitationToReceptorContrast(excitations.desired(:,1:2));
-        contrasts.predicted = ReceptorExcitationToReceptorContrast(excitations.predicted(:,1:2));
+        %contrasts.predicted = ReceptorExcitationToReceptorContrast(excitations.predicted(:,1:2));
         contrasts.actual = ReceptorExcitationToReceptorContrast(excitations.actual(:,1:2));
 
         %     predictedContrastPostreceptoral = [ComputePostreceptoralContrastsFromLMSContrasts(predictedContrastPos(1:3,1)),...
         %         ComputePostreceptoralContrastsFromLMSContrasts(predictedContrastNeg(1:3,1))];
         % placeholder as we add the ability to calculate postreceptoral
         % contrast
-        validation.postreceptoralContrastActual = [];
+        validation.postreceptoralContrastDesired = ComputePostreceptoralContrastsFromLMSContrasts(contrasts.desired(1:3,1));
+        %validation.postreceptoralContrastPredicted = ComputePostreceptoralContrastsFromLMSContrasts(contrasts.predicted(1:3,1));
+        validation.postreceptoralContrastActual = ComputePostreceptoralContrastsFromLMSContrasts(contrasts.actual(1:3,1));
         
         % Write direction.describe.validation output
         validation.receptors = receptors;
         validation.excitationDesired = excitations.desired;
-        validation.excitationPredicted = excitations.predicted;
+        %validation.excitationPredicted = excitations.predicted;
         validation.excitationActual = excitations.actual;
         validation.contrastDesired = contrasts.desired;
-        validation.contrastPredicted = contrasts.predicted;
+        %validation.contrastPredicted = contrasts.predicted;
         validation.contrastActual = contrasts.actual;
     else
         validation.receptors = [];
         validation.excitationDesired = [];
-        validation.excitationPredicted = [];
+        %validation.excitationPredicted = [];
         validation.excitationActual = [];
         validation.contrastDesired = [];
-        validation.contrastPredicted = [];
+        %validation.contrastPredicted = [];
         validation.contrastActual = [];
     end
 
@@ -223,7 +232,7 @@ else
 
     % Write direction.describe.validation output
     validation.luminanceDesired = T_xyz(2,:) * [SPDs.desiredSPD];
-    validation.luminancePredicted = T_xyz(2,:) * [SPDs.predictedSPD];
+    %validation.luminancePredicted = T_xyz(2,:) * [SPDs.predictedSPD];
     validation.luminanceActual = T_xyz(2,:) * [SPDs.measuredSPD];
 
     %% Append to each directions .describe.validation
