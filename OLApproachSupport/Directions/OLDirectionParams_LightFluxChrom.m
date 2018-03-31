@@ -18,6 +18,8 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
         end
         
         function directionStruct = OLDirectionNominalStructFromParams(directionParams, calibration, varargin)
+            % DEPRECATED! USE OLDIRECTIONNOMINALFROMPARAMS INSTEAD
+            
             % Generate a parameterized direction from the given parameters
             %
             % Syntax:
@@ -178,6 +180,96 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
             end            
         end
         
+        function [direction, background] = OLDirectionNominalFromParams(directionParams, calibration, varargin)
+            % Generate a parameterized OLDirection object from the given parameters
+            %
+            % Syntax:
+            %   direction = OLDirectionNominalFromParams(OLDirectionParams_LightFluxChrom, calibration)
+            %   [direction, background] = OLDirectionNominalFromParams(OLDirectionParams_LightFluxChrom, calibration)
+            %   direction = OLDirectionNominalFromParams(OLDirectionParams_LightFluxChrom, calibration, background)
+            %   direction = OLDirectionNominalFromParams(..., 'observerAge', observerAge)
+            %
+            % Description:
+            %
+            % Inputs:
+            %    directionParams - OLDirectionParams_Unipolar object
+            %                      defining the parameters for a unipolar
+            %                      direction
+            %    calibration     - OneLight calibration struct
+            %    background      - [OPTIONAL] OLDirection_unipolar object
+            %                      specifying the background to build this
+            %                      direction around
+            %
+            % Outputs:
+            %    direction       - an OLDirection_unipolar object
+            %                      corresponding to the parameterized
+            %                      direction
+            %    background      - an OLDirection_unipolar object
+            %                      corresponding to the optimized
+            %                      background for the parameterized
+            %                      direction
+            %
+            % Optional key/value pairs:
+            %    None.
+            %
+            % See also:
+            %    OLDirection_unipolar, OLBackgroundNominalFromParams,
+            %    OLDirectionParamsDictionary
+            
+            % History:
+            %    01/31/18  jv  wrote it, based on OLWaveformFromParams and
+            %                  OLReceptorIsolateMakeDirectionNominalPrimaries
+            %    02/12/18  jv  inserted in OLDirectionParams_ classes.
+            %    03/22/18  jv  adapted to produce OLDirection objects
+            
+            %% Input validation
+            parser = inputParser();
+            parser.addRequired('directionParams',@(x) isstruct(x) || isa(x,'OLDirectionParams'));
+            parser.addRequired('calibration',@isstruct);
+            parser.addOptional('background',[],@isnumeric);
+            parser.addParameter('verbose',false,@islogical);
+            parser.addParameter('observerAge',1:60,@isnumeric);
+            parser.parse(directionParams,calibration,varargin{:});
+            
+            %% Get / make background
+            if isempty(parser.Results.background) % No primary specified in call
+                if isempty(directionParams.background) % No primary specified in params
+                    if isempty(directionParams.backgroundParams) % No params specified
+                        assert(isprop(directionParams,'backgroundName') && ~isempty(directionParams.backgroundName),'No background, backgroundParams, or backgroundName specified')
+                        
+                        % Get backgroundParams from stored name
+                        directionParams.backgroundParams = OLBackgroundParamsFromName(directionParams.backgroundName);
+                    end
+                    
+                    % Make backgroundPrimary from params
+                    directionParams.background = OLBackgroundNominalFromParams(directionParams.backgroundParams, calibration);
+                end
+                
+                % Use background stored in directionParams
+                background = directionParams.background;
+            else
+                % Use background specified in function call
+                background = parser.Results.background;
+            end
+            
+            backgroundSPD = background.ToPredictedSPD;
+            
+            %% Make direction
+            currentBackgroundPrimary = background.differentialPrimaryValues;
+            modulationPrimaryPositive = currentBackgroundPrimary*directionParams.lightFluxDownFactor;
+            differentialPrimaryValues = modulationPrimaryPositive - currentBackgroundPrimary; 
+            
+            % Update background
+            background = OLDirection_unipolar(background.differentialPrimaryValues-differentialPrimaryValues,calibration,background.describe);
+            differentialPrimaryValues = modulationPrimaryPositive - background.differentialPrimaryValues;
+                
+            %% Create direction object
+            describe.directionParams = directionParams;
+            describe.backgroundNominal = background.copy();
+            describe.background = background;
+            direction = OLDirection_unipolar(differentialPrimaryValues, calibration, describe);
+        end
+            
         function valid = OLDirectionParamsValidate(directionParams)
             valid = true;
         end
