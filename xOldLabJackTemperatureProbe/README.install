@@ -1,7 +1,0 @@
-1. brew install liblabjackusb
-2. cd /Users/Shared/Matlab/Toolboxes/OneLightToolbox/LabJackTemperatureProbe 
-3. run LJTempProbeDemo to compile the mex file and test it
-
-Nicolas
-9/28/2016
-
