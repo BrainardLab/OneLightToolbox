@@ -1,4 +1,4 @@
-function directionNames = OLGetDirectionNames
+function directionNames = OLGetDirectionNames(varargin)
 % Returns list of all named directions in DirectionParamsDictionary
 %
 % Syntax:
@@ -13,19 +13,24 @@ function directionNames = OLGetDirectionNames
 %    None.
 %
 % Outputs:
-%    directionNames - Nx1 cell array of names for the parameters in
+%    directionNames  - Nx1 cell array of names for the parameters in
 %                      OLDirectionParamsDictionary
 %
 % Optional key/value pairs:
-%    None.
+%    'alternateDictionaryFunc' - String with name of alternate dictionary
+%                      function to call. This must be a function on the
+%                      path. Default of empty results in using this
+%                      function.
 %
 % Notes:
 %    None.
 %
 % See also:
-%    OLDirectionParamsDictionary,
+%    OLDirectionParamsDictionary.
 
 % History:
 %    01/31/18  jv  Wrote it.
-directionNames = OLGetDictionaryEntryNames('Direction');
+%    03/31/18  dhb  Add alternateDictionaryFunc key/value pair.
+
+directionNames = OLGetDictionaryEntryNames('Direction',varargin{:});
 end

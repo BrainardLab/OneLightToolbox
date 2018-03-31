@@ -1,4 +1,4 @@
-function directionParams = OLDirectionParamsFromName(directionName)
+function directionParams = OLDirectionParamsFromName(directionName,varargin)
 % Returns parameters stored in under name in dictionary
 %
 % Syntax:
@@ -14,23 +14,26 @@ function directionParams = OLDirectionParamsFromName(directionName)
 %                      stored in OLDirectionNominalStructParamsDictionary.
 %
 % Outputs:
-%    directionParams - struct defining the parameters for a type of
-%                       direction. Can be generated using
-%                       OLDirectionParamsDefaults
+%    directionParams - Struct defining the parameters for a type of
+%                      direction. Can be generated using
+%                      OLDirectionParamsDefaults
 %
 % Optional key/value pairs:
-%    None.
+%    'alternateDictionaryFunc' - String with name of alternate dictionary
+%                      function to call. This must be a function on the
+%                      path. Default of empty results in using this
+%                      function.
 %
 % Notes:
 %    None.
 %
 % See also:
-%    OLDirectionNominalParamsDictionary, OLDirectionNominalParamsDefaults,
-%    OLDirectionNominalParamsValidate.
+%    OLDirectionParamsDictionary.
 
 % History:
-%    01/31/18  jv  Wrote it.
+%    01/31/18  jv   Wrote it.
+%    03/31/18  dhb  Add alternateDictionaryFunc key/value pair.
 
-directionParamsDictionary = OLDirectionParamsDictionary;
+directionParamsDictionary = OLDirectionParamsDictionary(varargin{:});
 directionParams = directionParamsDictionary(directionName);
 end

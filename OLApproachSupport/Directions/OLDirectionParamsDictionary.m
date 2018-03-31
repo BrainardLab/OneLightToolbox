@@ -1,4 +1,4 @@
-function dictionary = OLDirectionParamsDictionary()
+function dictionary = OLDirectionParamsDictionary(varargin)
 % Defines a dictionary with parameters for named nominal directions
 %
 % Syntax:
@@ -17,21 +17,15 @@ function dictionary = OLDirectionParamsDictionary()
 %    dictionary - dictionary with all parameters for all desired directions
 %
 % Optional key/value pairs:
-%    None.
+%    'alternateDictionaryFunc' - String with name of alternate dictionary
+%                          function to call. This must be a function on the
+%                          path. Default of empty results in using this
+%                          function.
 %
 % Notes:
-%    * When you add a new type, you need to add that type to the
-%      corresponding switch statement in OLDirectionParamsDefaults,
-%      OLDirectionParamsValidate, and 
-%      OLCheckCacheParamsAgainstCurrentParams.
+%    None.
 %
-% See also: 
-%    OLDirectionParamsDefaults, OLDirectionParamsValidate,
-%
-%    OLMakeDirectionNominalPrimaries, 
-%    OLBackgroundParamsDictionary, OLMakeBackgroundNominalPrimaries,
-%
-%    OLCheckCacheParamsAgainstCurrentParams
+% See also: OLBackgroundParamsDictionary
 
 % History:
 %    06/22/17  npc  Wrote it. 06/28/18  dhb  backgroundType ->
@@ -57,6 +51,23 @@ function dictionary = OLDirectionParamsDictionary()
 %                   modulation is now bipolar
 %	 01/25/18  jv	Extract defaults generation, validation of params.
 %    02/15/18  jv   Parameters are now objects
+%    03/31/18  dhb  Add alternateDictionaryFunc key/value pair.
+%              dhb  Delete obsolete notes and see alsos.
+
+% Parse input
+p = inputParser;
+p.KeepUnmatched = true;
+p.addParameter('alternateDictionaryFunc','',@ischar);
+p.parse(varargin{:});
+
+% Check for alternate dictionary, call if so and then return.
+% Otherwise this is the dictionary function and we execute it.
+% The alternate function must be on the path.
+if (~isempty(p.Results.alternateDictionaryFunc))
+    dictionaryFunction = str2func(sprintf('@%s',p.Results.alternateDictionaryFunc));
+    dictionary = dictionaryFunction();
+    return;
+end
 
 %% Initialize dictionary
 dictionary = containers.Map();
