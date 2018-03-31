@@ -1,4 +1,4 @@
-function dictionary = OLBackgroundParamsDictionary()
+function dictionary = OLBackgroundParamsDictionary(varargin)
 % Defines a dictionary with parameters for named nominal backgrounds
 %
 % Syntax:
@@ -14,11 +14,14 @@ function dictionary = OLBackgroundParamsDictionary()
 %    None.
 %
 % Outputs:
-%    dictionary - dictionary with all parameters for all desired
-%                 backgrounds
+%    dictionary         -  Dictionary with all parameters for all desired
+%                          backgrounds
 %
 % Optional key/value pairs:
-%    None.
+%    'alternateDictionaryFunc' - String with name of alternate dictionary
+%                          function to call. This must be a function on the
+%                          path. Default of empty results in using this
+%                          function.
 %
 % Notes:
 %    * When you add a new type, you need to add that type to the 
@@ -31,9 +34,8 @@ function dictionary = OLBackgroundParamsDictionary()
 %
 % See also: 
 %    OLBackgroundParams, OLBackgroundNomimalPrimaryFromParams,
-%    OLBackgroundNominalPrimaryFromName,
-%
-%    OLDirectionParamsDictionary, OLMakeDirectionNominalPrimaries,
+%    OLBackgroundNominalPrimaryFromName, OLDirectionParamsDictionary,
+%    OLMakeDirectionNominalPrimaries,
 
 % History:
 %    06/28/17  dhb  Created from direction version.
@@ -55,6 +57,22 @@ function dictionary = OLBackgroundParamsDictionary()
 %    02/07/18  jv   Updated to use OLBackgroundParams objects
 %    03/26/18  jv, dhb Fix type in modulationContrast field of
 %                   LMSDirected_LMS_275_60_667.
+%    03/31/18  dhb  Add alternateDictionaryFunc key/value pair.
+
+% Parse input
+p = inputParser;
+p.KeepUnmatched = true;
+p.addParameter('alternateDictionaryFunc','',@isstring);
+p.parse(varargin{:});
+
+% Check for alternate dictionary, call if so and then return.
+% Otherwise this is the dictionary function and we execute it.
+% The alternate function must be on the path.
+if (~isempty(p.Results.alternateDictionaryFunc))
+    dictionaryFunction = str2func(sprintf('@%s',p.Results.alternateDictionaryFunc));
+    dictionary = dictionaryFunction();
+    return;
+end
 
 % Initialize dictionary
 dictionary = containers.Map();

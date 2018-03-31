@@ -1,4 +1,4 @@
-function backgroundParams = OLBackgroundParamsFromName(backgroundName)
+function backgroundParams = OLBackgroundParamsFromName(backgroundName,varargin)
 % Returns parameters stored in under name in dictionary
 %
 % Syntax:
@@ -18,7 +18,10 @@ function backgroundParams = OLBackgroundParamsFromName(backgroundName)
 %                       for a type of background.
 %
 % Optional key/value pairs:
-%    None.
+%    'alternateDictionaryFunc' - String with name of alternate dictionary
+%                       function to call. This must be a function on the
+%                       path. Default of empty results in using this
+%                       function.
 %
 % Notes:
 %    None.
@@ -29,7 +32,8 @@ function backgroundParams = OLBackgroundParamsFromName(backgroundName)
 
 % History:
 %    01/31/18  jv  Wrote it.
+%    03/31/18  dhb  Add alternateDictionaryFunc key/value pair.
 
-backgroundParamsDictionary = OLBackgroundParamsDictionary;
+backgroundParamsDictionary = OLBackgroundParamsDictionary(varargin{:});
 backgroundParams = backgroundParamsDictionary(backgroundName);
 end

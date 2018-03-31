@@ -20,6 +20,10 @@ function backgroundPrimary = OLBackgroundNominalPrimaryFromName(backgroundName, 
 %
 % Optional key/value pairs:
 %    'verbose'         - boolean flag to print output. Default false.
+%    'alternateDictionaryFunc' - String with name of alternate dictionary
+%                        function to call. This must be a function on the
+%                        path. Default of empty results in using this
+%                        function.
 %
 % Notes:
 %    None.
@@ -32,7 +36,8 @@ function backgroundPrimary = OLBackgroundNominalPrimaryFromName(backgroundName, 
 %    01/31/18  jv  Created as wrapper around
 %                  OLBackgroundNominalPrimaryFromParams and
 %                  OLBackgroundNominalPrimaryFromName.
+%    03/31/18  dhb Add alternateDictionaryFunc key/value pair.
 
-backgroundParams = OLBackgroundParamsFromName(backgroundName);
+backgroundParams = OLBackgroundParamsFromName(backgroundName,varargin{:});
 backgroundPrimary = OLBackgroundNominalPrimaryFromParams(backgroundParams, calibration, varargin{:});
 end
