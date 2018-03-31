@@ -36,7 +36,6 @@ classdef OLDirectionParams < matlab.mixin.Heterogeneous
         % subclasses for specific direction types are required to implement
         % these methods
         OLDirectionNameFromParams(params);
-        OLDirectionNominalStructFromParams(params, calibration, varargin);
         OLDirectionParamsValidate(params);
     end
     
