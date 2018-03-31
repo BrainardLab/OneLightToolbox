@@ -23,7 +23,7 @@ function backgroundNames = OLGetBackgroundNames(varargin)
 %                      function.
 %
 % See also:
-%    OLBackgroundParamsDictionary,
+%    OLBackgroundParamsDictionary
 
 % History:
 %    01/31/18  jv  Wrote it.

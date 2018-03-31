@@ -30,9 +30,7 @@ function dictionary = OLBackgroundParamsDictionary(varargin)
 %              energy spectrum, scaled in middle of gamut.
 %
 % See also: 
-%    OLBackgroundParams, OLBackgroundNomimalPrimaryFromParams,
-%    OLBackgroundNominalPrimaryFromName, OLDirectionParamsDictionary,
-%    OLMakeDirectionNominalPrimaries,
+%    OLBackgroundParams, OLDirectionParamsDictionary.
 
 % History:
 %    06/28/17  dhb  Created from direction version.
@@ -55,6 +53,7 @@ function dictionary = OLBackgroundParamsDictionary(varargin)
 %    03/26/18  jv, dhb Fix type in modulationContrast field of
 %                   LMSDirected_LMS_275_60_667.
 %    03/31/18  dhb  Add alternateDictionaryFunc key/value pair.
+%              dhb  Delete obsolete notes and see alsos.
 
 % Parse input
 p = inputParser;

@@ -31,7 +31,7 @@ function backgroundParams = OLBackgroundParamsFromName(backgroundName,varargin)
 %    OLBackgroundNominalPrimaryFromParams, OLBackgroundParamsValidate
 
 % History:
-%    01/31/18  jv  Wrote it.
+%    01/31/18  jv   Wrote it.
 %    03/31/18  dhb  Add alternateDictionaryFunc key/value pair.
 
 backgroundParamsDictionary = OLBackgroundParamsDictionary(varargin{:});
