@@ -6,9 +6,7 @@ function dictionary = OLBackgroundParamsDictionary(varargin)
 %
 % Description:
 %    Define a dictionary of named backgrounds of modulation, with
-%    corresponding nominal parameters. Types of backgrounds, and their
-%    corresponding fields, are defined in OLBackgroundParamsDefaults
-%    and validated by OLBackgroundParamsValidate.
+%    corresponding nominal parameters.
 %
 % Inputs:
 %    None.
