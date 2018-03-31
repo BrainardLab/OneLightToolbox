@@ -1,3 +1,4 @@
+function dictionary = OLCalibrationParamsDictionary(varargin)
 % OOLCalibrationParamsDictionary
 %
 % Description:
@@ -7,15 +8,43 @@
 %     This routine does its best to check that all and only needed fields are present in
 %     the dictionary structures.
 %
+% Inputs:
+%    None.
+%
+% Outputs:
+%    dictionary         -  Dictionary with all parameters for all desired
+%                          box calibrations
+%
+% Optional key/value pairs:
+%    'alternateDictionaryFunc' - String with name of alternate dictionary
+%                          function to call. This must be a function on the
+%                          path. Default of empty results in using this
+%                          function.
+%
 % See also: OLCalibrateOOC.
 %
-% 8/7/17   npc  Wrote it.
-%
 
-function d = OLCalibrationParamsDictionary()
+% History:
+%   8/07/17   npc  Wrote it.
+%   03/31/18  dhb  Add alternateDictionaryFunc key/value pair.
+
+% Parse input
+p = inputParser;
+p.KeepUnmatched = true;
+p.addParameter('alternateDictionaryFunc','',@ischar);
+p.parse(varargin{:});
+
+% Check for alternate dictionary, call if so and then return.
+% Otherwise this is the dictionary function and we execute it.
+% The alternate function must be on the path.
+if (~isempty(p.Results.alternateDictionaryFunc))
+    dictionaryFunction = str2func(sprintf('@%s',p.Results.alternateDictionaryFunc));
+    dictionary = dictionaryFunction();
+    return;
+end
 
 % Initialize dictionary
-d = containers.Map();
+dictionary = containers.Map();
 
 boxName = 'BoxA';
 type = 'standardCalibration';
@@ -28,7 +57,7 @@ params.useAverageGamma = false;
 params.nShortPrimariesSkip = 7;
 params.nLongPrimariesSkip = 3;
 params.nGammaBands = 16;        
-d = paramsValidateAndAppendToDictionary(d, params);
+dictionary = paramsValidateAndAppendToDictionary(dictionary, params);
 
 
 boxName = 'BoxB';
@@ -43,7 +72,7 @@ params.whichAverageGamma = 'middle';
 params.nShortPrimariesSkip = 5;
 params.nLongPrimariesSkip = 3;
 params.nGammaBands = 16;        
-d = paramsValidateAndAppendToDictionary(d, params);
+dictionary = paramsValidateAndAppendToDictionary(dictionary, params);
 
 
 boxName = 'BoxC';
@@ -57,7 +86,7 @@ params.useAverageGamma = true;
 params.nShortPrimariesSkip = 8;
 params.nLongPrimariesSkip = 8;
 params.nGammaBands = 16;        
-d = paramsValidateAndAppendToDictionary(d, params);
+dictionary = paramsValidateAndAppendToDictionary(dictionary, params);
 
 
 boxName = 'BoxD';
@@ -71,7 +100,7 @@ params.useAverageGamma = true;
 params.nShortPrimariesSkip = 8;
 params.nLongPrimariesSkip = 2;
 params.nGammaBands = 16;        
-d = paramsValidateAndAppendToDictionary(d, params);
+dictionary = paramsValidateAndAppendToDictionary(dictionary, params);
 end
 
 function d = paramsValidateAndAppendToDictionary(d, params)
