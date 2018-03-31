@@ -1,4 +1,4 @@
-function waveformNames = OLGetWaveformNames
+function waveformNames = OLGetWaveformNames(varargin)
 % Returns list of all named waveforms in WaveformParamsDictionary
 %
 % Syntax:
@@ -14,10 +14,13 @@ function waveformNames = OLGetWaveformNames
 %
 % Outputs:
 %    waveformNames - Nx1 cell array of names for the parameters in
-%                      OLWaveformParamsDictionary
+%                    OLWaveformParamsDictionary
 %
 % Optional key/value pairs:
-%    None.
+%    'alternateDictionaryFunc' - String with name of alternate dictionary
+%                    function to call. This must be a function on the
+%                    path. Default of empty results in using this
+%                    function.
 %
 % Notes:
 %    None.
@@ -27,6 +30,7 @@ function waveformNames = OLGetWaveformNames
 
 % History:
 %    01/31/18  jv  Wrote it.
+%    03/31/18  dhb  Add alternateDictionaryFunc key/value pair.
 
-waveformNames = OLGetDictionaryEntryNames('Waveform');
+waveformNames = OLGetDictionaryEntryNames('Waveform',varargin{:});
 end
