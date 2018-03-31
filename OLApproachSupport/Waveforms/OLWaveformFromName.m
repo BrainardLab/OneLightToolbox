@@ -1,4 +1,4 @@
-function [waveform, timestep, waveformDuration] = OLWaveformFromName(waveformName)
+function [waveform, timestep, waveformDuration] = OLWaveformFromName(waveformName,varargin)
 % Generate a parameterized waveform from the parameter name
 %
 % Syntax:
@@ -22,7 +22,10 @@ function [waveform, timestep, waveformDuration] = OLWaveformFromName(waveformNam
 %                       given timestep (see above)
 %
 % Optional key/value pairs:
-%    None.
+%    'alternateDictionaryFunc' - String with name of alternate dictionary
+%                       function to call. This must be a function on the
+%                       path. Default of empty results in using this
+%                       function.
 %
 % Notes:
 %    None.
@@ -34,6 +37,8 @@ function [waveform, timestep, waveformDuration] = OLWaveformFromName(waveformNam
 % History:
 %    01/30/18  jv  Created as wrapper around OLWaveformFromParams and
 %                  OLWaveformParamsDictionary.
-waveformParams = OLWaveformParamsFromName(waveformName);
+%    03/31/18  dhb  Add alternateDictionaryFunc key/value pair.
+
+waveformParams = OLWaveformParamsFromName(waveformName,varargin{:});
 [waveform, timestep, waveformDuration] = OLWaveformFromParams(waveformParams);
 end

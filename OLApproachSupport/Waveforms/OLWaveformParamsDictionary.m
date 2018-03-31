@@ -1,4 +1,4 @@
-function dictionary = OLWaveformParamsDictionary
+function dictionary = OLWaveformParamsDictionary(varargin)
 % Defines a dictionary with parameters for named modulations
 %
 % Syntax:
@@ -18,20 +18,19 @@ function dictionary = OLWaveformParamsDictionary
 %                 backgrounds
 %
 % Optional key/value pairs:
-%    None.
+%    'alternateDictionaryFunc' - String with name of alternate dictionary
+%                 function to call. This must be a function on the
+%                  path. Default of empty results in using this
+%                  function.
 %
 % Notes:
-%    * When you add a new type, you need to add that type to the 
-%      corresponding switch statement in 
-%      OLCheckCacheParamsAgainstCurrentParams.
+%    None.
 %
 % See also: 
 %    OLWaveformParamsDefaults, OLWaveformParamsValidate,
-%    OLMakeModulationPrimaries, 
-
-%    OLDirectionParamsDictionary, OLMakeDirectionNominalPrimaries,
+%    OLMakeModulationPrimaries, OLDirectionParamsDictionary,
+%    OLMakeDirectionNominalPrimaries.
 %
-%    OLCheckCacheParamsAgainstCurrentParams
 
 % History:
 %    06/23/17  npc  Wrote it.
@@ -41,6 +40,23 @@ function dictionary = OLWaveformParamsDictionary
 %    09/25/17  dhb  Cleaned up Michael Barnett's method of adding new modulation to dictionary. 
 %                   (Don't modify the defaults to do this, add a new entry and override the defaults explicitly.)
 %    01/25/18  jv   Extract default params generation, validation.
+%    03/31/18  dhb  Add alternateDictionaryFunc key/value pair.
+%              dhb  Delete obsolete notes and see alsos.
+
+%% Parse input
+p = inputParser;
+p.KeepUnmatched = true;
+p.addParameter('alternateDictionaryFunc','',@ischar);
+p.parse(varargin{:});
+
+%% Check for alternate dictionary, call if so and then return.
+% Otherwise this is the dictionary function and we execute it.
+% The alternate function must be on the path.
+if (~isempty(p.Results.alternateDictionaryFunc))
+    dictionaryFunction = str2func(sprintf('@%s',p.Results.alternateDictionaryFunc));
+    dictionary = dictionaryFunction();
+    return;
+end
 
 %% Initialize dictionary
 dictionary = containers.Map();

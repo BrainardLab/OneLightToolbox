@@ -1,4 +1,4 @@
-function waveformParams = OLWaveformParamsFromName(waveformName)
+function waveformParams = OLWaveformParamsFromName(waveformName,varargin)
 % Returns parameters stored in under name in dictionary
 %
 % Syntax:
@@ -19,7 +19,10 @@ function waveformParams = OLWaveformParamsFromName(waveformName)
 %                       OLWaveformParamsDefaults
 %
 % Optional key/value pairs:
-%    None.
+%    'alternateDictionaryFunc' - String with name of alternate dictionary
+%                       function to call. This must be a function on the
+%                       path. Default of empty results in using this
+%                       function.
 %
 % Notes:
 %    None.
@@ -31,7 +34,8 @@ function waveformParams = OLWaveformParamsFromName(waveformName)
 
 % History:
 %    01/31/18  jv  Wrote it.
+%    03/31/18  dhb  Add alternateDictionaryFunc key/value pair.
 
-waveformParamsDictionary = OLWaveformParamsDictionary;
+waveformParamsDictionary = OLWaveformParamsDictionary(varargin{:});
 waveformParams = waveformParamsDictionary(waveformName);
 end
