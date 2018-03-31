@@ -24,9 +24,6 @@ function dictionary = OLBackgroundParamsDictionary(varargin)
 %                          function.
 %
 % Notes:
-%    * When you add a new type, you need to add that type to the 
-%      corresponding switch statement in 
-%      OLCheckCacheParamsAgainstCurrentParams.
 %    * TODO:
 %          i) add type 'BackgroundHalfOn' - Primaries set to 0.5;
 %          ii) add type 'BackgroundEES' - Background metameric to an equal 
@@ -62,7 +59,7 @@ function dictionary = OLBackgroundParamsDictionary(varargin)
 % Parse input
 p = inputParser;
 p.KeepUnmatched = true;
-p.addParameter('alternateDictionaryFunc','',@isstring);
+p.addParameter('alternateDictionaryFunc','',@ischar);
 p.parse(varargin{:});
 
 % Check for alternate dictionary, call if so and then return.
