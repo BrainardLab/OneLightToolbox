@@ -1,25 +1,49 @@
-% OLCorrectionParamsDictionary
+function d = OLCorrectionParamsDictionary(varargin)
+% Defines a dictionary with parameters for spectral correction
 %
 % Description:
 %     Generate dictionary with box-specific params for direction primary correction.  The fields
 %     are explained at the end of this routine, where default values are assigned.
 %
-%     This routine does its best to check that all and only needed fields are present in
-%     the dictionary structures.
+% Inputs:
+%    None.
+%
+% Outputs:
+%    dictionary         -  Dictionary with all parameters for all desired
+%                          backgrounds
+%
+% Optional key/value pairs:
+%    'alternateDictionaryFunc' - String with name of alternate dictionary
+%                          function to call. This must be a function on the
+%                          path. Default of empty results in using this
+%                          function.
 %
 % Note:
-%     When you add a new type, you need to add that type to the corresponding switch statment
-%     in OLCheckCacheParamsAgainstCurrentParams.
 %
-% See also: OLCheckCacheParamsAgainstCurrentParams.
+% See also:
+%
 
 % 07/24/17  npc  Wrote it.
 % 09/25/17  dhb  Remove useAverageGamma and zeroPrimariesAwayFromPeak fields.
 %                Now, these should only be set in the calibration dictionary.
 %           dhb  Also remove postreceptorCombinations field, at a cost in generality
 %                but a gain in simplicity.
+%    03/31/18  dhb  Add alternateDictionaryFunc key/value pair.
 
-function d = OLCorrectionParamsDictionary()
+% Parse input
+p = inputParser;
+p.KeepUnmatched = true;
+p.addParameter('alternateDictionaryFunc','',@ischar);
+p.parse(varargin{:});
+
+% Check for alternate dictionary, call if so and then return.
+% Otherwise this is the dictionary function and we execute it.
+% The alternate function must be on the path.
+if (~isempty(p.Results.alternateDictionaryFunc))
+    dictionaryFunction = str2func(sprintf('@%s',p.Results.alternateDictionaryFunc));
+    dictionary = dictionaryFunction();
+    return;
+end
 
 % Initialize dictionary
 d = containers.Map();
