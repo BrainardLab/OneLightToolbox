@@ -27,5 +27,6 @@ function backgroundNames = OLGetBackgroundNames
 
 % History:
 %    01/31/18  jv  Wrote it.
+
 backgroundNames = OLGetDictionaryEntryNames('Background');
 end
