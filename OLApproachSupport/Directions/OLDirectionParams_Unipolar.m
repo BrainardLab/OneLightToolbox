@@ -68,7 +68,11 @@ classdef OLDirectionParams_Unipolar < OLDirectionParams
             %                      [1,60], so that the index is the
             %                      observerAge. When numel(observerAge ==
             %                      1), directionStruct will be a single
-            %                      struct. Default is 20:60.
+            %                      struct. If this is a single number and
+            %                      the backround gets made here, then this
+            %                      value orverrides what is in the
+            %                      background parameters structure. Default
+            %                      age is 32.
             %   'alternateBackgroundDictionaryFunc' - String with name of alternate dictionary
             %                      function to call to resolve a background
             %                      name. This must be a function on the
@@ -92,7 +96,7 @@ classdef OLDirectionParams_Unipolar < OLDirectionParams
             parser.addRequired('calibration',@isstruct);
             parser.addOptional('background',[],@isnumeric);
             parser.addParameter('verbose',false,@islogical);
-            parser.addParameter('observerAge',1:60,@isnumeric);
+            parser.addParameter('observerAge',32,@isnumeric);
             parser.addParameter('alternateBackgroundDictionaryFunc','',@ischar);               
             parser.parse(directionParams,calibration,varargin{:});
             
@@ -126,8 +130,15 @@ classdef OLDirectionParams_Unipolar < OLDirectionParams
                             'alternateDictionaryFunc',parser.Results.alternateBackgroundDictionaryFunc);
                     end
                     
-                    % Make backgroundPrimary from params
-                    directionParams.background = OLBackgroundNominalFromParams(directionParams.backgroundParams, calibration);
+                    % Make backgroundPrimary from params, using local
+                    % observer age if there is just one, otherwise whatever
+                    % is in the background structure.
+                    backgroundParamsTemp = directionParams.backgroundParams;
+                    if (length(parser.Results.observerAge) == 1)
+                        backgroundParamsTemp.backgroundObserverAge = parser.Results.observerAge;
+                    end
+                    directionParams.background = OLBackgroundNominalFromParams(backgroundParamsTemp.backgroundObserverAge, calibration);
+                    clear backgroundParamsTemp
                 end
                 
                 % Use background stored in directionParams
