@@ -87,7 +87,7 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
                             'alternateDictionaryFunc',parser.Results.alternateBackgroundDictionaryFunc);
                     end
                     
-                    directionParams.background = OLBackgroundNominalFromParams(backgroundParamsTemp, calibration);
+                    directionParams.background = OLBackgroundNominalFromParams(directionParams.backgroundParams, calibration);
                 end
                 
                 % Use background stored in directionParams
@@ -96,16 +96,13 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
                 % Use background specified in function call
                 background = parser.Results.background;
             end
-            
-            backgroundSPD = background.ToPredictedSPD;
-            
+                        
             %% Make direction
             currentBackgroundPrimary = background.differentialPrimaryValues;
-            modulationPrimaryPositive = currentBackgroundPrimary*directionParams.lightFluxDownFactor;
-            differentialPrimaryValues = modulationPrimaryPositive - currentBackgroundPrimary; 
+            targetSpd = OLPrimaryToSpd(calibration,currentBackgroundPrimary)*directionParams.lightFluxDownFactor;
+            modulationPrimaryPositive = OLSpdToPrimary(calibration,targetSpd,'lambda',0.000);
             
             % Update background
-            background = OLDirection_unipolar(background.differentialPrimaryValues-differentialPrimaryValues,calibration,background.describe);
             differentialPrimaryValues = modulationPrimaryPositive - background.differentialPrimaryValues;
                 
             %% Create direction object

@@ -66,7 +66,12 @@ classdef OLBackgroundParams_LightFluxChrom < OLBackgroundParams
             
             % Generate background
             maxBackgroundPrimary = OLBackgroundInvSolveChrom(calibration, params.lightFluxDesiredXY, 'PrimaryHeadroom', params.primaryHeadRoom);
-            backgroundPrimary = maxBackgroundPrimary/params.lightFluxDownFactor;
+            
+            % Get nominal spd
+            maxBackgroundSpd = OLPrimaryToSpd(calibration,maxBackgroundPrimary);
+            
+            % Downfactor it and convert back to primary space
+            backgroundPrimary = OLSpdToPrimary(calibration,maxBackgroundSpd/params.lightFluxDownFactor,'lambda',0.000);
         end
         
         function background = OLBackgroundNominalFromParams(params, calibration)
