@@ -49,6 +49,8 @@ function cal = OLGetCalibrationStructure(varargin)
 % 03/27/18  dhb      Got rid of the enumeration.  Function behavior is the
 %                    same, except that available types are deduced from
 %                    what is in the calibration folder.
+% 04/01/18  dhb      Something was wrong with how calFolder was being
+%                    passed into OLGetAvailableCalibrationTypes.  Fixed.
 
 %% Parse key/value pairs
 p = inputParser;
@@ -67,7 +69,7 @@ end
 
 % Figure out the available calibration types, that is those 
 % where there is an actual calibration file in the calibration folder.
-availableCalTypes = OLGetAvailableCalibrationTypes('CalibrationFolder',params.CalibrationFolder);
+availableCalTypes = OLGetAvailableCalibrationTypes('CalibrationFolder',calFolder);
 numAvailableCalTypes = length(availableCalTypes);
 
 % Determine calibration type to use.
