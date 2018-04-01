@@ -253,6 +253,7 @@ if OLDirectionParamsValidate(params)
     % All validations OK. Add entry to the dictionary.
     dictionary(params.name) = params;
 end
+
 %% MaxLMS_unipolar_275_60_500
 % Direction for maximum unipolar contrast LMS step
 %   Field size: 27.5 deg
