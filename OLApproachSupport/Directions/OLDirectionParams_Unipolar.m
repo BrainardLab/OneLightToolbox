@@ -59,7 +59,9 @@ classdef OLDirectionParams_Unipolar < OLDirectionParams
             %                      direction
             %
             % Optional key/value pairs:
-            %    observerAge     - (vector of) observer age(s) to
+            %   'verbose'        - Boolean(default false). Print diagnositc
+            %                      information.
+            %   'observerAge'    - (vector of) observer age(s) to
             %                      generate direction for. When
             %                      numel(observerAge > 1), output
             %                      directionStruct will still be of size
@@ -67,6 +69,11 @@ classdef OLDirectionParams_Unipolar < OLDirectionParams
             %                      observerAge. When numel(observerAge ==
             %                      1), directionStruct will be a single
             %                      struct. Default is 20:60.
+            %   'alternateBackgroundDictionaryFunc' - String with name of alternate dictionary
+            %                      function to call to resolve a background
+            %                      name. This must be a function on the
+            %                      path. Default of empty results in using
+            %                      the dictionary included in the OneLightToolbox.
             %
             % See also:
             %    OLDirection_unipolar, OLBackgroundNominalFromParams,
@@ -85,6 +92,7 @@ classdef OLDirectionParams_Unipolar < OLDirectionParams
             parser.addOptional('background',[],@isnumeric);
             parser.addParameter('verbose',false,@islogical);
             parser.addParameter('observerAge',1:60,@isnumeric);
+            parser.addParameter('alternateBackgroundDictionaryFunc','',@isstring);               
             parser.parse(directionParams,calibration,varargin{:});
             
             %% Set some params

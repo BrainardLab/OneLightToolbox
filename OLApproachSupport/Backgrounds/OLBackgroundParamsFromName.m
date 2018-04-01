@@ -20,8 +20,8 @@ function backgroundParams = OLBackgroundParamsFromName(backgroundName,varargin)
 % Optional key/value pairs:
 %    'alternateDictionaryFunc' - String with name of alternate dictionary
 %                       function to call. This must be a function on the
-%                       path. Default of empty results in using this
-%                       function.
+%                       path. Default of empty string results in using the
+%                       OneLightToolbox dictionary.
 %
 % Notes:
 %    None.
