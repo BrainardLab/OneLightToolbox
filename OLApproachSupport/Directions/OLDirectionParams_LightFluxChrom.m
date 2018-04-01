@@ -111,7 +111,7 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
                     if (length(parser.Results.observerAge) == 1)
                         backgroundParamsTemp.backgroundObserverAge = parser.Results.observerAge;
                     end
-                    directionParams.background = OLBackgroundNominalFromParams(backgroundParamsTemp.backgroundObserverAge, calibration);
+                    directionParams.background = OLBackgroundNominalFromParams(backgroundParamsTemp, calibration);
                     clear backgroundParamsTemp
                 end
                 
