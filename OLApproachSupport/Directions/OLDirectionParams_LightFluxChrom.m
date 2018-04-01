@@ -24,7 +24,6 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
             %   direction = OLDirectionNominalFromParams(OLDirectionParams_LightFluxChrom, calibration)
             %   [direction, background] = OLDirectionNominalFromParams(OLDirectionParams_LightFluxChrom, calibration)
             %   direction = OLDirectionNominalFromParams(OLDirectionParams_LightFluxChrom, calibration, background)
-            %   direction = OLDirectionNominalFromParams(..., 'observerAge', observerAge)
             %
             % Description:
             %
@@ -49,18 +48,6 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
             % Optional key/value pairs:
             %   'verbose'        - Boolean(default false). Print diagnositc
             %                      information.
-            %   'observerAge'    - (vector of) observer age(s) to
-            %                      generate direction for. When
-            %                      numel(observerAge > 1), output
-            %                      directionStruct will still be of size
-            %                      [1,60], so that the index is the
-            %                      observerAge. When numel(observerAge ==
-            %                      1), directionStruct will be a single
-            %                      struct. If this is a single number and
-            %                      the backround gets made here, then this
-            %                      value orverrides what is in the
-            %                      background parameters structure. Default
-            %                      age is 32.
             %   'alternateBackgroundDictionaryFunc' - String with name of alternate dictionary
             %                      function to call to resolve a background
             %                      name. This must be a function on the
@@ -78,9 +65,6 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
             %                  OLReceptorIsolateMakeDirectionNominalPrimaries
             %    02/12/18  jv  Inserted in OLDirectionParams_ classes.
             %    03/22/18  jv  Adapted to produce OLDirection objects.
-            %    04/01/18  dhb Override age passed to background from
-            %                  params with age used here. Also
-            %                  alternateBackgroundDictionaryFunc.
             
             %% Input validation
             parser = inputParser();
@@ -88,7 +72,6 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
             parser.addRequired('calibration',@isstruct);
             parser.addOptional('background',[],@isnumeric);
             parser.addParameter('verbose',false,@islogical);
-            parser.addParameter('observerAge',32,@isnumeric);
             parser.addParameter('alternateBackgroundDictionaryFunc','',@ischar);
             parser.parse(directionParams,calibration,varargin{:});
             
@@ -104,15 +87,7 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
                             'alternateDictionaryFunc',parser.Results.alternateBackgroundDictionaryFunc);
                     end
                     
-                    % Make backgroundPrimary from params, using local
-                    % observer age if there is just one, otherwise whatever
-                    % is in the background structure.
-                    backgroundParamsTemp = directionParams.backgroundParams;
-                    if (length(parser.Results.observerAge) == 1)
-                        backgroundParamsTemp.backgroundObserverAge = parser.Results.observerAge;
-                    end
                     directionParams.background = OLBackgroundNominalFromParams(backgroundParamsTemp, calibration);
-                    clear backgroundParamsTemp
                 end
                 
                 % Use background stored in directionParams
