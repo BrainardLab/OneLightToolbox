@@ -74,10 +74,13 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
             %    OLDirectionParamsDictionary
             
             % History:
-            %    01/31/18  jv  wrote it, based on OLWaveformFromParams and
+            %    01/31/18  jv  Wrote it, based on OLWaveformFromParams and
             %                  OLReceptorIsolateMakeDirectionNominalPrimaries
-            %    02/12/18  jv  inserted in OLDirectionParams_ classes.
-            %    03/22/18  jv  adapted to produce OLDirection objects
+            %    02/12/18  jv  Inserted in OLDirectionParams_ classes.
+            %    03/22/18  jv  Adapted to produce OLDirection objects.
+            %    04/01/18  dhb Override age passed to background from
+            %                  params with age used here. Also
+            %                  alternateBackgroundDictionaryFunc.
             
             %% Input validation
             parser = inputParser();
