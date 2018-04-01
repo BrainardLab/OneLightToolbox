@@ -72,8 +72,9 @@ classdef OLDirectionParams_Unipolar < OLDirectionParams
             %   'alternateBackgroundDictionaryFunc' - String with name of alternate dictionary
             %                      function to call to resolve a background
             %                      name. This must be a function on the
-            %                      path. Default of empty results in using
-            %                      the dictionary included in the OneLightToolbox.
+            %                      path. Default of empty string results in
+            %                      using the dictionary included in the
+            %                      OneLightToolbox.
             %
             % See also:
             %    OLDirection_unipolar, OLBackgroundNominalFromParams,
@@ -117,10 +118,12 @@ classdef OLDirectionParams_Unipolar < OLDirectionParams
             if isempty(parser.Results.background) % No primary specified in call
                 if isempty(directionParams.background) % No primary specified in params
                     if isempty(directionParams.backgroundParams) % No params specified
-                        assert(isprop(directionParams,'backgroundName') && ~isempty(directionParams.backgroundName),'No background, backgroundParams, or backgroundName specified')
+                        assert(isprop(directionParams,'backgroundName') && ~isempty(directionParams.backgroundName), ...
+                            'No background, backgroundParams, or backgroundName specified')
                         
                         % Get backgroundParams from stored name
-                        directionParams.backgroundParams = OLBackgroundParamsFromName(directionParams.backgroundName);
+                        directionParams.backgroundParams = OLBackgroundParamsFromName(directionParams.backgroundName, ...
+                            'alternateDictionaryFunc',parser.Results.alternateBackgroundDictionaryFunc);
                     end
                     
                     % Make backgroundPrimary from params
