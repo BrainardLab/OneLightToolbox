@@ -93,7 +93,7 @@ classdef OLDirectionParams_Unipolar < OLDirectionParams
             parser.addOptional('background',[],@isnumeric);
             parser.addParameter('verbose',false,@islogical);
             parser.addParameter('observerAge',1:60,@isnumeric);
-            parser.addParameter('alternateBackgroundDictionaryFunc','',@isstring);               
+            parser.addParameter('alternateBackgroundDictionaryFunc','',@ischar);               
             parser.parse(directionParams,calibration,varargin{:});
             
             %% Set some params
