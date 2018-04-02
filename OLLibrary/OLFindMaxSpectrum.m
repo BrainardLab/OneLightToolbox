@@ -1,33 +1,35 @@
 function [maxSpd, scaleFactor, maxVal] = OLFindMaxSpectrum(oneLightCal, targetSpd, lambda, verbose)
-% OLFindMaxSpectrum - Finds the scale factor to maximize OneLight spectrum luminance.
+% Finds the scale factor to maximize OneLight spectrum luminance.
 %
 % Syntax:
-% [maxSpd, scaleFactor, maxVal] = OLFindMaxSpectrum(oneLightCal, targetSpd)
-% [maxSpd, scaleFactor, maxVal] = OLFindMaxSpectrum(oneLightCal, targetSpd, lambda)
-% [maxSpd, scaleFactor, maxVal] = OLFindMaxSpectrum(oneLightCal, targetSpd, lambda, verbose)
+%     [maxSpd, scaleFactor, maxVal] = OLFindMaxSpectrum(oneLightCal, targetSpd)
+%     [maxSpd, scaleFactor, maxVal] = OLFindMaxSpectrum(oneLightCal, targetSpd, lambda)
+%     [maxSpd, scaleFactor, maxVal] = OLFindMaxSpectrum(oneLightCal, targetSpd, lambda, verbose)
 %
 % Description:
-% Takes the OneLight calibration and a target spectral power distribution
-% and finds the scale factor that you multipy the target spd by to get an
-% spd whose maximum primary value is as close as possible to 1.
+%     Takes the OneLight calibration and a target spectral power distribution
+%     and finds the scale factor that you multipy the target spd by to get an
+%     spd whose maximum primary value is as close as possible to 1.
 %
 % Input:
-% oneLightCal (struct) - OneLight calibration file after it has been
-%     processed by OLInitCal.
-% targetSpd (Mx1) - Target spectrum.  Should be on the same wavelength
-%     spacing and power units as the PR-650 field of the calibration
-%     structure.
-% lambda (scalar) - Determines how much smoothing we apply to the settings.
-%     Needed because there are more columns than wavelengths on the PR-650.
-%     Defaults to 0.1.
-% verbose (logical) - Toggles verbose output. Default: true
+%     oneLightCal          - Struct. OneLight calibration file after it has been
+%                            processed by OLInitCal.
+%     targetSpd            - Column vector giving target spectrum.  Should be
+%                            on the same wavelength spacing and power units
+%                            as the PR-650 field of the calibration
+%                            structure.
+%     lambda               - Scalar. Determines how much smoothing we apply to the settings.
+%                            Needed because we have enough primaries that the xform
+%                            matrix is not well-conditioned.
+%                            Default  0.1.
+%     verbose              - Logical. Toggles verbose output. Default true.
 %
 % Output:
-% maxSpd (Mx1) - Spectrum whose maximum primary value is as close as
-%     possible to 1.
-% scaleFactor (scalar) - Scale factor by which to multiply the target spd
-%     to get the maximum luminance.
-% maxVal (scalar) - The maximum primary value resulting from 'maxSpd'.
+%     maxSpd         (     - Column vector giving spectrum whose maximum primary value is as close as
+%                            possible to 1.
+%     scaleFactor          - Scale factor by which to multiply the target spd
+%                            to get the maximum luminance.
+%     maxVal               - The maximum primary value resulting from 'maxSpd'.
 
 % Validate the number of input arguments.
 narginchk(2, 4);
