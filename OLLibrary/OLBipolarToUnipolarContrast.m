@@ -40,6 +40,6 @@ peak = 1 + bipolarContrast;
 trough = 1 - bipolarContrast;
 
 % unipolarContrast = (peak - trough) / trough
-unipolarContrast = (peak - trough) / trough;
+unipolarContrast = (peak - trough) ./ trough;
 
 end
