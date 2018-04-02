@@ -42,7 +42,7 @@ trough = 1;
 % bipolarContrast = (peak - start) / start;
 % start = ((peak - trough) / 2) + trough;
 start = ((peak - trough) / 2) + trough;
-bipolarContrast = (peak - start) / start;
+bipolarContrast = (peak - start) ./ start;
 
 fraction = rats(bipolarContrast);
 
