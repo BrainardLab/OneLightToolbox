@@ -95,9 +95,9 @@ classdef OLDirectionParams_Unipolar < OLDirectionParams
             
             %% Input validation
             parser = inputParser();
-            parser.addRequired('directionParams',@(x) isstruct(x) || isa(x,'OLDirectionParams'));
+            parser.addRequired('directionParams',@(x) isa(x,'OLDirectionParams'));
             parser.addRequired('calibration',@isstruct);
-            parser.addOptional('background',[],@isnumeric);
+            parser.addOptional('background',[],@(x) isempty(x) || isa(x,'OLDirection_unipolar'));
             parser.addParameter('verbose',false,@islogical);
             parser.addParameter('observerAge',32,@isnumeric);
             parser.addParameter('alternateBackgroundDictionaryFunc','',@ischar);               

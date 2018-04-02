@@ -95,9 +95,9 @@ classdef OLDirectionParams_Bipolar < OLDirectionParams
             
             %% Input validation
             parser = inputParser();
-            parser.addRequired('directionParams',@(x) isstruct(x) || isa(x,'OLDirectionParams'));
+            parser.addRequired('directionParams',@(x) isa(x,'OLDirectionParams'));
             parser.addRequired('calibration',@isstruct);
-            parser.addOptional('background',[],@(x) isa(x,'OLDirection_unipolar'));
+            parser.addOptional('background',[],@(x) isempty(x) || isa(x,'OLDirection_unipolar'));
             parser.addParameter('verbose',false,@islogical);
             parser.addParameter('observerAge',32,@isnumeric);
             parser.addParameter('alternateBackgroundDictionaryFunc','',@ischar);
@@ -190,10 +190,10 @@ classdef OLDirectionParams_Bipolar < OLDirectionParams
                 %% Check gamut
                 modulationPositive = background + direction(observerAgeInYears);
                 modulationNegative = background - direction(observerAgeInYears);
-                modulationPositive.differentialPrimaryValues(modulationPositive.differentialPrimaryValues > 1 & modulationPositive.differentialPrimaryValues < 1+1e-6) = 1;
-                modulationPositive.differentialPrimaryValues(modulationPositive.differentialPrimaryValues < 0 & modulationPositive.differentialPrimaryValues > -1e-6) = 0;
-                modulationNegative.differentialPrimaryValues(modulationNegative.differentialPrimaryValues > 1 & modulationNegative.differentialPrimaryValues < 1+1e-6) = 1;
-                modulationNegative.differentialPrimaryValues(modulationNegative.differentialPrimaryValues < 0 & modulationNegative.differentialPrimaryValues > -1e-6) = 0;
+                modulationPositive.differentialPrimaryValues(modulationPositive.differentialPrimaryValues > 1 & modulationPositive.differentialPrimaryValues < 1+1e-5) = 1;
+                modulationPositive.differentialPrimaryValues(modulationPositive.differentialPrimaryValues < 0 & modulationPositive.differentialPrimaryValues > -1e-5) = 0;
+                modulationNegative.differentialPrimaryValues(modulationNegative.differentialPrimaryValues > 1 & modulationNegative.differentialPrimaryValues < 1+1e-5) = 1;
+                modulationNegative.differentialPrimaryValues(modulationNegative.differentialPrimaryValues < 0 & modulationNegative.differentialPrimaryValues > -1e-5) = 0;
                 if any(modulationPositive.differentialPrimaryValues > 1)  || any(modulationPositive.differentialPrimaryValues < 0)
                     error('Out of bounds.')
                 end
