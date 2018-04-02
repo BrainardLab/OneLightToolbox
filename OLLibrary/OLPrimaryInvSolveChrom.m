@@ -1,13 +1,25 @@
-function backgroundPrimary = OLBackgroundInvSolveChrom(cal, desiredChromaticity, varargin)
-% Find OneLight background of desired chromaticity
+function [primaryTarget,primaryMax,primaryMin,maxLum,minLum] = ...
+    OLPrimaryInvSolveChrom(cal, desiredChromaticity, varargin)
+% Find OneLight primaries to produce spectra at desired chromaticity
 %
 % Syntax:
-%   backgroundPrimary = OLBackgroundInvSolveChrom(cal, desiredChromaticity)
+%   [primaryTarget,primaryMax,primaryMin,maxLum,minLum] = ...
+%       OLPrimaryInvSolveChrom(cal, desiredChromaticity, varargin)
 %
 % Describe:
-%   Function to find a OneLight background spectrum of a desired
-%   chromaticity.  Target luminance is as much as possible within
-%   gamut.
+%   Sometimes we want to produce lights with fixed relative spectra, for
+%   example when we want to show a light flux modulation.  This is
+%   surprisingly tricky: because of the ambient spectrum we can't just
+%   scale primaries up and down to acheive this.
+%
+%   This function helps produce desired modulations.  First, it finds the
+%   maximum luminance that can be produced at a given chromaticity.
+%
+%   Then it finds the minimum luminance possible with the same relative
+%   spectral power distribution.  This information then allows us to figure
+%   out the range of luminances over which we can make light flux
+%   modulations with the desired chromaticity, and with the relative
+%   spectral power distribution held fixed.
 %
 % Inputs:
 %   cal                   OneLight calibration structure
@@ -23,12 +35,16 @@ function backgroundPrimary = OLBackgroundInvSolveChrom(cal, desiredChromaticity,
 %                         within this tolerance of [0,1]. Default 1e-6, and
 %                         'CheckOutOfRange' value is true.
 %   'CheckOutOfRange'     Boolean. Perform tolerance check.  Default true.
+%   'WhichLuminance'      String giving XXX in T_XXX, where that is the
+%                         loaded set of XYZ color matching functions.
+%                         Default 
 %
 
 % 05/22/15  ms      Wrote it.
 % 06/29/17  dhb     Clean up.
 % 03/27/18  dhb     Add 'PrimaryHeadroom' key/value pair.
 % 04/01/18  dhb     Primary range stuff.
+% 04/02/18  dhb     Rename and rewrite.
 
 %% Input parser
 p = inputParser;
@@ -108,12 +124,12 @@ maxHeadroom = p.Results.PrimaryHeadroom;
 vub = ones(size(B_primary, 2), 1)-maxHeadroom;
 vlb = ones(size(B_primary, 2), 1)*maxHeadroom;
 x = fmincon(@(x) ObjFunction(x, B_primary, ambientSpd, T_xyz),initialPrimaries,[],[],[],[],vlb,vub,@(x)ChromaticityNonlcon(x, B_primary, ambientSpd, T_xyz, xy_target),options);
-backgroundPrimary = x;
+backgroundPrimaryMax = x;
 
 %% Pull the background out of the solution
-backgroundPrimary(backgroundPrimary > 1 & backgroundPrimary < 1 + p.Results.PrimaryTolerance) = 1;
-backgroundPrimary(backgroundPrimary < 0 & backgroundPrimary > -p.Results.PrimaryTolerance) = 0;
-if (p.Results.CheckOutOfRange && (any(backgroundPrimary(:) > 1) || any(backgroundPrimary(:) < 0) ))
+backgroundPrimaryMax(backgroundPrimaryMax > 1 & backgroundPrimaryMax < 1 + p.Results.PrimaryTolerance) = 1;
+backgroundPrimaryMax(backgroundPrimaryMax < 0 & backgroundPrimaryMax > -p.Results.PrimaryTolerance) = 0;
+if (p.Results.CheckOutOfRange && (any(backgroundPrimaryMax(:) > 1) || any(backgroundPrimaryMax(:) < 0) ))
     error('At one least primary value is out of range [0,1]');
 end
 
