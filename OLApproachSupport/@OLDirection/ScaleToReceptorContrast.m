@@ -1,4 +1,4 @@
-function [scaledDirection, scalingFactor, scaledContrast] = ScaleToReceptorContrast(direction, background, receptors, currentDesiredContrast)
+function [scaledDirection, scalingFactor, scaledContrast] = ScaleToReceptorContrast(direction, background, receptors, desiredContrast)
 % Scales OLDirection to have the desired contrast with background
 %
 % Syntax:
