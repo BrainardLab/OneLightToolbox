@@ -1,62 +1,77 @@
-function effectivePrimary = OLSpdToPrimary(oneLightCal, targetSpd, varargin)
-% OLSpdToPrimary - Converts a spectrum into normalized primary OneLight mirror values.
+function [primaries,predictedSpd] = OLSpdToPrimary(oneLightCal, targetSpd, varargin)
+% Converts a spectrum into normalized primary OneLight mirror values.
 %
-% Examples:
-% effectivePrimary = OLSpdToPrimary(oneLightCal, targetSpd)
-% effectivePrimary = OLSpdToPrimary(oneLightCal, targetSpd, 'lambda', 0.01)
-% effectivePrimary = OLSpdToPrimary(oneLightCal, targetSpd, 'verbose, true)
+% Syntax:
+%     primaries = OLSpdToPrimary(oneLightCal, targetSpd)
+%     primaries = OLSpdToPrimary(oneLightCal, targetSpd, 'lambda', 0.01)
+%     primaries = OLSpdToPrimary(oneLightCal, targetSpd, 'verbose, true)
 %
 % Description:
-% Convert a spectral power distribution to the linear 0-1 fraction of light
-% that we need from each column of mirrors.  No gamma correction is applied
-% to the primary values.
+%    Convert a spectral power distribution to the linear 0-1 fraction of
+%    light that we need from each effective primary.
+%    No gamma correction is applied to the primary values.
 %
-% This routine also allows for a 'differentialMode' which is false unless
-% the 'differentialMode' key value pair is passed.
+%    What we mean by effective primaries is the number of column groups
+%    that were set up at calibration time.  Often these consiste of 16
+%    physical columns of the DLP chip.
 %
-% This routine truncates values into the range [0,1] in normal mode, and into
-% range [-1,1] in differential mode.
+%    This routine also allows for a 'differentialMode' which is false unless
+%    the 'differentialMode' key value pair is passed.
 %
-% Input:
-% oneLightCal (struct) - OneLight calibration file after it has been
+%    This routine keeps values in the range [0,1] in normal mode, and in
+%    range [-1,1] in differential mode.
+%
+% Inpust:
+%    oneLightCal       - Struct. OneLight calibration file after it has been
 %                        processed by OLInitCal.
-% targetSpd (nWlsx1) - The target spectrum, sampled at the wavelengths
-%                      used in the calibration file (typically 380 to 780 nm in 2 nm steps).
+%    targetSpd         - Column vector providing the target spectrum, sampled at the wavelengths
+%                        used in the calibration file (typically 380 to 780 nm in 2 nm steps).
 %
-% Output:
-% effectivePrimary (nPrimariesx1) - The [0-1] primary value for each effective primary
-%                                   of the OneLight. nPrimaries is the number of effective primaries.
-%                                   Not gamma corrected.
+% Outputs:
+%    primaries         - Column vector containing the primary values for each effective primary
+%                        of the OneLight. nPrimaries is the number of
+%                        effective primaries. Not gamma corrected.
+%    predictedSpd      - The spd predicted for the returned primaries.
 %
-% What we mean by effective primaries is the number of column groups
-% that were set up at calibration time.  Often these consiste of 16
-% physical columns of the DLP chip.
 % 
 % Optional Key-Value Pairs:
-%  'verbose' - true/false (default false). Provide more diagnostic output.
-%  'lambda' - value (default 0.1). Value of smoothing parameter.  Smaller
-%             lead to less smoothing, with 0 doing no smoothing at all.
+%  'verbose'           - Boolean (default false). Provide more diagnostic output.
+%  'lambda'            - Scalar (default 0.1). Value of smoothing
+%                        parameter.  Smaller values lead to less smoothing,
+%                        with 0 doing no smoothing at all.
 %  'differentialMode' - true/false (default false). Run in differential
 %                       mode.  This means, don't subtract dark light.
 %                       Useful when we want to find delta primaries that
 %                       produce a predicted delta spd.
+%  'checkSpd'         - Boolean (default false). Because of smoothing and
+%                       gamut limitations, this is not guaranteed to
+%                       produce primaries that lead to the predictedSpd
+%                       matching the targetSpd.  Set this to true to check.
+%                       Tolerance is given by spdTolerance.
+%  'spdToleranceFraction' - Scalar (default 0.01). If checkSpd is true, the
+%                       tolerance to avoid an error message is this
+%                       fraction times the maximum of targetSpd.
 %
 % See also:
 %   OLPrimaryToSpd, OLPrimaryToSettings, OLSettingsToStartsStops, OLSpdToPrimaryTest
 %
-% 3/29/13  dhb  Changed some variable names to make this cleaner (Settings -> Primary).
-% 11/08/15 dhb  Specify explicitly that lsqlin algorithm should be 'active-set', ...
-%               to satisfy warning in newer versions of Matlab
-% 06/01/17 dhb  Remove primary return argument, because I don't think it
-%               should be used.
-% 06/04/17 dhb  Got rid of old code that dated from before we switched to
-%               effective primaries concept.
+
+% History:
+%   03/29/13  dhb  Changed some variable names to make this cleaner (Settings -> Primary).
+%   11/08/15  dhb  Specify explicitly that lsqlin algorithm should be 'active-set', ...
+%                  to satisfy warning in newer versions of Matlab
+%   06/01/17  dhb  Remove primary return argument, because I don't think it
+%                  should be used.
+%   06/04/17  dhb  Got rid of old code that dated from before we switched to
+%                  effective primaries concept.
 
 %% Parse the input
 p = inputParser;
 p.addParameter('verbose', false, @islogical);
 p.addParameter('lambda', 0.1, @isscalar);
 p.addParameter('differentialMode', false, @islogical);
+p.addParameter('checkSpd', false, @islogical);
+p.addParameter('spdToleranceFraction', 0.01, @isscalar);
 p.parse(varargin{:});
 params = p.Results;
 
@@ -87,9 +102,9 @@ assert(isfield(oneLightCal, 'computed'), 'OLSpdToPrimary:InvalidCalFile', ...
 % We skip this step unless we are debuging.
 DEBUG = 0;
 if (DEBUG)
-    pinvEffectivePrimary = pinv(oneLightCal.computed.pr650M) * (targetSpd - darkSpd);
+    pinvprimary = pinv(oneLightCal.computed.pr650M) * (targetSpd - darkSpd);
     if params.verbose
-        fprintf('Pinv values: min = %g, max = %g\n', min(pinvEffectivePrimary(:)), max(pinvEffectivePrimary(:)));
+        fprintf('Pinv values: min = %g, max = %g\n', min(pinvprimary(:)), max(pinvprimary(:)));
     end
 end
 
@@ -129,17 +144,26 @@ end
 % Call into lsqlin
 options = optimset('lsqlin');
 options = optimset(options,'Diagnostics','off','Display','off');
-effectivePrimary = lsqlin(C,d,[],[],[],[],vlb,vub,[],options);
+primaries = lsqlin(C,d,[],[],[],[],vlb,vub,[],options);
 if params.verbose
-    fprintf('Lsqlin effective primaries: min = %g, max = %g\n', min(effectivePrimary(:)), max(effectivePrimary(:)));
+    fprintf('Lsqlin effective primaries: min = %g, max = %g\n', min(primaries(:)), max(primaries(:)));
 end
 
 %% Make sure we enforce bounds, in case lsqlin has a bit of numerical slop
 if params.differentialMode
-    effectivePrimary(effectivePrimary < -1) = -1;
+    primaries(primaries < -1) = -1;
 else
-    effectivePrimary(effectivePrimary < 0) = 0;
+    primaries(primaries < 0) = 0;
 end
-effectivePrimary(effectivePrimary > 1) = 1;
+primaries(primaries > 1) = 1;
+
+%% Predict spd, and check if specified
+predictedSpd = OLPrimaryToSpd(cal,primaries);
+if (p.Results.checkSpd)
+    tolerance = p.Results.spdToleranceFraction*max(targetSpd(:));
+    if (max(abs(targetSpd(:)-predictedSpd(:))) > tolerance)
+        error('Predicted spd not within tolerance of target');
+    end
+end
 
 
