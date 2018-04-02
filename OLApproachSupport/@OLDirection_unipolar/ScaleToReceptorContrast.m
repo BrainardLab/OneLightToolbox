@@ -1,4 +1,4 @@
-function [scaledDirection, scalingFactor] = ScaleToReceptorContrast(direction, background, receptors, desiredContrast)
+function [scaledDirection, scalingFactor, scaledContrast] = ScaleToReceptorContrast(direction, background, receptors, currentDesiredContrast)
 % Scales OLDirection to have the desired contrast with background
 %
 % Syntax:
@@ -22,6 +22,9 @@ function [scaledDirection, scalingFactor] = ScaleToReceptorContrast(direction, b
 %                      contrast on background
 %    scalingFactor   - numerical scaling factor to scale input direction to
 %                      scaled direction
+%    scaledContrast  - Rx1 columnvector of predicted desired contrast after
+%                      scaling; compare to input desiredContrast to see how
+%                      close to desired the scaling got.
 %
 % Optional key/value pairs:
 %    None.
@@ -35,9 +38,15 @@ function [scaledDirection, scalingFactor] = ScaleToReceptorContrast(direction, b
 %% Input validation
 
 %% Current desired receptor contrast
+currentDesiredContrast = ToDesiredReceptorContrast(direction, background, receptors);
 
+%% Figure out scaling factor
+scalingFactor = currentDesiredContrast \ desiredContrast;
 
-%% 
+%% Scale direction
+scaledDirection = scalingFactor .* direction;
+
+%% Verify
+scaledContrast = ToDesiredReceptorContrast(scaledDirection,background, receptors);
 
 end
-
