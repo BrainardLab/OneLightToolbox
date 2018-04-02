@@ -190,6 +190,10 @@ classdef OLDirectionParams_Bipolar < OLDirectionParams
                 %% Check gamut
                 modulationPositive = background + direction(observerAgeInYears);
                 modulationNegative = background - direction(observerAgeInYears);
+                modulationPositive.differentialPrimaryValues(modulationPositive.differentialPrimaryValues > 1 & modulationPositive.differentialPrimaryValues < 1+1e-6) = 1;
+                modulationPositive.differentialPrimaryValues(modulationPositive.differentialPrimaryValues < 0 & modulationPositive.differentialPrimaryValues > -1e-6) = 0;
+                modulationNegative.differentialPrimaryValues(modulationNegative.differentialPrimaryValues > 1 & modulationNegative.differentialPrimaryValues < 1+1e-6) = 1;
+                modulationNegative.differentialPrimaryValues(modulationNegative.differentialPrimaryValues < 0 & modulationNegative.differentialPrimaryValues > -1e-6) = 0;
                 if any(modulationPositive.differentialPrimaryValues > 1)  || any(modulationPositive.differentialPrimaryValues < 0)
                     error('Out of bounds.')
                 end
