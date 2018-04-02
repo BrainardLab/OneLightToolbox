@@ -1,10 +1,9 @@
-function [maxSpd, scaleFactor, maxVal] = OLFindMaxSpectrum(oneLightCal, targetSpd, lambda, verbose)
+function [maxSpd, scaleFactor, maxVal] = OLFindMaxSpectrum(oneLightCal, targetSpd)
 % Finds the scale factor to maximize OneLight spectrum luminance.
 %
 % Syntax:
 %     [maxSpd, scaleFactor, maxVal] = OLFindMaxSpectrum(oneLightCal, targetSpd)
-%     [maxSpd, scaleFactor, maxVal] = OLFindMaxSpectrum(oneLightCal, targetSpd, lambda)
-%     [maxSpd, scaleFactor, maxVal] = OLFindMaxSpectrum(oneLightCal, targetSpd, lambda, verbose)
+%     [maxSpd, scaleFactor, maxVal] = OLFindMaxSpectrum(oneLightCal, targetSpd, 'lambda', 0.001)
 %
 % Description:
 %     Takes the OneLight calibration and a target spectral power distribution
@@ -25,21 +24,32 @@ function [maxSpd, scaleFactor, maxVal] = OLFindMaxSpectrum(oneLightCal, targetSp
 %     verbose              - Logical. Toggles verbose output. Default true.
 %
 % Output:
-%     maxSpd         (     - Column vector giving spectrum whose maximum primary value is as close as
+%     maxSpd               - Column vector giving spectrum whose maximum primary value is as close as
 %                            possible to 1.
 %     scaleFactor          - Scale factor by which to multiply the target spd
 %                            to get the maximum luminance.
 %     maxVal               - The maximum primary value resulting from 'maxSpd'.
+%
+% Optional Key-Value Pairs:
+%  'verbose'              - Boolean (default false). Provide more diagnostic output.
+%  'lambda'               - Scalar  (default 0.1). Value of smoothing parameter.  Smaller
+%                           lead to less smoothing, with 0 doing no
+%                           smoothing at all. This gets passed through to
+%                           OLSpdToPrimary.
 
-% Validate the number of input arguments.
-narginchk(2, 4);
+% History:
+%  04/02/18  dhb   Change to key/value pairs.
 
-if ~exist('lambda', 'var')
-	lambda = 0.1;
-end
-if ~exist('verbose', 'var')
-	verbose = true;
-end
+
+%% Parse the input
+p = inputParser;
+p.addParameter('verbose', false, @islogical);
+p.addParameter('lambda', 0.1, @isscalar);
+p.parse(varargin{:});
+params = p.Results;
+lambda = p.Results.lambda;
+verbose = p.Results.verbose;
+
 
 % Make sure that the oneLightCal has been properly processed by OLInitCal.
 assert(isfield(oneLightCal, 'computed'), 'OLSpdToPrimary:InvalidCalFile', ...
