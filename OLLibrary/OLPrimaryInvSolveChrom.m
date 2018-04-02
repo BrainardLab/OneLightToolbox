@@ -1,4 +1,4 @@
-function [primaryTarget,primaryMax,primaryMin,maxLum,minLum] = ...
+function [primaryMax,primaryMin,maxLum,minLum] = ...
     OLPrimaryInvSolveChrom(cal, desiredChromaticity, varargin)
 % Find OneLight primaries to produce spectra at desired chromaticity
 %
@@ -22,52 +22,82 @@ function [primaryTarget,primaryMax,primaryMin,maxLum,minLum] = ...
 %   spectral power distribution held fixed.
 %
 % Inputs:
-%   cal                   OneLight calibration structure
-%   desiredChrmaticity    Vector with desired CIE 1931 chromaticity.
+%   cal                       - OneLight calibration structure
+%   desiredChrmaticity        - Column vector with desired CIE 1931 chromaticity.
 %
 % Outputs:
-%   backgroundPrimary     Primary settings for the obtained background.
+%   primaryMax                - Primary settings that produce a spectrum
+%                               with desired chromaticity at max possible in
+%                               gamut luminance.
 %
 % Optional key/value pairs:
-%   'PrimaryHeadroom'     Scalar.  Headroom to leave on primaries.  Default
-%                         0.1.
-%   'PrimaryTolerance     Scalar. Truncate to range [0,1] if primaries are
-%                         within this tolerance of [0,1]. Default 1e-6, and
-%                         'CheckOutOfRange' value is true.
-%   'CheckOutOfRange'     Boolean. Perform tolerance check.  Default true.
-%   'WhichLuminance'      String giving XXX in T_XXX, where that is the
-%                         loaded set of XYZ color matching functions.
-%                         Default 
+%   'PrimaryHeadroom'         - Scalar.  Headroom to leave on primaries.  Default
+%                               0.1.
+%   'PrimaryTolerance         - Scalar. Truncate to range [0,1] if primaries are
+%                               within this tolerance of [0,1]. Default 1e-6, and
+%                               'CheckOutOfRange' value is true.
+%   'CheckOutOfRange'         - Boolean. Perform tolerance check.  Default true.
+%   'InitialLuminanceFactor'  - Scaler. We need to start the search at an in gamut
+%                               set of primaries that produce the desired
+%                               chromaticity. This requires guessing an in
+%                               gamut luminance for that chromaticity. We
+%                               do this as a scaling down by this factor of
+%                               the max device luminance. The routine does
+%                               a little searching if the initial value
+%                               doesn't do the trick.  If that fails,
+%                               adjusting this may help. Default 0.2.
+%   'WhichXYZ'                - String giving XXX in T_XXX, where that is the
+%                               loaded set of XYZ color matching functions.
+%                               These can be anything that is in an appropriate
+%                               T_ format file on the path.  Thes include
+%                                 T_xyz1931
+%                                 T_xyz1964
+%                                 T_xyzJuddVos
+%                                 T_xyzCIEPhys2
+%                                 T_xyzCIEPhys10
+%                             - Default 'xyzCIEPhys10'
+%
+% See also:
 %
 
-% 05/22/15  ms      Wrote it.
-% 06/29/17  dhb     Clean up.
-% 03/27/18  dhb     Add 'PrimaryHeadroom' key/value pair.
-% 04/01/18  dhb     Primary range stuff.
-% 04/02/18  dhb     Rename and rewrite.
+% History:
+%   05/22/15  ms      Wrote it.
+%   06/29/17  dhb     Clean up.
+%   03/27/18  dhb     Add 'PrimaryHeadroom' key/value pair.
+%   04/01/18  dhb     Primary range stuff.
+%   04/02/18  dhb     Rename and rewrite.
+
+%% Examples:
+%{
+% Get the OneLightToolbox demo cal structure
+cal = OLGetCalibrationStructure('CalibrationType','DemoCal','CalibrationFolder',fullfile(tbLocateToolbox('OneLightToolbox'),'OLDemoCal'),'CalibrationDate','latest');
+OLPrimaryInvSolveChrom(cal, [0.33 0.33])
+%}
 
 %% Input parser
 p = inputParser;
 p.addParameter('PrimaryHeadroom',0.1,@isscalar);
 p.addParameter('PrimaryTolerance',1e-6,@isscalar);
 p.addParameter('CheckOutOfRange',true,@islogical);
+p.addParameter('InitialLuminanceFactor',0.2,@isnumeric);
+p.addParameter('WhichXYZ','xyzCIEPhys10',@ischar);
 p.parse(varargin{:});
 
 %% Set up some parameters
 S = cal.describe.S;
 
-%% Load 1931 CIE functions
-load T_xyz1931
-T_xyz = SplineCmf(S_xyz1931,683*T_xyz1931,S);
+%% Load XYZ functions according to chosen type
+eval(['tempXYZ = load(''T_' p.Results.WhichXYZ ''');']);
+eval(['T_xyz = SplineCmf(tempXYZ.S_' p.Results.WhichXYZ ',683*tempXYZ.T_' p.Results.WhichXYZ ',S);']);
 
 %% Pull out key properties of OneLight cal
-B_primary = cal.computed.pr650M;
-nPrimaries = size(B_primary, 2);
+devicePrimaryBasis = cal.computed.pr650M;
+nPrimaries = size(devicePrimaryBasis, 2);
 ambientSpd = cal.computed.pr650MeanDark;
 
 %% Get the maximum luminance for this calibration
-maxSpd = B_primary*ones(size(B_primary,2),1) + ambientSpd;
-maxLuminance = T_xyz(3, :)*maxSpd;
+maxSpd = devicePrimaryBasis*ones(size(devicePrimaryBasis,2),1) + ambientSpd;
+maxLuminance = T_xyz(2,:)*maxSpd;
 
 %% Construct basis functions for primaries
 %
@@ -75,43 +105,46 @@ maxLuminance = T_xyz(3, :)*maxSpd;
 B1 = 0.5*ones(nPrimaries,1);            % Half-on
 B2 = 1-linspace(0, 1, nPrimaries);      % Linear ramp
 B3 = 1-linspace(-1, 1, nPrimaries).^2;  % Quadratic
-primaryBasis = [B1 B2' B3'];                       % Put them together
+primaryWeightBasis = [B1 B2' B3'];            % Put them together
 
-% % Multiply with the B_primary matrix from the calibration and the relevant
-% % CIE functions
-% xy_s = (T_xyz(1:2, :)*B_primary*primaryBasis)./repmat(sum(T_xyz*B_primary*primaryBasis), 2, 1);
-% Y_s = (T_xyz(3, :)*B_primary*primaryBasis);
-% 
-% % Put them together
-% xyY_s = [xy_s ; Y_s];
+%% Construct matrix that goes between primary basis weights w and XYZ
+M_primaryWeightsToXYZ = T_xyz*devicePrimaryBasis*primaryWeightBasis;
+M_XYZToPrimaryWeights = inv(M_primaryWeightsToXYZ);
 
 %% Define the target chromaticities and luminance
 %
-% Luminance set to be 1/10 of the max.  This is likely to be within gamut.
-xyY_target = [desiredChromaticity(1) desiredChromaticity(2) maxLuminance/10]';
-xy_target = xyY_target(1:2);
-XYZ_target = xyYToXYZ(xyY_target);
-
-%% Construct matrix that goes between primary basis weights w and XYZ
-M_weightsToXYZ = T_xyz*B_primary*primaryBasis;
-M_XYZToWeights = inv(M_weightsToXYZ);
-
-%% First step: solve with a linear method
-%
-% Provides a starting point for optimization
-%w = inv(xyY_s)*xyY_target;
-initialWeights = M_XYZToWeights*XYZ_target;
-
-%% Are initial primaries in range?
-initialPrimaries = primaryBasis*initialWeights;
-if (any(initialPrimaries < 0 | initialPrimaries > 1))
-    error('Cannot find within gamut primaries for guess at initial luminance');
+% Take an initial guess at in gamut luminance and then do a little
+% searching if necessary.
+initialLuminanceTries = 3;
+luminanceGuess = maxLuminance*p.Results.InitialLuminanceFactor;
+for ii = 1:initialLuminanceTries
+    % Set up initial XYZ based on luminance guess and desired chromaticity
+    xyY_target = [desiredChromaticity(1) desiredChromaticity(2) luminanceGuess]';
+    xy_target = xyY_target(1:2);
+    XYZ_target = xyYToXYZ(xyY_target);
+    
+    % Solve for initial primaries with a linear method
+    initialPrimaryWeights = M_XYZToPrimaryWeights*XYZ_target;
+    initialPrimaries = primaryWeightBasis*initialPrimaryWeights;
+    if (all(initialPrimaries >= 0 & initialPrimaries <= 1))
+        % If we're good, break out of loop
+        break;
+    end
+    
+    % Try adjusting initial luminace
+    luminanceGuess = 0.99*luminanceGuess/max(initialPrimaries(:));  
 end
 
-% Sanity check. Look at this and see if it
-% comes out near xyY_target if you like.
+%% Are initial primaries in gamut and do they produce desired chromaticity.
+if (any(initialPrimaries < 0 | initialPrimaries > 1))
+        fprintf('Cannot find within gamut primaries for guess at initial luminance.\n');
+        fprintf('Try adjusting value for ''InitialLuminanceFactor'' key.\n');
+        error('');
+end
+    
+% Chromaticity check
 initialxyYTolerance = 1e-5;
-initialXYZ = T_xyz*B_primary*initialPrimaries;
+initialXYZ = T_xyz*devicePrimaryBasis*initialPrimaries;
 initialxyY = XYZToxyY(initialXYZ);
 if (any( max(abs(xy_target-initialxyY(1:2))) > initialxyYTolerance))
     error('Initial primaries do not have desired chromaticity');
@@ -121,12 +154,12 @@ end
 options = optimset('fmincon');
 options = optimset(options,'Diagnostics','off','Display','off','LargeScale','off','Algorithm','active-set', 'MaxIter', 10000, 'MaxFunEvals', 100000, 'TolFun', 1e-10, 'TolCon', 1e-10, 'TolX', 1e-10);
 maxHeadroom = p.Results.PrimaryHeadroom;
-vub = ones(size(B_primary, 2), 1)-maxHeadroom;
-vlb = ones(size(B_primary, 2), 1)*maxHeadroom;
-x = fmincon(@(x) ObjFunction(x, B_primary, ambientSpd, T_xyz),initialPrimaries,[],[],[],[],vlb,vub,@(x)ChromaticityNonlcon(x, B_primary, ambientSpd, T_xyz, xy_target),options);
+vub = ones(size(devicePrimaryBasis, 2), 1)-maxHeadroom;
+vlb = ones(size(devicePrimaryBasis, 2), 1)*maxHeadroom;
+x = fmincon(@(x) ObjFunction(x, devicePrimaryBasis, ambientSpd, T_xyz),initialPrimaries,[],[],[],[],vlb,vub,@(x)ChromaticityNonlcon(x, devicePrimaryBasis, ambientSpd, T_xyz, xy_target),options);
 backgroundPrimaryMax = x;
 
-%% Pull the background out of the solution
+% Check that primaries are within gamut to tolerance.
 backgroundPrimaryMax(backgroundPrimaryMax > 1 & backgroundPrimaryMax < 1 + p.Results.PrimaryTolerance) = 1;
 backgroundPrimaryMax(backgroundPrimaryMax < 0 & backgroundPrimaryMax > -p.Results.PrimaryTolerance) = 0;
 if (p.Results.CheckOutOfRange && (any(backgroundPrimaryMax(:) > 1) || any(backgroundPrimaryMax(:) < 0) ))
@@ -140,26 +173,29 @@ end
 
 end
 
-%% Objective function for the optimization
-function f = ObjFunction(x, B_primary, ambientSpd, T_xyz)
+%% Objective function to maximize luminance
+function f = ObjFunction(x, devicePrimaryBasis, ambientSpd, T_xyz)
 
 % Get spectrum and luminance
-backgroundSpd = B_primary*x + ambientSpd;
-photopicLuminanceCdM2 = T_xyz(2,:)*backgroundSpd;
+theSpd = devicePrimaryBasis*x + ambientSpd;
+theLuminance = T_xyz(2,:)*theSpd;
 
 % Maximize the luminance
-f = -photopicLuminanceCdM2;
+f = -theLuminance;
 
 end
 
 %% Constraint function for the optimization
-function [c ceq] = ChromaticityNonlcon(x, B_primary, ambientSpd, T_xyz, xy_target)
+%
+% Forces chromaticity to stay at target
+function [c ceq] = ChromaticityNonlcon(x, devicePrimaryBasis, ambientSpd, T_xyz, target_xy)
 
 % Calculate spectrum and chromaticity
-backgroundSpd = B_primary*x + ambientSpd;
-xy_now = (T_xyz(1:2, :)*backgroundSpd)./repmat(sum(T_xyz*backgroundSpd), 2, 1);
+theSpd = devicePrimaryBasis*x + ambientSpd;
+theXYZ = T_xyz*theSpd;
+thexyY = XYZToxyY(theXYZ);
 
 c = [];
-ceq = [(xy_target-xy_now).^2];
+ceq = [(target_xy-thexyY(1:2)).^2];
 
 end
