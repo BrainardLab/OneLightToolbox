@@ -158,7 +158,7 @@ end
 primaries(primaries > 1) = 1;
 
 %% Predict spd, and check if specified
-predictedSpd = OLPrimaryToSpd(cal,primaries);
+predictedSpd = OLPrimaryToSpd(oneLightCal,primaries);
 if (p.Results.checkSpd)
     tolerance = p.Results.spdToleranceFraction*max(targetSpd(:));
     if (max(abs(targetSpd(:)-predictedSpd(:))) > tolerance)

@@ -1,14 +1,17 @@
-function [maxSpd, scaleFactor, maxVal] = OLFindMaxSpectrum(oneLightCal, targetSpd)
+function [maxSpd, maxPrimary, scaleFactor] = OLFindMaxSpectrum(oneLightCal, targetSpd, varargin)
 % Finds the scale factor to maximize OneLight spectrum luminance.
 %
 % Syntax:
-%     [maxSpd, scaleFactor, maxVal] = OLFindMaxSpectrum(oneLightCal, targetSpd)
-%     [maxSpd, scaleFactor, maxVal] = OLFindMaxSpectrum(oneLightCal, targetSpd, 'lambda', 0.001)
+%     [maxSpd, maxPrimary, scaleFactor] = OLFindMaxSpectrum(oneLightCal, targetSpd)
+%     [maxSpd, maxPrimary, scaleFactor] = OLFindMaxSpectrum(oneLightCal, targetSpd, 'lambda', 0.001)
 %
 % Description:
 %     Takes the OneLight calibration and a target spectral power distribution
 %     and finds the scale factor that you multipy the target spd by to get an
 %     spd whose maximum primary value is as close as possible to 1.
+%
+%     Can also find min instead of max, by setting value for key 'findMin'
+%     to true.
 %
 % Input:
 %     oneLightCal          - Struct. OneLight calibration file after it has been
@@ -26,16 +29,32 @@ function [maxSpd, scaleFactor, maxVal] = OLFindMaxSpectrum(oneLightCal, targetSp
 % Output:
 %     maxSpd               - Column vector giving spectrum whose maximum primary value is as close as
 %                            possible to 1.
+%     maxPrimary           - Primaries that produce max spectrum.
 %     scaleFactor          - Scale factor by which to multiply the target spd
-%                            to get the maximum luminance.
+%                            to get maxSpd.
 %     maxVal               - The maximum primary value resulting from 'maxSpd'.
 %
+%
 % Optional Key-Value Pairs:
-%  'verbose'              - Boolean (default false). Provide more diagnostic output.
-%  'lambda'               - Scalar  (default 0.1). Value of smoothing parameter.  Smaller
-%                           lead to less smoothing, with 0 doing no
-%                           smoothing at all. This gets passed through to
-%                           OLSpdToPrimary.
+%  'verbose'          - Boolean (default false). Provide more diagnostic output.
+%  'lambda'           - Scalar  (default 0.1). Value of smoothing parameter.  Smaller
+%                       lead to less smoothing, with 0 doing no
+%                       smoothing at all. This gets passed through to
+%                       OLSpdToPrimary.
+%  'checkSpd'         - Boolean (default false). Because of smoothing and
+%                       gamut limitations, this is not guaranteed to
+%                       produce primaries that lead to the predictedSpd
+%                       matching the targetSpd.  Set this to true to check.
+%                       Tolerance is given by spdFractionTolerance.
+%  'spdToleranceFraction' - Scalar (default 0.01). If checkSpd is true, the
+%                       tolerance to avoid an error message is this
+%                       fraction times the maximum of targetSpd, with the
+%                       comparison begin made on maxSpd scaled back to
+%                       targetSpd.
+%  'findMin'          - Boolean (default false). Find minimum rather than
+%                       maximum, with everything else the same.
+%
+% See also: OLPrimaryInvSolveChrom, OLFindMinSpectrum.
 
 % History:
 %  04/02/18  dhb   Change to key/value pairs.
@@ -45,67 +64,64 @@ function [maxSpd, scaleFactor, maxVal] = OLFindMaxSpectrum(oneLightCal, targetSp
 p = inputParser;
 p.addParameter('verbose', false, @islogical);
 p.addParameter('lambda', 0.1, @isscalar);
+p.addParameter('checkSpd', false, @islogical);
+p.addParameter('spdToleranceFraction', 0.01, @isscalar);
+p.addParameter('findMin', false, @islogical);
 p.parse(varargin{:});
-params = p.Results;
-lambda = p.Results.lambda;
-verbose = p.Results.verbose;
-
 
 % Make sure that the oneLightCal has been properly processed by OLInitCal.
 assert(isfield(oneLightCal, 'computed'), 'OLSpdToPrimary:InvalidCalFile', ...
-	'The calibration file needs to be processed by OLInitCal.');
+    'The calibration file needs to be processed by OLInitCal.');
+
+% Make sure input target isn't insane
+if (min(targetSpd(:) < 0))
+    error('No no no you cannot have negative light');
+end
+if (all(targetSpd(:) == 0))
+    error('Cannot run this with target all zeros');
+end
 
 % Use fsolve to find the right scale factor.  The advantage of this method
 % is that it properly takes the ambient into account, to the extent that
 % our core OLSpdToPrimary routine does that.
 options = optimset('fsolve');
 options = optimset(options,'Diagnostics','off','Display','off','LargeScale','off');
-if ~verbose
-	options = optimset(options, 'Display', 'off');
+if ~p.Results.verbose
+    options = optimset(options, 'Display', 'off');
 end
-scaleFactor = fsolve(@(scaleFactor) OLFindMaxSpectrumFun(scaleFactor,oneLightCal,targetSpd,lambda),1,options);
+scaleFactor = fsolve(@(scaleFactor) OLFindMaxSpectrumFun(scaleFactor,oneLightCal,targetSpd,p.Results.lambda,p.Results.findMin),1,options);
 
 maxSpd = scaleFactor*targetSpd;
-primary = OLSpdToPrimary(oneLightCal, maxSpd, 'lambda', lambda);
-maxVal = max(primary);
+maxPrimary = OLSpdToPrimary(oneLightCal, maxSpd, 'lambda', p.Results.lambda);
 
+if (p.Results.checkSpd)
+    predMaxSpd = OLPrimaryToSpd(oneLightCal, maxPrimary)/scaleFactor;
+    if (max(abs(maxSpd(:)-predMaxSpd(:))) > p.Results.spdToleranceFraction*max(targetSpd(:)))
+        error('Spd predicted from primaries not sufficently close to target max spd');
+    end
+end
 
-function f = OLFindMaxSpectrumFun(scaleFactor, oneLightCal, targetSpd, lambda)
+end
+
+function f = OLFindMaxSpectrumFun(scaleFactor, oneLightCal, targetSpd, lambda, findMin)
 % This is the function that fsolve tries to drive to 0 by varying its first
 % argument.
 
 primary = OLSpdToPrimary(oneLightCal, scaleFactor*targetSpd, 'lambda', lambda);
-maxPrimary = max(primary);
-f = maxPrimary-1;
 
-% Another way one could try to do this.  We didn't fully code this
-% because we were more into trying fsolve.
-%
-% % Setup our start point and some search parameters.
-% maxSpd = targetSpd;
-% tolerance = 0.001;
-% maxIterations = 2;
-% 
-% % Loop for the max iterations or until we find a value that satisfies our
-% % tolerance limit.
-% for i = 1:maxIterations
-% 	% Process the spd and see what it's max primary is.
-%     primary = OLSpdToPrimary(oneLightCal, maxSpd, lambda, verbose);
-%     maxVal = max(primary);
-% 	
-% 	% Recompute the spd scale factor based on the newly calculated maximum
-% 	% primary.
-%     scaleFactor = 1/maxVal;
-% 	
-% 	% If our maximum primary value is within our tolerance limit break out
-% 	% of the loop.
-% 	if (1 - maxVal) < tolerance
-% 		break;
-% 	end
-% 	
-% 	% Scale the spd in preparation to run in through OLSpdToPrimary.
-% 	maxSpd = 0.99*targetSpd*scaleFactor;
-% end
-% 
-% % Find the final scale factor
-% scaleFactor = targetSpd\maxSpd;
+% Negative light makes no sense, don't allow negative scale factors.
+% Actually, don't allow ridiculously small scale factors, as that gets us
+% into a world of numerical hurt.
+if (scaleFactor <= 1e-4)
+    f = Inf;
+    return;
+end
+if (findMin)
+    f = abs(min(primary(:)));
+else
+    maxPrimary = max(primary(:));
+    f = maxPrimary-1;
+end
+
+end
+

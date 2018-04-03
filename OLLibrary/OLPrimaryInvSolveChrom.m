@@ -1,4 +1,4 @@
-function [primaryMax,primaryMin,maxLum,minLum] = ...
+function [maxPrimary,minPrimary,maxLum,minLum] = ...
     OLPrimaryInvSolveChrom(cal, desiredChromaticity, varargin)
 % Find OneLight primaries to produce spectra at desired chromaticity
 %
@@ -26,9 +26,11 @@ function [primaryMax,primaryMin,maxLum,minLum] = ...
 %   desiredChrmaticity        - Column vector with desired CIE 1931 chromaticity.
 %
 % Outputs:
-%   primaryMax                - Primary settings that produce a spectrum
+%   maxPrimary                - Primary settings that produce a spectrum
 %                               with desired chromaticity at max possible in
 %                               gamut luminance.
+%   minPrimary                - Primary settings that produce same relative
+%                               spd as max, but with minimum in gamut luminance.
 %
 % Optional key/value pairs:
 %   'PrimaryHeadroom'         - Scalar.  Headroom to leave on primaries.  Default
@@ -71,7 +73,7 @@ function [primaryMax,primaryMin,maxLum,minLum] = ...
 %{
 % Get the OneLightToolbox demo cal structure
 cal = OLGetCalibrationStructure('CalibrationType','DemoCal','CalibrationFolder',fullfile(tbLocateToolbox('OneLightToolbox'),'OLDemoCal'),'CalibrationDate','latest');
-OLPrimaryInvSolveChrom(cal, [0.33 0.33])
+[maxPrimary,minPrimary,maxLum,minLum] = OLPrimaryInvSolveChrom(cal, [0.33 0.33])
 %}
 
 %% Input parser
@@ -105,7 +107,7 @@ maxLuminance = T_xyz(2,:)*maxSpd;
 B1 = 0.5*ones(nPrimaries,1);            % Half-on
 B2 = 1-linspace(0, 1, nPrimaries);      % Linear ramp
 B3 = 1-linspace(-1, 1, nPrimaries).^2;  % Quadratic
-primaryWeightBasis = [B1 B2' B3'];            % Put them together
+primaryWeightBasis = [B1 B2' B3'];      % Put them together
 
 %% Construct matrix that goes between primary basis weights w and XYZ
 M_primaryWeightsToXYZ = T_xyz*devicePrimaryBasis*primaryWeightBasis;
@@ -157,12 +159,12 @@ maxHeadroom = p.Results.PrimaryHeadroom;
 vub = ones(size(devicePrimaryBasis, 2), 1)-maxHeadroom;
 vlb = ones(size(devicePrimaryBasis, 2), 1)*maxHeadroom;
 x = fmincon(@(x) ObjFunction(x, devicePrimaryBasis, ambientSpd, T_xyz),initialPrimaries,[],[],[],[],vlb,vub,@(x)ChromaticityNonlcon(x, devicePrimaryBasis, ambientSpd, T_xyz, xy_target),options);
-backgroundPrimaryMax = x;
+maxPrimary = x;
 
-% Check that primaries are within gamut to tolerance.
-backgroundPrimaryMax(backgroundPrimaryMax > 1 & backgroundPrimaryMax < 1 + p.Results.PrimaryTolerance) = 1;
-backgroundPrimaryMax(backgroundPrimaryMax < 0 & backgroundPrimaryMax > -p.Results.PrimaryTolerance) = 0;
-if (p.Results.CheckOutOfRange && (any(backgroundPrimaryMax(:) > 1) || any(backgroundPrimaryMax(:) < 0) ))
+%% Check that primaries are within gamut to tolerance.
+maxPrimary(maxPrimary > 1 & maxPrimary < 1 + p.Results.PrimaryTolerance) = 1;
+maxPrimary(maxPrimary < 0 & maxPrimary > -p.Results.PrimaryTolerance) = 0;
+if (p.Results.CheckOutOfRange && (any(maxPrimary(:) > 1) || any(maxPrimary(:) < 0) ))
     error('At one least primary value is out of range [0,1]');
 end
 
@@ -170,6 +172,15 @@ end
 % checkXYZ = T_xyz*B_primary*backgroundPrimary;
 % checkxyY = XYZToxyY(checkXYZ)
 
+%% Get max spd and its luminance
+maxSpd = OLPrimaryToSpd(cal,maxPrimary);
+maxLum = T_xyz(2,:)*maxSpd;
+
+%% Get spd and then find minimum luminance with same spd
+lambda = 0;
+[minSpd, minPrimary] = OLFindMaxSpectrum(cal, maxSpd, 'lambda', lambda, ...
+    'findMin', true, 'checkSpd', true);
+minLum = T_xyz(2,:)*minSpd;
 
 end
 

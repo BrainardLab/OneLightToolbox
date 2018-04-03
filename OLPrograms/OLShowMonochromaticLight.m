@@ -13,7 +13,7 @@ spd1 = OLMakeMonochromaticSpd(cal, wl1, fullWidthHalfMax);
 [maxSpd1, scaleFactor1] = OLFindMaxSpectrum(cal, spd1, 'lambda', lambda);
 
 % Find the primaries for that
-primary1 = OLSpdToPrimary(cal, maxSpd1, lambda);
+primary1 = OLSpdToPrimary(cal, maxSpd1, 'lambda', lambda);
 settings1 = OLPrimaryToSettings(cal, primary1);
 [starts1, stops1] = OLSettingsToStartsStops(cal, settings1);
 
