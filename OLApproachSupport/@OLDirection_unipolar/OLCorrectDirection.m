@@ -75,35 +75,44 @@ else
     nominalDirection = direction.copy(); % store unlinked copy of nominalDirection
     nominalDirection.SPDdifferentialDesired = direction.SPDdifferentialDesired;
    
-    %% Correct differential primary values
-    % Correcting a direction (on top of a background) means correcting the
-    % primary values that would combine direction and background into the
-    % desired combined SPD, then subtracting the background primary values,
-    % to end up with the differential primary values to add to the
-    % background, i.e., the direction.
-    desiredCombinedSPD = direction.SPDdifferentialDesired + background.SPDdifferentialDesired;
+    %% Turn into fake cache-structure
+    % Rolled-back code requires a cache-structure, this function creates
+    % one from the OLDirection_unipolar object
+    observerAge = direction.describe.observerAge;
+    directionCache = makeFakeCache(direction);
     
-    % To get the combined primary values, the direction and background have
-    % to be added. However, when calling this routine, the background may
-    % already have been corrected. In that case, the summed direction and
-    % background primary values no longer correspond to the desired
-    % combined SPD. Instead, convert the desiredCombinedSPD to some initial
-    % primary values predicted to produce it, and correct those.
-    nominalCombinedPrimaryValues = OLSpdToPrimary(direction.calibration,desiredCombinedSPD,'lambda',parser.Results.smoothness);
-    [correctedCombinedPrimaryValues, correctionData] = OLCorrectPrimaryValues(nominalCombinedPrimaryValues,direction.calibration,oneLight,varargin{:});
+    %% Correct
+    calibration = direction.calibration;
+    correctedDirectionData = OLCorrectCacheFileOOC_modified(...
+        directionCache, calibration, oneLight, ...
+        'test', ...
+        'PR-670', radiometer, false, ...
+        'FullOnMeas', false, ...
+        'CalStateMeas', false, ...
+        'DarkMeas', false, ...
+        'OBSERVER_AGE', observerAge, ...
+        'ReducedPowerLevels', false, ...
+        'CALCULATE_SPLATTER', false, ...
+        'lambda', 0.8, ...
+        'NIter', 20, ...
+        'powerLevels', [0 1.0000], ...
+        'doCorrection', true, ...
+        'postreceptoralCombinations', [1 1 1 0 ; 1 -1 0 0 ; 0 0 1 0 ; 0 0 0 1], ...
+        'outDir', fullfile('~/Desktop'), ...
+        'takeTemperatureMeasurements', false);
     
     %% Update original OLDirection
-    % Update business end
-    direction.differentialPrimaryValues = correctedCombinedPrimaryValues-background.differentialPrimaryValues;
+    % Update direction business end
+    direction.differentialPrimaryValues = correctedDirectionData.data(observerAge).differencePrimary;
     direction.SPDdifferentialDesired = nominalDirection.SPDdifferentialDesired;
 
     % Update describe
-    correctionDescribe = correctionData;
+    correctionDescribe = correctedDirectionData.data(32).correction;
     correctionDescribe.time = [time now];
     correctionDescribe.background = background; 
     correctionDescribe.nominalDirection = nominalDirection;
-    correctionDescribe.nominalCombinedPrimaryValues = nominalCombinedPrimaryValues;
-    correctionDescribe.correctedCombinedPrimaryValues = correctedCombinedPrimaryValues;
+    %correctionDescribe.nominalCombinedPrimaryValues = nominalCombinedPrimaryValues;
+    %correctionDescribe.correctedCombinedPrimaryValues = correctedCombinedPrimaryValues;
 
     % Add to direction.describe; append if correction already present
     if ~isfield(direction.describe,'correction') || isempty(direction.describe.correction)
