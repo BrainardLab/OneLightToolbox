@@ -25,12 +25,15 @@ function [contrasts, excitation, excitationDiff] = ToDesiredReceptorContrast(dir
 %                       T.T_energyNormalized matrix will be used
 %
 % Outputs:
-%    contrasts      - Rx1 vector of contrasts on R receptors of direction 
+%    contrasts      - Rx2 vector of contrasts on R receptors of direction
+%                     positive component, and direction negative component
 %                     on background
-%    excitation     - Rx2 matrix of excitations of each receptor type to
-%                     direction, and background
-%    excitationDiff - Rx1 matrix of difference in excitation of each
-%                     receptor type between direction and background
+%    excitation     - Rx3 matrix of excitations of each receptor type to
+%                     background, direction positive component and
+%                     direction negative component.
+%    excitationDiff - Rx2 matrix of difference in excitation of each
+%                     receptor type between background and direction
+%                     positive component and direction negative component.
 %
 % Optional key/value pairs:
 %    None.
@@ -50,7 +53,30 @@ parser.parse(direction, background, receptors);
 assert(matchingCalibration(direction,background),'OneLightToolbox:ApproachSupport:OLValidateDirection:MismatchedCalibration',...
        'Direction and background do not share a calibration.');
 
-%% Convert to unipolar
-unipolar = OLDirection_unipolar(direction.differentialPositive, direction.calibration);
-[unipolarContrasts, excitation, excitationDiff] = ToDesiredReceptorContrast(unipolar, background, receptors);
-contrasts = OLUnipolarToBipolarContrast(2*unipolarContrasts);
+%% Get background SPD
+if isempty(background.SPDdifferentialDesired)
+    desiredBackgroundSPD = background.ToPredictedSPD;
+else
+    desiredBackgroundSPD = background.SPDdifferentialDesired;
+end
+
+%% Add dark light
+desiredBackgroundSPD = desiredBackgroundSPD + background.calibration.computed.pr650MeanDark;
+
+%% Get combined direction + background SPD
+if isempty(direction.SPDdifferentialDesired)
+    SPDdifferentialDesired = direction.ToPredictedSPD;
+else
+    SPDdifferentialDesired = direction.SPDdifferentialDesired;
+end
+desiredPositive = SPDdifferentialDesired(:,1) + desiredBackgroundSPD;
+desiredNegative = SPDdifferentialDesired(:,2) + desiredBackgroundSPD;
+
+%% Calculate contrast
+[contrastsPos, excitationPos, excitationDiffPos] = SPDToReceptorContrast([desiredBackgroundSPD desiredPositive],receptors);
+[contrastsNeg, excitationNeg, excitationDiffNeg] = SPDToReceptorContrast([desiredBackgroundSPD desiredNegative],receptors);
+
+%% Combine outputs
+contrasts = mean(abs([contrastsPos(:,1) contrastsNeg(:,1)]),2);
+excitation = [excitationPos(:,1:2) excitationNeg(:,2)];
+excitationDiff = [excitationDiffPos(:,1) excitationDiffNeg(:,1)];

@@ -38,10 +38,10 @@ function [scaledDirection, scalingFactor, scaledContrast] = ScaleToReceptorContr
 %% Input validation
 
 %% Current desired receptor contrast
-currentDesiredContrast = ToDesiredReceptorContrast(direction, background, receptors);
+currentReceptorContrast = ToDesiredReceptorContrast(direction, background, receptors);
 
 %% Figure out scaling factor
-scalingFactor = currentDesiredContrast \ desiredContrast;
+scalingFactor = currentReceptorContrast \ desiredContrast;
 
 %% Scale direction
 scaledDirection = scalingFactor .* direction;
