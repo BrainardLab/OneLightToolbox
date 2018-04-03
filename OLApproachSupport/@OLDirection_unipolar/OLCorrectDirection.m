@@ -74,6 +74,8 @@ else
     %% Copy nominal primary into separate object
     nominalDirection = direction.copy(); % store unlinked copy of nominalDirection
     nominalDirection.SPDdifferentialDesired = direction.SPDdifferentialDesired;
+    nominalBackground = background.copy(); % store unlinked copy of nominalBackground
+    nominalBackground.SPDdifferentialDesired = background.SPDdifferentialDesired;
    
     %% Turn into fake cache-structure
     % Rolled-back code requires a cache-structure, this function creates
@@ -107,11 +109,17 @@ else
     direction.differentialPrimaryValues = correctedDirectionData.data(observerAge).differencePrimary;
     direction.SPDdifferentialDesired = nominalDirection.SPDdifferentialDesired;
 
+    % Update background business end
+    background.differentialPrimaryValues = correctedDirectionData.data(observerAge).backgroundPrimary;
+    background.SPDdifferentialDesired = nominalBackground.SPDdifferentialDesired;
+    
     % Update describe
     correctionDescribe = correctedDirectionData.data(32).correction;
     correctionDescribe.time = [time now];
     correctionDescribe.background = background; 
     correctionDescribe.nominalDirection = nominalDirection;
+    correctionDescribe.nominalBackground = nominalBackground;
+    correctionDescribe.correctedBackground = background;
     %correctionDescribe.nominalCombinedPrimaryValues = nominalCombinedPrimaryValues;
     %correctionDescribe.correctedCombinedPrimaryValues = correctedCombinedPrimaryValues;
 
