@@ -53,15 +53,30 @@ parser.parse(direction, background, receptors);
 assert(matchingCalibration(direction,background),'OneLightToolbox:ApproachSupport:OLValidateDirection:MismatchedCalibration',...
        'Direction and background do not share a calibration.');
 
-%% Convert to unipolar
-unipolarPositive = OLDirection_unipolar(direction.differentialPositive, direction.calibration);
-unipolarNegative = OLDirection_unipolar(direction.differentialNegative, direction.calibration);
+%% Get background SPD
+if isempty(background.SPDdifferentialDesired)
+    desiredBackgroundSPD = background.ToPredictedSPD;
+else
+    desiredBackgroundSPD = background.SPDdifferentialDesired;
+end
 
-%% Contrast unipolars
-[contrastsPos, excitationPos, excitationDiffPos] = ToDesiredReceptorContrast(unipolarPositive, background, receptors);
-[contrastsNeg, excitationNeg, excitationDiffNeg] = ToDesiredReceptorContrast(unipolarNegative, background, receptors);
+%% Add dark light
+desiredBackgroundSPD = desiredBackgroundSPD + background.calibration.computed.pr650MeanDark;
+
+%% Get combined direction + background SPD
+if isempty(direction.SPDdifferentialDesired)
+    SPDdifferentialDesired = direction.ToPredictedSPD;
+else
+    SPDdifferentialDesired = direction.SPDdifferentialDesired;
+end
+desiredPositive = SPDdifferentialDesired(:,1) + desiredBackgroundSPD;
+desiredNegative = SPDdifferentialDesired(:,2) + desiredBackgroundSPD;
+
+%% Calculate contrast
+[contrastsPos, excitationPos, excitationDiffPos] = SPDToReceptorContrast([desiredBackgroundSPD desiredPositive],receptors);
+[contrastsNeg, excitationNeg, excitationDiffNeg] = SPDToReceptorContrast([desiredBackgroundSPD desiredNegative],receptors);
 
 %% Combine outputs
-contrasts = [contrastsPos contrastsNeg];
+contrasts = mean(abs([contrastsPos(:,1) contrastsNeg(:,1)]),2);
 excitation = [excitationPos(:,1:2) excitationNeg(:,2)];
 excitationDiff = [excitationDiffPos(:,1) excitationDiffNeg(:,1)];
