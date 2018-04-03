@@ -53,4 +53,4 @@ assert(matchingCalibration(direction,background),'OneLightToolbox:ApproachSuppor
 %% Convert to unipolar
 unipolar = OLDirection_unipolar(direction.differentialPositive, direction.calibration);
 [unipolarContrasts, excitation, excitationDiff] = ToDesiredReceptorContrast(unipolar, background, receptors);
-contrasts = OLUnipolarToBipolarContrast(unipolarContrasts);
+contrasts = OLUnipolarToBipolarContrast(2*unipolarContrasts);

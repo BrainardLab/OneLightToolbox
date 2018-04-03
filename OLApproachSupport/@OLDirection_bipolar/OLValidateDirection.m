@@ -188,12 +188,12 @@ else
     %% Calculate nominal and actual excitation
     if ~isempty(receptors)        
         excitations.desired = SPDToReceptorExcitation([SPDs.desiredSPD],receptors);
-        excitations.predicted = SPDToReceptorExcitation([SPDs.predictedSPD],receptors);
+        %excitations.predicted = SPDToReceptorExcitation([SPDs.predictedSPD],receptors);
         excitations.actual = SPDToReceptorExcitation([SPDs.measuredSPD],receptors);
 
-        contrasts.desired = [ReceptorExcitationToReceptorContrast(excitations.desired(:,1:2)) ReceptorExcitationToReceptorContrast(excitations.desired(:,[1 3]))];
-        contrasts.predicted = [ReceptorExcitationToReceptorContrast(excitations.predicted(:,1:2)) ReceptorExcitationToReceptorContrast(excitations.predicted(:,[1 3]))];
-        contrasts.actual = [ReceptorExcitationToReceptorContrast(excitations.actual(:,1:2)) ReceptorExcitationToReceptorContrast(excitations.predicted(:,[1 3]))];
+        contrasts.desired = [ReceptorExcitationToReceptorContrast(excitations.desired(:,[1,2])) ReceptorExcitationToReceptorContrast(excitations.desired(:,[1,3]))];
+        %contrasts.predicted = [ReceptorExcitationToReceptorContrast(excitations.predicted(:,1:2)) ReceptorExcitationToReceptorContrast(excitations.predicted(:,[1 3]))];
+        contrasts.actual = [ReceptorExcitationToReceptorContrast(excitations.actual(:,[1,2])) ReceptorExcitationToReceptorContrast(excitations.actual(:,[1,3]))];
 
         %     predictedContrastPostreceptoral = [ComputePostreceptoralContrastsFromLMSContrasts(predictedContrastPos(1:3,1)),...
         %         ComputePostreceptoralContrastsFromLMSContrasts(predictedContrastNeg(1:3,1))];
@@ -201,18 +201,18 @@ else
         % Write direction.describe.validation output
         validation.receptors = receptors;
         validation.excitationDesired = excitations.desired;
-        validation.excitationPredicted = excitations.predicted;
+        %validation.excitationPredicted = excitations.predicted;
         validation.excitationActual = excitations.actual;
         validation.contrastDesired = contrasts.desired;
-        validation.contrastPredicted = contrasts.predicted;
+        %validation.contrastPredicted = contrasts.predicted;
         validation.contrastActual = contrasts.actual;
     else
         validation.receptors = [];
         validation.excitationDesired = [];
-        validation.excitationPredicted = [];
+       % validation.excitationPredicted = [];
         validation.excitationActual = [];
         validation.contrastDesired = [];
-        validation.contrastPredicted = [];
+        %validation.contrastPredicted = [];
         validation.contrastActual = [];
     end
 
