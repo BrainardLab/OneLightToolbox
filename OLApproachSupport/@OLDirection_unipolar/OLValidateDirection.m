@@ -176,6 +176,8 @@ else
     %% Measure SPDs
     % Call OLValidatePrimaryValues on all the differentialPrimaryValues of
     % all directions
+    validation.differentialPrimaryValues = direction.differentialPrimaryValues;
+    validation.measuredPrimaryValues = [background.differentialPrimaryValues, direction.differentialPrimaryValues+background.differentialPrimaryValues];
     SPDs = OLValidatePrimaryValues([background.differentialPrimaryValues, direction.differentialPrimaryValues+background.differentialPrimaryValues],direction.calibration,oneLight,radiometer, 'nAverage', parser.Results.nAverage, 'temperatureProbe', parser.Results.temperatureProbe);
 
     % Add desired SPDs to the SPDs structarray
