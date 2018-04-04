@@ -84,12 +84,20 @@ end
 % Use fsolve to find the right scale factor.  The advantage of this method
 % is that it properly takes the ambient into account, to the extent that
 % our core OLSpdToPrimary routine does that.
-options = optimset('fsolve');
-options = optimset(options,'Diagnostics','off','Display','off','LargeScale','off');
-if ~p.Results.verbose
-    options = optimset(options, 'Display', 'off');
-end
-scaleFactor = fsolve(@(scaleFactor) OLFindMaxSpectrumFun(scaleFactor,oneLightCal,targetSpd,p.Results.lambda,p.Results.findMin,p.Results.spdToleranceFraction),1,options);
+% options = optimset('fsolve');
+% options = optimset(options,'Diagnostics','off','Display','off','LargeScale','off');
+% if ~p.Results.verbose
+%     options = optimset(options, 'Display', 'off');
+% end
+% scaleFactor = fsolve(@(scaleFactor) OLFindMaxSpectrumFun(scaleFactor,oneLightCal,targetSpd,p.Results.lambda,p.Results.findMin,p.Results.spdToleranceFraction),1,options);
+
+%% Maximize luminance while staying at same relative spd
+minScaleFactor = 1e-4;
+options = optimset('fmincon');
+options = optimset(options,'Diagnostics','off','Display','iter','LargeScale','off','Algorithm','active-set', 'MaxIter', 10000, 'MaxFunEvals', 100000, 'TolFun', 1e-10, 'TolCon', 1e-10, 'TolX', 1e-10);
+vlb = minScaleFactor;
+vub = 1e4;
+scaleFactor = fmincon(@(x) OLFindMaxSpectrumFun(x,oneLightCal,targetSpd,p.Results.lambda,p.Results.findMin,p.Results.spdToleranceFraction),1,[],[],[],[],vlb,vub,[],options);
 
 maxSpd = scaleFactor*targetSpd;
 maxPrimary = OLSpdToPrimary(oneLightCal, maxSpd, 'lambda', p.Results.lambda);
@@ -131,10 +139,9 @@ end
 
 % Now do the right thing depending on whether we are maximizing or minimizing
 if (findMin)
-    f = abs(min(maxPrimary(:)));
+    f = max(maxPrimary(:));
 else
-    maxPrimary = max(maxPrimary(:));
-    f = maxPrimary-1;
+    f = -max(maxPrimary(:));
 end
 
 end
