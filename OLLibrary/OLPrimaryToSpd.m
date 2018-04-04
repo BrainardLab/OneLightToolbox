@@ -1,9 +1,9 @@
-function SPD = OLPrimaryToSpd(calibration, primary, varargin)
+function theSpd = OLPrimaryToSpd(calibration, primary, varargin)
 % Predict spectral power distribution from primar values
 %
 % Syntax:
-%   SPD = OLPrimaryToSpd(primary, calibration);
-%   SPD = OLPrimaryToSpd(primary, calibration, 'differentialMode', true);
+%   theSpd = OLPrimaryToSpd(primary, calibration);
+%   theSpd = OLPrimaryToSpd(primary, calibration, 'differentialMode', true);
 %
 % Description:
 %    Takes in vectors of primary values, and a OneLight calibration, and
@@ -20,13 +20,13 @@ function SPD = OLPrimaryToSpd(calibration, primary, varargin)
 %                  processed by OLInitCal)
 %
 % Outputs:
-%    SPD         - Spectral power distribution(s) predicted from the
+%    theSpd      - Spectral power distribution(s) predicted from the
 %                  primary values and calibration information
 %
 % Optional key/value pairs:
-%    'differentialMode' - (true/false). Do not add in the
-%                         dark light and allow primaries to be in range
-%                         [-1,1] rather than [0,1]. Default false.
+%    'differentialMode' - Boolean. Do not add in the
+%                  dark light and allow primaries to be in range
+%                  [-1,1] rather than [0,1]. Default false.
 %
 % See also:
 %    OLSpdToPrimary, OLPrimaryToSettings, OLSettingsToStartsStops,
@@ -58,9 +58,9 @@ assert(isfield(calibration, 'computed'),...
 if (p.Results.differentialMode)
     primary(primary < -1) = -1;
     primary(primary > 1) = 1;
-    SPD = calibration.computed.pr650M * primary;
+    theSpd = calibration.computed.pr650M * primary;
 else
     primary(primary < 0) = 0;
     primary(primary > 1) = 1;
-    SPD = calibration.computed.pr650M * primary + calibration.computed.pr650MeanDark;
+    theSpd = calibration.computed.pr650M * primary + calibration.computed.pr650MeanDark;
 end
