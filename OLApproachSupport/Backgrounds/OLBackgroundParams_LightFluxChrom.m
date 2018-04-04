@@ -64,14 +64,29 @@ classdef OLBackgroundParams_LightFluxChrom < OLBackgroundParams
             parser.addRequired('calibration',@isstruct);
             parser.parse(params,calibration);
             
+            % Parameters maybe we should pass
+            lambda = 0;
+            spdToleranceFraction = 0.005;
+            primaryHeadroom = params.primaryHeadRoom;
+            
             % Generate background
-            maxBackgroundPrimary = OLPrimaryInvSolveChrom(calibration, params.lightFluxDesiredXY, 'PrimaryHeadroom', params.primaryHeadRoom);
+            [maxBackgroundPrimary, minBackgroundPrimary, maxLum, minLum]  = ...
+                OLPrimaryInvSolveChrom(calibration, params.lightFluxDesiredXY, ...
+                'primaryHeadroom',primaryHeadroom, ...
+                'lambda',lambda, 'spdToleranceFraction',spdToleranceFraction);
             
             % Get nominal spd
             maxBackgroundSpd = OLPrimaryToSpd(calibration,maxBackgroundPrimary);
+            checkLum = maxLum/params.lightFluxDownFactor;
+            if (checkLum < minLum)
+                error('Not enough contrast available to make the desired background');
+            end
+            desiredLum = minLum + (checkLum-minLum)/2;
+            backgroundSpd = maxBackgroundSpd*(desiredLum/maxLum);
             
             % Downfactor it and convert back to primary space
-            backgroundPrimary = OLSpdToPrimary(calibration,maxBackgroundSpd/params.lightFluxDownFactor,'lambda',0.000);
+            backgroundPrimary = OLSpdToPrimary(calibration,backgroundSpd, ...
+                'lambda',lambda, 'checkSpd',true, 'spdToleranceFraction',spdToleranceFraction);
         end
         
         function background = OLBackgroundNominalFromParams(params, calibration)
