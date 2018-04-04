@@ -21,6 +21,16 @@ function [primaries,predictedSpd] = OLSpdToPrimary(oneLightCal, targetSpd, varar
 %    This routine keeps values in the range [0,1] in normal mode, and in
 %    range [-1,1] in differential mode.
 %
+%    The routine works by using lsqlin to minimize the SSE between target and
+%    desired spectra.  The value of the 'lambda' key is smoothing parameter.
+%    This weights an additional error term that tries to minimize the SSE
+%    of the difference between neighboring primary values. This can reduce
+%    ringing in the obtained primaries, at the cost of increasing the SSE
+%    to which the target spd is reproduced.
+%
+%    Set value of 'checkSpd' to true to force a check on how well the
+%    target is acheived.
+%
 % Inpust:
 %    oneLightCal       - Struct. OneLight calibration file after it has been
 %                        processed by OLInitCal.
@@ -36,7 +46,7 @@ function [primaries,predictedSpd] = OLSpdToPrimary(oneLightCal, targetSpd, varar
 % 
 % Optional Key-Value Pairs:
 %  'verbose'           - Boolean (default false). Provide more diagnostic output.
-%  'lambda'            - Scalar (default 0.1). Value of smoothing
+%  'lambda'            - Scalar (default 0.1). Value of primary smoothing
 %                        parameter.  Smaller values lead to less smoothing,
 %                        with 0 doing no smoothing at all.
 %  'differentialMode' - true/false (default false). Run in differential
@@ -158,9 +168,9 @@ end
 primaries(primaries > 1) = 1;
 
 %% Predict spd, and check if specified
-predictedSpd = OLPrimaryToSpd(oneLightCal,primaries);
+predictedSpd = OLPrimaryToSpd(oneLightCal,primaries,'differentialMode',params.differentialMode);
 if (p.Results.checkSpd)
-    tolerance = p.Results.spdToleranceFraction*max(targetSpd(:));
+    tolerance = p.Results.spdToleranceFraction*max(abs(targetSpd(:)));
     if (max(abs(targetSpd(:)-predictedSpd(:))) > tolerance)
         error('Predicted spd not within tolerance of target');
     end
