@@ -46,7 +46,7 @@ function [primaries,predictedSpd] = OLSpdToPrimary(oneLightCal, targetSpd, varar
 % 
 % Optional Key-Value Pairs:
 %  'verbose'           - Boolean (default false). Provide more diagnostic output.
-%  'lambda'            - Scalar (default 0.1). Value of primary smoothing
+%  'lambda'            - Scalar (default 0.005). Value of primary smoothing
 %                        parameter.  Smaller values lead to less smoothing,
 %                        with 0 doing no smoothing at all.
 %  'differentialMode' - true/false (default false). Run in differential
@@ -74,11 +74,12 @@ function [primaries,predictedSpd] = OLSpdToPrimary(oneLightCal, targetSpd, varar
 %                  should be used.
 %   06/04/17  dhb  Got rid of old code that dated from before we switched to
 %                  effective primaries concept.
+%   04/04/18  dhb  Change lambda default to 0.005.
 
 %% Parse the input
 p = inputParser;
 p.addParameter('verbose', false, @islogical);
-p.addParameter('lambda', 0.1, @isscalar);
+p.addParameter('lambda', 0.005, @isscalar);
 p.addParameter('differentialMode', false, @islogical);
 p.addParameter('checkSpd', false, @islogical);
 p.addParameter('spdToleranceFraction', 0.01, @isscalar);

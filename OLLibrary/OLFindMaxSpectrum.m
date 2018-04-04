@@ -37,8 +37,8 @@ function [maxSpd, maxPrimary, scaleFactor] = OLFindMaxSpectrum(oneLightCal, targ
 %
 % Optional Key-Value Pairs:
 %  'verbose'          - Boolean (default false). Provide more diagnostic output.
-%  'lambda'           - Scalar  (default 0.1). Value of smoothing parameter.  Smaller
-%                       lead to less smoothing, with 0 doing no
+%  'lambda'           - Scalar  (default 0.005). Value of smoothing parameter.
+%                       Smaller lead to less smoothing, with 0 doing no
 %                       smoothing at all. This gets passed through to
 %                       OLSpdToPrimary.
 %  'checkSpd'         - Boolean (default false). Because of smoothing and
@@ -63,7 +63,7 @@ function [maxSpd, maxPrimary, scaleFactor] = OLFindMaxSpectrum(oneLightCal, targ
 %% Parse the input
 p = inputParser;
 p.addParameter('verbose', false, @islogical);
-p.addParameter('lambda', 0.1, @isscalar);
+p.addParameter('lambda', 0.005, @isscalar);
 p.addParameter('checkSpd', false, @islogical);
 p.addParameter('spdToleranceFraction', 0.01, @isscalar);
 p.addParameter('findMin', false, @islogical);
