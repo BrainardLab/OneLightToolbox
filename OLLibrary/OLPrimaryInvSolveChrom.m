@@ -58,6 +58,13 @@ function [maxPrimary,minPrimary,maxLum,minLum] = ...
 %                                 T_xyzCIEPhys2
 %                                 T_xyzCIEPhys10
 %                             - Default 'xyzCIEPhys10'
+%   'lambda'                  - Scalar. Smoothing value passed through to called
+%                               routines, eventually for use in OLSpdToPrimary.
+%                               Default 0.
+%   'spdToleranceFraction'   -  Scalar. How closely min spectrum must match max in
+%                               relative spd, in fractional terms. Relaxing
+%                               this can get you more contrast between min
+%                               and max. Default 0.01.
 %
 % See also:
 %
@@ -73,7 +80,11 @@ function [maxPrimary,minPrimary,maxLum,minLum] = ...
 %{
 % Get the OneLightToolbox demo cal structure
 cal = OLGetCalibrationStructure('CalibrationType','DemoCal','CalibrationFolder',fullfile(tbLocateToolbox('OneLightToolbox'),'OLDemoCal'),'CalibrationDate','latest');
-[maxPrimary,minPrimary,maxLum,minLum] = OLPrimaryInvSolveChrom(cal, [0.33 0.33])
+[maxPrimary,minPrimary,maxLum,minLum] = OLPrimaryInvSolveChrom(cal, [0.33 0.33], ...
+    'lambda',0,'spdToleranceFraction',0.01);
+fprintf('Max lum %0.2f, min lum %0.2f\n',maxLum,minLum);
+fprintf('Luminance weber contrast, low to high: %0.2f%%\n',100*(maxLum-minLum)/minLum);
+fprintf('Luminance michaelson contrast, around mean: %0.2f%%\n',100*(maxLum-minLum)/(maxLum+minLum));
 %}
 
 %% Input parser
@@ -83,6 +94,8 @@ p.addParameter('PrimaryTolerance',1e-6,@isscalar);
 p.addParameter('CheckOutOfRange',true,@islogical);
 p.addParameter('InitialLuminanceFactor',0.2,@isnumeric);
 p.addParameter('WhichXYZ','xyzCIEPhys10',@ischar);
+p.addParameter('lambda', 0.0, @isscalar);
+p.addParameter('spdToleranceFraction', 0.01, @isscalar);
 p.parse(varargin{:});
 
 %% Set up some parameters
@@ -97,9 +110,12 @@ devicePrimaryBasis = cal.computed.pr650M;
 nPrimaries = size(devicePrimaryBasis, 2);
 ambientSpd = cal.computed.pr650MeanDark;
 
-%% Get the maximum luminance for this calibration
+%% Get the maximum device luminance for this calibration
 maxSpd = devicePrimaryBasis*ones(size(devicePrimaryBasis,2),1) + ambientSpd;
-maxLuminance = T_xyz(2,:)*maxSpd;
+maxXYZ = T_xyz*maxSpd;
+maxLuminance = maxXYZ(2);
+maxxyY = XYZToxyY(maxXYZ);
+ambientLuminance = T_xyz(2,:)*ambientSpd;
 
 %% Construct basis functions for primaries
 %
@@ -144,7 +160,7 @@ if (any(initialPrimaries < 0 | initialPrimaries > 1))
         error('');
 end
     
-% Chromaticity check
+%% Chromaticity check
 initialxyYTolerance = 1e-5;
 initialXYZ = T_xyz*devicePrimaryBasis*initialPrimaries;
 initialxyY = XYZToxyY(initialXYZ);
@@ -152,7 +168,7 @@ if (any( max(abs(xy_target-initialxyY(1:2))) > initialxyYTolerance))
     error('Initial primaries do not have desired chromaticity');
 end
 
-%% Second step: maximize luminance while staying at chromaticity
+%% Maximize luminance while staying at chromaticity
 options = optimset('fmincon');
 options = optimset(options,'Diagnostics','off','Display','off','LargeScale','off','Algorithm','active-set', 'MaxIter', 10000, 'MaxFunEvals', 100000, 'TolFun', 1e-10, 'TolCon', 1e-10, 'TolX', 1e-10);
 maxHeadroom = p.Results.PrimaryHeadroom;
@@ -178,8 +194,11 @@ maxLum = T_xyz(2,:)*maxSpd;
 
 %% Get spd and then find minimum luminance with same spd
 lambda = 0;
-[minSpd, minPrimary] = OLFindMaxSpectrum(cal, maxSpd, 'lambda', lambda, ...
-    'findMin', true, 'checkSpd', true);
+[minSpd, minPrimary] = OLFindMaxSpectrum(cal, maxSpd, ...
+    'lambda', lambda, ...
+    'findMin', true, ...
+    'spdToleranceFraction', p.Results.spdToleranceFraction, ...
+    'checkSpd', true);
 minLum = T_xyz(2,:)*minSpd;
 
 end
