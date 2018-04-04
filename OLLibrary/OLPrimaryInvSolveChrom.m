@@ -81,7 +81,7 @@ function [maxPrimary,minPrimary,maxLum,minLum] = ...
 % Get the OneLightToolbox demo cal structure
 cal = OLGetCalibrationStructure('CalibrationType','DemoCal','CalibrationFolder',fullfile(tbLocateToolbox('OneLightToolbox'),'OLDemoCal'),'CalibrationDate','latest');
 [maxPrimary,minPrimary,maxLum,minLum] = OLPrimaryInvSolveChrom(cal, [0.33 0.33], ...
-    'lambda',0,'spdToleranceFraction',0.01);
+    'lambda',0,'spdToleranceFraction',0.005);
 fprintf('Max lum %0.2f, min lum %0.2f\n',maxLum,minLum);
 fprintf('Luminance weber contrast, low to high: %0.2f%%\n',100*(maxLum-minLum)/minLum);
 fprintf('Luminance michaelson contrast, around mean: %0.2f%%\n',100*(maxLum-minLum)/(maxLum+minLum));
