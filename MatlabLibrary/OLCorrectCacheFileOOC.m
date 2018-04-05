@@ -1,4 +1,4 @@
-function cacheData = OLCorrectCacheFileOOC(cacheData, cal, ol, spectroRadiometerOBJ, emailRecipient, ...
+function cacheData = OLCorrectCacheFileOOC(cacheData, cal, ol, spectroRadiometerOBJ, ...
     meterType, spectroRadiometerOBJWillShutdownAfterMeasurement, varargin)
 % results = OLCorrectCacheFileOOC(cacheFileName, emailRecipient, ...
 %    meterType, spectroRadiometerOBJ, spectroRadiometerOBJWillShutdownAfterMeasurement, varargin)
@@ -76,10 +76,6 @@ p.parse(varargin{:});
 describe = p.Results;
 powerLevels = describe.powerLevels;
 takeTemperatureMeasurements = describe.takeTemperatureMeasurements;
-
-if isempty(emailRecipient)
-    emailRecipient = GetWithDefault('Send status email to','igdalova@mail.med.upenn.edu');
-end
 
 % All variables assigned in the following if (isempty(..)) block (except
 % spectroRadiometerOBJ) must be declared as persistent
@@ -289,49 +285,49 @@ end
     startMeas = GetSecs;
     fprintf('- Performing radiometer measurements.\n');
     
-    % Take reference measurements
-    if describe.FullOnMeas
-        fprintf('- Full-on measurement \n');
-        [starts,stops] = OLSettingsToStartsStops(cal,1*ones(cal.describe.numWavelengthBands, 1));
-        results.fullOnMeas.meas = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
-        results.fullOnMeas.starts = starts;
-        results.fullOnMeas.stops = stops;
-        results.fullOnMeas.predictedFromCal = cal.raw.fullOn(:, 1);
-        if (takeTemperatureMeasurements)
-            printf('Taking temperature for fullOnMeas\n');
-            [status, results.temperature.fullOnMeas] = theLJdev.measure();
-        end
-    end
-    
-    if describe.HalfOnMeas
-        fprintf('- Half-on measurement \n');
-        [starts,stops] = OLSettingsToStartsStops(cal,0.5*ones(cal.describe.numWavelengthBands, 1));
-        results.halfOnMeas.meas = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
-        results.halfOnMeas.starts = starts;
-        results.halfOnMeas.stops = stops;
-        results.halfOnMeas.predictedFromCal = cal.raw.halfOnMeas(:, 1);
-        if (takeTemperatureMeasurements)
-            [status, results.temperature.halfOnMeas] = theLJdev.measure();
-        end 
-    end
-    
-    if describe.DarkMeas
-        fprintf('- Dark measurement \n');
-        [starts,stops] = OLSettingsToStartsStops(cal,0*ones(cal.describe.numWavelengthBands, 1));
-        results.offMeas.meas = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
-        results.offMeas.starts = starts;
-        results.offMeas.stops = stops;
-        results.offMeas.predictedFromCal = cal.raw.darkMeas(:, 1);
-        if (takeTemperatureMeasurements)
-            [status, results.temperature.offMeas] = theLJdev.measure();
-        end
-    end
-    
-    if describe.CalStateMeas
-        fprintf('- State measurements \n');
-        [~, calStateMeas] = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, 'standAlone',true);
-        OLCalibrator.SaveStateMeasurements(cal, calStateMeas);
-    end
+%     % Take reference measurements
+%     if describe.FullOnMeas
+%         fprintf('- Full-on measurement \n');
+%         [starts,stops] = OLSettingsToStartsStops(cal,1*ones(cal.describe.numWavelengthBands, 1));
+%         results.fullOnMeas.meas = OLTakeMeasurementOOC(ol, [], spectroRadiometerOBJ, starts, stops, S, [true false], nAverage);
+%         results.fullOnMeas.starts = starts;
+%         results.fullOnMeas.stops = stops;
+%         results.fullOnMeas.predictedFromCal = cal.raw.fullOn(:, 1);
+%         if (takeTemperatureMeasurements)
+%             printf('Taking temperature for fullOnMeas\n');
+%             [status, results.temperature.fullOnMeas] = theLJdev.measure();
+%         end
+%     end
+%     
+%     if describe.HalfOnMeas
+%         fprintf('- Half-on measurement \n');
+%         [starts,stops] = OLSettingsToStartsStops(cal,0.5*ones(cal.describe.numWavelengthBands, 1));
+%         results.halfOnMeas.meas = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
+%         results.halfOnMeas.starts = starts;
+%         results.halfOnMeas.stops = stops;
+%         results.halfOnMeas.predictedFromCal = cal.raw.halfOnMeas(:, 1);
+%         if (takeTemperatureMeasurements)
+%             [status, results.temperature.halfOnMeas] = theLJdev.measure();
+%         end 
+%     end
+%     
+%     if describe.DarkMeas
+%         fprintf('- Dark measurement \n');
+%         [starts,stops] = OLSettingsToStartsStops(cal,0*ones(cal.describe.numWavelengthBands, 1));
+%         results.offMeas.meas = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
+%         results.offMeas.starts = starts;
+%         results.offMeas.stops = stops;
+%         results.offMeas.predictedFromCal = cal.raw.darkMeas(:, 1);
+%         if (takeTemperatureMeasurements)
+%             [status, results.temperature.offMeas] = theLJdev.measure();
+%         end
+%     end
+%     
+%     if describe.CalStateMeas
+%         fprintf('- State measurements \n');
+%         [~, calStateMeas] = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, 'standAlone',true);
+%         OLCalibrator.SaveStateMeasurements(cal, calStateMeas);
+%     end
     
     % Loop over the stimuli in the cache file and take a measurement with the PR-670.
     iter = 1;
@@ -342,10 +338,10 @@ end
                 if describe.ReducedPowerLevels
                     % Only take three measurements
                     if describe.SkipBackground
-                        nPowerLevels = 2
+                        nPowerLevels = 2;
                         powerLevels = [-1 1];
                     else
-                        if strcmp(cacheData.data(32).describe.params.receptorIsolateMode, 'PIPR')
+                        if true
                             nPowerLevels = 2;
                             powerLevels = [0 1];
                         else
@@ -354,7 +350,7 @@ end
                         end
                     end
                 else
-                    % Take a full set of measurements
+                    Take a full set of measurements
                     nPowerLevels = length(powerLevels);
                 end
                 
@@ -386,7 +382,7 @@ end
                     [starts,stops] = OLSettingsToStartsStops(cal, settings);
                     
                     % Take the measurements
-                    results.modulationAllMeas(i).meas = OLTakeMeasurementOOC(ol, od, spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
+                    results.modulationAllMeas(i).meas = OLTakeMeasurementOOC(ol, [], spectroRadiometerOBJ, starts, stops, S, [true false], nAverage);
                     
                     % Save out information about this.
                     results.modulationAllMeas(i).powerLevel = powerLevels(i);
@@ -471,7 +467,7 @@ end
                 
                 % Save out information about the correction
                 [contrasts(:,iter) postreceptoralContrasts(:,iter)] = ComputeAndReportContrastsFromSpds(['Iteration ' num2str(iter, '%02.0f')] ,theCanonicalPhotoreceptors,T_receptors,...
-                    results.modulationBGMeas.meas.pr650.spectrum,results.modulationMaxMeas.meas.pr650.spectrum,describe.postreceptoralCombinations,true);
+                    results.modulationBGMeas.meas.pr650.spectrum,results.modulationMaxMeas.meas.pr650.spectrum,'doPostreceptoral',true);
                 
                 backgroundPrimaryCorrectedAll(:,iter) = backgroundPrimaryCorrected;
                 deltaBackgroundPrimaryInferredAll(:,iter)= deltaBackgroundPrimaryInferred;
