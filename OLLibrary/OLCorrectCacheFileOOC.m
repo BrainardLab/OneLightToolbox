@@ -1,5 +1,5 @@
-function [cacheData olCache openSpectroRadiometerOBJ] = OLCorrectCacheFileOOC(cacheData, cal, ol, spectroRadiometerOBJ, ...
-    meterType, spectroRadiometerOBJWillShutdownAfterMeasurement, varargin)
+function [cacheData olCache openSpectroRadiometerOBJ] = OLCorrectCacheFileOOC(cacheFileNameFullPath, emailRecipient, ...
+    meterType, spectroRadiometerOBJ, spectroRadiometerOBJWillShutdownAfterMeasurement, varargin)
 %%OLCorrectCacheFileOOC  Use iterated procedure to optimize modulations in a cache file
 %    results = OLCorrectCacheFileOOC(cacheFileNameFullPath, emailRecipient, ...
 %    meterType, spectroRadiometerOBJ, spectroRadiometerOBJWillShutdownAfterMeasurement, varargin)
@@ -88,13 +88,13 @@ p.addParameter('zeroPrimariesAwayFromPeak', false, @islogical);
 p.parse(varargin{:});
 correctDescribe = p.Results;
 
-% %% Set up email recipient
-% if isempty(emailRecipient)
-%     emailRecipient = GetWithDefault('Send status email to','igdalova@mail.med.upenn.edu');
-% end
+%% Set up email recipient
+if isempty(emailRecipient)
+    emailRecipient = GetWithDefault('Send status email to','igdalova@mail.med.upenn.edu');
+end
 
-% %% Get cached modulation data as well as calibration file
-% [olCache,cacheData,cal,cacheDir,cacheFileName] = OLGetModulationCacheData(cacheFileNameFullPath, correctDescribe);
+%% Get cached modulation data as well as calibration file
+[olCache,cacheData,cal,cacheDir,cacheFileName] = OLGetModulationCacheData(cacheFileNameFullPath, correctDescribe);
 
 %% Force useAverageGamma?
 if (correctDescribe.useAverageGamma)
@@ -118,22 +118,21 @@ if ~(correctDescribe.doCorrection)
     return;
 end
 
-% %% Open up a radiometer object
-% %
-% % Set meterToggle so that we don't use the Omni radiometer here.
-% %
-% % All variables assigned in the following if (isempty(..)) block (except
-% % spectroRadiometerOBJ) must be declared as persistent.
-% %
-% % DHB: I DON'T UNDERSTAND THE USE OF PERSISTENT VARIABLES HERE.  CAN'T WE GET
-% % THESE OUT OF THE RETURNED OBJECT WHENEVER WE WANT THEM?
-% persistent S
-% persistent nAverage
-% persistent theMeterTypeID
-% if (isempty(spectroRadiometerOBJ))
-%     [spectroRadiometerOBJ,S,nAverage,theMeterTypeID] = OLOpenSpectroRadiometerObj(meterType);
-% end
-S = cal.describe.S;
+%% Open up a radiometer object
+%
+% Set meterToggle so that we don't use the Omni radiometer here.
+%
+% All variables assigned in the following if (isempty(..)) block (except
+% spectroRadiometerOBJ) must be declared as persistent.
+%
+% DHB: I DON'T UNDERSTAND THE USE OF PERSISTENT VARIABLES HERE.  CAN'T WE GET
+% THESE OUT OF THE RETURNED OBJECT WHENEVER WE WANT THEM?
+persistent S
+persistent nAverage
+persistent theMeterTypeID
+if (isempty(spectroRadiometerOBJ))
+    [spectroRadiometerOBJ,S,nAverage,theMeterTypeID] = OLOpenSpectroRadiometerObj(meterType);
+end
 meterToggle = [true false];
 
 %% Save a copy of the radiometer object
@@ -142,37 +141,37 @@ meterToggle = [true false];
 % ONE WE HAVE?
 openSpectroRadiometerOBJ = spectroRadiometerOBJ;
 
-% %% Attempt to open the LabJack temperature sensing device
-% %
-% % DHB: WHAT IS THE QUITNOW VARIABLE?  RETURNING WITHOUT MAKING ANY
-% % MEASUREMENTS DOES NOT SEEM LIKE THE RIGHT MOVE HERE.  CHECK.
-% if (correctDescribe.takeTemperatureMeasurements)
-%     % Gracefully attempt to open the LabJack
-%     [correctDescribe.takeTemperatureMeasurements, quitNow, theLJdev] = OLCalibrator.OpenLabJackTemperatureProbe(correctDescribe.takeTemperatureMeasurements);
-%     if (quitNow)
-%         return;
-%     end
-% else
-%     theLJdev = [];
-% end
+%% Attempt to open the LabJack temperature sensing device
+%
+% DHB: WHAT IS THE QUITNOW VARIABLE?  RETURNING WITHOUT MAKING ANY
+% MEASUREMENTS DOES NOT SEEM LIKE THE RIGHT MOVE HERE.  CHECK.
+if (correctDescribe.takeTemperatureMeasurements)
+    % Gracefully attempt to open the LabJack
+    [correctDescribe.takeTemperatureMeasurements, quitNow, theLJdev] = OLCalibrator.OpenLabJackTemperatureProbe(correctDescribe.takeTemperatureMeasurements);
+    if (quitNow)
+        return;
+    end
+else
+    theLJdev = [];
+end
 
-% %% Open up the OneLight
-% %
-% % And let user get the radiometer set up if desired.
-% ol = OneLight;
-% if ~correctDescribe.NoAdjustment
-%     ol.setAll(true);
-%     pauseDuration = 0;
-%     fprintf('- Focus the radiometer and press enter to pause %d seconds and start measuring.\n', ...
-%         pauseDuration);
-%     input('');
-%     ol.setAll(false);
-%     pause(pauseDuration);
-% else
-%     ol.setAll(false);
-% end
+%% Open up the OneLight
+%
+% And let user get the radiometer set up if desired.
+ol = OneLight;
+if ~correctDescribe.NoAdjustment
+    ol.setAll(true);
+    pauseDuration = 0;
+    fprintf('- Focus the radiometer and press enter to pause %d seconds and start measuring.\n', ...
+        pauseDuration);
+    input('');
+    ol.setAll(false);
+    pause(pauseDuration);
+else
+    ol.setAll(false);
+end
 
-% try
+try
     startMeas = GetSecs;
     fprintf('- Performing radiometer measurements.\n');
     
@@ -352,7 +351,7 @@ openSpectroRadiometerOBJ = spectroRadiometerOBJ;
                 theCanonicalPhotoreceptors = cacheData.data(correctDescribe.OBSERVER_AGE).describe.photoreceptors;
                 T_receptors = cacheData.data(correctDescribe.OBSERVER_AGE).describe.T_receptors;
                 [contrasts(:,iter) postreceptoralContrasts(:,iter)] = ComputeAndReportContrastsFromSpds(['Iteration ' num2str(iter, '%02.0f')] ,theCanonicalPhotoreceptors,T_receptors,...
-                    backgroundSpdMeasured,modulationSpdMeasured,'doPostreceptoral',true);
+                    backgroundSpdMeasured,modulationSpdMeasured,correctDescribe.postreceptoralCombinations,true);
                 
                 % Save the information in a convenient form for later.
                 backgroundSpdMeasuredAll(:,iter) = backgroundSpdMeasured;
@@ -428,30 +427,30 @@ openSpectroRadiometerOBJ = spectroRadiometerOBJ;
     % Turn the OneLight mirrors off.
     ol.setAll(false);
     
-%     % Close the radiometer
-%     if (spectroRadiometerOBJWillShutdownAfterMeasurement)
-%         if (~isempty(spectroRadiometerOBJ))
-%             spectroRadiometerOBJ.shutDown();
-%             openSpectroRadiometerOBJ = [];
-%         end
-%     end
-%     
-%     % Check if we want to do splatter calculations
-%     try
-%         OLAnalyzeValidationReceptorIsolate(validationPath, 'short');
-%     catch e
-%         fprintf('Caught error during call to OLAnalyzeValidationReceptorIsolate\n');
-%         fprintf('The orignal error message was: %s\n',e.message);
-%     end
-%     
-%     % Something went wrong, try to close radiometer gracefully
-% catch e
-%     if (~isempty(spectroRadiometerOBJ))
-%         spectroRadiometerOBJ.shutDown();
-%         openSpectroRadiometerOBJ = [];
-%     end
-%     rethrow(e)
-% end
+    % Close the radiometer
+    if (spectroRadiometerOBJWillShutdownAfterMeasurement)
+        if (~isempty(spectroRadiometerOBJ))
+            spectroRadiometerOBJ.shutDown();
+            openSpectroRadiometerOBJ = [];
+        end
+    end
+    
+    % Check if we want to do splatter calculations
+    try
+        OLAnalyzeValidationReceptorIsolate(validationPath, 'short');
+    catch e
+        fprintf('Caught error during call to OLAnalyzeValidationReceptorIsolate\n');
+        fprintf('The orignal error message was: %s\n',e.message);
+    end
+    
+    % Something went wrong, try to close radiometer gracefully
+catch e
+    if (~isempty(spectroRadiometerOBJ))
+        spectroRadiometerOBJ.shutDown();
+        openSpectroRadiometerOBJ = [];
+    end
+    rethrow(e)
+end
 
 end
 
