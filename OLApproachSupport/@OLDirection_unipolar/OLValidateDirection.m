@@ -27,13 +27,13 @@ function [validation, SPDs, excitations, contrasts] = OLValidateDirection(direct
 %     2) the actual excitations/contrasts, calculated from the measured
 %        SPDs
 %
-%    This method save a validation by appending it to the the
+%    This method saves a validation by appending it to the the
 %    describe.validation field of the OLDirection.
 %
 % Inputs:
 %    direction   - OLDirection_unipolar object specifying the direction to
 %                  validate.
-%    background  - OLDireciton_unipolar object specifying the background
+%    background  - OLDirection_unipolar object specifying the background
 %                  around which to validate.
 %    oneLight    - a oneLight device driver object to control a OneLight
 %                  device, can be real or simulated

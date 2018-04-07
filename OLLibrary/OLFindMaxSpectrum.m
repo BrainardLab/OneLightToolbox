@@ -81,23 +81,15 @@ if (all(targetSpd(:) == 0))
     error('Cannot run this with target all zeros');
 end
 
-% Use fsolve to find the right scale factor.  The advantage of this method
-% is that it properly takes the ambient into account, to the extent that
-% our core OLSpdToPrimary routine does that.
-% options = optimset('fsolve');
-% options = optimset(options,'Diagnostics','off','Display','off','LargeScale','off');
-% if ~p.Results.verbose
-%     options = optimset(options, 'Display', 'off');
-% end
-% scaleFactor = fsolve(@(scaleFactor) OLFindMaxSpectrumFun(scaleFactor,oneLightCal,targetSpd,p.Results.lambda,p.Results.findMin,p.Results.spdToleranceFraction),1,options);
-
 %% Maximize luminance while staying at same relative spd
 minScaleFactor = 1e-4;
 options = optimset('fmincon');
-options = optimset(options,'Diagnostics','off','Display','iter','LargeScale','off','Algorithm','active-set', 'MaxIter', 10000, 'MaxFunEvals', 100000, 'TolFun', 1e-10, 'TolCon', 1e-10, 'TolX', 1e-10);
+options = optimset(options,'Diagnostics','off','Display','off','LargeScale','off','Algorithm','active-set', 'MaxIter', 10000, 'MaxFunEvals', 1000, 'TolFun', 1e-10, 'TolCon', 1e-10, 'TolX', 1e-10);
 vlb = minScaleFactor;
 vub = 1e4;
-scaleFactor = fmincon(@(x) OLFindMaxSpectrumFun(x,oneLightCal,targetSpd,p.Results.lambda,p.Results.findMin,p.Results.spdToleranceFraction),1,[],[],[],[],vlb,vub,[],options);
+scaleFactor = fmincon(@(x) OLFindMaxSpectrumFun(x,oneLightCal,targetSpd,p.Results.lambda,p.Results.findMin,p.Results.spdToleranceFraction),1,[],[],[],[], ...
+    vlb,vub,@(x) OLFindMaxSpectrumCon(x, oneLightCal, targetSpd, p.Results.lambda,p.Results.spdToleranceFraction),...
+    options);
 
 maxSpd = scaleFactor*targetSpd;
 maxPrimary = OLSpdToPrimary(oneLightCal, maxSpd, 'lambda', p.Results.lambda);
@@ -116,26 +108,20 @@ end
 
 end
 
-% This is the function that fsolve tries to drive to 0 by varying its first
+% This is the function that fmincon tries to drive to minimize
 % argument.
 function f = OLFindMaxSpectrumFun(scaleFactor, oneLightCal, targetSpd, lambda, findMin, spdToleranceFraction)
 
-% Scale factor not acceptable if we don't get a properly scaled version of
-% the target
 maxPrimary = OLSpdToPrimary(oneLightCal, scaleFactor*targetSpd, 'lambda', lambda);
-predTargetSpd = OLPrimaryToSpd(oneLightCal,maxPrimary)/scaleFactor;
-if (max(abs(targetSpd(:)-predTargetSpd(:))) > spdToleranceFraction*max(targetSpd(:)))
-    f = Inf;
-    return;
-end
 
-% Negative light makes no sense, don't allow negative scale factors.
-% Actually, don't allow ridiculously small scale factors, as that gets us
-% into a world of numerical hurt.
-if (scaleFactor <= 1e-4)
-    f = Inf;
-    return;
-end
+
+% % Scale factor not acceptable if we don't get a properly scaled version of
+% % the target
+% predTargetSpd = OLPrimaryToSpd(oneLightCal,maxPrimary)/scaleFactor;
+% if (max(abs(targetSpd(:)-predTargetSpd(:))) > spdToleranceFraction*max(targetSpd(:)))
+%     f = realmax;
+%     return;
+% end
 
 % Now do the right thing depending on whether we are maximizing or minimizing
 if (findMin)
@@ -143,6 +129,24 @@ if (findMin)
 else
     f = -max(maxPrimary(:));
 end
+
+end
+
+% This is the constraint function that keeps the relative spectrum correct
+function [c, ceq] = OLFindMaxSpectrumCon(scaleFactor, oneLightCal, targetSpd, lambda, spdToleranceFraction)
+
+% Scale factor not acceptable if we don't get a properly scaled version of
+% the target
+maxPrimary = OLSpdToPrimary(oneLightCal, scaleFactor*targetSpd, 'lambda', lambda);
+predTargetSpd = OLPrimaryToSpd(oneLightCal,maxPrimary)/scaleFactor;
+diffSpd = abs(targetSpd(:)-predTargetSpd(:));
+
+% Multiplying by 0.999 keeps us enough within constraint so that the check
+% after the search does not fail.
+cVec = diffSpd - 0.999*spdToleranceFraction*max(targetSpd(:));
+c = cVec;
+
+ceq = 0;
 
 end
 
