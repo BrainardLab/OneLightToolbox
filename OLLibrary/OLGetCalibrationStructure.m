@@ -83,7 +83,7 @@ if (isempty(params.CalibrationType))
         % Show the available calibration types.
         fprintf('\n*** Available Calibration Types ***\n\n');
         for i = 1:length(availableCalTypes)
-            fprintf('%d - %s\n', i, availableCalTypes(i).char);
+            fprintf('%d - %s\n', i, availableCalTypes{i});
         end
         fprintf('\n');
         
