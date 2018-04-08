@@ -19,9 +19,12 @@ function [maxPrimary,minPrimary,maxLum,minLum] = ...
 %   This is a fairly brittle routine, in that fussing with the various of
 %   the keys below can make a big difference to the outcome.
 %
-%   The 'lamda' parameter could be incorporated into the intial searches
+%   The 'lamda' value could be incorporated into the intial searches
 %   performed within this routine to find the relative spd consistent with
 %   the desired chromaticity -- it is not currently.
+%
+%   The 'primaryHeadroom' value is not respected for the maxContrast
+%   optimization. This would be good to add.
 %
 % Inputs:
 %   cal                       - OneLight calibration structure
@@ -307,18 +310,26 @@ switch (p.Results.optimizationTarget)
         % Find maxSpd and minSpd that maximize luminance contrast.
         
         % Obtain some initial primaries from the max
-        initialPrimaries = OLSpdToPrimary(cal, maxSpd/p.Results.maxScaleDownForStart, 'lambda', p.Results.lambda);
+        initialSpd = maxSpd/p.Results.maxScaleDownForStart;
+        initialPrimaries = OLSpdToPrimary(cal, initialSpd, 'lambda', p.Results.lambda);
         
         % Maximize luminance while staying at chromaticity
         % Then take resulting maxSpd and find the spd with same
         % relative specrum that has minimum within gamut luminance.
         options = optimset('fmincon');
-        options = optimset(options,'Diagnostics','off','Display','off','LargeScale','off','Algorithm','active-set', 'MaxIter', 10000, 'MaxFunEvals', 100000, 'TolFun', 1e-10, 'TolCon', 1e-10, 'TolX', 1e-10);
+        options = optimset(options,'Diagnostics','off','Display','off','LargeScale','off','Algorithm','active-set', 'MaxIter', 300, 'MaxFunEvals', 100000, 'TolFun', 1e-2, 'TolCon', 1e-10, 'TolX', 1e-6);
         vub = ones(size(devicePrimaryBasis, 2), 2)-p.Results.primaryHeadroom;
         vlb = ones(size(devicePrimaryBasis, 2), 2)*p.Results.primaryHeadroom;
-        x = fmincon(@(x) ObjFunctionMaxContrast(x, devicePrimaryBasis, ambientSpd, T_xyz),[initialPrimaries initialPrimaries],[],[],[],[],vlb,vub,@(x)ChromaticityNonlcon(x, devicePrimaryBasis, ambientSpd, T_xyz, xy_target),options);
+        x = fmincon(@(x) ObjFunctionMaxContrast(x, devicePrimaryBasis, ambientSpd, T_xyz),[initialPrimaries initialPrimaries],[],[],[],[],vlb,vub, ...
+            @(x)RelativeSpdNonlcon(x, devicePrimaryBasis, ambientSpd, T_xyz, xy_target, p.Results.spdToleranceFraction),options);
         maxPrimary = x(:,1);
         minPrimary = x(:,2);
+        
+        % Take a look at how well we did on contraints
+        %{
+        [c, ceq] = RelativeSpdNonlcon(x, devicePrimaryBasis, ambientSpd,
+        T_xyz, xy_target, p.Results.spdToleranceFraction);
+        %}
         
         %% Check that primaries are within gamut to tolerance.
         maxPrimary(maxPrimary > 1 & maxPrimary < 1 + p.Results.primaryTolerance) = 1;
@@ -332,17 +343,27 @@ switch (p.Results.optimizationTarget)
             error('At one least primary value is out of range [0,1]');
         end
         
-        %% Can look at these to see if things came out right
-        % checkXYZ = T_xyz*B_primary*maxPrimary;
-        % checkxyY = XYZToxyY(checkXYZ)
-        % checkXYZ = T_xyz*B_primary*minPrimary;
-        % checkxyY = XYZToxyY(checkXYZ)
+        % Can look at these to see if chromaticities came out right
+        %{
+        checkXYZ = T_xyz*B_primary*maxPrimary;
+        checkxyY = XYZToxyY(checkXYZ)
+        checkXYZ = T_xyz*B_primary*minPrimary;
+        checkxyY = XYZToxyY(checkXYZ)
+        %}
         
         %% Get spds and their luminances
         maxSpd = OLPrimaryToSpd(cal,maxPrimary);
         maxLum = T_xyz(2,:)*maxSpd;
         minSpd = OLPrimaryToSpd(cal,minPrimary);
         minLum = T_xyz(2,:)*minSpd;
+        
+        % Figure for checking
+        %{
+        figure; hold on
+        plot(maxSpd,'r','LineWidth',3);
+        plot(minSpd,'g');
+        plot((minSpd\maxSpd)*minSpd,'k-','LineWidth',1);
+        %}
         
     otherwise
         error('Unknown optimization target');
@@ -384,12 +405,12 @@ f = -theContrast;
 end
 
 
-%% Constraint function for the optimization
+%% Constraint function for chromaticity optimization
 %
 % Forces chromaticities to stay at target
-function [c ceq] = ChromaticityNonlcon(x, devicePrimaryBasis, ambientSpd, T_xyz, target_xy)
+function [c, ceq] = ChromaticityNonlcon(x, devicePrimaryBasis, ambientSpd, T_xyz, target_xy)
 
-% Calculate spectrum and chromaticity
+% Calculate spectra and chromaticities
 theSpds = devicePrimaryBasis*x + ambientSpd;
 theXYZs = T_xyz*theSpds;
 thexyYs = XYZToxyY(theXYZs);
@@ -399,4 +420,41 @@ ceq = [];
 for kk = 1:size(thexyYs,2)
     ceq = [ceq ; (target_xy-thexyYs(1:2,kk)).^2];
 end
+end
+
+%% Constraint function for relative spd optimization
+%
+% Forces chromaticities to stay at target and relative spds to match within
+% tolerance
+function [c, ceq] = RelativeSpdNonlcon(x, devicePrimaryBasis, ambientSpd, T_xyz, target_xy, spdToleranceFraction)
+
+% Calculate spectra
+theSpds = devicePrimaryBasis*x + ambientSpd;
+
+% Get how well we're doing on target chromaticity
+[~, ceq] = ChromaticityNonlcon(x, devicePrimaryBasis, ambientSpd, T_xyz, target_xy);
+
+% Take mean spectra as target for relative spds
+targetSpd = mean(theSpds,2);
+
+% Get tolerance for spd matching
+spdTolerance = max(abs(spdToleranceFraction*targetSpd(:)));
+
+% Evalute how close each spectrum is to target after best scaling
+cRaw = [];
+for kk = 1:size(theSpds,2)
+    predTargetSpd(:,kk) = (theSpds(:,kk)\targetSpd)*theSpds(:,kk);
+    cRaw = [cRaw ; max(abs(targetSpd-predTargetSpd(:,kk)))];
+end
+
+% Set inequality contraints
+c = cRaw(:) - spdTolerance;
+
+% Figure for debugging
+%{
+figure; clf; hold on
+plot(targetSpd,'k','LineWidth',3);
+plot(predTargetSpd,'r');
+%}
+
 end

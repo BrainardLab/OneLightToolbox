@@ -1,4 +1,4 @@
-function [primaries,predictedSpd] = OLSpdToPrimary(oneLightCal, targetSpd, varargin)
+function [primaries,predictedSpd,fractionalError] = OLSpdToPrimary(oneLightCal, targetSpd, varargin)
 % Converts a spectrum into normalized primary OneLight mirror values.
 %
 % Syntax:
@@ -42,6 +42,8 @@ function [primaries,predictedSpd] = OLSpdToPrimary(oneLightCal, targetSpd, varar
 %                        of the OneLight. nPrimaries is the number of
 %                        effective primaries. Not gamma corrected.
 %    predictedSpd      - The spd predicted for the returned primaries.
+%    fractionalError   - How close the predictedSpd came to the target, in
+%                        fractional terms.
 %
 % 
 % Optional Key-Value Pairs:
@@ -56,8 +58,10 @@ function [primaries,predictedSpd] = OLSpdToPrimary(oneLightCal, targetSpd, varar
 %  'checkSpd'         - Boolean (default false). Because of smoothing and
 %                       gamut limitations, this is not guaranteed to
 %                       produce primaries that lead to the predictedSpd
-%                       matching the targetSpd.  Set this to true to check.
-%                       Tolerance is given by spdTolerance.
+%                       matching the targetSpd.  Set this to true to check
+%                       force an error if difference exceeds tolerance.
+%                       Otherwise, the toleranceFraction actually obtained
+%                       is retruned. Tolerance is given by spdTolerance.
 %  'spdToleranceFraction' - Scalar (default 0.01). If checkSpd is true, the
 %                       tolerance to avoid an error message is this
 %                       fraction times the maximum of targetSpd.
@@ -170,11 +174,10 @@ primaries(primaries > 1) = 1;
 
 %% Predict spd, and check if specified
 predictedSpd = OLPrimaryToSpd(oneLightCal,primaries,'differentialMode',params.differentialMode);
-if (p.Results.checkSpd)
-    tolerance = p.Results.spdToleranceFraction*max(abs(targetSpd(:)));
-    if (max(abs(targetSpd(:)-predictedSpd(:))) > tolerance)
-        error('Predicted spd not within tolerance of target');
-    end
+fractionalError = max(abs(targetSpd(:)-predictedSpd(:)))/max(abs(targetSpd(:)));
+if (p.Results.checkSpd & fractionalError > p.Results.spdToleranceFraction)
+    error('Predicted spd not within tolerance of target');
+end
 end
 
 

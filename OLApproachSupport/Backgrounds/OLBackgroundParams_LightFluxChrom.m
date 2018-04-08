@@ -67,30 +67,46 @@ classdef OLBackgroundParams_LightFluxChrom < OLBackgroundParams
             % Parameters maybe we should pass
             lambda = 0;
             spdToleranceFraction = 0.005;
+            primaryHeadroomForInitialMax = 0.05;
             primaryHeadroom = params.primaryHeadRoom;
             
             % Generate background
             [maxBackgroundPrimary, minBackgroundPrimary, maxLum, minLum]  = ...
                 OLPrimaryInvSolveChrom(calibration, params.lightFluxDesiredXY, ...
-                'primaryHeadroom',0.005, 'lambda',0, 'spdToleranceFraction',0.005, ...
-                'optimizationTarget','maxContrast', 'primaryHeadroomForInitialMax', 0.05, ...
+                'primaryHeadroom',0.005, 'lambda',lambda, 'spdToleranceFraction',spdToleranceFraction, ...
+                'optimizationTarget','maxContrast', 'primaryHeadroomForInitialMax', primaryHeadroomForInitialMax, ...
                 'maxScaleDownForStart', 2);
+            %{
             fprintf('Max lum %0.2f, min lum %0.2f\n',maxLum,minLum);
             fprintf('Luminance weber contrast, low to high: %0.2f%%\n',100*(maxLum-minLum)/minLum);
             fprintf('Luminance michaelson contrast, around mean: %0.2f%%\n',100*(maxLum-minLum)/(maxLum+minLum));
+            %}
             
             % Get nominal spd
             maxBackgroundSpd = OLPrimaryToSpd(calibration,maxBackgroundPrimary);
+            minBackgroundSpd = OLPrimaryToSpd(calibration,minBackgroundPrimary);
             checkLum = maxLum/params.lightFluxDownFactor;
             if (checkLum < minLum)
-                error('Not enough contrast available to make the desired background');
+                desiredLum = minLum;
+            else
+                desiredLum = minLum + (checkLum-minLum)/2;
             end
-            desiredLum = minLum + (checkLum-minLum)/2;
             backgroundSpd = maxBackgroundSpd*(desiredLum/maxLum);
             
             % Downfactor it and convert back to primary space
-            backgroundPrimary = OLSpdToPrimary(calibration,backgroundSpd, ...
-                'lambda',lambda, 'checkSpd',true, 'spdToleranceFraction',spdToleranceFraction);
+            [backgroundPrimary,predBackgroundSpd,fractionalError] = OLSpdToPrimary(calibration,backgroundSpd, ...
+                'lambda',lambda, 'checkSpd',false, 'spdToleranceFraction',spdToleranceFraction);
+            
+            % Figure for debugging
+            %{
+            figure; clf; hold on;
+            plot(maxBackgroundSpd,'r','LineWidth',3);
+            plot(minBackgroundSpd,'g');
+            plot((minBackgroundSpd\maxBackgroundSpd)*minBackgroundSpd,'k-','LineWidth',1);
+            plot(backgroundSpd,'k');
+            plot(predBackgroundSpd,'b');
+            fprintf('Fractional spd error between desired and found background spectrum: %0.1f%%\n',100*fractionalError);
+            %}
         end
         
         function background = OLBackgroundNominalFromParams(params, calibration)
