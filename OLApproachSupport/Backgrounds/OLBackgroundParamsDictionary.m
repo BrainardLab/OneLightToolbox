@@ -52,6 +52,7 @@ function dictionary = OLBackgroundParamsDictionary(varargin)
 %                   LMSDirected_LMS_275_60_667.
 %    03/31/18  dhb  Add alternateDictionaryFunc key/value pair.
 %              dhb  Delete obsolete notes and see alsos.
+%    04/09/18  dhb  Removing light flux parameters. Use a local dictionary!
 
 % Parse input
 p = inputParser;
@@ -231,44 +232,4 @@ if OLBackgroundParamsValidate(params)
     dictionary(params.name) = params;
 end
 
-%% LightFlux_540_380_50
-% Background at xy = [0.54,0.38] that allows light flux pulses to increase
-% a factor of 5 within gamut
-params = OLBackgroundParams_LightFluxChrom;
-params.baseName = 'LightFlux';
-params.lightFluxDesiredXY = [0.54,0.38];
-params.lightFluxDownFactor = 5;
-params.primaryHeadRoom = 0.00;
-params.name = OLBackgroundNameFromParams(params);
-if OLBackgroundParamsValidate(params)
-    % All validations OK. Add entry to the dictionary.
-    dictionary(params.name) = params;
-end
-
-%% LightFlux_540_380_55
-% Background at xy = [0.54,0.38] that allows light flux pulses to increase
-% a factor of 5 within gamut
-params = OLBackgroundParams_LightFluxChrom;
-params.baseName = 'LightFlux';
-params.lightFluxDesiredXY = [0.54,0.38];
-params.lightFluxDownFactor = 5.5;
-params.primaryHeadRoom = 0.00;
-params.name = OLBackgroundNameFromParams(params);
-if OLBackgroundParamsValidate(params)
-    % All validations OK. Add entry to the dictionary.
-    dictionary(params.name) = params;
-end
-
-%% LightFlux_330_330_20
-% Background at xy = [0.33,0.33] that allows light flux pulses to increase 
-% a factor of  2 within gamut
-params = OLBackgroundParams_LightFluxChrom;
-params.baseName = 'LightFlux';
-params.lightFluxDesiredXY = [0.33,0.33];
-params.lightFluxDownFactor = 2;
-params.name = OLBackgroundNameFromParams(params);
-if OLBackgroundParamsValidate(params)
-    % All validations OK. Add entry to the dictionary.
-    dictionary(params.name) = params;
-end
 end
