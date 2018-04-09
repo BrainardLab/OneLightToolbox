@@ -1,4 +1,4 @@
-function [calID calIDTitle] = OLGetCalID(cal);
+function [calID, calIDTitle] = OLGetCalID(cal)
 % [calID calIDTitle] = OLGetCalID(cal);
 %
 % Obtain the unique calibration ID, consisting of cal type, bulb and date.
@@ -6,7 +6,7 @@ function [calID calIDTitle] = OLGetCalID(cal);
 % 2/9/14  ms Wrote it.
 if isfield(cal.describe, 'bulbNumber')
     if ~isfield(cal.describe, 'calID')
-        calID = [cal.describe.calType.CalFileName '_Bulb' num2str(cal.describe.bulbNumber,'%03d') '_' cal.describe.date];
+        calID = [cal.describe.calType '_Bulb' num2str(cal.describe.bulbNumber,'%03d') '_' cal.describe.date];
     else
         calID = cal.describe.calID;
     end
