@@ -99,18 +99,55 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
             end
                         
             %% Make direction
-            currentBackgroundPrimary = background.differentialPrimaryValues;
-            targetSpd = OLPrimaryToSpd(calibration,currentBackgroundPrimary)*directionParams.lightFluxDownFactor;
-            modulationPrimaryPositive = OLSpdToPrimary(calibration,targetSpd,'lambda',0.000);
-            
-            % Update background
-            differentialPrimaryValues = modulationPrimaryPositive - background.differentialPrimaryValues;
-                
-            %% Create direction object
-            describe.directionParams = directionParams;
-            describe.backgroundNominal = background.copy();
-            describe.background = background;
-            direction = OLDirection_unipolar(differentialPrimaryValues, calibration, describe);
+            switch (directionParams.polarType)
+                case 'unipolar'
+                    backgroundPrimary = background.differentialPrimaryValues;
+                    targetSpdPositive = OLPrimaryToSpd(calibration,backgroundPrimary)*directionParams.lightFluxDownFactor;
+                    modulationPrimaryPositive = OLSpdToPrimary(calibration,targetSpdPositive,'lambda',directionParams.background.lambda);
+                    
+                    % Update background
+                    differentialPrimaryPositive = modulationPrimaryPositive - background.differentialPrimaryValues;
+                    
+                    % Create direction object
+                    describe.directionParams = directionParams;
+                    describe.backgroundNominal = background.copy();
+                    describe.background = background;
+                    direction = OLDirection_unipolar(differentialPrimaryPositive, calibration, describe);
+                case 'bipolar'
+                    backgroundPrimary = background.differentialPrimaryValues;
+                    backgroundSpd = OLPrimaryToSpd(calibration,backgroundPrimary);
+                    
+                    targetSpdPositive = OLPrimaryToSpd(calibration,backgroundPrimary)*directionParams.lightFluxDownFactor;
+                    targetSpdNegative = backgroundSpd - (targetSpdPositive-backgroundSpd);
+
+                    modulationPrimaryPositive = OLSpdToPrimary(calibration,targetSpdPositive,'lambda',directionParams.backgroundParams.lambda);
+                    modulationPrimaryNegative = OLSpdToPrimary(calibration,targetSpdNegative,'lambda',directionParams.backgroundParams.lambda);
+                    
+                    % Update background
+                    differentialPrimaryPositive = modulationPrimaryPositive - backgroundPrimary;
+                    differentialPrimaryNegative = modulationPrimaryNegative - backgroundPrimary;
+                    
+                    % Check negative primary does what we want
+                    targetSpdNegative = backgroundSpd - (targetSpdPositive-backgroundSpd);
+                    predSpdPositive = OLPrimaryToSpd(calibration,backgroundPrimary+differentialPrimaryPositive);
+                    predSpdNegative = OLPrimaryToSpd(calibration,backgroundPrimary+differentialPrimaryNegative);
+                    figure; clf; hold on;
+                    plot(targetSpdNegative,'g','LineWidth',3);
+                    plot(predSpdNegative,'k','LineWidth',1);
+                    plot(backgroundSpd,'k','LineWidth',3);
+                    plot(targetSpdPositive,'r','LineWidth',3);
+                    plot(predSpdPositive,'k','LineWidth',1);
+
+                    % Create direction object
+                    describe.directionParams = directionParams;
+                    describe.backgroundNominal = background.copy();
+                    describe.background = background;
+                    direction = OLDirection_bipolar(differentialPrimaryPositive, differentialPrimaryNegative, calibration, describe);
+                    
+                otherwise
+                    error('Unknown polarType specified');
+            end
+           
         end
             
         function valid = OLDirectionParamsValidate(directionParams)

@@ -82,39 +82,57 @@ classdef OLBackgroundParams_LightFluxChrom < OLBackgroundParams
             fprintf('Max lum %0.2f, min lum %0.2f\n',maxLum,minLum);
             fprintf('Luminance weber contrast, low to high: %0.2f%%\n',100*(maxLum-minLum)/minLum);
             fprintf('Luminance michaelson contrast, around mean: %0.2f%%\n',100*(maxLum-minLum)/(maxLum+minLum));
-                %}
+            %}
                 
-                % Get background spd
-                maxBackgroundSpd = OLPrimaryToSpd(calibration,maxBackgroundPrimary);
-                minBackgroundSpd = OLPrimaryToSpd(calibration,minBackgroundPrimary);
-                checkLum = maxLum/params.lightFluxDownFactor;
-                switch (params.polarType)
-                    case 'unipolar' 
-                        if (checkLum < minLum)
-                            desiredLum = minLum;
-                        else
-                            desiredLum = minLum + (checkLum-minLum)/2;
-                        end
-                        backgroundSpd = maxBackgroundSpd*(desiredLum/maxLum);
-                        
-                        % Downfactor it and convert back to primary space
-                        [backgroundPrimary,predBackgroundSpd,fractionalError] = OLSpdToPrimary(calibration,backgroundSpd, ...
-                            'lambda',params.lambda, 'checkSpd',false, 'spdToleranceFraction',params.spdToleranceFraction);
-                        
-                        % Figure for debugging
-                        %{
-                        figure; clf; hold on;
-                        plot(maxBackgroundSpd,'r','LineWidth',3);
-                        plot(minBackgroundSpd,'g');
-                        plot((minBackgroundSpd\maxBackgroundSpd)*minBackgroundSpd,'k-','LineWidth',1);
-                        plot(backgroundSpd,'k');
-                        plot(predBackgroundSpd,'b');
-                        fprintf('Fractional spd error between desired and found background spectrum: %0.1f%%\n',100*fractionalError);
-                        %}
-                    case 'bipolar'
-                    otherwise
-                        error('Unknown background polarType property provided');
-                end
+            % Get background spd
+            maxBackgroundSpd = OLPrimaryToSpd(calibration,maxBackgroundPrimary);
+            minBackgroundSpd = OLPrimaryToSpd(calibration,minBackgroundPrimary);
+            checkLum = maxLum/params.lightFluxDownFactor;
+            switch (params.polarType)
+                case 'unipolar'
+                    if (checkLum < minLum)
+                        desiredLum = minLum;
+                    else
+                        desiredLum = minLum + (checkLum-minLum)/2;
+                    end
+                    targetBackgroundSpd = maxBackgroundSpd*(desiredLum/maxLum);
+
+                    % Convert target spd back to primary space
+                    [backgroundPrimary,predBackgroundSpd,fractionalError] = OLSpdToPrimary(calibration,targetBackgroundSpd, ...
+                        'lambda',params.lambda, 'checkSpd',false, 'spdToleranceFraction',params.spdToleranceFraction);
+
+                    % Figure for debugging
+                    %{
+                    figure; clf; hold on;
+                    plot(maxBackgroundSpd,'r','LineWidth',3);
+                    plot(minBackgroundSpd,'g');
+                    plot((minBackgroundSpd\maxBackgroundSpd)*minBackgroundSpd,'k-','LineWidth',1);
+                    plot(backgroundSpd,'b','LineWidth',3);
+                    plot(predBackgroundSpd,'k');
+                    fprintf('Fractional spd error between desired and found background spectrum: %0.1f%%\n',100*fractionalError);
+                    %}
+                case 'bipolar'
+                    desiredLum = (maxLum+minLum)/2;
+                    targetBackgroundSpd = maxBackgroundSpd*(desiredLum/maxLum);
+
+                    % Convert back spd to primary space
+                    [backgroundPrimary,predBackgroundSpd,fractionalError] = OLSpdToPrimary(calibration,targetBackgroundSpd, ...
+                        'lambda',params.lambda, 'checkSpd',false, 'spdToleranceFraction',params.spdToleranceFraction);
+
+                    % Figure for debugging
+                    %{
+                    figure; clf; hold on;
+                    plot(maxBackgroundSpd,'r','LineWidth',3);
+                    plot(minBackgroundSpd,'g','LineWidth',3);
+                    plot((minBackgroundSpd\maxBackgroundSpd)*minBackgroundSpd,'k-','LineWidth',1);
+                    plot(targetBackgroundSpd,'b','LineWidth',3);
+                    plot(predBackgroundSpd,'y');
+                    fprintf('Fractional spd error between desired and found background spectrum: %0.1f%%\n',100*fractionalError);
+                    fprintf('Maximum available bipolar contrast is %0.1f%%\n',100*(maxLum-desiredLum)/desiredLum);
+                    %}
+                otherwise
+                    error('Unknown background polarType property provided');
+            end
         end
         
         function background = OLBackgroundNominalFromParams(params, calibration)
