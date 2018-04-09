@@ -128,15 +128,16 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
                     differentialPrimaryNegative = modulationPrimaryNegative - backgroundPrimary;
                     
                     % Check negative primary does what we want
-                    targetSpdNegative = backgroundSpd - (targetSpdPositive-backgroundSpd);
-                    predSpdPositive = OLPrimaryToSpd(calibration,backgroundPrimary+differentialPrimaryPositive);
-                    predSpdNegative = OLPrimaryToSpd(calibration,backgroundPrimary+differentialPrimaryNegative);
-                    figure; clf; hold on;
-                    plot(targetSpdNegative,'g','LineWidth',3);
-                    plot(predSpdNegative,'k','LineWidth',1);
-                    plot(backgroundSpd,'k','LineWidth',3);
-                    plot(targetSpdPositive,'r','LineWidth',3);
-                    plot(predSpdPositive,'k','LineWidth',1);
+                    %{
+                        predSpdPositive = OLPrimaryToSpd(calibration,backgroundPrimary+differentialPrimaryPositive);
+                        predSpdNegative = OLPrimaryToSpd(calibration,backgroundPrimary+differentialPrimaryNegative);
+                        figure; clf; hold on;
+                        plot(targetSpdNegative,'g','LineWidth',3);
+                        plot(predSpdNegative,'k','LineWidth',1);
+                        plot(backgroundSpd,'k','LineWidth',3);
+                        plot(targetSpdPositive,'r','LineWidth',3);
+                        plot(predSpdPositive,'k','LineWidth',1);
+                    %}
 
                     % Create direction object
                     describe.directionParams = directionParams;
