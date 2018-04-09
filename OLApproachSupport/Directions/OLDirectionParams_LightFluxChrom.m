@@ -103,7 +103,7 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
                 case 'unipolar'
                     backgroundPrimary = background.differentialPrimaryValues;
                     targetSpdPositive = OLPrimaryToSpd(calibration,backgroundPrimary)*directionParams.lightFluxDownFactor;
-                    modulationPrimaryPositive = OLSpdToPrimary(calibration,targetSpdPositive,'lambda',directionParams.background.lambda);
+                    modulationPrimaryPositive = OLSpdToPrimary(calibration,targetSpdPositive,'lambda',directionParams.backgroundParams.lambda);
                     
                     % Update background
                     differentialPrimaryPositive = modulationPrimaryPositive - background.differentialPrimaryValues;
