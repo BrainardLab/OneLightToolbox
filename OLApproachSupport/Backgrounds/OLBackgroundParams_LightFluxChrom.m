@@ -1,27 +1,27 @@
 classdef OLBackgroundParams_LightFluxChrom < OLBackgroundParams
-% Parameter-object for light flux backgrounds at a chromaticity
-%
-% Syntax:
-%   params = OLBackgroundParams_LightFluxChrom
-%   backgroundPrimary = OLBackgroundNominalPrimaryFromParams(OLBackgroundParams_LightFluxChromObject,calibration)
-%
-% Description:
-%    These parameters generate a background of specified CIE x, y
-%    chromaticity. The luminance of this background is a specified flux
-%    factor down from the max luminance at this chromaticity.
-%
-% See also:
-%    OLBackgroundParams, OLBackgroundParams_Optimized,
-%    OLPrimaryInvSolveChrom
-%
-
-% History:
-%    02/07/18  jv  Wote it.
-%    04/09/18  dhb Update properties towards current search methods
+    % Parameter-object for light flux backgrounds at a chromaticity
+    %
+    % Syntax:
+    %   params = OLBackgroundParams_LightFluxChrom
+    %   backgroundPrimary = OLBackgroundNominalPrimaryFromParams(OLBackgroundParams_LightFluxChromObject,calibration)
+    %
+    % Description:
+    %    These parameters generate a background of specified CIE x, y
+    %    chromaticity. The luminance of this background is a specified flux
+    %    factor down from the max luminance at this chromaticity.
+    %
+    % See also:
+    %    OLBackgroundParams, OLBackgroundParams_Optimized,
+    %    OLPrimaryInvSolveChrom
+    %
+    
+    % History:
+    %    02/07/18  jv  Wote it.
+    %    04/09/18  dhb Update properties towards current search methods
     
     properties
         lightFluxDesiredXY(1,2) = [0.54 0.38];                              % Modulation chromaticity.
-        lightFluxDownFactor(1,1) = 5;                                       % Factor to decrease background after initial values found.  Determines how big a pulse we can put on it.   
+        lightFluxDownFactor(1,1) = 5;                                       % Factor to decrease background after initial values found.  Determines how big a pulse we can put on it.
         polarType(1,:) char = 'unipolar';                                   % Background set for unipolar or bipolar modulation?
         lambda(1,1) = 0;                                                    % Primary smoothing parameter
         spdToleranceFraction(1,1) = 0.005;                                  % Fractional tolerance for relative spd
@@ -34,9 +34,9 @@ classdef OLBackgroundParams_LightFluxChrom < OLBackgroundParams
         function obj = OLBackgroundParams_LightFluxChrom
             obj = obj@OLBackgroundParams;
         end
-
+        
         function name = OLBackgroundNameFromParams(params)
-            name = sprintf('%s_%d_%d_%d',params.baseName,round(1000*params.lightFluxDesiredXY(1)),round(1000*params.lightFluxDesiredXY(2)),round(10*params.lightFluxDownFactor)); 
+            name = sprintf('%s_%d_%d_%d',params.baseName,round(1000*params.lightFluxDesiredXY(1)),round(1000*params.lightFluxDesiredXY(2)),round(10*params.lightFluxDownFactor));
         end
         
         function backgroundPrimary = OLBackgroundNominalPrimaryFromParams(params, calibration)
@@ -82,33 +82,39 @@ classdef OLBackgroundParams_LightFluxChrom < OLBackgroundParams
             fprintf('Max lum %0.2f, min lum %0.2f\n',maxLum,minLum);
             fprintf('Luminance weber contrast, low to high: %0.2f%%\n',100*(maxLum-minLum)/minLum);
             fprintf('Luminance michaelson contrast, around mean: %0.2f%%\n',100*(maxLum-minLum)/(maxLum+minLum));
-            %}
-            
-            % Get nominal spd
-            maxBackgroundSpd = OLPrimaryToSpd(calibration,maxBackgroundPrimary);
-            minBackgroundSpd = OLPrimaryToSpd(calibration,minBackgroundPrimary);
-            checkLum = maxLum/params.lightFluxDownFactor;
-            if (checkLum < minLum)
-                desiredLum = minLum;
-            else
-                desiredLum = minLum + (checkLum-minLum)/2;
-            end
-            backgroundSpd = maxBackgroundSpd*(desiredLum/maxLum);
-            
-            % Downfactor it and convert back to primary space
-            [backgroundPrimary,predBackgroundSpd,fractionalError] = OLSpdToPrimary(calibration,backgroundSpd, ...
-                'lambda',params.lambda, 'checkSpd',false, 'spdToleranceFraction',params.spdToleranceFraction);
-            
-            % Figure for debugging
-            %{
-            figure; clf; hold on;
-            plot(maxBackgroundSpd,'r','LineWidth',3);
-            plot(minBackgroundSpd,'g');
-            plot((minBackgroundSpd\maxBackgroundSpd)*minBackgroundSpd,'k-','LineWidth',1);
-            plot(backgroundSpd,'k');
-            plot(predBackgroundSpd,'b');
-            fprintf('Fractional spd error between desired and found background spectrum: %0.1f%%\n',100*fractionalError);
-            %}
+                %}
+                
+                % Get background spd
+                maxBackgroundSpd = OLPrimaryToSpd(calibration,maxBackgroundPrimary);
+                minBackgroundSpd = OLPrimaryToSpd(calibration,minBackgroundPrimary);
+                checkLum = maxLum/params.lightFluxDownFactor;
+                switch (params.polarType)
+                    case 'unipolar' 
+                        if (checkLum < minLum)
+                            desiredLum = minLum;
+                        else
+                            desiredLum = minLum + (checkLum-minLum)/2;
+                        end
+                        backgroundSpd = maxBackgroundSpd*(desiredLum/maxLum);
+                        
+                        % Downfactor it and convert back to primary space
+                        [backgroundPrimary,predBackgroundSpd,fractionalError] = OLSpdToPrimary(calibration,backgroundSpd, ...
+                            'lambda',params.lambda, 'checkSpd',false, 'spdToleranceFraction',params.spdToleranceFraction);
+                        
+                        % Figure for debugging
+                        %{
+                        figure; clf; hold on;
+                        plot(maxBackgroundSpd,'r','LineWidth',3);
+                        plot(minBackgroundSpd,'g');
+                        plot((minBackgroundSpd\maxBackgroundSpd)*minBackgroundSpd,'k-','LineWidth',1);
+                        plot(backgroundSpd,'k');
+                        plot(predBackgroundSpd,'b');
+                        fprintf('Fractional spd error between desired and found background spectrum: %0.1f%%\n',100*fractionalError);
+                        %}
+                    case 'bipolar'
+                    otherwise
+                        error('Unknown background polarType property provided');
+                end
         end
         
         function background = OLBackgroundNominalFromParams(params, calibration)
@@ -138,11 +144,11 @@ classdef OLBackgroundParams_LightFluxChrom < OLBackgroundParams
             %    background        - an OLDirection_unipolar object
             %                        corresponding to the optimized
             %                        background for the parameterized
-            %                        direction 
+            %                        direction
             %
             % Optional key/value pairs:
             %    None.
-            %            
+            %
             % See also:
             %    OLDirection_unipolar, OLDirectionNominalFromParams
             
@@ -150,7 +156,7 @@ classdef OLBackgroundParams_LightFluxChrom < OLBackgroundParams
             %    03/30/18  jv  OLDirection_unipolar from backgroundParams
             backgroundPrimary = OLBackgroundNominalPrimaryFromParams(params,calibration);
             background = OLDirection_unipolar(backgroundPrimary,calibration);
-            background.describe.params = params;            
+            background.describe.params = params;
         end
         
         function valid = OLBackgroundParamsValidate(params)
@@ -170,23 +176,23 @@ classdef OLBackgroundParams_LightFluxChrom < OLBackgroundParams
             %             parameters for this LightFluxChrom background.
             %
             % Outputs:
-            %    valid  - logical boolean. True if entry contains all those fields, and 
+            %    valid  - logical boolean. True if entry contains all those fields, and
             %             only those fields, returned by
             %             OLBackgroundParamsDefaults for the given type. False
             %             if missing or additional fields.
             %
             % Optional key/value pairs:
-            %    None.            
+            %    None.
             
             try
-                % Validate lightFluxDesiredXY           
+                % Validate lightFluxDesiredXY
                 property = 'lightFluxDesiredXY';
                 mustBeNumeric(params.(property));
                 mustBeNonnegative(params.(property));
                 mustBeLessThanOrEqual(params.(property),1);
-            
+                
                 % Validate lightFluxDownFactor
-                property = 'lightFluxDownFactor';                
+                property = 'lightFluxDownFactor';
                 mustBePositive(params.(property));
                 
                 % Validate primary headroom
@@ -210,9 +216,9 @@ classdef OLBackgroundParams_LightFluxChrom < OLBackgroundParams
                 mustBeNonnegative(params.(property));
                 
                 % Validate maxScaleDownForStart
-                property = 'maxScaleDownForStart';                
+                property = 'maxScaleDownForStart';
                 mustBePositive(params.(property));
-                                
+                
             catch valueException
                 % Add more descriptive message
                 propException = MException(sprintf('BackgroundParams:Validate:%s',property),...
@@ -220,10 +226,10 @@ classdef OLBackgroundParams_LightFluxChrom < OLBackgroundParams
                 addCause(propException,valueException);
                 throw(propException);
             end
-                
+            
             valid = true;
         end
-                
+        
         
     end
     
