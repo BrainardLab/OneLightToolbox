@@ -11,15 +11,23 @@ classdef OLBackgroundParams_LightFluxChrom < OLBackgroundParams
 %    factor down from the max luminance at this chromaticity.
 %
 % See also:
-%    OLBackgroundParams, OLBackgroundParams_Optimized
+%    OLBackgroundParams, OLBackgroundParams_Optimized,
+%    OLPrimaryInvSolveChrom
 %
 
 % History:
-%    02/07/18  jv  wrote it.
+%    02/07/18  jv  Wote it.
+%    04/09/18  dhb Update properties towards current search methods
     
     properties
         lightFluxDesiredXY(1,2) = [0.54 0.38];                              % Modulation chromaticity.
-        lightFluxDownFactor(1,1) = 5;                                       % Factor to decrease background after initial values found.  Determines how big a pulse we can put on it.
+        lightFluxDownFactor(1,1) = 5;                                       % Factor to decrease background after initial values found.  Determines how big a pulse we can put on it.   
+        polarType(1,:) char = 'unipolar';                                   % Background set for unipolar or bipolar modulation?
+        lambda(1,1) = 0;                                                    % Primary smoothing parameter
+        spdToleranceFraction(1,1) = 0.005;                                  % Fractional tolerance for relative spd
+        optimizationTarget(1,:) char = 'maxContrast';                       % Method used in search for background
+        primaryHeadroomForInitialMax(1,1) = 0.05;                           % Parameter used when finding max spd in search for background
+        maxScaleDownForStart(1,1) = 2;                                      % Parameter used to scale down max spd in some background search methods
     end
     
     methods
@@ -64,18 +72,12 @@ classdef OLBackgroundParams_LightFluxChrom < OLBackgroundParams
             parser.addRequired('calibration',@isstruct);
             parser.parse(params,calibration);
             
-            % Parameters maybe we should pass
-            lambda = 0;
-            spdToleranceFraction = 0.005;
-            primaryHeadroomForInitialMax = 0.05;
-            primaryHeadroom = params.primaryHeadRoom;
-            
             % Generate background
             [maxBackgroundPrimary, minBackgroundPrimary, maxLum, minLum]  = ...
                 OLPrimaryInvSolveChrom(calibration, params.lightFluxDesiredXY, ...
-                'primaryHeadroom',0.005, 'lambda',lambda, 'spdToleranceFraction',spdToleranceFraction, ...
-                'optimizationTarget','maxContrast', 'primaryHeadroomForInitialMax', primaryHeadroomForInitialMax, ...
-                'maxScaleDownForStart', 2);
+                'primaryHeadroom',params.primaryHeadRoom, 'lambda',params.lambda, 'spdToleranceFraction',params.spdToleranceFraction, ...
+                'optimizationTarget',params.optimizationTarget, 'primaryHeadroomForInitialMax', params.primaryHeadroomForInitialMax, ...
+                'maxScaleDownForStart', params.maxScaleDownForStart);
             %{
             fprintf('Max lum %0.2f, min lum %0.2f\n',maxLum,minLum);
             fprintf('Luminance weber contrast, low to high: %0.2f%%\n',100*(maxLum-minLum)/minLum);
@@ -95,7 +97,7 @@ classdef OLBackgroundParams_LightFluxChrom < OLBackgroundParams
             
             % Downfactor it and convert back to primary space
             [backgroundPrimary,predBackgroundSpd,fractionalError] = OLSpdToPrimary(calibration,backgroundSpd, ...
-                'lambda',lambda, 'checkSpd',false, 'spdToleranceFraction',spdToleranceFraction);
+                'lambda',params.lambda, 'checkSpd',false, 'spdToleranceFraction',params.spdToleranceFraction);
             
             % Figure for debugging
             %{
@@ -187,6 +189,30 @@ classdef OLBackgroundParams_LightFluxChrom < OLBackgroundParams
                 property = 'lightFluxDownFactor';                
                 mustBePositive(params.(property));
                 
+                % Validate primary headroom
+                property = 'primaryHeadRoom';
+                mustBeNonnegative(params.(property));
+                
+                % Validate lambda
+                property = 'lambda';
+                mustBeNonnegative(params.(property));
+                
+                % Validate spdToleranceFraction
+                property = 'spdToleranceFraction';
+                mustBeNonnegative(params.(property));
+                
+                % Validate optimizationTarget
+                %property = 'optimizationTarget';
+                %if (~ischar(params.(property))), error('Property %s is not a string',property); end
+                
+                % Validate primaryHeadroomForInitialMax
+                property = 'primaryHeadroomForInitialMax';
+                mustBeNonnegative(params.(property));
+                
+                % Validate maxScaleDownForStart
+                property = 'maxScaleDownForStart';                
+                mustBePositive(params.(property));
+                                
             catch valueException
                 % Add more descriptive message
                 propException = MException(sprintf('BackgroundParams:Validate:%s',property),...

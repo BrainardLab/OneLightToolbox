@@ -113,7 +113,7 @@ function [maxPrimary,minPrimary,maxLum,minLum] = ...
     fprintf('Luminance michaelson contrast, around mean: %0.2f%%\n',100*(maxLum-minLum)/(maxLum+minLum));
 %}
 %{
-    % Minimize luminance first, let max lumiance and contrast be what t.
+    % Minimize luminance first, let max lumiance and contrast be what they are.
     %
     % Get the OneLightToolbox demo cal structure
     cal = OLGetCalibrationStructure('CalibrationType','DemoCal','CalibrationFolder',fullfile(tbLocateToolbox('OneLightToolbox'),'OLDemoCal'),'CalibrationDate','latest');
@@ -250,13 +250,17 @@ if (p.Results.checkOutOfRange && (any(maxPrimary(:) > 1) || any(maxPrimary(:) < 
     error('At one least primary value is out of range [0,1]');
 end
 
-%% Can look at these to see if things came out right
-% checkXYZ = T_xyz*B_primary*maxPrimary;
-% checkxyY = XYZToxyY(checkXYZ)
-
 %% Get max spd and its luminance
 maxSpd = OLPrimaryToSpd(cal,maxPrimary);
 maxLum = T_xyz(2,:)*maxSpd;
+
+%% Can look at these to see if things came out right
+%{
+checkXYZ = T_xyz*maxSpd;
+checkxyY = XYZToxyY(checkXYZ)
+%}
+
+
         
 % Maximize
 switch (p.Results.optimizationTarget)

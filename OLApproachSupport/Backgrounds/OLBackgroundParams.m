@@ -18,14 +18,15 @@ classdef OLBackgroundParams < matlab.mixin.Heterogeneous
 %
 
 % History:
-%    02/07/18  jv  wrote it.
+%    02/07/18  jv  Wrote it.
+%    04/09/18  dhb Update primaryHeadroom devalut value
 
 
 properties
     name
     baseName;
     useAmbient = true;                 % Use measured ambient in calculations if true. If false, set ambient to zero.
-	primaryHeadRoom = 0.01;            % How close to edge of [0-1] primary gamut do we want to get?    
+	primaryHeadRoom = 0.005;           % How close to edge of [0-1] primary gamut do we want to get?    
 end
     
 methods (Abstract)

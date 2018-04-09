@@ -5,6 +5,7 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
     properties
         lightFluxDesiredXY(1,2) = [0.333 0.333];                           % Modulation chromaticity.
         lightFluxDownFactor(1,1) = 0;                                      % Size of max flux increase from background
+        polarType(1,:) char = 'unipolar';                                  % Unipolar or bipolar light flux direction
     end    
     
     methods
