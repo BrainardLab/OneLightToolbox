@@ -58,13 +58,13 @@ try
     selectedCalType = OLGetEnumeratedCalibrationType;
     
     % Which box are we using?
-    if strfind(selectedCalType.char, 'BoxA')
+    if contains(selectedCalType, 'BoxA')
         whichBox = 'BoxA';
-    elseif strfind(selectedCalType.char, 'BoxB')
+    elseif contains(selectedCalType, 'BoxB')
         whichBox = 'BoxB';
-    elseif strfind(selectedCalType.char, 'BoxC')
+    elseif contains(selectedCalType, 'BoxC')
         whichBox = 'BoxC';
-    elseif strfind(selectedCalType.char, 'BoxD')
+    elseif contains(selectedCalType, 'BoxD')
         whichBox = 'BoxD';
     end
     
@@ -408,7 +408,7 @@ try
         end
         
         % Save out the calibration
-        SaveCalFile(cal, selectedCalType.CalFileName, getpref('OneLightToolbox', 'OneLightCalData'));
+        SaveCalFile(cal, ['OL', selectedCalType], getpref('OneLightToolbox', 'OneLightCalData'));
     end
     
     % Notify user we are done
@@ -427,12 +427,14 @@ try
     end
     
 catch e
-    fprintf('Failed with message: ''%s''.\nPlease wait for the spectroradiometer to shut down .... ', e.message);
+    fprintf('Failed with message: ''%s''.\nPlease wait for the spectroradiometer to shut down .... \n', e.message);
     if (~isempty(spectroRadiometerOBJ))
         spectroRadiometerOBJ.shutDown();
     end
-    SendEmail(emailRecipient, 'OneLight Calibration Failed', ...
-        ['Calibration failed with the following error' 10 e.message]);
+    if exist('emailRecipient','var')
+        SendEmail(emailRecipient, 'OneLight Calibration Failed', ...
+            ['Calibration failed with the following error' 10 e.message]);
+    end
     keyboard;
     
     if (takeTemperatureMeasurements)
