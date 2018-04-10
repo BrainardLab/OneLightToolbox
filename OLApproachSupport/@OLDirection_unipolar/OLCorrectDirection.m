@@ -103,7 +103,7 @@ else
 %         'postreceptoralCombinations', [1 1 1 0 ; 1 -1 0 0 ; 0 0 1 0 ; 0 0 0 1], ...
 %         'outDir', fullfile('~/Desktop'), ...
 %         'takeTemperatureMeasurements', false);
-    correctedDirectionData = OLCorrectCacheFileOOC(directionData, calibration, oneLight, radiometer);
+    correctedDirectionData = OLCorrectCacheFileOOC(directionData, calibration, oneLight, radiometer, 'OBSERVER_AGE', observerAge);
 
     %% Update original OLDirection
     % Update direction business end
