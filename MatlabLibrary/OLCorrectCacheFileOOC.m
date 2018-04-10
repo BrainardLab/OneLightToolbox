@@ -1,5 +1,4 @@
-function cacheData = OLCorrectCacheFileOOC(cacheData, cal, ol, spectroRadiometerOBJ, ...
-    meterType, spectroRadiometerOBJWillShutdownAfterMeasurement, varargin)
+function cacheData = OLCorrectCacheFileOOC(cacheData, cal, ol, spectroRadiometerOBJ, varargin)
 % results = OLCorrectCacheFileOOC(cacheFileName, emailRecipient, ...
 %    meterType, spectroRadiometerOBJ, spectroRadiometerOBJWillShutdownAfterMeasurement, varargin)
 %
