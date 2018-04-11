@@ -20,11 +20,11 @@ S = [380 1 401];
 
 %% Get OL calibration info
 cal = OLGetCalibrationStructure;
-calType = cal.describe.calType.CalFileName;
+calType = cal.describe.calType;
 calDate = cal.describe.date;
 calFolderInfo = what(getpref('OneLightToolbox', 'OneLightCalData'));
 calFolder = calFolderInfo.path;
-calFileName = cal.describe.calType.CalFileName;
+calFileName = ['OL' cal.describe.calType];
 
 % We'll store the plots under a folder with a unique timestamp.  We'll
 % remap the ' ' and ':' characters to '-' and '.', respectively found
@@ -377,6 +377,6 @@ fullOn2PhotopicLuminanceCdM2 = T_xyz(2,:)*radianceWattsPerM2Sr;
 
 beep; beep; beep;
 fprintf('\n\n\n>>> You can copy the following line to the calibration log on the Wiki:\n\n');
-fprintf('|''''%s''''|''''%s''''|''''%s''''|%g|%g|%.2f|%.2f|\n\n', cal.describe.calType.char, cal.describe.date, cal.describe.calID, cal.describe.bulbNumber, photopicLuminanceCdM2, fullOn1PhotopicLuminanceCdM2, fullOn2PhotopicLuminanceCdM2);
+fprintf('|''''%s''''|''''%s''''|''''%s''''|%g|%g|%.2f|%.2f|\n\n', cal.describe.calType, cal.describe.date, cal.describe.calID, cal.describe.bulbNumber, photopicLuminanceCdM2, fullOn1PhotopicLuminanceCdM2, fullOn2PhotopicLuminanceCdM2);
 fprintf('>>> The Wiki URL is https://cfn.upenn.edu/aguirre/wiki/private:bluemechanism:experimental_apparatus:onelight:calibration:calibration_log\n');
 %!open https://cfn.upenn.edu/aguirre/wiki/private:bluemechanism:experimental_apparatus:onelight:calibration:calibration_log
