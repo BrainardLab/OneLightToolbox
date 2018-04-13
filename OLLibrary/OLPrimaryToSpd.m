@@ -27,6 +27,12 @@ function predictedSpd = OLPrimaryToSpd(calibration, primary, varargin)
 %    'differentialMode' - Boolean. Do not add in the
 %                         dark light and allow primaries to be in range
 %                         [-1,1] rather than [0,1]. Default false.
+%   'primaryHeadroom'   - Scalar.  Headroom to leave on primaries.  Default
+%                         0. How much headroom to protect in definition of
+%                         in gamut.  Range used for check and truncation is
+%                         [primaryHeadroom 1-primaryHeadroom]. Do not change
+%                         this default.  Sometimes assumed to be true by a
+%                         caller.
 %    'primaryTolerance' - Scalar (default 1e-6). Primaries can be this
 %                         much out of gamut and it will truncate them
 %                         into gamut without complaining.
@@ -49,6 +55,7 @@ p = inputParser;
 p.addRequired('calibration',@isstruct);
 p.addRequired('primary',@isnumeric);
 p.addParameter('differentialMode', false, @islogical);
+p.addParameter('primaryHeadroom', 0, @isscalar);
 p.addParameter('primaryTolerance',1e-6, @isscalar);
 p.addParameter('checkPrimaryOutOfRange', true, @islogical);
 p.parse(calibration,primary,varargin{:});
@@ -60,7 +67,7 @@ assert(isfield(calibration, 'computed'),...
 
 %% Check input range
 primary = OLCheckPrimaryGamut(primary,...
-    'primaryHeadroom',0, ...
+    'primaryHeadroom',p.Results.primaryHeadroom, ...
     'primaryTolerance',p.Results.primaryTolerance, ...
     'checkPrimaryOutOfRange',p.Results.checkPrimaryOutOfRange, ...
     'differentialMode',p.Results.differentialMode);

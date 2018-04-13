@@ -90,7 +90,7 @@ function [maxPrimary,minPrimary,maxLum,minLum] = ...
 %                               maxSpd, when determining starting point for
 %                               minLum and maxContrast methods. Default 2.
 %   'maxSearchIter'           - Control how long the search goes for.
-%                               Default, 100000.  Reduce if you don't need
+%                               Default, 50.  Reduce if you don't need
 %                               to go that long and things will get faster.
 %
 % See also:
@@ -154,7 +154,7 @@ p.addParameter('spdToleranceFraction', 0.01, @isscalar);
 p.addParameter('optimizationTarget', 'maxLum', @ischar);
 p.addParameter('primaryHeadroomForInitialMax', 0.1, @isscalar);
 p.addParameter('maxScaleDownForStart', 2, @isscalar);
-p.addParameter('maxSearchIter',10000,@isscalar);
+p.addParameter('maxSearchIter',50,@isscalar);
 p.parse(varargin{:});
 
 %% Set up some parameters

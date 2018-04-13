@@ -60,7 +60,7 @@ function [maxSpd, maxPrimary, scaleFactor] = OLFindMaxSpd(oneLightCal, targetSpd
 %   'findMin'         - Boolean (default false). Find minimum rather than
 %                       maximum, with everything else the same.
 %   'maxSearchIter'   - Control how long the search goes for.
-%                       Default, 100000.  Reduce if you don't need
+%                       Default, 50.  Reduce if you don't need
 %                       to go that long and things will get faster.
 %
 % See also: OLPrimaryInvSolveChrom, OLFindMinSpectrum.
@@ -79,7 +79,7 @@ p.addParameter('checkPrimaryOutOfRange', true, @islogical);
 p.addParameter('checkSpd', false, @islogical);
 p.addParameter('spdToleranceFraction', 0.01, @isscalar);
 p.addParameter('findMin', false, @islogical);
-p.addParameter('maxSearchIter',10000,@isscalar);
+p.addParameter('maxSearchIter',50,@isscalar);
 p.parse(varargin{:});
 
 % Make sure that the oneLightCal has been properly processed by OLInitCal.
@@ -97,17 +97,23 @@ end
 %% Maximize luminance while staying at same relative spd
 minScaleFactor = 1e-4;
 options = optimset('fmincon');
-options = optimset(options,'Diagnostics','off','Display','iter','LargeScale','off','Algorithm','active-set', 'MaxIter', p.Results.maxSearchIter, 'MaxFunEvals', 1000, 'TolFun', 1e-10, 'TolCon', 1e-10, 'TolX', 1e-10);
+options = optimset(options,'Diagnostics','off','Display','iter','LargeScale','off','Algorithm','active-set', 'MaxIter', p.Results.maxSearchIter, 'MaxFunEvals', 1000, 'TolFun', 1e-3, 'TolCon', 1e-10, 'TolX', 1e-5);
 vlb = minScaleFactor;
 vub = 1e4;
 scaleFactor = fmincon(@(x) OLFindMaxSpdFun(x,oneLightCal,targetSpd,p.Results.lambda,p.Results.findMin,p.Results.spdToleranceFraction),1,[],[],[],[], ...
     vlb,vub,@(x) OLFindMaxSpdCon(x, oneLightCal, targetSpd, p.Results.lambda,p.Results.primaryHeadroom,p.Results.primaryTolerance,p.Results.spdToleranceFraction),...
     options);
+
+%{
+[c, ceq] = OLFindMaxSpdCon(scaleFactor, oneLightCal, targetSpd, p.Results.lambda,p.Results.primaryHeadroom,p.Results.primaryTolerance,p.Results.spdToleranceFraction)    
+%}
+
+% Pick up and check values from search
 maxSpd = scaleFactor*targetSpd;
-maxPrimary = OLSpdToPrimary(oneLightCal, maxSpd, 'lambda', p.Results.lambda,...
+[maxPrimary,~,gamutDeviation] = OLSpdToPrimary(oneLightCal, maxSpd, 'lambda', p.Results.lambda,...
     'primaryHeadroom',p.Results.primaryHeadroom, ...
     'primaryTolerance',p.Results.primaryTolerance, ...
-    'checkPrimaryOutOfRange',p.Results.checkPrimaryOutOfRange);
+    'checkPrimaryOutOfRange',false); % p.Results.checkPrimaryOutOfRange
 
 % Check tolerance between predicted spd and target, in a relative sense
 predictedRelSpd = OLPrimaryToSpd(oneLightCal,maxPrimary)/scaleFactor;
@@ -156,7 +162,7 @@ function [c, ceq] = OLFindMaxSpdCon(scaleFactor, oneLightCal, targetSpd, lambda,
     'primaryHeadroom',primaryHeadroom, ...
     'primaryTolerance',primaryTolerance, ...
     'checkPrimaryOutOfRange',false);
-c1 = gamutDeviation - 0.9*primaryTolerance;
+c1 = gamutDeviation - realmin;
 
 % Scale factor not acceptable if we don't get a properly scaled version of
 % the target.
@@ -166,12 +172,22 @@ c1 = gamutDeviation - 0.9*primaryTolerance;
 predictedTargetSpd = OLPrimaryToSpd(oneLightCal,maxPrimary)/scaleFactor;
 [~, errorFraction] = OLCheckSpdTolerance(targetSpd,predictedTargetSpd, ...
     'checkSpd', false, 'spdToleranceFraction', spdToleranceFraction);
-c2 = errorFraction-0.6*spdToleranceFraction;  
+c2 = errorFraction-0.999*spdToleranceFraction;  
 
 % Return values
 c = [c1(:) ; c2(:)];
-ceq = 0;
+ceq = [];
 
+% % Scale factor not acceptable if we don't get a properly scaled version of
+% % the target
+% maxPrimary = OLSpdToPrimary(oneLightCal, scaleFactor*targetSpd, 'lambda', lambda);
+% predTargetSpd = OLPrimaryToSpd(oneLightCal,maxPrimary)/scaleFactor;
+% diffSpd = abs(targetSpd(:)-predTargetSpd(:));
+% 
+% % Multiplying by 0.999 keeps us enough within constraint so that the check
+% % after the search does not fail.
+% cVec = diffSpd - 0.999*spdToleranceFraction*max(targetSpd(:));
+% c = cVec;
 
 end
 

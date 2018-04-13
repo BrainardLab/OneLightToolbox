@@ -22,7 +22,8 @@ function [primary, inGamut, gamutDeviation] = OLCheckPrimaryGamut(primary,vararg
 %     inGamut                 - Boolean. True if returned primaries are in
 %                               gamut, false if not.  You can only get
 %                               false if checkPrimaryOutOfRange is false.
-%     gamutDeviation          - 0 if primaries are in gamut. Otherwise the
+%     gamutDeviation          - Negative if primaries are in gamut, amount negative
+%                               tells you magnitude of margin. Otherwise this is the
 %                               magnitude of the largest deviation.
 % 
 % Optional key/value pairs:
