@@ -1,9 +1,9 @@
-function [maxSpd, maxPrimary, scaleFactor] = OLFindMaxSpectrum(oneLightCal, targetSpd, varargin)
+function [maxSpd, maxPrimary, scaleFactor] = OLFindMaxSpd(oneLightCal, targetSpd, varargin)
 % Finds the scale factor to maximize OneLight spectrum luminance.
 %
 % Syntax:
-%     [maxSpd, maxPrimary, scaleFactor] = OLFindMaxSpectrum(oneLightCal, targetSpd)
-%     [maxSpd, maxPrimary, scaleFactor] = OLFindMaxSpectrum(oneLightCal, targetSpd, 'lambda', 0.001)
+%     [maxSpd, maxPrimary, scaleFactor] = OLFindMaxSpd(oneLightCal, targetSpd)
+%     [maxSpd, maxPrimary, scaleFactor] = OLFindMaxSpd(oneLightCal, targetSpd, 'lambda', 0.001)
 %
 % Description:
 %     Takes the OneLight calibration and a target spectral power distribution
@@ -87,8 +87,8 @@ options = optimset('fmincon');
 options = optimset(options,'Diagnostics','off','Display','off','LargeScale','off','Algorithm','active-set', 'MaxIter', 10000, 'MaxFunEvals', 1000, 'TolFun', 1e-10, 'TolCon', 1e-10, 'TolX', 1e-10);
 vlb = minScaleFactor;
 vub = 1e4;
-scaleFactor = fmincon(@(x) OLFindMaxSpectrumFun(x,oneLightCal,targetSpd,p.Results.lambda,p.Results.findMin,p.Results.spdToleranceFraction),1,[],[],[],[], ...
-    vlb,vub,@(x) OLFindMaxSpectrumCon(x, oneLightCal, targetSpd, p.Results.lambda,p.Results.spdToleranceFraction),...
+scaleFactor = fmincon(@(x) OLFindMaxSpdFun(x,oneLightCal,targetSpd,p.Results.lambda,p.Results.findMin,p.Results.spdToleranceFraction),1,[],[],[],[], ...
+    vlb,vub,@(x) OLFindMaxSpdCon(x, oneLightCal, targetSpd, p.Results.lambda,p.Results.spdToleranceFraction),...
     options);
 
 maxSpd = scaleFactor*targetSpd;
@@ -110,7 +110,7 @@ end
 
 % This is the function that fmincon tries to drive to minimize
 % argument.
-function f = OLFindMaxSpectrumFun(scaleFactor, oneLightCal, targetSpd, lambda, findMin, spdToleranceFraction)
+function f = OLFindMaxSpdFun(scaleFactor, oneLightCal, targetSpd, lambda, findMin, spdToleranceFraction)
 
 maxPrimary = OLSpdToPrimary(oneLightCal, scaleFactor*targetSpd, 'lambda', lambda);
 
@@ -133,7 +133,7 @@ end
 end
 
 % This is the constraint function that keeps the relative spectrum correct
-function [c, ceq] = OLFindMaxSpectrumCon(scaleFactor, oneLightCal, targetSpd, lambda, spdToleranceFraction)
+function [c, ceq] = OLFindMaxSpdCon(scaleFactor, oneLightCal, targetSpd, lambda, spdToleranceFraction)
 
 % Scale factor not acceptable if we don't get a properly scaled version of
 % the target

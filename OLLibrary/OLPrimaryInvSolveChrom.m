@@ -49,8 +49,8 @@ function [maxPrimary,minPrimary,maxLum,minLum] = ...
 %                               spectral shape of the maximum modulation.
 %   'primaryTolerance         - Scalar. Truncate to range [0,1] if primaries are
 %                               within this tolerance of [0,1]. Default 1e-6, and
-%                               'checkOutOfRange' value is true.
-%   'checkOutOfRange'         - Boolean. Perform tolerance check.  Default true.
+%                               'checkPrimaryOutOfRange' value is true.
+%   'checkPrimaryOutOfRange'  - Boolean. Perform tolerance check.  Default true.
 %   'initialLuminanceFactor'  - Scaler. We need to start the search at an in gamut
 %                               set of primaries that produce the desired
 %                               chromaticity. This requires guessing an in
@@ -99,6 +99,7 @@ function [maxPrimary,minPrimary,maxLum,minLum] = ...
 %   03/27/18  dhb     Add 'primaryHeadroom' key/value pair.
 %   04/01/18  dhb     Primary range stuff.
 %   04/02/18  dhb     Rename and rewrite.
+%   04/12/18  dhb     Update to call OLCheckPrimaryGamut.
 
 %% Examples:
 %{
@@ -142,7 +143,7 @@ function [maxPrimary,minPrimary,maxLum,minLum] = ...
 p = inputParser;
 p.addParameter('primaryHeadroom', 0.01, @isscalar);
 p.addParameter('primaryTolerance', 1e-6, @isscalar);
-p.addParameter('checkOutOfRange', true, @islogical);
+p.addParameter('checkPrimaryOutOfRange', true, @islogical);
 p.addParameter('initialLuminanceFactor', 0.2, @isnumeric);
 p.addParameter('whichXYZ', 'xyzCIEPhys10', @ischar);
 p.addParameter('lambda', 0.005, @isscalar);
@@ -244,11 +245,10 @@ x = fmincon(@(x) ObjFunctionMaxLum(x, devicePrimaryBasis, ambientSpd, T_xyz),ini
 maxPrimary = x;
 
 %% Check that primaries are within gamut to tolerance.
-maxPrimary(maxPrimary > 1 & maxPrimary < 1 + p.Results.primaryTolerance) = 1;
-maxPrimary(maxPrimary < 0 & maxPrimary > -p.Results.primaryTolerance) = 0;
-if (p.Results.checkOutOfRange && (any(maxPrimary(:) > 1) || any(maxPrimary(:) < 0) ))
-    error('At one least primary value is out of range [0,1]');
-end
+maxPrimary = OLCheckPrimaryGamut(maxPrimary,...
+    'primaryHeadroom',p.Results.primaryHeadroom, ...
+    'primaryTolerance',p.Results.primaryTolerance, ...
+    'checkPrimaryOutOfRange',p.Results.checkPrimaryOutOfRange);
 
 %% Get max spd and its luminance
 maxSpd = OLPrimaryToSpd(cal,maxPrimary);
@@ -266,7 +266,7 @@ checkxyY = XYZToxyY(checkXYZ)
 switch (p.Results.optimizationTarget)
     case 'maxLum'
         %% Find minimum luminance spd with same relative luminance as max
-        [minSpd, minPrimary] = OLFindMaxSpectrum(cal, maxSpd, ...
+        [minSpd, minPrimary] = OLFindMaxSpd(cal, maxSpd, ...
             'lambda', p.Results.lambda, ...
             'findMin', true, ...
             'spdToleranceFraction', p.Results.spdToleranceFraction, ...
@@ -288,11 +288,10 @@ switch (p.Results.optimizationTarget)
         minPrimary = x;
         
         %% Check that primaries are within gamut to tolerance.
-        minPrimary(minPrimary > 1 & minPrimary < 1 + p.Results.primaryTolerance) = 1;
-        minPrimary(minPrimary < 0 & minPrimary > -p.Results.primaryTolerance) = 0;
-        if (p.Results.checkOutOfRange && (any(minPrimary(:) > 1) || any(minPrimary(:) < 0) ))
-            error('At one least primary value is out of range [0,1]');
-        end
+        minPrimary = OLCheckPrimaryGamut(minPrimary,...
+            'primaryHeadroom',p.Results.primaryHeadroom, ...
+            'primaryTolerance',p.Results.primaryTolerance, ...
+            'checkPrimaryOutOfRange',p.Results.checkPrimaryOutOfRange);
         
         %% Can look at these to see if things came out right
         % checkXYZ = T_xyz*B_primary*minPrimary;
@@ -303,7 +302,7 @@ switch (p.Results.optimizationTarget)
         minLum = T_xyz(2,:)*minSpd;
         
         %% Find minimum luminance spd with same srelative luminance as max
-        [maxSpd, maxPrimary] = OLFindMaxSpectrum(cal, minSpd, ...
+        [maxSpd, maxPrimary] = OLFindMaxSpd(cal, minSpd, ...
             'lambda', p.Results.lambda, ...
             'findMin', false, ...
             'spdToleranceFraction', p.Results.spdToleranceFraction, ...
@@ -336,16 +335,14 @@ switch (p.Results.optimizationTarget)
         %}
         
         %% Check that primaries are within gamut to tolerance.
-        maxPrimary(maxPrimary > 1 & maxPrimary < 1 + p.Results.primaryTolerance) = 1;
-        maxPrimary(maxPrimary < 0 & maxPrimary > -p.Results.primaryTolerance) = 0;
-        if (p.Results.checkOutOfRange && (any(maxPrimary(:) > 1) || any(maxPrimary(:) < 0) ))
-            error('At one least primary value is out of range [0,1]');
-        end
-        minPrimary(minPrimary > 1 & minPrimary < 1 + p.Results.primaryTolerance) = 1;
-        minPrimary(minPrimary < 0 & minPrimary > -p.Results.primaryTolerance) = 0;
-        if (p.Results.checkOutOfRange && (any(minPrimary(:) > 1) || any(minPrimary(:) < 0) ))
-            error('At one least primary value is out of range [0,1]');
-        end
+        maxPrimary = OLCheckPrimaryGamut(maxPrimary,...
+            'primaryHeadroom',p.Results.primaryHeadroom, ...
+            'primaryTolerance',p.Results.primaryTolerance, ...
+            'checkPrimaryOutOfRange',p.Results.checkPrimaryOutOfRange);
+        minPrimary = OLCheckPrimaryGamut(minPrimary,...
+            'primaryHeadroom',p.Results.primaryHeadroom, ...
+            'primaryTolerance',p.Results.primaryTolerance, ...
+            'checkPrimaryOutOfRange',p.Results.checkPrimaryOutOfRange);
         
         % Can look at these to see if chromaticities came out right
         %{
