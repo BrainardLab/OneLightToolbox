@@ -1,4 +1,4 @@
-function [primary, inGamut] = OLCheckPrimaryGamut(primary,varargin)
+function [primary, inGamut, gamutDeviation] = OLCheckPrimaryGamut(primary,varargin)
 % Check whether primaries are sufficiently in gamut, guarantee return in 0-1
 %
 % Syntax:
@@ -22,6 +22,8 @@ function [primary, inGamut] = OLCheckPrimaryGamut(primary,varargin)
 %     inGamut                 - Boolean. True if returned primaries are in
 %                               gamut, false if not.  You can only get
 %                               false if checkPrimaryOutOfRange is false.
+%     gamutDeviation          - 0 if primaries are in gamut. Otherwise the
+%                               magnitude of the largest deviation.
 % 
 % Optional key/value pairs:
 %   'primaryHeadroom'         - Scalar.  Headroom to leave on primaries.  Default
@@ -37,6 +39,9 @@ function [primary, inGamut] = OLCheckPrimaryGamut(primary,varargin)
 %   'checkPrimaryOutOfRange'  - Boolean. Perform primary tolerance check. Default true.
 %                               Do not change this default.  Sometimes
 %                               assumed to be true by a caller.
+%   'differentialMode'        - Boolean. If true, allowable gamut starts at [-1,1] not at
+%                               [0,1], and then is adjusted by
+%                               primaryHeadroom. Default false.
 %
 % See also: OLSpdToPrimary, OLPrimaryInvSolveChrom, OLFindMaxSpd,
 %           OLPrimaryToSpd.
@@ -52,22 +57,35 @@ p = inputParser;
 p.addParameter('primaryHeadroom', 0, @isscalar);
 p.addParameter('primaryTolerance', 1e-6, @isscalar);
 p.addParameter('checkPrimaryOutOfRange', true, @islogical);
+p.addParameter('differentialMode', false, @islogical);
 p.parse(varargin{:});
 
 %% Initialize
 inGamut = true;
+gamutDeviation = 0;
+
+%% Handle differential mode
+if (p.Results.differentialMode)
+    lowerGamut = -1;
+else
+    lowerGamut = 0;
+end
+upperGamut = 1;
 
 %% Check that primaries are within gamut to tolerance.
 %
 % Truncate and call it good if so, throw error conditionally on checking if
 % not.
-primary(primary < p.Results.primaryHeadroom & primary > p.Results.primaryHeadroom - p.Results.primaryTolerance) = p.Results.primaryHeadroom;
-primary(primary > 1-p.Results.primaryHeadroom & primary < 1 -p.Results.primaryHeadroom + p.Results.primaryTolerance) = 1-p.Results.primaryHeadroom;
-if ( (any(primary(:) > 1-p.Results.primaryHeadroom) || any(primary(:) < p.Results.primaryHeadroom) ))
+primary(primary < lowerGamut + p.Results.primaryHeadroom & primary > lowerGamut + p.Results.primaryHeadroom - p.Results.primaryTolerance) = lowerGamut + p.Results.primaryHeadroom;
+primary(primary > upperGamut - p.Results.primaryHeadroom & primary < upperGamut - p.Results.primaryHeadroom + p.Results.primaryTolerance) = upperGamut - p.Results.primaryHeadroom;
+if ( (any(primary(:) > upperGamut - p.Results.primaryHeadroom) || any(primary(:) < lowerGamut + p.Results.primaryHeadroom) ))
     if (p.Results.checkPrimaryOutOfRange)  
         error('At one least primary value is out of gamut');
     else
         inGamut = false;
+        upperGamutDeviation = abs(max(primary(:)) - (upperGamut-p.Results.primaryHeadroom));
+        lowerGamutDeviation = abs(min(primary(:)) - (lowerGamut+p.Results.primaryHeadroom));
+        gamutDeviation = max([upperGamutDeviation lowerGamutDeviation]);
     end
 end
 

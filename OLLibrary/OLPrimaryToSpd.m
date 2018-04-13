@@ -1,9 +1,9 @@
-function theSpd = OLPrimaryToSpd(calibration, primary, varargin)
+function predictedSpd = OLPrimaryToSpd(calibration, primary, varargin)
 % Predict spectral power distribution from primar values
 %
 % Syntax:
-%   theSpd = OLPrimaryToSpd(primary, calibration);
-%   theSpd = OLPrimaryToSpd(primary, calibration, 'differentialMode', true);
+%   predictedSpd = OLPrimaryToSpd(primary, calibration);
+%   predictedSpd = OLPrimaryToSpd(primary, calibration, 'differentialMode', true);
 %
 % Description:
 %    Takes in vectors of primary values, and a OneLight calibration, and
@@ -20,13 +20,18 @@ function theSpd = OLPrimaryToSpd(calibration, primary, varargin)
 %                  processed by OLInitCal)
 %
 % Outputs:
-%    theSpd      - Spectral power distribution(s) predicted from the
+%    predictedSpd - Spectral power distribution(s) predicted from the
 %                  primary values and calibration information
 %
 % Optional key/value pairs:
 %    'differentialMode' - Boolean. Do not add in the
-%                  dark light and allow primaries to be in range
-%                  [-1,1] rather than [0,1]. Default false.
+%                         dark light and allow primaries to be in range
+%                         [-1,1] rather than [0,1]. Default false.
+%    'primaryTolerance' - Scalar (default 1e-6). Primaries can be this
+%                         much out of gamut and it will truncate them
+%                         into gamut without complaining.
+%    'checkPrimaryOutOfRange' - Boolean (default true). Throw error if any passed
+%                         primaries are out of the [0-1] range.
 %
 % See also:
 %    OLSpdToPrimary, OLPrimaryToSettings, OLSettingsToStartsStops,
@@ -39,28 +44,33 @@ function theSpd = OLPrimaryToSpd(calibration, primary, varargin)
 %    12/08/17  jv   put header comment in ISETBIO convention.
 %    03/08/18  jv   clarified header comment.
 
-% Parse input
+%% Parse input
 p = inputParser;
 p.addRequired('calibration',@isstruct);
 p.addRequired('primary',@isnumeric);
 p.addParameter('differentialMode', false, @islogical);
+p.addParameter('primaryTolerance',1e-6, @isscalar);
+p.addParameter('checkPrimaryOutOfRange', true, @islogical);
 p.parse(calibration,primary,varargin{:});
 
-% Make sure that the calibration file has been processed by OLInitCal.
+%% Make sure that the calibration file has been processed by OLInitCal.
 assert(isfield(calibration, 'computed'),...
     'OneLightToolbox:OLPrimaryToSpd:InvalidCalFile', ...
     'The calibration file needs to be processed by OLInitCal.');
+
+%% Check input range
+primary = OLCheckPrimaryGamut(primary,...
+    'primaryHeadroom',0, ...
+    'primaryTolerance',p.Results.primaryTolerance, ...
+    'checkPrimaryOutOfRange',p.Results.checkPrimaryOutOfRange, ...
+    'differentialMode',p.Results.differentialMode);
 
 % Predict spd from calibration fields
 %
 % Allowable primary range depends on whether differential mode is true or
 % not.
 if (p.Results.differentialMode)
-    primary(primary < -1) = -1;
-    primary(primary > 1) = 1;
-    theSpd = calibration.computed.pr650M * primary;
+    predictedSpd = calibration.computed.pr650M * primary;
 else
-    primary(primary < 0) = 0;
-    primary(primary > 1) = 1;
-    theSpd = calibration.computed.pr650M * primary + calibration.computed.pr650MeanDark;
+    predictedSpd = calibration.computed.pr650M * primary + calibration.computed.pr650MeanDark;
 end

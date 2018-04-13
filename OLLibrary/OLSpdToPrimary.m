@@ -1,10 +1,10 @@
-function [primaries,predictedSpd,fractionalError] = OLSpdToPrimary(oneLightCal, targetSpd, varargin)
+function [primary,predictedSpd,errorFraction] = OLSpdToPrimary(oneLightCal, targetSpd, varargin)
 % Converts a spectrum into normalized primary OneLight mirror values.
 %
 % Syntax:
-%     primaries = OLSpdToPrimary(oneLightCal, targetSpd)
-%     primaries = OLSpdToPrimary(oneLightCal, targetSpd, 'lambda', 0.01)
-%     primaries = OLSpdToPrimary(oneLightCal, targetSpd, 'verbose, true)
+%     primary = OLSpdToPrimary(oneLightCal, targetSpd)
+%     primary = OLSpdToPrimary(oneLightCal, targetSpd, 'lambda', 0.01)
+%     primary = OLSpdToPrimary(oneLightCal, targetSpd, 'verbose, true)
 %
 % Description:
 %    Convert a spectral power distribution to the linear 0-1 fraction of
@@ -38,11 +38,11 @@ function [primaries,predictedSpd,fractionalError] = OLSpdToPrimary(oneLightCal, 
 %                        used in the calibration file (typically 380 to 780 nm in 2 nm steps).
 %
 % Outputs:
-%    primaries         - Column vector containing the primary values for each effective primary
+%    primary           - Column vector containing the primary values for each effective primary
 %                        of the OneLight. nPrimaries is the number of
 %                        effective primaries. Not gamma corrected.
 %    predictedSpd      - The spd predicted for the returned primaries.
-%    fractionalError   - How close the predictedSpd came to the target, in
+%    errorFraction     - How close the predictedSpd came to the target, in
 %                        fractional terms.
 %
 % 
@@ -51,18 +51,28 @@ function [primaries,predictedSpd,fractionalError] = OLSpdToPrimary(oneLightCal, 
 %  'lambda'            - Scalar (default 0.005). Value of primary smoothing
 %                        parameter.  Smaller values lead to less smoothing,
 %                        with 0 doing no smoothing at all.
-%  'differentialMode' - true/false (default false). Run in differential
+%   'primaryHeadroom'  - Scalar.  Headroom to leave on primaries.  Default
+%                        0. How much headroom to protect in definition of
+%                        in gamut.  Range used for check and truncation is
+%                        [primaryHeadroom 1-primaryHeadroom]. Do not change
+%                        this default.  Sometimes assumed to be true by a
+%                        caller.
+%   'primaryTolerance  - Scalar. Truncate to range [0,1] if primaries are
+%                        within this tolerance of [0,1]. Default 1e-6, and
+%                        'checkPrimaryOutOfRange' value is true.
+%   'checkPrimaryOutOfRange' - Boolean. Perform primary tolerance check. Default true.
+%   'differentialMode' - Boolean (default false). Run in differential
 %                       mode.  This means, don't subtract dark light.
 %                       Useful when we want to find delta primaries that
 %                       produce a predicted delta spd.
-%  'checkSpd'         - Boolean (default false). Because of smoothing and
+%   'checkSpd'        - Boolean (default false). Because of smoothing and
 %                       gamut limitations, this is not guaranteed to
 %                       produce primaries that lead to the predictedSpd
 %                       matching the targetSpd.  Set this to true to check
 %                       force an error if difference exceeds tolerance.
 %                       Otherwise, the toleranceFraction actually obtained
 %                       is retruned. Tolerance is given by spdTolerance.
-%  'spdToleranceFraction' - Scalar (default 0.01). If checkSpd is true, the
+%   'spdToleranceFraction' - Scalar (default 0.01). If checkSpd is true, the
 %                       tolerance to avoid an error message is this
 %                       fraction times the maximum of targetSpd.
 %
@@ -84,6 +94,9 @@ function [primaries,predictedSpd,fractionalError] = OLSpdToPrimary(oneLightCal, 
 p = inputParser;
 p.addParameter('verbose', false, @islogical);
 p.addParameter('lambda', 0.005, @isscalar);
+p.addParameter('primaryHeadroom', 0, @isscalar);
+p.addParameter('primaryTolerance', 1e-6, @isscalar);
+p.addParameter('checkPrimaryOutOfRange', true, @islogical);
 p.addParameter('differentialMode', false, @islogical);
 p.addParameter('checkSpd', false, @islogical);
 p.addParameter('spdToleranceFraction', 0.01, @isscalar);
@@ -159,25 +172,22 @@ end
 % Call into lsqlin
 options = optimset('lsqlin');
 options = optimset(options,'Diagnostics','off','Display','off');
-primaries = lsqlin(C,d,[],[],[],[],vlb,vub,[],options);
+primary = lsqlin(C,d,[],[],[],[],vlb,vub,[],options);
 if params.verbose
-    fprintf('Lsqlin effective primaries: min = %g, max = %g\n', min(primaries(:)), max(primaries(:)));
+    fprintf('Lsqlin effective primaries: min = %g, max = %g\n', min(primary(:)), max(primary(:)));
 end
 
 %% Make sure we enforce bounds, in case lsqlin has a bit of numerical slop
-if params.differentialMode
-    primaries(primaries < -1) = -1;
-else
-    primaries(primaries < 0) = 0;
-end
-primaries(primaries > 1) = 1;
+primary = OLCheckPrimaryGamut(primary, ...
+    'primaryHeadroom',p.Results.primaryHeadroom, ...
+    'primaryTolerance',p.Results.primaryTolerance, ...
+    'checkPrimaryOutOfRange',p.Results.checkPrimaryOutOfRange, ...
+    'differentialMode',p.Results.differentialMode);
 
 %% Predict spd, and check if specified
-predictedSpd = OLPrimaryToSpd(oneLightCal,primaries,'differentialMode',params.differentialMode);
-fractionalError = max(abs(targetSpd(:)-predictedSpd(:)))/max(abs(targetSpd(:)));
-if (p.Results.checkSpd & fractionalError > p.Results.spdToleranceFraction)
-    error('Predicted spd not within tolerance of target');
-end
+predictedSpd = OLPrimaryToSpd(oneLightCal,primary,'differentialMode',params.differentialMode);
+[~,errorFraction] = OLCheckSpdTolerance(targetSpd,predictedSpd, ...
+    'checkSpd',p.Results.checkSpd,'spdToleranceFraction',p.Results.spdToleranceFraction);
 end
 
 

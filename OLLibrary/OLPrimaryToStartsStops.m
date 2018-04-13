@@ -58,7 +58,9 @@ function [starts, stops] = OLPrimaryToStartsStops(primary, calibration, varargin
 %    OLPrimaryToSettings, OLSettingsToStartsStops
 
 % History:
-%    01/29/18  jv  wrote it.
+%    01/29/18  jv  Wrote it.
+%    04/12/18  dhb Updating primary gamut checking.  Provide separate
+%                  tolerances for gamut checking and uniqueness.
 
 % Examples:
 %{

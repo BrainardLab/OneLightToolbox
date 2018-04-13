@@ -41,18 +41,27 @@ function [maxSpd, maxPrimary, scaleFactor] = OLFindMaxSpd(oneLightCal, targetSpd
 %                       Smaller lead to less smoothing, with 0 doing no
 %                       smoothing at all. This gets passed through to
 %                       OLSpdToPrimary.
-%  'checkSpd'         - Boolean (default false). Because of smoothing and
+%   'primaryHeadroom' - Scalar.  Headroom to leave on primaries.  Default
+%                       0.0
+%   'primaryTolerance - Scalar. Truncate to range [0,1] if primaries are
+%                       within this tolerance of [0,1]. Default 1e-6, and
+%                       'checkPrimaryOutOfRange' value is true.
+%   'checkPrimaryOutOfRange'  - Boolean. Perform tolerance check.  Default true.
+%   'checkSpd'        - Boolean (default false). Because of smoothing and
 %                       gamut limitations, this is not guaranteed to
 %                       produce primaries that lead to the predictedSpd
 %                       matching the targetSpd.  Set this to true to check.
 %                       Tolerance is given by spdFractionTolerance.
-%  'spdToleranceFraction' - Scalar (default 0.01). If checkSpd is true, the
+%   'spdToleranceFraction' - Scalar (default 0.01). If checkSpd is true, the
 %                       tolerance to avoid an error message is this
 %                       fraction times the maximum of targetSpd, with the
 %                       comparison begin made on maxSpd scaled back to
 %                       targetSpd.
-%  'findMin'          - Boolean (default false). Find minimum rather than
+%   'findMin'         - Boolean (default false). Find minimum rather than
 %                       maximum, with everything else the same.
+%   'maxSearchIter'   - Control how long the search goes for.
+%                       Default, 100000.  Reduce if you don't need
+%                       to go that long and things will get faster.
 %
 % See also: OLPrimaryInvSolveChrom, OLFindMinSpectrum.
 
@@ -64,9 +73,13 @@ function [maxSpd, maxPrimary, scaleFactor] = OLFindMaxSpd(oneLightCal, targetSpd
 p = inputParser;
 p.addParameter('verbose', false, @islogical);
 p.addParameter('lambda', 0.005, @isscalar);
+p.addParameter('primaryHeadroom', 0.0, @isscalar);
+p.addParameter('primaryTolerance', 1e-6, @isscalar);
+p.addParameter('checkPrimaryOutOfRange', true, @islogical);
 p.addParameter('checkSpd', false, @islogical);
 p.addParameter('spdToleranceFraction', 0.01, @isscalar);
 p.addParameter('findMin', false, @islogical);
+p.addParameter('maxSearchIter',10000,@isscalar);
 p.parse(varargin{:});
 
 % Make sure that the oneLightCal has been properly processed by OLInitCal.
@@ -84,43 +97,43 @@ end
 %% Maximize luminance while staying at same relative spd
 minScaleFactor = 1e-4;
 options = optimset('fmincon');
-options = optimset(options,'Diagnostics','off','Display','off','LargeScale','off','Algorithm','active-set', 'MaxIter', 10000, 'MaxFunEvals', 1000, 'TolFun', 1e-10, 'TolCon', 1e-10, 'TolX', 1e-10);
+options = optimset(options,'Diagnostics','off','Display','iter','LargeScale','off','Algorithm','active-set', 'MaxIter', p.Results.maxSearchIter, 'MaxFunEvals', 1000, 'TolFun', 1e-10, 'TolCon', 1e-10, 'TolX', 1e-10);
 vlb = minScaleFactor;
 vub = 1e4;
 scaleFactor = fmincon(@(x) OLFindMaxSpdFun(x,oneLightCal,targetSpd,p.Results.lambda,p.Results.findMin,p.Results.spdToleranceFraction),1,[],[],[],[], ...
-    vlb,vub,@(x) OLFindMaxSpdCon(x, oneLightCal, targetSpd, p.Results.lambda,p.Results.spdToleranceFraction),...
+    vlb,vub,@(x) OLFindMaxSpdCon(x, oneLightCal, targetSpd, p.Results.lambda,p.Results.primaryHeadroom,p.Results.primaryTolerance,p.Results.spdToleranceFraction),...
     options);
-
 maxSpd = scaleFactor*targetSpd;
-maxPrimary = OLSpdToPrimary(oneLightCal, maxSpd, 'lambda', p.Results.lambda);
+maxPrimary = OLSpdToPrimary(oneLightCal, maxSpd, 'lambda', p.Results.lambda,...
+    'primaryHeadroom',p.Results.primaryHeadroom, ...
+    'primaryTolerance',p.Results.primaryTolerance, ...
+    'checkPrimaryOutOfRange',p.Results.checkPrimaryOutOfRange);
 
-if (p.Results.checkSpd)
-    predTargetSpd = OLPrimaryToSpd(oneLightCal,maxPrimary)/scaleFactor;
-    if (max(abs(targetSpd(:)-predTargetSpd(:))) > p.Results.spdToleranceFraction*max(targetSpd(:)))
-        error('Spd predicted from primaries not sufficently close to target max spd');
-    end
-    
-    % figure; clf; hold on
-    % plot(targetSpd,'r','LineWidth',2);
-    % plot(predTargetSpd,'g','LineWidth',1);
-    % plot(maxSpd,'b');
+% Check tolerance between predicted spd and target, in a relative sense
+predictedRelSpd = OLPrimaryToSpd(oneLightCal,maxPrimary)/scaleFactor;
+OLCheckSpdTolerance(targetSpd,predictedRelSpd, ...
+    'checkSpd',p.Results.checkSpd,'spdToleranceFraction',p.Results.spdToleranceFraction);
+% figure; clf; hold on
+% plot(targetSpd,'r','LineWidth',2);
+% plot(predictedRelSpd,'g','LineWidth',1);
+% plot(maxSpd,'b');
+
 end
 
-end
-
-% This is the function that fmincon tries to drive to minimize
-% argument.
+% This is the function that fmincon tries to drive to minimize argument.
 function f = OLFindMaxSpdFun(scaleFactor, oneLightCal, targetSpd, lambda, findMin, spdToleranceFraction)
 
 maxPrimary = OLSpdToPrimary(oneLightCal, scaleFactor*targetSpd, 'lambda', lambda);
 
-
-% % Scale factor not acceptable if we don't get a properly scaled version of
-% % the target
+% Scale factor not acceptable if we don't get a properly scaled version of
+% the target.  Can try to enforce this here in the search error function
+% if the constraint function is not doing the job properly.
+%
 % predTargetSpd = OLPrimaryToSpd(oneLightCal,maxPrimary)/scaleFactor;
-% if (max(abs(targetSpd(:)-predTargetSpd(:))) > spdToleranceFraction*max(targetSpd(:)))
+% spdOK = OLCheckSpdTolerance(targetSpd,predictedRelSpd, ...
+%     'checkSpd',false,'spdToleranceFraction',p.Results.spdToleranceFraction);
+% if (~spdOK)
 %     f = realmax;
-%     return;
 % end
 
 % Now do the right thing depending on whether we are maximizing or minimizing
@@ -133,20 +146,32 @@ end
 end
 
 % This is the constraint function that keeps the relative spectrum correct
-function [c, ceq] = OLFindMaxSpdCon(scaleFactor, oneLightCal, targetSpd, lambda, spdToleranceFraction)
+function [c, ceq] = OLFindMaxSpdCon(scaleFactor, oneLightCal, targetSpd, lambda, ...
+    primaryHeadroom, primaryTolerance, spdToleranceFraction)
+
+
+% Constraint that found primaries stay within gamut, according to the
+% parameters
+[maxPrimary,~,gamutDeviation] = OLSpdToPrimary(oneLightCal, scaleFactor*targetSpd, 'lambda', lambda, ...
+    'primaryHeadroom',primaryHeadroom, ...
+    'primaryTolerance',primaryTolerance, ...
+    'checkPrimaryOutOfRange',false);
+c1 = gamutDeviation - 0.9*primaryTolerance;
 
 % Scale factor not acceptable if we don't get a properly scaled version of
-% the target
-maxPrimary = OLSpdToPrimary(oneLightCal, scaleFactor*targetSpd, 'lambda', lambda);
-predTargetSpd = OLPrimaryToSpd(oneLightCal,maxPrimary)/scaleFactor;
-diffSpd = abs(targetSpd(:)-predTargetSpd(:));
+% the target.
+%
+% Multiplying the desired tolerance faction by 0.999 keeps us enough within
+% constraint so that the check after the search does not fail.
+predictedTargetSpd = OLPrimaryToSpd(oneLightCal,maxPrimary)/scaleFactor;
+[~, errorFraction] = OLCheckSpdTolerance(targetSpd,predictedTargetSpd, ...
+    'checkSpd', false, 'spdToleranceFraction', spdToleranceFraction);
+c2 = errorFraction-0.6*spdToleranceFraction;  
 
-% Multiplying by 0.999 keeps us enough within constraint so that the check
-% after the search does not fail.
-cVec = diffSpd - 0.999*spdToleranceFraction*max(targetSpd(:));
-c = cVec;
-
+% Return values
+c = [c1(:) ; c2(:)];
 ceq = 0;
+
 
 end
 
