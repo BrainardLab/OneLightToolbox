@@ -110,8 +110,8 @@ function [maxPrimary,minPrimary,maxLum,minLum] = ...
 %% Examples:
 %{
     % Maximize luminance first, let min lumiance and contrast be what they are.
-    %
-    % Get the OneLightToolbox demo cal structure
+    % This does OK, but not as well as maximizing contrast (next example
+    % below.)
     cal = OLGetCalibrationStructure('CalibrationType','DemoCal','CalibrationFolder',fullfile(tbLocateToolbox('OneLightToolbox'),'OLDemoCal'),'CalibrationDate','latest');
     [maxPrimary,minPrimary,maxLum,minLum] = OLPrimaryInvSolveChrom(cal, [0.54,0.38], ...
         'primaryHeadroom',0.005, 'lambda',0, 'spdToleranceFraction',0.005, 'verbose', true);
@@ -120,28 +120,27 @@ function [maxPrimary,minPrimary,maxLum,minLum] = ...
     fprintf('Luminance michaelson contrast, around mean: %0.2f%%\n',100*(maxLum-minLum)/(maxLum+minLum));
 %}
 %{
-    % Minimize luminance first, let max lumiance and contrast be what they are.
-    %
-    % Get the OneLightToolbox demo cal structure
-    cal = OLGetCalibrationStructure('CalibrationType','DemoCal','CalibrationFolder',fullfile(tbLocateToolbox('OneLightToolbox'),'OLDemoCal'),'CalibrationDate','latest');
-    [maxPrimary,minPrimary,maxLum,minLum] = OLPrimaryInvSolveChrom(cal, [0.54,0.38], ...
-        'primaryHeadroom',0.005, 'lambda',0, 'spdToleranceFraction',0.005, ...
-        'optimizationTarget','minLum', 'primaryHeadroomForInitialMax', 0.005, ...
-        'maxScaleDownForStart', 2, 'verbose', true);
-    fprintf('Max lum %0.2f, min lum %0.2f\n',maxLum,minLum);
-    fprintf('Luminance weber contrast, low to high: %0.2f%%\n',100*(maxLum-minLum)/minLum);
-    fprintf('Luminance michaelson contrast, around mean: %0.2f%%\n',100*(maxLum-minLum)/(maxLum+minLum));
-%}
-%{
     % Maximize contrast, let max/min luminances be what they are. This
     % needs a lot of iterations to converge, although it will eventually
-    % yield a pretty good solution with enormous contrast.
-    % Get the OneLightToolbox demo cal structure
+    % yield a pretty a good solution with enormous contrast.
     cal = OLGetCalibrationStructure('CalibrationType','DemoCal','CalibrationFolder',fullfile(tbLocateToolbox('OneLightToolbox'),'OLDemoCal'),'CalibrationDate','latest');
     [maxPrimary,minPrimary,maxLum,minLum] = OLPrimaryInvSolveChrom(cal, [0.54,0.38], ...
         'primaryHeadroom',0.005, 'lambda',0, 'spdToleranceFraction',0.005,  ...
         'optimizationTarget','maxContrast', 'primaryHeadroomForInitialMax', 0.005, ...
         'maxScaleDownForStart', 2, 'chromaticityTolerance', 0.001, 'maxSearchIter', 1000, 'verbose',true);
+    fprintf('Max lum %0.2f, min lum %0.2f\n',maxLum,minLum);
+    fprintf('Luminance weber contrast, low to high: %0.2f%%\n',100*(maxLum-minLum)/minLum);
+    fprintf('Luminance michaelson contrast, around mean: %0.2f%%\n',100*(maxLum-minLum)/(maxLum+minLum));
+%}
+%{
+    % Minimize luminance first, let max lumiance and contrast be what they
+    % are.  This seems to back itself into a search corner, and fail to find an
+    % acceptable solution. Maybe with a little more parameter fussing....
+    cal = OLGetCalibrationStructure('CalibrationType','DemoCal','CalibrationFolder',fullfile(tbLocateToolbox('OneLightToolbox'),'OLDemoCal'),'CalibrationDate','latest');
+    [maxPrimary,minPrimary,maxLum,minLum] = OLPrimaryInvSolveChrom(cal, [0.54,0.38], ...
+        'primaryHeadroom',0.005, 'lambda',0, 'spdToleranceFraction',0.005, ...
+        'optimizationTarget','minLum', 'primaryHeadroomForInitialMax', 0.005, ...
+        'maxScaleDownForStart', 2, 'verbose', true);
     fprintf('Max lum %0.2f, min lum %0.2f\n',maxLum,minLum);
     fprintf('Luminance weber contrast, low to high: %0.2f%%\n',100*(maxLum-minLum)/minLum);
     fprintf('Luminance michaelson contrast, around mean: %0.2f%%\n',100*(maxLum-minLum)/(maxLum+minLum));
@@ -297,7 +296,8 @@ switch (p.Results.optimizationTarget)
         
     case 'minLum'
         % Obtain some initial primaries from the max
-        initialPrimaries = OLSpdToPrimary(cal, maxSpd/p.Results.maxScaleDownForStart, 'lambda', p.Results.lambda);
+        %initialPrimaries = OLSpdToPrimary(cal, maxSpd/p.Results.maxScaleDownForStart, 'lambda', p.Results.lambda);
+        initialPrimaries = maxPrimary;
         
         % Minimize luminance while staying at chromaticity
         % Then take resulting maxSpd and find the spd with same
