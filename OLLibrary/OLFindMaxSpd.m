@@ -114,7 +114,7 @@ OLCheckSpdTolerance(targetSpd,checkSpd, ...
 % This seems to work robustly, and thus we use it for helping to
 % start other options.
 options = optimset('fmincon');
-options = optimset(options,'Diagnostics','off','Display',fminconDisplaySetting,'LargeScale','off','Algorithm','active-set', 'MaxIter', p.Results.maxSearchIter, 'MaxFunEvals', 100000, 'TolFun', 1e-3, 'TolCon', 1e-10, 'TolX', 1e-4);
+options = optimset(options,'Diagnostics','off','Display',fminconDisplaySetting,'LargeScale','off','Algorithm','active-set', 'MaxIter', p.Results.maxSearchIter, 'MaxFunEvals', 100000, 'TolFun', 1e-3, 'TolCon', 1e-6, 'TolX', 1e-4);
 vub = ones(size(initialPrimary))  - p.Results.primaryHeadroom;
 vlb = zeros(size(initialPrimary)) + p.Results.primaryHeadroom;
 x = fmincon(@(x) OLFindMaxSpdFun(x, cal, T_xyz, p.Results.lambda, p.Results.findMin), ... 
@@ -185,12 +185,12 @@ predictedSpd = OLPrimaryToSpd(cal,primary,'skipAllChecks',true);
     
 % Check how well we are doing on relative spd
 %
-% Multiplying the desired tolerance faction by 0.999 keeps us enough within
+% Multiplying the desired tolerance faction by 0.95 keeps us enough within
 % constraint so that the check after the search does not fail.
 predictedRelativeSpd = (predictedSpd\targetSpd)*predictedSpd;
 [~, errorFraction] = OLCheckSpdTolerance(targetSpd,predictedRelativeSpd, ...
     'checkSpd', false, 'spdToleranceFraction', spdToleranceFraction);
-c2 = errorFraction-0.9*spdToleranceFraction;  
+c2 = errorFraction-0.95*spdToleranceFraction;  
 
 % Return values
 c = [c2(:)];

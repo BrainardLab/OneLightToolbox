@@ -133,13 +133,15 @@ function [maxPrimary,minPrimary,maxLum,minLum] = ...
     fprintf('Luminance michaelson contrast, around mean: %0.2f%%\n',100*(maxLum-minLum)/(maxLum+minLum));
 %}
 %{
-    % Maximize contrast, let max/min luminances be what they are.
+    % Maximize contrast, let max/min luminances be what they are. This
+    % needs a lot of iterations to converge, although it will eventually
+    % yield a pretty good solution with enormous contrast.
     % Get the OneLightToolbox demo cal structure
     cal = OLGetCalibrationStructure('CalibrationType','DemoCal','CalibrationFolder',fullfile(tbLocateToolbox('OneLightToolbox'),'OLDemoCal'),'CalibrationDate','latest');
     [maxPrimary,minPrimary,maxLum,minLum] = OLPrimaryInvSolveChrom(cal, [0.54,0.38], ...
         'primaryHeadroom',0.005, 'lambda',0, 'spdToleranceFraction',0.005,  ...
         'optimizationTarget','maxContrast', 'primaryHeadroomForInitialMax', 0.005, ...
-        'maxScaleDownForStart', 2, 'chromaticityTolerance', 0.001, 'verbose',true);
+        'maxScaleDownForStart', 2, 'chromaticityTolerance', 0.001, 'maxSearchIter', 1000, 'verbose',true);
     fprintf('Max lum %0.2f, min lum %0.2f\n',maxLum,minLum);
     fprintf('Luminance weber contrast, low to high: %0.2f%%\n',100*(maxLum-minLum)/minLum);
     fprintf('Luminance michaelson contrast, around mean: %0.2f%%\n',100*(maxLum-minLum)/(maxLum+minLum));
@@ -256,7 +258,7 @@ end
 % This seems to work robustly, and thus we use it for helping to
 % start other options.
 options = optimset('fmincon');
-options = optimset(options,'Diagnostics','off','Display',fminconDisplaySetting,'LargeScale','off','Algorithm','active-set', 'MaxIter', p.Results.maxSearchIter, 'MaxFunEvals', 100000, 'TolFun', 1e-3, 'TolCon', 1e-10, 'TolX', 1e-4);
+options = optimset(options,'Diagnostics','off','Display',fminconDisplaySetting,'LargeScale','off','Algorithm','active-set', 'MaxIter', p.Results.maxSearchIter, 'MaxFunEvals', 1000000, 'TolFun', 1e-3, 'TolCon', 1e-6, 'TolX', 1e-4);
 vub = ones(size(devicePrimaryBasis, 2), 1)  - maxLumPrimaryHeadroom;
 vlb = zeros(size(devicePrimaryBasis, 2), 1) + maxLumPrimaryHeadroom;
 x = fmincon(@(x) ObjFunctionMaxLum(x, cal, T_xyz), ...
@@ -301,7 +303,7 @@ switch (p.Results.optimizationTarget)
         % Then take resulting maxSpd and find the spd with same
         % relative spectrum that has maximum within gamut luminance.
         options = optimset('fmincon');
-        options = optimset(options,'Diagnostics','off','Display',fminconDisplaySetting,'LargeScale','off','Algorithm','active-set', 'MaxIter', p.Results.maxSearchIter, 'MaxFunEvals', 100000, 'TolFun', 1e-3, 'TolCon', 1e-10, 'TolX', 1e-4);
+        options = optimset(options,'Diagnostics','off','Display',fminconDisplaySetting,'LargeScale','off','Algorithm','active-set', 'MaxIter', p.Results.maxSearchIter, 'MaxFunEvals', 1000000, 'TolFun', 1e-3, 'TolCon', 1e-6, 'TolX', 1e-4);
         vub = ones(size(devicePrimaryBasis, 2), 1)-p.Results.primaryHeadroom;
         vlb = ones(size(devicePrimaryBasis, 2), 1)*p.Results.primaryHeadroom;
         x = fmincon(@(x) ObjFunctionMinLum(x, cal, T_xyz), ...
@@ -342,7 +344,7 @@ switch (p.Results.optimizationTarget)
         % Then take resulting maxSpd and find the spd with same
         % relative specrum that has minimum within gamut luminance.
         options = optimset('fmincon');
-        options = optimset(options,'Diagnostics','off','Display',fminconDisplaySetting,'LargeScale','off','Algorithm','active-set', 'MaxIter', p.Results.maxSearchIter, 'MaxFunEvals', 100000, 'TolFun', 1e-3, 'TolCon', 1e-10, 'TolX', 1e-4);
+        options = optimset(options,'Diagnostics','off','Display',fminconDisplaySetting,'LargeScale','off','Algorithm','active-set', 'MaxIter', p.Results.maxSearchIter, 'MaxFunEvals', 1000000, 'TolFun', 1e-3, 'TolCon', 1e-6, 'TolX', 1e-4);
         vub = ones(size(devicePrimaryBasis, 2), 2)-p.Results.primaryHeadroom;
         vlb = ones(size(devicePrimaryBasis, 2), 2)*p.Results.primaryHeadroom;
         x = fmincon(@(x) ObjFunctionMaxContrast(x, cal, T_xyz),[initialPrimaries initialPrimaries],[],[],[],[],vlb,vub, ...
@@ -446,7 +448,7 @@ for kk = 1:size(thexyYs,2)
     chromErrs(kk) = sqrt(sum((targetxy-thexyYs(1:2,kk)).^2));
 end
 
-% Set constraint.  The 0.95 gives us a little room in the numercal
+% Set constraints.  The 0.95 gives us a little room in the numercal
 % search.
 c = chromErrs - 0.95*chromaticityTolerance;
 ceq = [];
@@ -463,7 +465,7 @@ function [c, ceq] = RelativeSpdNonlcon(primary, cal, T_xyz, targetxy, spdToleran
 theSpds = OLPrimaryToSpd(cal,primary,'skipAllChecks',true);
 
 % Get how well we're doing on target chromaticity
-[~, ceq] = ChromaticityNonlcon(primary, cal, T_xyz, targetxy, chromaticityTolerance);
+[c1, ~] = ChromaticityNonlcon(primary, cal, T_xyz, targetxy, chromaticityTolerance);
 
 % Take mean spectra as target for relative spds
 targetSpd = mean(theSpds,2);
@@ -472,14 +474,20 @@ targetSpd = mean(theSpds,2);
 spdTolerance = max(abs(spdToleranceFraction*targetSpd(:)));
 
 % Evalute how close each spectrum is to target after best scaling
-cRaw = [];
+cRaw = zeros(size(theSpds,2),1);
 for kk = 1:size(theSpds,2)
-    predTargetSpd(:,kk) = (theSpds(:,kk)\targetSpd)*theSpds(:,kk);
-    cRaw = [cRaw ; max(abs(targetSpd-predTargetSpd(:,kk)))];
+    predictedRelativeSpd = (theSpds(:,kk)\targetSpd)*theSpds(:,kk);
+    [~, errorFraction] = OLCheckSpdTolerance(targetSpd,predictedRelativeSpd, ...
+        'checkSpd', false, 'spdToleranceFraction', spdToleranceFraction);
+    cRaw(kk) = errorFraction-0.95*spdToleranceFraction; 
 end
 
 % Set inequality contraints
-c = cRaw(:) - spdTolerance;
+c2 = cRaw(:) - spdTolerance;
+c = [c1(:) ; c2(:)];
+
+% No equality constraint
+ceq = [];
 
 % Figure for debugging
 %{
