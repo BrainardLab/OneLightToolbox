@@ -1,4 +1,4 @@
-function [primary, inGamut, gamutDeviation] = OLCheckPrimaryGamut(primary,varargin)
+function [primary, inGamut, gamutMargin] = OLCheckPrimaryGamut(primary,varargin)
 % Check whether primaries are sufficiently in gamut, guarantee return in 0-1
 %
 % Syntax:
@@ -22,7 +22,7 @@ function [primary, inGamut, gamutDeviation] = OLCheckPrimaryGamut(primary,vararg
 %     inGamut                 - Boolean. True if returned primaries are in
 %                               gamut, false if not.  You can only get
 %                               false if checkPrimaryOutOfRange is false.
-%     gamutDeviation          - Negative if primaries are in gamut, amount negative
+%     gamutMargin             - Negative if primaries are in gamut, amount negative
 %                               tells you magnitude of margin. Otherwise this is the
 %                               magnitude of the largest deviation.
 % 
@@ -39,10 +39,15 @@ function [primary, inGamut, gamutDeviation] = OLCheckPrimaryGamut(primary,vararg
 %                               'checkPrimaryOutOfRange' value is true.
 %   'checkPrimaryOutOfRange'  - Boolean. Perform primary tolerance check. Default true.
 %                               Do not change this default.  Sometimes
-%                               assumed to be true by a caller.
+%                               assumed to be true by a caller.  When
+%                               false, the inGamut flag is set and the
+%                               returned primaries are truncated into
+%                               range.
 %   'differentialMode'        - Boolean. If true, allowable gamut starts at [-1,1] not at
 %                               [0,1], and then is adjusted by
 %                               primaryHeadroom. Default false.
+%
+% Examples are provided in the source code.
 %
 % See also: OLSpdToPrimary, OLPrimaryInvSolveChrom, OLFindMaxSpd,
 %           OLPrimaryToSpd.
@@ -50,6 +55,20 @@ function [primary, inGamut, gamutDeviation] = OLCheckPrimaryGamut(primary,vararg
 
 % History:
 %   04/12/18  dhb  Wrote it.
+
+% Examples:
+%{
+[outputPrimary,inGamut,gamutMargin] = OLCheckPrimaryGamut(-0.01, ...
+    'checkPrimaryOutOfRange',false)
+[outputPrimary,inGamut,gamutMargin] = OLCheckPrimaryGamut(-0.01, ...
+    'checkPrimaryOutOfRange',false,'primaryHeadroom',0.005)
+[outputPrimary,inGamut,gamutMargin] = OLCheckPrimaryGamut(1.01, ...
+    'checkPrimaryOutOfRange',false,'primaryHeadroom',0.005)
+[outputPrimary,inGamut,gamutMargin] = OLCheckPrimaryGamut(1+1e-7, ...
+    'checkPrimaryOutOfRange',true,'primaryHeadroom',0)
+[outputPrimary,inGamut,gamutMargin] = OLCheckPrimaryGamut(1+1e-7, ...
+    'checkPrimaryOutOfRange',true,'primaryHeadroom',0,'primaryTolerance',1e-8)
+%}
 
 %% Parse input
 %
@@ -63,7 +82,7 @@ p.parse(varargin{:});
 
 %% Initialize
 inGamut = true;
-gamutDeviation = 0;
+gamutMargin = 0;
 
 %% Handle differential mode
 if (p.Results.differentialMode)
@@ -79,14 +98,20 @@ upperGamut = 1;
 % not.
 primary(primary < lowerGamut + p.Results.primaryHeadroom & primary > lowerGamut + p.Results.primaryHeadroom - p.Results.primaryTolerance) = lowerGamut + p.Results.primaryHeadroom;
 primary(primary > upperGamut - p.Results.primaryHeadroom & primary < upperGamut - p.Results.primaryHeadroom + p.Results.primaryTolerance) = upperGamut - p.Results.primaryHeadroom;
+
+% Compute gamut deviation as a positive number meaning deviation
+upperGamutMargin = max(primary(:) - (upperGamut-p.Results.primaryHeadroom));
+lowerGamutMargin = -(min(primary(:)) - (lowerGamut+p.Results.primaryHeadroom));
+gamutMargin = max([upperGamutMargin lowerGamutMargin]);
+
 if ( (any(primary(:) > upperGamut - p.Results.primaryHeadroom) || any(primary(:) < lowerGamut + p.Results.primaryHeadroom) ))
     if (p.Results.checkPrimaryOutOfRange)  
         error('At one least primary value is out of gamut');
     else
+        % In this case, force primaries to be within gamut
         inGamut = false;
-        upperGamutDeviation = abs(max(primary(:)) - (upperGamut-p.Results.primaryHeadroom));
-        lowerGamutDeviation = abs(min(primary(:)) - (lowerGamut+p.Results.primaryHeadroom));
-        gamutDeviation = max([upperGamutDeviation lowerGamutDeviation]);
+        primary(primary > upperGamut - p.Results.primaryHeadroom) = upperGamut - p.Results.primaryHeadroom;
+        primary(primary < lowerGamut + p.Results.primaryHeadroom) = lowerGamut + p.Results.primaryHeadroom;
     end
 end
 

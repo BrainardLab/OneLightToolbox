@@ -38,6 +38,11 @@ function predictedSpd = OLPrimaryToSpd(calibration, primary, varargin)
 %                         into gamut without complaining.
 %    'checkPrimaryOutOfRange' - Boolean (default true). Throw error if any passed
 %                         primaries are out of the [0-1] range.
+%    'skipAllChecks'    - Boolean (default false). The checks take time, and
+%                         this routine is sometimes called in searches
+%                         where we want it to go fast, and are doing
+%                         relevant checking elsewhere.  Setting to true
+%                         ignores checks and makes this run faster.
 %
 % See also:
 %    OLSpdToPrimary, OLPrimaryToSettings, OLSettingsToStartsStops,
@@ -58,19 +63,24 @@ p.addParameter('differentialMode', false, @islogical);
 p.addParameter('primaryHeadroom', 0, @isscalar);
 p.addParameter('primaryTolerance',1e-6, @isscalar);
 p.addParameter('checkPrimaryOutOfRange', true, @islogical);
+p.addParameter('skipAllChecks', false, @islogical);
 p.parse(calibration,primary,varargin{:});
 
-%% Make sure that the calibration file has been processed by OLInitCal.
-assert(isfield(calibration, 'computed'),...
-    'OneLightToolbox:OLPrimaryToSpd:InvalidCalFile', ...
-    'The calibration file needs to be processed by OLInitCal.');
-
-%% Check input range
-primary = OLCheckPrimaryGamut(primary,...
-    'primaryHeadroom',p.Results.primaryHeadroom, ...
-    'primaryTolerance',p.Results.primaryTolerance, ...
-    'checkPrimaryOutOfRange',p.Results.checkPrimaryOutOfRange, ...
-    'differentialMode',p.Results.differentialMode);
+%% Checks, if not skipped for speed
+if (~p.Results.skipAllChecks)
+    % Make sure that the calibration file has been processed by OLInitCal.
+    
+    assert(isfield(calibration, 'computed'),...
+        'OneLightToolbox:OLPrimaryToSpd:InvalidCalFile', ...
+        'The calibration file needs to be processed by OLInitCal.');
+    
+    % Check input range
+    primary = OLCheckPrimaryGamut(primary,...
+        'primaryHeadroom',p.Results.primaryHeadroom, ...
+        'primaryTolerance',p.Results.primaryTolerance, ...
+        'checkPrimaryOutOfRange',p.Results.checkPrimaryOutOfRange, ...
+        'differentialMode',p.Results.differentialMode);
+end
 
 % Predict spd from calibration fields
 %

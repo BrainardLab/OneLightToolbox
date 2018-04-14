@@ -1,4 +1,4 @@
-function [primary,predictedSpd,errorFraction] = OLSpdToPrimary(oneLightCal, targetSpd, varargin)
+function [primary,predictedSpd,errorFraction,gamutMargin] = OLSpdToPrimary(oneLightCal, targetSpd, varargin)
 % Converts a spectrum into normalized primary OneLight mirror values.
 %
 % Syntax:
@@ -44,6 +44,8 @@ function [primary,predictedSpd,errorFraction] = OLSpdToPrimary(oneLightCal, targ
 %    predictedSpd      - The spd predicted for the returned primaries.
 %    errorFraction     - How close the predictedSpd came to the target, in
 %                        fractional terms.
+%    gamutMargin       - How far out of gamut are primaries. Positive means
+%                        out of gamut, negative is how far in gamut.
 %
 % 
 % Optional Key-Value Pairs:
@@ -178,7 +180,7 @@ if params.verbose
 end
 
 %% Make sure we enforce bounds, in case lsqlin has a bit of numerical slop
-primary = OLCheckPrimaryGamut(primary, ...
+[primary,~,gamutMargin] = OLCheckPrimaryGamut(primary, ...
     'primaryHeadroom',p.Results.primaryHeadroom, ...
     'primaryTolerance',p.Results.primaryTolerance, ...
     'checkPrimaryOutOfRange',p.Results.checkPrimaryOutOfRange, ...
