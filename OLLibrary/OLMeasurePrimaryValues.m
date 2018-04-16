@@ -32,6 +32,8 @@ function [SPD, temperatures] = OLMeasurePrimaryValues(primaryValues,calibration,
 %                       Default 1.
 %    temperatureProbe - LJTemperatureProbe object to drive a LabJack
 %                       temperature probe
+%    primaryTolerance - tolerance for primary values being out of gamut.
+%                       Default 1e-7.
 
 % History:
 %    12/14/17  jv  created.
@@ -44,12 +46,13 @@ parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
 parser.addOptional('radiometer',[]);
 parser.addParameter('nAverage',1,@isnumeric);
 parser.addParameter('temperatureProbe',[],@(x) isempty(x) || isa(x,'LJTemperatureProbe'));
+parser.addParameter('primaryTolerance',1e-7,@isnumeric);
 parser.parse(primaryValues,calibration,oneLight,varargin{:});
 
 radiometer = parser.Results.radiometer;
 
 %% Convert primary values to starts and stops
-olSettings = OLPrimaryToSettings(calibration, primaryValues);
+olSettings = OLPrimaryToSettings(calibration, primaryValues, 'primaryTolerance', parser.Results.primaryTolerance);
 [starts, stops] = OLSettingsToStartsStops(calibration, olSettings);
 
 %% Measure (or simulate)
