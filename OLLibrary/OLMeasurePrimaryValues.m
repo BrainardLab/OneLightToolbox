@@ -46,7 +46,7 @@ parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
 parser.addOptional('radiometer',[]);
 parser.addParameter('nAverage',1,@isnumeric);
 parser.addParameter('temperatureProbe',[],@(x) isempty(x) || isa(x,'LJTemperatureProbe'));
-parser.addParameter('primaryTolerance',1e-7,@isnumeric);
+parser.addParameter('primaryTolerance',1e-5,@isnumeric);
 parser.parse(primaryValues,calibration,oneLight,varargin{:});
 
 radiometer = parser.Results.radiometer;
