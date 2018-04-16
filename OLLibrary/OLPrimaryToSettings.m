@@ -50,7 +50,7 @@ function settings = OLPrimaryToSettings(cal, primary, varargin)
 p = inputParser;
 p.addParameter('verbose', false, @islogical);
 p.addParameter('checkoutofrange', true, @islogical);
-p.addParameter('primarytolerance',1e-6, @isscalar);
+p.addParameter('primarytolerance',1e-5, @isscalar);
 p.parse(varargin{:});
 params = p.Results;
 
