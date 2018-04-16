@@ -1,8 +1,8 @@
-function [starts, stops] = OLPrimaryToStartsStops(primaryValues, calibration, varargin)
+function [starts, stops] = OLPrimaryToStartsStops(primary, calibration, varargin)
 % Convert OneLight primary values to starts and stops for mirror columns
 %
 % Syntax:
-%   [starts, stops] = OLPrimaryToStartsStops(primaryValues, calibration)
+%   [starts, stops] = OLPrimaryToStartsStops(primary, calibration)
 %
 % Description:
 %    Take OneLight primary values, which are [0,1] numbers that give the
@@ -24,7 +24,7 @@ function [starts, stops] = OLPrimaryToStartsStops(primaryValues, calibration, va
 %
 %
 % Inputs:
-%    primaryValues - The primary values, i.e., the normalized gamma
+%    primary       - The primary values, i.e., the normalized gamma
 %                    uncorrected power level for each effective primary
 %                    (fraction of max power) in the range [0,1]. Can be a
 %                    1xP column vector for P effective device primaries, or
@@ -41,12 +41,14 @@ function [starts, stops] = OLPrimaryToStartsStops(primaryValues, calibration, va
 %                    similar to starts.
 %
 % Optional key/value pairs:
-%    'checkoutofrange' - true/false (default true). If true, throw error if
-%                        any passed primaries are out of the [0,1] range.
-%                        If false, throw warning, but truncate primaries to
-%                        [0,1] range and proceed.
-%    'tolerance'       - The tolerance for uniqueness of primary values.
-%                        Default 1e-6.
+%    'primaryTolerance'           - Scalar (default 1e-6). Primaries can be this
+%                                   much out of gamut and it will truncate them
+%                                   into gamut without complaining.
+%    'uniqueTolerance'            - Scalar (default 1e-6). Primaries closer
+%                                   together than this are considered the
+%                                   same. Speeds calculation.
+%    'checkPrimaryOutOfRange'     - Boolean (default true). Throw error if any passed
+%                                   primaries are out of the [0-1] range.
 %
 % Examples are provided in the source code.
 %
@@ -56,16 +58,18 @@ function [starts, stops] = OLPrimaryToStartsStops(primaryValues, calibration, va
 %    OLPrimaryToSettings, OLSettingsToStartsStops
 
 % History:
-%    01/29/18  jv  wrote it.
+%    01/29/18  jv  Wrote it.
+%    04/12/18  dhb Updating primary gamut checking.  Provide separate
+%                  tolerances for gamut checking and uniqueness.
 
 % Examples:
 %{
     calibration = OLGetCalibrationStructure('CalibrationFolder',fileparts(which('OLDemoCal.mat')),'CalibrationType','OLDemoCal');
     P = calibration.describe.numWavelengthBands;  % number of effective device primaries
-    primaryValues = .5 * ones(P,1); % all primaries half-on
+    primary = .5 * ones(P,1); % all primaries half-on
 
     %% Use OLPrimaryToStartsStops
-    [starts,stops] = OLPrimaryToStartsStops(primaryValues,calibration);
+    [starts,stops] = OLPrimaryToStartsStops(primary,calibration);
 %}
 %{
     %% Compare the speed of this routine vs. OLPrimaryTosettings ->
@@ -78,8 +82,8 @@ function [starts, stops] = OLPrimaryToStartsStops(primaryValues, calibration, va
     temporalWaveform = ones(1,numel(timebase));     % rectify, differentialScalars are [0-1]
 
     %% Combine primary and temporal waveform
-	primaryValues = .5 * ones(P,1);      % all primaries half-on
-    primaryWaveform = OLPrimaryWaveform(primaryValues,temporalWaveform);
+	primary = .5 * ones(P,1);      % all primaries half-on
+    primaryWaveform = OLPrimaryWaveform(primary,temporalWaveform);
 
     %% Use OLPrimaryToStartsStops
     tic;
@@ -108,8 +112,8 @@ function [starts, stops] = OLPrimaryToStartsStops(primaryValues, calibration, va
     flickerWaveform = abs(sinewave);     % rectify, differentialScalars are [0-1]
 
     %% Combine primary and temporal waveform
-	primaryValues = .5 * ones(P,1);      % all primaries half-on
-    primaryWaveform = OLPrimaryWaveform(primaryValues,flickerWaveform);
+	primary = .5 * ones(P,1);      % all primaries half-on
+    primaryWaveform = OLPrimaryWaveform(primary,flickerWaveform);
 
     %% Use OLPrimaryToStartsStops
     tic;
@@ -129,35 +133,31 @@ function [starts, stops] = OLPrimaryToStartsStops(primaryValues, calibration, va
 
 %% Input validation
 parser = inputParser();
-parser.addRequired('primaryValues',@isnumeric);
+parser.addRequired('primary',@isnumeric);
 parser.addRequired('calibration',@isstruct);
-parser.addParameter('checkoutofrange',true,@islogical);
-parser.addParameter('tolerance',1e-6,@isnumeric);
-parser.parse(primaryValues,calibration,varargin{:});
+p.addParameter('primaryTolerance',1e-6, @isscalar);
+p.addParameter('uniqueTolerance', 1e-6, @isscalar);
+p.addParameter('checkPrimaryOutOfRange', true, @islogical);
+parser.parse(primary,calibration,varargin{:});
 
-primaryTolerance = parser.Results.tolerance;
-primaryValues(primaryValues > 1 & primaryValues < 1 + primaryTolerance) = 1;
-primaryValues(primaryValues < 0 & primaryValues > -primaryTolerance) = 0;
-if any(primaryValues(:)<0) || any(primaryValues(:)>1)
-    if parser.Results.checkoutofrange
-        error('OneLightToolbox:OLPrimaryToStartsStops:OutOfRange','At least one primary value is out of range [0,1]');
-    else
-        warning('OneLightToolbox:OLPrimaryToStartsStops:OutOfRange','At least one primary value is out of range [0,1]. These will be truncated.');
-        primaryValues(primaryValues < 0) = 0;
-        primaryValues(primaryValues > 1) = 1;
-    end
-end
+%% Check primaries within gamut
+primary = OLCheckPrimaryGamut(primary,...
+    'primaryHeadroom',0, ...
+    'primaryTolerance',p.Results.primaryTolerance, ...
+    'checkPrimaryOutOfRange',p.Results.checkPrimaryOutOfRange);
 
 %% Find unique primary values
+%
 % We need to convert any value for a given primary only once. However, the
 % same primary value (for a given primary) value can appear often, e.g. if
 % we pass in a periodic signal. Thus, we can speed things up by finding
 % only the unique values. 
-% Note that here we're finding the unique columns of primaryValues, i.e.,
+%
+% Note that here we're finding the unique columns of primary, i.e.,
 % entire Px1 vectors of primary values, rather than the unique values per
 % primary. The overhead necessary to do the latter likely defeats the
 % gains.
-[uniquePrimaryVals, ~, indices] = uniquetol(primaryValues',parser.Results.tolerance,'ByRows',true);
+[uniquePrimaryVals, ~, indices] = uniquetol(primary',parser.Results.uniqueTolerance,'ByRows',true);
 
 %% Convert to settings
 settings = OLPrimaryToSettings(calibration,uniquePrimaryVals');
@@ -168,4 +168,5 @@ settings = OLPrimaryToSettings(calibration,uniquePrimaryVals');
 %% Back fill in
 starts = starts(indices,:);
 stops = stops(indices,:);
+
 end

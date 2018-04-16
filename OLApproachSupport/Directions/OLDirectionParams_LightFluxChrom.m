@@ -3,8 +3,9 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
 %   Detailed explanation goes here
     
     properties
-        lightFluxDesiredXY(1,2) = [0.333 0.333];                           % Modulation chromaticity.
-        lightFluxDownFactor(1,1) = 0;                                      % Size of max flux increase from background
+        desiredxy(1,2) = [0.333 0.333];                                    % Modulation chromaticity.
+        whichXYZ(1,:) char = 'xyzCIEPhys10';                               % Which XYZ cmfs.
+        desiredMaxContrast(1,1) = 1;                                       % Size of max contrast
         polarType(1,:) char = 'unipolar';                                  % Unipolar or bipolar light flux direction
     end    
     
@@ -102,8 +103,8 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
             switch (directionParams.polarType)
                 case 'unipolar'
                     backgroundPrimary = background.differentialPrimaryValues;
-                    targetSpdPositive = OLPrimaryToSpd(calibration,backgroundPrimary)*directionParams.lightFluxDownFactor;
-                    modulationPrimaryPositive = OLSpdToPrimary(calibration,targetSpdPositive,'lambda',directionParams.backgroundParams.lambda);
+                    targetSpdPositive = OLPrimaryToSpd(calibration,backgroundPrimary)*(1 + directionParams.desiredMaxContrast);
+                    modulationPrimaryPositive = OLSpdToPrimary(calibration,targetSpdPositive,'lambda',directionParams.backgroundParams.search.lambda);
                     
                     % Update background
                     differentialPrimaryPositive = modulationPrimaryPositive - background.differentialPrimaryValues;
@@ -117,11 +118,11 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
                     backgroundPrimary = background.differentialPrimaryValues;
                     backgroundSpd = OLPrimaryToSpd(calibration,backgroundPrimary);
                     
-                    targetSpdPositive = OLPrimaryToSpd(calibration,backgroundPrimary)*directionParams.lightFluxDownFactor;
+                    targetSpdPositive = OLPrimaryToSpd(calibration,backgroundPrimary)*(1 + directionParams.desiredMaxContrast);
                     targetSpdNegative = backgroundSpd - (targetSpdPositive-backgroundSpd);
 
-                    modulationPrimaryPositive = OLSpdToPrimary(calibration,targetSpdPositive,'lambda',directionParams.backgroundParams.lambda);
-                    modulationPrimaryNegative = OLSpdToPrimary(calibration,targetSpdNegative,'lambda',directionParams.backgroundParams.lambda);
+                    modulationPrimaryPositive = OLSpdToPrimary(calibration,targetSpdPositive,'lambda',directionParams.backgroundParams.search.lambda);
+                    modulationPrimaryNegative = OLSpdToPrimary(calibration,targetSpdNegative,'lambda',directionParams.backgroundParams.search.lambda);
                     
                     % Update background
                     differentialPrimaryPositive = modulationPrimaryPositive - backgroundPrimary;
