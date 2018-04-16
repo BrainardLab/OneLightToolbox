@@ -236,14 +236,18 @@ for kki = 1:initialLuminanceTries
     end
     
     % Try adjusting initial luminace
-    luminanceGuess = 0.9*luminanceGuess/max(initialPrimaries(:));
+    luminanceGuess = 0.99*luminanceGuess/max(initialPrimaries(:));
 end
 
-%% Are initial primaries in gamut and do they produce desired chromaticity.
+%% Are initial primaries in gamut 
+%
+% Currently allow this to fail, as the search might bring them back into agreement.
+%{
 initialPrimaries = OLCheckPrimaryGamut(initialPrimaries, ...
     'primaryHeadroom',maxLumPrimaryHeadroom, ...
     'primaryTolerance',p.Results.primaryTolerance, ...
     'checkPrimaryOutOfRange',p.Results.checkPrimaryOutOfRange);
+%}
 
 %% Chromaticity check
 initialXYZ = T_xyz*devicePrimaryBasis*initialPrimaries +ambientXYZ;
