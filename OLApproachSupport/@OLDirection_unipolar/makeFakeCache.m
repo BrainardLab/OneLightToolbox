@@ -1,12 +1,11 @@
-function [ fakeCache ] = makeFakeCache(DirectionObject)
-
-observerAge = DirectionObject.describe.observerAge;
+function [ fakeCache ] = makeFakeCache(direction, background)
 
 fakeCache.computeMethod = 'ReceptorIsolate';
-fakeCache.data(observerAge).params.receptorIsolateMode = 'Standard';
-fakeCache.data(observerAge).backgroundPrimary = DirectionObject.describe.backgroundNominal.differentialPrimaryValues;
-fakeCache.data(observerAge).differencePrimary = DirectionObject.differentialPrimaryValues;
-fakeCache.data(observerAge).describe.photoreceptors = DirectionObject.describe.photoreceptorClasses;
-fakeCache.data(observerAge).describe.T_receptors = DirectionObject.describe.T_receptors;
+fakeCache.data(32).params.receptorIsolateMode = 'Standard';
+fakeCache.data(32).backgroundPrimary = background.differentialPrimaryValues;
+fakeCache.data(32).differencePrimary = direction.differentialPrimaryValues;
+
+fakeCache.data(32).describe.photoreceptors = direction.describe.photoreceptorClasses;
+fakeCache.data(32).describe.T_receptors = direction.describe.T_receptors;
 
 end

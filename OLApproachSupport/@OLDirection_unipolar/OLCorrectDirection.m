@@ -1,4 +1,4 @@
-function correctedDirection = OLCorrectDirection(direction, background, oneLight, varargin)
+function correctedDirection = OLCorrectDirection(direction, background, oneLight, radiometer, varargin)
 % Corrects OLDirection iteratively to attain predicted SPD
 %
 % Syntax:
@@ -16,8 +16,8 @@ function correctedDirection = OLCorrectDirection(direction, background, oneLight
 %    oneLight           - a OneLight device driver object to control a
 %                         OneLight device, can be real or simulated
 %    radiometer         - Radiometer object to control a
-%                         spectroradiometer. Can be passed empty when
-%                         simulating
+%                         spectroradiometer. Can be passed the empty matrix
+%                         [] when simulating
 %
 % Outputs:
 %    correctedDirection - the corrected OLDirection, with the corrected
@@ -26,6 +26,11 @@ function correctedDirection = OLCorrectDirection(direction, background, oneLight
 %                         in the 'describe' property.
 %
 % Optional key/value pairs:
+%    legacyMode             - Boolean. If true, use an older version of 
+%                             corrections algorithm, by calling
+%                             OLCorrectCacheFileOOC. If false, use the
+%                             refactored approach by calling
+%                             OLCorrectPrimaryValues. Defaults to true.
 %    nIterations            - Number of iterations. Default is 20.
 %    learningRate           - Learning rate. Default is .8.
 %    learningRateDecrease   - Decrease learning rate over iterations?
@@ -53,10 +58,11 @@ parser = inputParser;
 parser.addRequired('direction',@(x) isa(x,'OLDirection_unipolar'));
 parser.addRequired('background',@(x) isa(x,'OLDirection_unipolar'));
 parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
-parser.addOptional('radiometer',[],@(x) isempty(x) || isa(x,'Radiometer'));
+parser.addRequired('radiometer',@(x) isempty(x) || isa(x,'Radiometer'));
 parser.addParameter('smoothness',.001,@isnumeric);
+parser.addParameter('legacyMode',true,@islogical);
 parser.KeepUnmatched = true; % allows fastforwarding of kwargs to OLCorrectPrimaryValues
-parser.parse(direction,background,oneLight,varargin{:});
+parser.parse(direction,background,oneLight,radiometer,varargin{:});
 radiometer = parser.Results.radiometer;
 
 if ~isscalar(direction)
@@ -77,45 +83,62 @@ else
     nominalBackground = background.copy(); % store unlinked copy of nominalBackground
     nominalBackground.SPDdifferentialDesired = background.SPDdifferentialDesired;
    
-    %% Turn into fake cache-structure
-    % Rolled-back code requires a cache-structure, this function creates
-    % one from the OLDirection_unipolar object
-    observerAge = direction.describe.observerAge;
-    directionData = makeFakeCache(direction);
-    
-    %% Correct
-    calibration = direction.calibration;
-%     correctedDirectionData = OLCorrectCacheFileOOC_modified(...
-%         directionData, calibration, oneLight, ...
-%         'test', ...
-%         'PR-670', radiometer, false, ...
-%         'FullOnMeas', false, ...
-%         'CalStateMeas', false, ...
-%         'SkipBackground', false, ...
-%         'DarkMeas', false, ...
-%         'OBSERVER_AGE', observerAge, ...
-%         'ReducedPowerLevels', false, ...
-%         'CALCULATE_SPLATTER', false, ...
-%         'lambda', 0.8, ...
-%         'NIter', 20, ...
-%         'powerLevels', [0 1.0000], ...
-%         'doCorrection', true, ...
-%         'postreceptoralCombinations', [1 1 1 0 ; 1 -1 0 0 ; 0 0 1 0 ; 0 0 0 1], ...
-%         'outDir', fullfile('~/Desktop'), ...
-%         'takeTemperatureMeasurements', false);
-    correctedDirectionData = OLCorrectCacheFileOOC(directionData, calibration, oneLight, radiometer, 'OBSERVER_AGE', observerAge);
+    if parser.Results.legacyMode 
+        %% Use MatlabLibrary/OLCorrectCacheFileOOC. 
+        % That routine was rolled-back from 01/06/17.
+        %
+        % We think that algorithm is more robust, although we don't know
+        % whether that is true, or why.
+        
+        %% Turn into fake cache-structure
+        % Rolled-back code requires a cache-structure, this function creates
+        % one from the OLDirection_unipolar object
+        directionData = makeFakeCache(direction, background);
 
-    %% Update original OLDirection
-    % Update direction business end
-    direction.differentialPrimaryValues = correctedDirectionData.data(observerAge).differencePrimary;
-    direction.SPDdifferentialDesired = nominalDirection.SPDdifferentialDesired;
+        %% Correct
+        calibration = direction.calibration;
+        correctedDirectionData = OLCorrectCacheFileOOC(directionData, calibration, oneLight, radiometer, 'OBSERVER_AGE', 32);
 
-    % Update background business end
-    background.differentialPrimaryValues = correctedDirectionData.data(observerAge).backgroundPrimary;
-    background.SPDdifferentialDesired = nominalBackground.SPDdifferentialDesired;
+        %% Update original OLDirection
+        % Update direction business end
+        direction.differentialPrimaryValues = correctedDirectionData.data(observerAge).differencePrimary;
+        direction.SPDdifferentialDesired = nominalDirection.SPDdifferentialDesired;
+
+        % Update background business end
+        background.differentialPrimaryValues = correctedDirectionData.data(observerAge).backgroundPrimary;
+        background.SPDdifferentialDesired = nominalBackground.SPDdifferentialDesired;
+        
+        % Update describe
+        correctionDescribe = correctedDirectionData.data(observerAge).correction;
+    else
+        %% Use refactored code, by calling OLCorrectPrimaryValues
+        
+        %% Correct differential primary values
+        % Correcting a direction (on top of a background) means correcting the
+        % primary values that would combine direction and background into the
+        % desired combined SPD, then subtracting the background primary values,
+        % to end up with the differential primary values to add to the
+        % background, i.e., the direction.
+        desiredCombinedSPD = direction.SPDdifferentialDesired + background.SPDdifferentialDesired;
+
+        % To get the combined primary values, the direction and background have
+        % to be added. However, when calling this routine, the background may
+        % already have been corrected. In that case, the summed direction and
+        % background primary values no longer correspond to the desired
+        % combined SPD. Instead, convert the desiredCombinedSPD to some initial
+        % primary values predicted to produce it, and correct those.
+        nominalCombinedPrimaryValues = OLSpdToPrimary(direction.calibration,desiredCombinedSPD,'lambda',parser.Results.smoothness);
+        [correctedCombinedPrimaryValues, correctionData] = OLCorrectPrimaryValues(nominalCombinedPrimaryValues,direction.calibration,oneLight,radiometer,varargin{:});
+
+        % Update business end
+        direction.differentialPrimaryValues = correctedCombinedPrimaryValues-background.differentialPrimaryValues;
+        
+        % Update describe
+        correctionDescribe = correctionData;
+    end
     
     % Update describe
-    correctionDescribe = correctedDirectionData.data(observerAge).correction;
+    correctionDescribe.legacyMode = parser.Results.legacyMode;
     correctionDescribe.time = [time now];
     correctionDescribe.background = background; 
     correctionDescribe.nominalDirection = nominalDirection;
@@ -123,14 +146,13 @@ else
     correctionDescribe.correctedBackground = background;
     %correctionDescribe.nominalCombinedPrimaryValues = nominalCombinedPrimaryValues;
     %correctionDescribe.correctedCombinedPrimaryValues = correctedCombinedPrimaryValues;
-
     % Add to direction.describe; append if correction already present
     if ~isfield(direction.describe,'correction') || isempty(direction.describe.correction)
         direction.describe.correction = correctionDescribe;
     else
         direction.describe.correction = [direction.describe.correction correctionDescribe];
     end
-    
+
     % Return direction
     correctedDirection = direction;
 end

@@ -64,7 +64,7 @@ function [starts, stops] = OLPrimaryToStartsStops(primary, calibration, varargin
 
 % Examples:
 %{
-    calibration = OLGetCalibrationStructure('CalibrationFolder',fileparts(which('OLDemoCal.mat')),'CalibrationType','OLDemoCal');
+    calibration = OLGetCalibrationStructure('CalibrationFolder',fileparts(which('OLDemoCal.mat')),'CalibrationType','DemoCal');
     P = calibration.describe.numWavelengthBands;  % number of effective device primaries
     primary = .5 * ones(P,1); % all primaries half-on
 
@@ -74,7 +74,7 @@ function [starts, stops] = OLPrimaryToStartsStops(primary, calibration, varargin
 %{
     %% Compare the speed of this routine vs. OLPrimaryTosettings ->
     %   OLSettingsToStartsStops for a  steady signal.
-    calibration = OLGetCalibrationStructure('CalibrationFolder',fileparts(which('OLDemoCal.mat')),'CalibrationType','OLDemoCal');
+    calibration = OLGetCalibrationStructure('CalibrationFolder',fileparts(which('OLDemoCal.mat')),'CalibrationType','DemoCal');
     P = calibration.describe.numWavelengthBands;  % number of effective device primaries
     
     % Sinusoidal flicker
@@ -103,7 +103,7 @@ function [starts, stops] = OLPrimaryToStartsStops(primary, calibration, varargin
 %{
     %% Compare the speed of this routine vs. OLPrimaryTosettings ->
     %   OLSettingsToStartsStops for a periodic signal.
-    calibration = OLGetCalibrationStructure('CalibrationFolder',fileparts(which('OLDemoCal.mat')),'CalibrationType','OLDemoCal');
+    calibration = OLGetCalibrationStructure('CalibrationFolder',fileparts(which('OLDemoCal.mat')),'CalibrationType','DemoCal');
     P = calibration.describe.numWavelengthBands;  % number of effective device primaries
     
     % Sinusoidal flicker
@@ -135,16 +135,16 @@ function [starts, stops] = OLPrimaryToStartsStops(primary, calibration, varargin
 parser = inputParser();
 parser.addRequired('primary',@isnumeric);
 parser.addRequired('calibration',@isstruct);
-p.addParameter('primaryTolerance',1e-6, @isscalar);
-p.addParameter('uniqueTolerance', 1e-6, @isscalar);
-p.addParameter('checkPrimaryOutOfRange', true, @islogical);
+parser.addParameter('primaryTolerance',1e-6, @isscalar);
+parser.addParameter('uniqueTolerance', 1e-6, @isscalar);
+parser.addParameter('checkPrimaryOutOfRange', true, @islogical);
 parser.parse(primary,calibration,varargin{:});
 
 %% Check primaries within gamut
 primary = OLCheckPrimaryGamut(primary,...
     'primaryHeadroom',0, ...
-    'primaryTolerance',p.Results.primaryTolerance, ...
-    'checkPrimaryOutOfRange',p.Results.checkPrimaryOutOfRange);
+    'primaryTolerance',parser.Results.primaryTolerance, ...
+    'checkPrimaryOutOfRange',parser.Results.checkPrimaryOutOfRange);
 
 %% Find unique primary values
 %
