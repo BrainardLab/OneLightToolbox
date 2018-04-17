@@ -228,7 +228,7 @@ end
                     [starts,stops] = OLSettingsToStartsStops(cal, settings);
                     
                     % Take the measurements
-                    results.modulationAllMeas(i).meas = OLTakeMeasurementOOC(ol, [], spectroRadiometerOBJ, starts, stops, S, meterToggle, nAverage);
+                    results.modulationAllMeas(i).meas = OLTakeMeasurementOOC(ol, [], spectroRadiometerOBJ, starts, stops, S, [true false], nAverage);
                     
                     % Save out information about this.
                     results.modulationAllMeas(i).powerLevel = powerLevels(i);

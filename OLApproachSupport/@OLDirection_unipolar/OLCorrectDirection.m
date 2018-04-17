@@ -80,8 +80,7 @@ else
     %% Turn into fake cache-structure
     % Rolled-back code requires a cache-structure, this function creates
     % one from the OLDirection_unipolar object
-    observerAge = direction.describe.observerAge;
-    directionData = makeFakeCache(direction);
+    directionData = makeFakeCache(direction, background);
     
     %% Correct
     calibration = direction.calibration;
@@ -103,7 +102,7 @@ else
 %         'postreceptoralCombinations', [1 1 1 0 ; 1 -1 0 0 ; 0 0 1 0 ; 0 0 0 1], ...
 %         'outDir', fullfile('~/Desktop'), ...
 %         'takeTemperatureMeasurements', false);
-    correctedDirectionData = OLCorrectCacheFileOOC(directionData, calibration, oneLight, radiometer, 'OBSERVER_AGE', observerAge);
+    correctedDirectionData = OLCorrectCacheFileOOC(directionData, calibration, oneLight, radiometer, 'OBSERVER_AGE', 32);
 
     %% Update original OLDirection
     % Update direction business end
