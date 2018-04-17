@@ -64,7 +64,7 @@ function [starts, stops] = OLPrimaryToStartsStops(primary, calibration, varargin
 
 % Examples:
 %{
-    calibration = OLGetCalibrationStructure('CalibrationFolder',fileparts(which('OLDemoCal.mat')),'CalibrationType','OLDemoCal');
+    calibration = OLGetCalibrationStructure('CalibrationFolder',fileparts(which('OLDemoCal.mat')),'CalibrationType','DemoCal');
     P = calibration.describe.numWavelengthBands;  % number of effective device primaries
     primary = .5 * ones(P,1); % all primaries half-on
 
@@ -74,7 +74,7 @@ function [starts, stops] = OLPrimaryToStartsStops(primary, calibration, varargin
 %{
     %% Compare the speed of this routine vs. OLPrimaryTosettings ->
     %   OLSettingsToStartsStops for a  steady signal.
-    calibration = OLGetCalibrationStructure('CalibrationFolder',fileparts(which('OLDemoCal.mat')),'CalibrationType','OLDemoCal');
+    calibration = OLGetCalibrationStructure('CalibrationFolder',fileparts(which('OLDemoCal.mat')),'CalibrationType','DemoCal');
     P = calibration.describe.numWavelengthBands;  % number of effective device primaries
     
     % Sinusoidal flicker
@@ -103,7 +103,7 @@ function [starts, stops] = OLPrimaryToStartsStops(primary, calibration, varargin
 %{
     %% Compare the speed of this routine vs. OLPrimaryTosettings ->
     %   OLSettingsToStartsStops for a periodic signal.
-    calibration = OLGetCalibrationStructure('CalibrationFolder',fileparts(which('OLDemoCal.mat')),'CalibrationType','OLDemoCal');
+    calibration = OLGetCalibrationStructure('CalibrationFolder',fileparts(which('OLDemoCal.mat')),'CalibrationType','DemoCal');
     P = calibration.describe.numWavelengthBands;  % number of effective device primaries
     
     % Sinusoidal flicker
