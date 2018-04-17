@@ -135,9 +135,9 @@ function [starts, stops] = OLPrimaryToStartsStops(primary, calibration, varargin
 parser = inputParser();
 parser.addRequired('primary',@isnumeric);
 parser.addRequired('calibration',@isstruct);
-p.addParameter('primaryTolerance',1e-6, @isscalar);
-p.addParameter('uniqueTolerance', 1e-6, @isscalar);
-p.addParameter('checkPrimaryOutOfRange', true, @islogical);
+parser.addParameter('primaryTolerance',1e-6, @isscalar);
+parser.addParameter('uniqueTolerance', 1e-6, @isscalar);
+parser.addParameter('checkPrimaryOutOfRange', true, @islogical);
 parser.parse(primary,calibration,varargin{:});
 
 %% Check primaries within gamut
