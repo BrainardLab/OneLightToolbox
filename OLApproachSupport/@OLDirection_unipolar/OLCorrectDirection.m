@@ -1,4 +1,4 @@
-function correctedDirection = OLCorrectDirection(direction, background, oneLight, varargin)
+function correctedDirection = OLCorrectDirection(direction, background, oneLight, radiometer, varargin)
 % Corrects OLDirection iteratively to attain predicted SPD
 %
 % Syntax:
@@ -58,11 +58,11 @@ parser = inputParser;
 parser.addRequired('direction',@(x) isa(x,'OLDirection_unipolar'));
 parser.addRequired('background',@(x) isa(x,'OLDirection_unipolar'));
 parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
-parser.addOptional('radiometer',[],@(x) isempty(x) || isa(x,'Radiometer'));
+parser.addRequired('radiometer',@(x) isempty(x) || isa(x,'Radiometer'));
 parser.addParameter('smoothness',.001,@isnumeric);
 parser.addParameter('legacyMode',true,@islogical);
 parser.KeepUnmatched = true; % allows fastforwarding of kwargs to OLCorrectPrimaryValues
-parser.parse(direction,background,oneLight,varargin{:});
+parser.parse(direction,background,oneLight,radiometer,varargin{:});
 radiometer = parser.Results.radiometer;
 
 if ~isscalar(direction)
