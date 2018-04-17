@@ -1,10 +1,10 @@
-function [primary,predictedSpd,errorFraction,gamutMargin] = OLSpdToPrimary(oneLightCal, targetSpd, varargin)
+function [primary,predictedSpd,errorFraction,gamutMargin] = OLSpdToPrimary(cal, targetSpd, varargin)
 % Converts a spectrum into normalized primary OneLight mirror values.
 %
 % Syntax:
-%     primary = OLSpdToPrimary(oneLightCal, targetSpd)
-%     primary = OLSpdToPrimary(oneLightCal, targetSpd, 'lambda', 0.01)
-%     primary = OLSpdToPrimary(oneLightCal, targetSpd, 'verbose, true)
+%     primary = OLSpdToPrimary(cal, targetSpd)
+%     primary = OLSpdToPrimary(cal, targetSpd, 'lambda', 0.01)
+%     primary = OLSpdToPrimary(cal, targetSpd, 'verbose, true)
 %
 % Description:
 %    Convert a spectral power distribution to the linear 0-1 fraction of
@@ -32,7 +32,7 @@ function [primary,predictedSpd,errorFraction,gamutMargin] = OLSpdToPrimary(oneLi
 %    target is acheived.
 %
 % Inpust:
-%    oneLightCal       - Struct. OneLight calibration file after it has been
+%    cal               - Struct. OneLight calibration file after it has been
 %                        processed by OLInitCal.
 %    targetSpd         - Column vector providing the target spectrum, sampled at the wavelengths
 %                        used in the calibration file (typically 380 to 780 nm in 2 nm steps).
@@ -77,6 +77,9 @@ function [primary,predictedSpd,errorFraction,gamutMargin] = OLSpdToPrimary(oneLi
 %   'spdToleranceFraction' - Scalar (default 0.01). If checkSpd is true, the
 %                       tolerance to avoid an error message is this
 %                       fraction times the maximum of targetSpd.
+%   'maxSearchIter'   - Control how long the search goes for.
+%                       Default, 50.  Reduce if you don't need
+%                       to go that long and things will get faster.
 %
 % See also:
 %   OLPrimaryToSpd, OLPrimaryToSettings, OLSettingsToStartsStops, OLSpdToPrimaryTest
@@ -102,25 +105,33 @@ p.addParameter('checkPrimaryOutOfRange', true, @islogical);
 p.addParameter('differentialMode', false, @islogical);
 p.addParameter('checkSpd', false, @islogical);
 p.addParameter('spdToleranceFraction', 0.01, @isscalar);
+p.addParameter('maxSearchIter',300,@isscalar);
 p.parse(varargin{:});
 params = p.Results;
 
+%% Parameters
+if (p.Results.verbose)
+    fminconDisplaySetting = 'iter';
+else
+    fminconDisplaySetting = 'off';
+end
+
 %% Check wavelength sampling
 nWls = size(targetSpd,1);
-if (nWls ~= oneLightCal.describe.S(3))
+if (nWls ~= cal.describe.S(3))
     error('Wavelength sampling inconsistency between passed spectrum and calibration');
 end
 
 %% In differential mode, we ignore the dark light, otherwise we snag it from
 % the calibration file.
 if params.differentialMode
-    darkSpd = zeros(size(oneLightCal.computed.pr650MeanDark));
+    darkSpd = zeros(size(cal.computed.pr650MeanDark));
 else
-    darkSpd = oneLightCal.computed.pr650MeanDark;
+    darkSpd = cal.computed.pr650MeanDark;
 end
 
 %% Make sure that the calibration file has been processed by OLInitCal.
-assert(isfield(oneLightCal, 'computed'), 'OLSpdToPrimary:InvalidCalFile', ...
+assert(isfield(cal, 'computed'), 'OLSpdToPrimary:InvalidCalFile', ...
     'The calibration file needs to be processed by OLInitCal.');
 
 %% Find primaries the linear way, without any constraints
@@ -132,24 +143,27 @@ assert(isfield(oneLightCal, 'computed'), 'OLSpdToPrimary:InvalidCalFile', ...
 % We skip this step unless we are debuging.
 DEBUG = 0;
 if (DEBUG)
-    pinvprimary = pinv(oneLightCal.computed.pr650M) * (targetSpd - darkSpd);
+    pinvprimary = pinv(cal.computed.pr650M) * (targetSpd - darkSpd);
     if params.verbose
         fprintf('Pinv values: min = %g, max = %g\n', min(pinvprimary(:)), max(pinvprimary(:)));
     end
 end
 
-%% Use lsqlin to enforce constraints.
+%% Initialize some primaries for search
+initialPrimary = 0.5*ones(size(cal.computed.pr650M,2),1);
+
+%% Linear constraint setup
 %
 % This first constraint (C1,d1) minimizes the error between the predicted spectrum
 % and the desired spectrum.
-C1 = oneLightCal.computed.pr650M;
+C1 = cal.computed.pr650M;
 d1 = targetSpd - darkSpd;
 
 % The second constraint computes the difference between between neighboring
 % values and tries to make this small.  How much this is weighted 
 % depends on the value of params.lambda.  The bigger params.lambda, the
 % more this constraint kicks in.
-nPrimaries = size(oneLightCal.computed.pr650M,2);
+nPrimaries = size(cal.computed.pr650M,2);
 C2 = zeros(nPrimaries -1, nPrimaries );
 for i = 1:nPrimaries -1
     C2(i,i) = params.lambda;
@@ -161,22 +175,36 @@ d2 = zeros(nPrimaries-1,1);
 C = [C1 ; C2];
 d = [d1 ; d2];
 
-% In differential mode, the bounds on primaries are [-1,1].
-% Otherwise they are [0,1].
+%% Search for primaries that hit target as closely as possible,
+% subject to lambda weighting.
+options = optimset('fmincon');
+options = optimset(options,'Diagnostics','off','Display',fminconDisplaySetting,'LargeScale','off','Algorithm','active-set', 'MaxIter', p.Results.maxSearchIter, 'MaxFunEvals', 100000, 'TolFun', 1e-3, 'TolCon', 1e-6, 'TolX', 1e-4);
 if params.differentialMode
-    vlb = -ones(nPrimaries,1);
-    vub = ones(nPrimaries,1);
+    vub = ones(size(initialPrimary))  - p.Results.primaryHeadroom;
+    vlb = -1*ones(size(initialPrimary)) + p.Results.primaryHeadroom;
 else
-    vlb = zeros(nPrimaries,1);
-    vub = ones(nPrimaries,1);
+    vub = ones(size(initialPrimary))  - p.Results.primaryHeadroom;
+    vlb = zeros(size(initialPrimary)) + p.Results.primaryHeadroom;
 end
+x = fmincon(@(x) OLFindSpdFun(x, cal, targetSpd, p.Results.lambda, p.Results.differentialMode), ... 
+    initialPrimary,[],[],[],[],vlb,vub, ...
+    [], ...
+    options);
+%@(x)OLFindMaxSpdCon(x, cal, targetSpd, p.Results.lambda, p.Results.primaryHeadroom, p.Results.primaryTolerance, p.Results.spdToleranceFraction), ...
 
-% Call into lsqlin
-options = optimset('lsqlin');
-options = optimset(options,'Diagnostics','off','Display','off');
-primary = lsqlin(C,d,[],[],[],[],vlb,vub,[],options);
+%% Use lsqlin to find primaries.
+% 
+% % Call into lsqlin
+% options = optimset('lsqlin');
+% options = optimset(options,'Diagnostics','off','Display','off');
+% x = lsqlin(C,d,[],[],[],[],vlb,vub,[],options);
+
+%% Set primaries from search
+primary = x;
+
+%% Report
 if params.verbose
-    fprintf('Lsqlin effective primaries: min = %g, max = %g\n', min(primary(:)), max(primary(:)));
+    fprintf('Primaries: min = %g, max = %g\n', min(primary(:)), max(primary(:)));
 end
 
 %% Make sure we enforce bounds, in case lsqlin has a bit of numerical slop
@@ -187,7 +215,7 @@ end
     'differentialMode',p.Results.differentialMode);
 
 %% Predict spd, and check if specified
-predictedSpd = OLPrimaryToSpd(oneLightCal,primary, ...
+predictedSpd = OLPrimaryToSpd(cal,primary, ...
     'primaryHeadroom',p.Results.primaryHeadroom, ...
     'primaryTolerance',p.Results.primaryTolerance, ...
     'checkPrimaryOutOfRange',p.Results.checkPrimaryOutOfRange, ...
@@ -195,6 +223,26 @@ predictedSpd = OLPrimaryToSpd(oneLightCal,primary, ...
 
 [~,errorFraction] = OLCheckSpdTolerance(targetSpd,predictedSpd, ...
     'checkSpd',p.Results.checkSpd,'spdToleranceFraction',p.Results.spdToleranceFraction);
+end
+
+function f = OLFindSpdFun(primary, cal, targetSpd, lambda, differentialMode)
+
+% Get the prediction.  Constraint checking is done in the constraint
+% function, skipped here
+predictedSpd = OLPrimaryToSpd(cal, primary, ...
+    'differentialMode', differentialMode, ...
+    'skipAllChecks',true);
+
+% Fit to desired sum of squares
+f1 = sum((predictedSpd-targetSpd).^2);
+
+% Primary smoothness penalty
+primaryDiffs = diff(primary).^2;
+f2 = lambda*sum(primaryDiffs);
+
+% Final error 
+f = f1 + f2;
+
 end
 
 

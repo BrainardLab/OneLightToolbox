@@ -92,16 +92,23 @@ classdef OLBackgroundParams_LightFluxChrom < OLBackgroundParams
                         desiredLum = minLum + (checkLum-minLum)/2;
                     end
                     targetBackgroundSpd = maxBackgroundSpd*(desiredLum/maxLum);
+                    targetBackgroundSpd = minBackgroundSpd;
 
-                    % Convert target spd back to primary space
+                    % Convert target spd back to primary space.
+                    % The problem is that this does not reproduce the
+                    % primaries that we got above, even when we pass in the
+                    % spd that results from those primaries. That is,
+                    % OLSpdToPrimary does not invert OLPrimaryToSpd, even
+                    % when there is a perfect inverse possible.  Ugh.
                     [backgroundPrimary,predBackgroundSpd,fractionalError] = OLSpdToPrimary(calibration,targetBackgroundSpd, ...
+                        'primaryHeadroom',params.search.primaryHeadroom,'primaryTolerance',params.search.primaryTolerance, ...
                         'lambda',params.search.lambda, 'checkSpd',false, 'spdToleranceFraction',params.search.spdToleranceFraction);
 
                     % Figure for debugging
                     %{
                     figure; clf; hold on;
                     plot(maxBackgroundSpd,'r','LineWidth',3);
-                    plot(minBackgroundSpd,'g');
+                    plot(minBackgroundSpd,'g','LineWidth',4);
                     plot((minBackgroundSpd\maxBackgroundSpd)*minBackgroundSpd,'k-','LineWidth',1);
                     plot(targetBackgroundSpd,'b','LineWidth',3);
                     plot(predBackgroundSpd,'k');
@@ -113,6 +120,7 @@ classdef OLBackgroundParams_LightFluxChrom < OLBackgroundParams
 
                     % Convert back spd to primary space
                     [backgroundPrimary,predBackgroundSpd,fractionalError] = OLSpdToPrimary(calibration,targetBackgroundSpd, ...
+                        'primaryHeadroom',params.search.primaryHeadroom,'primaryTolerance',params.search.primaryTolerance, ...
                         'lambda',params.search.lambda, 'checkSpd',false, 'spdToleranceFraction',params.search.spdToleranceFraction);
 
                     % Figure for debugging

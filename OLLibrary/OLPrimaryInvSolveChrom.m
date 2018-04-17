@@ -19,9 +19,9 @@ function [maxPrimary,minPrimary,maxLum,minLum] = ...
 %   This is a fairly brittle routine, in that fussing with the various of
 %   the keys below can make a big difference to the outcome.
 %
-%   The 'lamda' value could be incorporated into the intial searches
-%   performed within this routine to find the relative spd consistent with
-%   the desired chromaticity -- it is not currently.
+%   The 'lamda' value could be incorporated into the searches
+%   performed within this routine. Currently it is just passed on
+%   OLFindMaxSpd.
 %
 %   The 'primaryHeadroom' value is not respected for the maxContrast
 %   optimization. This would be good to add.
@@ -84,6 +84,10 @@ function [maxPrimary,minPrimary,maxLum,minLum] = ...
 %                                 'minLum' minimize min luminance'
 %                                 'maxContrast' maximize contrast.
 %                               Default 'maxLum'.
+%   'targetContrast'          - Scalar (default []). If not empty and
+%                               target is 'maxContrast', then tries to
+%                               produce this contrast instead of
+%                               maximizing.
 %   'primaryHeadroomForInitialMax' - Use this headroom when finding initial
 %                               max luminance spd to use in turn to
 %                               initialize search for minLum or maxContrast
@@ -158,6 +162,7 @@ p.addParameter('spdToleranceFraction', 0.01, @isscalar);
 p.addParameter('chromaticityTolerance',0.0001, @isscalar);
 p.addParameter('optimizationTarget', 'maxLum', @ischar);
 p.addParameter('primaryHeadroomForInitialMax', 0.005, @isscalar);
+p.addParameter('targetContrast', [], @(x) (isempty(x) || isscalar(x)));
 p.addParameter('maxScaleDownForStart', 2, @isscalar);
 p.addParameter('maxSearchIter',300,@isscalar);
 p.addParameter('verbose', false, @islogical);
@@ -219,7 +224,7 @@ M_XYZToPrimaryWeights = inv(M_primaryWeightsToXYZ);
 %
 % Take an initial guess at in gamut luminance and then do a little
 % searching if necessary.
-initialLuminanceTries = 3;
+initialLuminanceTries = 20;
 luminanceGuess = maxLuminance*p.Results.initialLuminanceFactor;
 for kki = 1:initialLuminanceTries
     % Set up initial XYZ based on luminance guess and desired chromaticity
@@ -230,27 +235,33 @@ for kki = 1:initialLuminanceTries
     % Solve for initial primaries with a linear method
     initialPrimaryWeights = M_XYZToPrimaryWeights*(targetXYZ-ambientXYZ);
     initialPrimaries = primaryWeightBasis*initialPrimaryWeights;
-    if (all(initialPrimaries >= maxLumPrimaryHeadroom  & initialPrimaries <= 1-maxLumPrimaryHeadroom))
+    
+    %% Are initial primaries in gamut 
+    [initialPrimaries,inGamut] = OLCheckPrimaryGamut(initialPrimaries, ...
+        'primaryHeadroom',maxLumPrimaryHeadroom, ...
+        'primaryTolerance',p.Results.primaryTolerance, ...
+        'checkPrimaryOutOfRange',false);
+    if (inGamut)
         % If we're good, break out of loop
         break;
     end
     
     % Try adjusting initial luminace
-    luminanceGuess = 0.99*luminanceGuess/max(initialPrimaries(:));
+    luminanceGuess = 0.90*luminanceGuess/max(initialPrimaries(:));
 end
 
 %% Are initial primaries in gamut 
-%
-% Currently allow this to fail, as the search might bring them back into agreement.
-%{
 initialPrimaries = OLCheckPrimaryGamut(initialPrimaries, ...
     'primaryHeadroom',maxLumPrimaryHeadroom, ...
     'primaryTolerance',p.Results.primaryTolerance, ...
     'checkPrimaryOutOfRange',p.Results.checkPrimaryOutOfRange);
-%}
 
 %% Chromaticity check
-initialXYZ = T_xyz*devicePrimaryBasis*initialPrimaries +ambientXYZ;
+initialXYZ = T_xyz*OLPrimaryToSpd(cal,initialPrimaries, ...
+    'primaryHeadroom',maxLumPrimaryHeadroom, ...
+    'primaryTolerance',p.Results.primaryTolerance, ...
+    'checkPrimaryOutOfRange',p.Results.checkPrimaryOutOfRange);
+initialXYZ = T_xyz*OLPrimaryToSpd(cal,initialPrimaries,'skipAllChecks',true);
 initialxyY = XYZToxyY(initialXYZ);
 if (sqrt(sum((targetxy-initialxyY(1:2)).^2)) > p.Results.chromaticityTolerance)
     error('Initial primaries do not have desired chromaticity');
@@ -265,10 +276,10 @@ options = optimset(options,'Diagnostics','off','Display',fminconDisplaySetting,'
 vub = ones(size(devicePrimaryBasis, 2), 1)  - maxLumPrimaryHeadroom;
 vlb = zeros(size(devicePrimaryBasis, 2), 1) + maxLumPrimaryHeadroom;
 x = fmincon(@(x) ObjFunctionMaxLum(x, cal, T_xyz), ...
-    initialPrimaries,[],[],[],[],vlb,vub, ...
+    PrimaryToX(initialPrimaries),[],[],[],[],vlb,vub, ...
     @(x)ChromaticityNonlcon(x, cal, T_xyz, targetxy, p.Results.chromaticityTolerance), ...
     options);
-maxPrimary = x;
+maxPrimary = XToPrimary(x); clear x;
 
 %{
 [c, ceq] = ChromaticityNonlcon(x, devicePrimaryBasis, ambientSpd, T_xyz, targetxy, p.Results.chromaticityTolerance)
@@ -311,10 +322,10 @@ switch (p.Results.optimizationTarget)
         vub = ones(size(devicePrimaryBasis, 2), 1)-p.Results.primaryHeadroom;
         vlb = ones(size(devicePrimaryBasis, 2), 1)*p.Results.primaryHeadroom;
         x = fmincon(@(x) ObjFunctionMinLum(x, cal, T_xyz), ...
-            initialPrimaries,[],[],[],[],vlb,vub, ...
+            PrimaryToX(initialPrimaries),[],[],[],[],vlb,vub, ...
             @(x)ChromaticityNonlcon(x, cal, T_xyz, targetxy, p.Results.chromaticityTolerance), ...
             options);
-        minPrimary = x;
+        minPrimary = XToPrimary(x); clear x;
         
         %% Check that primaries are within gamut to tolerance.
         minPrimary = OLCheckPrimaryGamut(minPrimary,...
@@ -341,8 +352,8 @@ switch (p.Results.optimizationTarget)
         % Find maxSpd and minSpd that maximize luminance contrast.
         
         % Obtain some initial primaries from the max
-        initialSpd = maxSpd/p.Results.maxScaleDownForStart;
-        initialPrimaries = OLSpdToPrimary(cal, initialSpd, 'lambda', p.Results.lambda);
+        % initialSpd = maxSpd/p.Results.maxScaleDownForStart;
+        % initialPrimaries = OLSpdToPrimary(cal, initialSpd, 'lambda', p.Results.lambda);
         
         % Maximize luminance while staying at chromaticity
         % Then take resulting maxSpd and find the spd with same
@@ -351,11 +362,12 @@ switch (p.Results.optimizationTarget)
         options = optimset(options,'Diagnostics','off','Display',fminconDisplaySetting,'LargeScale','off','Algorithm','active-set', 'MaxIter', p.Results.maxSearchIter, 'MaxFunEvals', 1000000, 'TolFun', 1e-3, 'TolCon', 1e-6, 'TolX', 1e-4);
         vub = ones(size(devicePrimaryBasis, 2), 2)-p.Results.primaryHeadroom;
         vlb = ones(size(devicePrimaryBasis, 2), 2)*p.Results.primaryHeadroom;
-        x = fmincon(@(x) ObjFunctionMaxContrast(x, cal, T_xyz),[initialPrimaries initialPrimaries],[],[],[],[],vlb,vub, ...
+        x = fmincon(@(x) ObjFunctionMaxContrast(x, cal, T_xyz, p.Results.targetContrast), ...
+            PrimaryToX([initialPrimaries initialPrimaries]),[],[],[],[],vlb,vub, ...
             @(x)RelativeSpdNonlcon(x, cal, T_xyz, targetxy, p.Results.spdToleranceFraction, p.Results.chromaticityTolerance), ...
             options);
-        maxPrimary = x(:,1);
-        minPrimary = x(:,2);
+        maxPrimary = XToPrimary(x(:,1));
+        minPrimary = XToPrimary(x(:,2));
         
         % Take a look at how well we did on contraints
         %{
@@ -378,6 +390,11 @@ switch (p.Results.optimizationTarget)
         maxLum = T_xyz(2,:)*maxSpd;
         minSpd = OLPrimaryToSpd(cal,minPrimary);
         minLum = T_xyz(2,:)*minSpd;
+        
+        %{
+        maxContrast = (maxLum-minLum)/minLum
+        save foo maxSpd minSpd maxPrimary minPrimary
+        %}
         
     otherwise
         error('Unknown optimization target');
@@ -404,7 +421,10 @@ end
 end
 
 %% Objective function to maximize luminance
-function f = ObjFunctionMaxLum(primary, cal, T_xyz)
+function f = ObjFunctionMaxLum(x, cal, T_xyz)
+
+% Convert x to primary
+primary = XToPrimary(x);
 
 % Get spectrum and luminance
 theSpd = OLPrimaryToSpd(cal,primary,'skipAllChecks',true);
@@ -415,7 +435,10 @@ f = -theLuminance;
 end
 
 %% Objective function to minimize luminance
-function f = ObjFunctionMinLum(primary, cal, T_xyz)
+function f = ObjFunctionMinLum(x, cal, T_xyz)
+
+% Convert x to primary
+primary = XToPrimary(x);
 
 % Get spectrum and luminance
 theSpd = OLPrimaryToSpd(cal,primary,'skipAllChecks',true);
@@ -426,21 +449,32 @@ f = theLuminance;
 end
 
 %% Objective function to maximize contrast
-function f = ObjFunctionMaxContrast(primary, cal, T_xyz)
+function f = ObjFunctionMaxContrast(x, cal, T_xyz, targetContrast)
+
+% Convert x to primary
+primary = XToPrimary(x);
 
 % Get spectrum and luminance
 theSpds = OLPrimaryToSpd(cal,primary,'skipAllChecks',true);
 theLuminances= T_xyz(2,:)*theSpds;
-theContrast = theLuminances(1)/theLuminances(2);
+theContrast = (theLuminances(1)-theLuminances(2))/theLuminances(2);
 
-% Maximize the luminance
-f = -theContrast;
+if (isempty(targetContrast))
+    % Maximize the contrast 
+    f = -theContrast;
+else
+    % Minimize deviation from target
+    f = (theContrast-targetContrast)^2;
+end
 end
 
 %% Constraint function for chromaticity optimization
 %
 % Forces chromaticities to stay at target
-function [c, ceq] = ChromaticityNonlcon(primary, cal, T_xyz, targetxy, chromaticityTolerance)
+function [c, ceq] = ChromaticityNonlcon(x, cal, T_xyz, targetxy, chromaticityTolerance)
+
+% Convert x to primary
+primary = XToPrimary(x);
 
 % Calculate spectra and chromaticities
 theSpds = OLPrimaryToSpd(cal,primary,'skipAllChecks',true);
@@ -463,7 +497,10 @@ end
 %
 % Forces chromaticities to stay at target and relative spds to match within
 % tolerance
-function [c, ceq] = RelativeSpdNonlcon(primary, cal, T_xyz, targetxy, spdToleranceFraction, chromaticityTolerance)
+function [c, ceq] = RelativeSpdNonlcon(x, cal, T_xyz, targetxy, spdToleranceFraction, chromaticityTolerance)
+
+% Convert x to primary
+primary = XToPrimary(x);
 
 % Calculate spectra
 theSpds = OLPrimaryToSpd(cal,primary,'skipAllChecks',true);
@@ -501,3 +538,41 @@ plot(predTargetSpd,'r');
 %}
 
 end
+
+%% PrimaryToX
+function x = PrimaryToX(primary)
+
+x = primary;
+
+% This was a sort of clever idea,
+% but hard to put vlb and vub in place
+% doing it this way.
+%
+% x = zeros(size(primary));
+% for ii = 1:size(x,2)
+%     meanVal = mean(primary(:,ii));
+%     x(1,ii) = meanVal;    
+%     x(2:end,ii) = primary(1:end-1,ii)/meanVal;
+% end
+
+end
+
+function primary = XToPrimary(x)
+
+primary = x;
+
+% This was a sort of clever idea,
+% but hard to put vlb and vub in place
+% doing it this way.
+%
+% primary = zeros(size(x));
+% for ii = 1:size(x,2)
+%     meanVal = x(1,ii);
+%     primary(1:end-1,ii) = x(2:end,ii)*meanVal;
+%     sumPrimary = meanVal*size(primary,1);
+%     primary(end,ii) = sumPrimary-sum(primary(1:end-1,ii));
+% end
+
+
+end
+
