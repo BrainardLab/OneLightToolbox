@@ -73,6 +73,8 @@ function [maxPrimary,minPrimary,maxLum,minLum] = ...
 %   'lambda'                  - Scalar. Smoothing value passed through to called
 %                               routines, eventually for use in OLSpdToPrimary.
 %                               Default 0.005.
+%   'whichSpdToPrimaryMin'   - String, what to minimize in any OLSpdToPrimary calls
+%                              (default 'leastSquares')
 %   'spdToleranceFraction'   -  Scalar. How closely min spectrum must match max in
 %                               relative spd, in fractional terms. Relaxing
 %                               this can get you more contrast between min
@@ -158,6 +160,7 @@ p.addParameter('checkPrimaryOutOfRange', true, @islogical);
 p.addParameter('initialLuminanceFactor', 0.2, @isnumeric);
 p.addParameter('whichXYZ', 'xyzCIEPhys10', @ischar);
 p.addParameter('lambda', 0.005, @isscalar);
+p.addParameter('whichSpdToPrimaryMin', 'leastSquares', @ischar);
 p.addParameter('spdToleranceFraction', 0.01, @isscalar);
 p.addParameter('chromaticityTolerance',0.0001, @isscalar);
 p.addParameter('optimizationTarget', 'maxLum', @ischar);
@@ -311,7 +314,8 @@ switch (p.Results.optimizationTarget)
         
     case 'minLum'
         % Obtain some initial primaries from the max
-        %initialPrimaries = OLSpdToPrimary(cal, maxSpd/p.Results.maxScaleDownForStart, 'lambda', p.Results.lambda);
+        %initialPrimaries = OLSpdToPrimary(cal, maxSpd/p.Results.maxScaleDownForStart, ...
+        %    'lambda', p.Results.lambda,'whichSpdToPrimaryMin',p.Results.whichSpdToPrimaryMin);
         initialPrimaries = maxPrimary;
         
         % Minimize luminance while staying at chromaticity
@@ -353,7 +357,8 @@ switch (p.Results.optimizationTarget)
         
         % Obtain some initial primaries from the max
         % initialSpd = maxSpd/p.Results.maxScaleDownForStart;
-        % initialPrimaries = OLSpdToPrimary(cal, initialSpd, 'lambda', p.Results.lambda);
+        % initialPrimaries = OLSpdToPrimary(cal, maxSpd/p.Results.maxScaleDownForStart, ...
+        %    'lambda', p.Results.lambda,'whichSpdToPrimaryMin',p.Results.whichSpdToPrimaryMin);
         
         % Maximize luminance while staying at chromaticity
         % Then take resulting maxSpd and find the spd with same

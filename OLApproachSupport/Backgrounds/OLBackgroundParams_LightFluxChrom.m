@@ -36,7 +36,7 @@ classdef OLBackgroundParams_LightFluxChrom < OLBackgroundParams
             name = sprintf('%s_%d_%d_%d',params.baseName,round(1000*params.lightFluxDesiredXY(1)),round(1000*params.lightFluxDesiredXY(2)),round(10*params.lightFluxDownFactor));
         end
         
-        function backgroundPrimary = OLBackgroundNominalPrimaryFromParams(params, calibration)
+        function [backgroundPrimary,maxBackgroundPrimary,minBackgroundPrimary] = OLBackgroundNominalPrimaryFromParams(params, calibration)
             % Generate nominal primary for these parameters, for calibration
             %
             % Syntax:
@@ -47,7 +47,19 @@ classdef OLBackgroundParams_LightFluxChrom < OLBackgroundParams
             %    to the given parameter, under the given calibration.
             %
             %    Background at specified chromaticity that allows a large
-            %    light flux pulse modulation.
+            %    light flux pulse modulation.  This is found using
+            %    OLPrimaryInvSolveChrom.  That routine returns primaries
+            %    that maximize contrast at a desired chromaticity and that
+            %    represent a light flux modulation.  We can then find
+            %    primaries for a background spd in between these, which is
+            %    done using OLSpdToPrimary. This results in the returned
+            %    backgroundPrimary.  
+            %
+            %    We also return the primary values (minBackgroundPrimary and
+            %    maxBackgroundPrimary that were found directly in the
+            %    search.  Because OLSpdToPrimary has some error in what it
+            %    returns, it can sometimes be better to use these directly
+            %    when constructing light flux directions.
             %
             % Inputs:
             %    params            - OLBackgroundParams_LightFluxChrom
@@ -56,12 +68,19 @@ classdef OLBackgroundParams_LightFluxChrom < OLBackgroundParams
             %    calibration       - OneLight calibration struct
             %
             % Outputs:
-            %    backgroundPrimary - column vector of primary values for
-            %                        the background
+            %    backgroundPrimary - Column vector of primary values for
+            %                        the background.
+            %    minBackgroundPrimary - Column vector of primary values for
+            %                        the low end of what was found by
+            %                        OLPrimaryInvSolveChrom.
+            %    maxBackgroundPrimary - Column vector of primary values for
+            %                        the high end of what was found by
+            %                        OLPrimayInvSolveChrom.
             %
             % Optional key/value pairs:
             %    None.
             %
+            % See also: OLPrimaryInvSolveChrom, OLSpdToPrimary.
             
             % Input validation
             parser = inputParser();
@@ -99,10 +118,13 @@ classdef OLBackgroundParams_LightFluxChrom < OLBackgroundParams
                     % primaries that we got above, even when we pass in the
                     % spd that results from those primaries. That is,
                     % OLSpdToPrimary does not invert OLPrimaryToSpd, even
-                    % when there is a perfect inverse possible.  Ugh.
+                    % when there is a perfect inverse possible.  Ugh!
                     [backgroundPrimary,predBackgroundSpd,fractionalError] = OLSpdToPrimary(calibration,targetBackgroundSpd, ...
                         'primaryHeadroom',params.search.primaryHeadroom,'primaryTolerance',params.search.primaryTolerance, ...
-                        'lambda',params.search.lambda, 'checkSpd',false, 'spdToleranceFraction',params.search.spdToleranceFraction);
+                        'lambda',params.search.lambda, 'checkSpd',false, ...
+                        'whichSpdToPrimaryMin',params.search.whichSpdToPrimaryMin, ...
+                        'spdToleranceFraction',params.search.spdToleranceFraction, ...
+                        'verbose',params.search.verbose);
 
                     % Figure for debugging
                     %{
@@ -139,7 +161,7 @@ classdef OLBackgroundParams_LightFluxChrom < OLBackgroundParams
             end
         end
         
-        function background = OLBackgroundNominalFromParams(params, calibration)
+        function [background,maxBackgroundPrimary,minBackgroundPrimary] = OLBackgroundNominalFromParams(params, calibration)
             % Generate nominal background for given parameters, for calibration
             %
             % Syntax:
@@ -176,7 +198,7 @@ classdef OLBackgroundParams_LightFluxChrom < OLBackgroundParams
             
             % History:
             %    03/30/18  jv  OLDirection_unipolar from backgroundParams
-            backgroundPrimary = OLBackgroundNominalPrimaryFromParams(params,calibration);
+            [backgroundPrimary,maxBackgroundPrimary,minBackgroundPrimary] = OLBackgroundNominalPrimaryFromParams(params,calibration);
             background = OLDirection_unipolar(backgroundPrimary,calibration);
             background.describe.params = params;
         end

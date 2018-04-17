@@ -89,7 +89,10 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
                             'alternateDictionaryFunc',parser.Results.alternateBackgroundDictionaryFunc);
                     end
                     
-                    directionParams.background = OLBackgroundNominalFromParams(directionParams.backgroundParams, calibration);
+                    % Grab the primaries directly from
+                    % OLPrimaryInvSolveChrom, as well as what it things the
+                    % best choice is.
+                    [directionParams.background,maxBackgroundPrimary,minBackgroundPrimary] = OLBackgroundNominalFromParams(directionParams.backgroundParams, calibration);
                 end
                 
                 % Use background stored in directionParams
@@ -102,9 +105,20 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
             %% Make direction
             switch (directionParams.polarType)
                 case 'unipolar'
-                    backgroundPrimary = background.differentialPrimaryValues;
-                    targetSpdPositive = OLPrimaryToSpd(calibration,backgroundPrimary)*(1 + directionParams.desiredMaxContrast);
-                    modulationPrimaryPositive = OLSpdToPrimary(calibration,targetSpdPositive,'lambda',directionParams.backgroundParams.search.lambda);
+                    if (~exist('maxBackgroundPrimary','var'))
+                        % Old way
+                        backgroundPrimary = background.differentialPrimaryValues;
+                        targetSpdPositive = OLPrimaryToSpd(calibration,backgroundPrimary)*(1 + directionParams.desiredMaxContrast);
+                        modulationPrimaryPositive = OLSpdToPrimary(calibration,targetSpdPositive,'lambda',directionParams.backgroundParams.search.lambda);
+                    else
+                        % New way.  Only works if aimed
+                        % OLPrimaryInvSolveChrom at the desired target
+                        % contrast, which you should do if we decide this
+                        % method works.
+                        background.differentialPrimaryValues = minBackgroundPrimary;
+                        modulationPrimaryPositive = maxBackgroundPrimary;
+                        targetSpdPositive = OLPrimaryToSpd(modulationPrimaryPositive);
+                    end
                     
                     % Update background
                     differentialPrimaryPositive = modulationPrimaryPositive - background.differentialPrimaryValues;

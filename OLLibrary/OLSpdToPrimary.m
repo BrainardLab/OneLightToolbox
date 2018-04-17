@@ -74,6 +74,13 @@ function [primary,predictedSpd,errorFraction,gamutMargin] = OLSpdToPrimary(cal, 
 %                       force an error if difference exceeds tolerance.
 %                       Otherwise, the toleranceFraction actually obtained
 %                       is retruned. Tolerance is given by spdTolerance.
+%   'whichSpdToPrimaryMin' - String, what to minimize (default 'leastSquares')
+%                         'leastSquares' Mimimize sum of squared error,
+%                          respecting lambda parameter as well.  Fast.
+%                         'fractionalError' Minimize fractional squared
+%                          error. Slower.  Also respects lambda constraint,
+%                          but the relative scale of the error is different
+%                          so you need to adjust lambda by hand.
 %   'spdToleranceFraction' - Scalar (default 0.01). If checkSpd is true, the
 %                       tolerance to avoid an error message is this
 %                       fraction times the maximum of targetSpd.
@@ -104,6 +111,7 @@ p.addParameter('primaryTolerance', 1e-6, @isscalar);
 p.addParameter('checkPrimaryOutOfRange', true, @islogical);
 p.addParameter('differentialMode', false, @islogical);
 p.addParameter('checkSpd', false, @islogical);
+p.addParameter('whichSpdToPrimaryMin', 'leastSquares', @ischar);
 p.addParameter('spdToleranceFraction', 0.01, @isscalar);
 p.addParameter('maxSearchIter',300,@isscalar);
 p.parse(varargin{:});
@@ -175,10 +183,7 @@ d2 = zeros(nPrimaries-1,1);
 C = [C1 ; C2];
 d = [d1 ; d2];
 
-%% Search for primaries that hit target as closely as possible,
-% subject to lambda weighting.
-options = optimset('fmincon');
-options = optimset(options,'Diagnostics','off','Display',fminconDisplaySetting,'LargeScale','off','Algorithm','active-set', 'MaxIter', p.Results.maxSearchIter, 'MaxFunEvals', 100000, 'TolFun', 1e-3, 'TolCon', 1e-6, 'TolX', 1e-4);
+%% Primary bounds for searches
 if params.differentialMode
     vub = ones(size(initialPrimary))  - p.Results.primaryHeadroom;
     vlb = -1*ones(size(initialPrimary)) + p.Results.primaryHeadroom;
@@ -186,21 +191,58 @@ else
     vub = ones(size(initialPrimary))  - p.Results.primaryHeadroom;
     vlb = zeros(size(initialPrimary)) + p.Results.primaryHeadroom;
 end
-x = fmincon(@(x) OLFindSpdFun(x, cal, targetSpd, p.Results.lambda, p.Results.differentialMode), ... 
-    initialPrimary,[],[],[],[],vlb,vub, ...
-    [], ...
-    options);
-%@(x)OLFindMaxSpdCon(x, cal, targetSpd, p.Results.lambda, p.Results.primaryHeadroom, p.Results.primaryTolerance, p.Results.spdToleranceFraction), ...
 
-%% Use lsqlin to find primaries.
+%% Search for primaries that hit target as closely as possible,
 % 
-% % Call into lsqlin
-% options = optimset('lsqlin');
-% options = optimset(options,'Diagnostics','off','Display','off');
-% x = lsqlin(C,d,[],[],[],[],vlb,vub,[],options);
+% Subject to lambda weighting.  This is slower and less accurate than
+% lsqlin, presumably because lsqlin is written to know about the linear,
+% structure of the error.
+%
+% But, fmincon gives more control so keeping this here in case we ever want 
+% explore further;
 
-%% Set primaries from search
-primary = x;
+% options = optimset('fmincon');
+% options = optimset(options,'Diagnostics','off','Display',fminconDisplaySetting,'LargeScale','off','Algorithm','active-set', 'MaxIter', p.Results.maxSearchIter, 'MaxFunEvals', 100000, 'TolFun', 1e-7, 'TolCon', 1e-6, 'TolX', 1e-4);
+% fminconx = fmincon(@(x) OLFindSpdFun(x, cal, targetSpd, p.Results.lambda, p.Results.differentialMode), ... 
+%     initialPrimary,[],[],[],[],vlb,vub, ...
+%     [], ...
+%     options);
+% fminconResnorm = OLFindSpdFun(fminconx, cal, targetSpd, p.Results.lambda, p.Results.differentialMode);
+
+switch (p.Results.whichSpdToPrimaryMin)
+    case 'fractionalError'
+        % Search minimizing fractional error rather than sum of squared error
+        options = optimset('fmincon');
+        options = optimset(options,'Diagnostics','off','Display',fminconDisplaySetting,'LargeScale','off','Algorithm','active-set', 'MaxIter', p.Results.maxSearchIter, 'MaxFunEvals', 100000, 'TolFun', p.Results.spdToleranceFraction/10, 'TolCon', 1e-6, 'TolX', 1e-6);
+        fminconfractionalx = fmincon(@(x) OLFindSpdFunFractional(x, cal, targetSpd, p.Results.lambda, p.Results.differentialMode), ...
+            initialPrimary,[],[],[],[],vlb,vub, ...
+            [], ...
+            options);
+        primary = fminconfractionalx;
+        
+    case 'leastSquares'
+        % Use lsqlin to find primaries.
+        %
+        % Call into lsqlin
+        lsqoptions = optimset('lsqlin');
+        lsqoptions = optimset(lsqoptions,'Diagnostics','off','Display','off');
+        [lsqx,lsqResnorm] = lsqlin(C,d,[],[],[],[],vlb,vub,[],lsqoptions);
+        primary = lsqx;
+        
+    otherwise
+        error('Unknown value for ''whichMin'' key');
+end
+
+%% Compare ways of getting spectrum
+% 
+% Need to run alternative ways by hand to get all the lines.
+%{
+figure; clf; hold on
+plot(targetSpd,'r','LineWidth',4);
+plot(OLPrimaryToSpd(cal,lsqx,'skipAllChecks',true),'g','LineWidth',1);
+plot(OLPrimaryToSpd(cal,fminconfractionalx,'skipAllChecks',true),'b','LineWidth',1);
+plot(OLPrimaryToSpd(cal,fminconx,'skipAllChecks',true),'k','LineWidth',1);
+%}
 
 %% Report
 if params.verbose
@@ -240,9 +282,30 @@ f1 = sum((predictedSpd-targetSpd).^2);
 primaryDiffs = diff(primary).^2;
 f2 = lambda*sum(primaryDiffs);
 
-% Final error 
-f = f1 + f2;
+% Final error.
+f = (f1 + f2);
 
 end
 
 
+function f = OLFindSpdFunFractional(primary, cal, targetSpd, lambda, differentialMode)
+
+% Get the prediction.  Constraint checking is done in the constraint
+% function, skipped here
+predictedSpd = OLPrimaryToSpd(cal, primary, ...
+    'differentialMode', differentialMode, ...
+    'skipAllChecks',true);
+
+[~, errorFraction] = OLCheckSpdTolerance(targetSpd,predictedSpd, ...
+    'checkSpd', false);
+
+f1 = errorFraction;
+
+% Primary smoothness penalty
+primaryDiffs = diff(primary).^2;
+f2 = lambda*sum(primaryDiffs);
+
+% Final error.
+f = (f1 + f2);
+
+end

@@ -49,6 +49,8 @@ function [maxSpd, maxPrimary, maxLum] = OLFindMaxSpd(cal, targetSpd, initialPrim
 %                       produce primaries that lead to the predictedSpd
 %                       matching the targetSpd.  Set this to true to check.
 %                       Tolerance is given by spdFractionTolerance.
+%   'whichSpdToPrimaryMin' - String, what to minimize in any OLSpdToPrimary calls
+%                       (default 'leastSquares')
 %   'spdToleranceFraction' - Scalar (default 0.01). If checkSpd is true, the
 %                       tolerance to avoid an error message is this
 %                       fraction times the maximum of targetSpd, with the
@@ -76,6 +78,7 @@ p.addParameter('primaryHeadroom', 0.0, @isscalar);
 p.addParameter('primaryTolerance', 1e-6, @isscalar);
 p.addParameter('checkPrimaryOutOfRange', true, @islogical);
 p.addParameter('checkSpd', false, @islogical);
+p.addParameter('whichSpdToPrimaryMin', 'leastSquares', @ischar);
 p.addParameter('spdToleranceFraction', 0.01, @isscalar);
 p.addParameter('findMin', false, @islogical);
 p.addParameter('maxSearchIter',300,@isscalar);
@@ -89,7 +92,7 @@ else
 end
 
 %% Make sure that the oneLightCal has been properly processed by OLInitCal.
-assert(isfield(cal, 'computed'), 'OLSpdToPrimary:InvalidCalFile', ...
+assert(isfield(cal, 'computed'), 'OLFindMaxSpd:InvalidCalFile', ...
     'The calibration file needs to be processed by OLInitCal.');
 
 %% Make sure input target isn't insane
