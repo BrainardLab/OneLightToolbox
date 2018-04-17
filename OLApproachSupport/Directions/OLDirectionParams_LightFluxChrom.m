@@ -117,7 +117,7 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
                         % method works.
                         background.differentialPrimaryValues = minBackgroundPrimary;
                         modulationPrimaryPositive = maxBackgroundPrimary;
-                        targetSpdPositive = OLPrimaryToSpd(modulationPrimaryPositive);
+                        targetSpdPositive = OLPrimaryToSpd(calibration,modulationPrimaryPositive);
                     end
                     
                     % Update background

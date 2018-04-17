@@ -154,20 +154,20 @@ function [maxPrimary,minPrimary,maxLum,minLum] = ...
 
 %% Input parser
 p = inputParser;
-p.addParameter('primaryHeadroom', 0.01, @isscalar);
-p.addParameter('primaryTolerance', 1e-6, @isscalar);
+p.addParameter('primaryHeadroom', 0.01, @isnumeric);
+p.addParameter('primaryTolerance', 1e-6, @isnumeric);
 p.addParameter('checkPrimaryOutOfRange', true, @islogical);
 p.addParameter('initialLuminanceFactor', 0.2, @isnumeric);
 p.addParameter('whichXYZ', 'xyzCIEPhys10', @ischar);
-p.addParameter('lambda', 0.005, @isscalar);
+p.addParameter('lambda', 0.005, @isnumeric);
 p.addParameter('whichSpdToPrimaryMin', 'leastSquares', @ischar);
-p.addParameter('spdToleranceFraction', 0.01, @isscalar);
-p.addParameter('chromaticityTolerance',0.0001, @isscalar);
+p.addParameter('spdToleranceFraction', 0.01, @isnumeric);
+p.addParameter('chromaticityTolerance',0.0001, @isnumeric);
 p.addParameter('optimizationTarget', 'maxLum', @ischar);
-p.addParameter('primaryHeadroomForInitialMax', 0.005, @isscalar);
-p.addParameter('targetContrast', [], @(x) (isempty(x) || isscalar(x)));
-p.addParameter('maxScaleDownForStart', 2, @isscalar);
-p.addParameter('maxSearchIter',300,@isscalar);
+p.addParameter('primaryHeadroomForInitialMax', 0.005, @isnumeric);
+p.addParameter('targetContrast', [], @(x) (isempty(x) || isnumeric(x)));
+p.addParameter('maxScaleDownForStart', 2, @isnumeric);
+p.addParameter('maxSearchIter',300,@isnumeric);
 p.addParameter('verbose', false, @islogical);
 p.parse(varargin{:});
 
