@@ -83,6 +83,7 @@ parser.addParameter('smoothness', 0.001, @isscalar);
 parser.addParameter('iterativeSearch',true, @islogical);
 parser.addParameter('temperatureProbe',[],@(x) isempty(x) || isa(x,'LJTemperatureProbe'));
 parser.parse(nominalPrimaryValues,calibration,oneLight,varargin{:});
+parser.KeepUnmatched = true;
 
 nIterations = parser.Results.nIterations;
 learningRate = parser.Results.learningRate;
