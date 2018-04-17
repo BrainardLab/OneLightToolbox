@@ -16,8 +16,8 @@ function correctedDirection = OLCorrectDirection(direction, background, oneLight
 %    oneLight           - a OneLight device driver object to control a
 %                         OneLight device, can be real or simulated
 %    radiometer         - Radiometer object to control a
-%                         spectroradiometer. Can be passed empty when
-%                         simulating
+%                         spectroradiometer. Can be passed the empty matrix
+%                         [] when simulating
 %
 % Outputs:
 %    correctedDirection - the corrected OLDirection, with the corrected
