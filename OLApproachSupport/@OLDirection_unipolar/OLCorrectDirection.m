@@ -101,15 +101,15 @@ else
 
         %% Update original OLDirection
         % Update direction business end
-        direction.differentialPrimaryValues = correctedDirectionData.data(observerAge).differencePrimary;
+        direction.differentialPrimaryValues = correctedDirectionData.data(32).differencePrimary;
         direction.SPDdifferentialDesired = nominalDirection.SPDdifferentialDesired;
 
         % Update background business end
-        background.differentialPrimaryValues = correctedDirectionData.data(observerAge).backgroundPrimary;
+        background.differentialPrimaryValues = correctedDirectionData.data(32).backgroundPrimary;
         background.SPDdifferentialDesired = nominalBackground.SPDdifferentialDesired;
         
         % Update describe
-        correctionDescribe = correctedDirectionData.data(observerAge).correction;
+        correctionDescribe = correctedDirectionData.data(32).correction;
     else
         %% Use refactored code, by calling OLCorrectPrimaryValues
         
