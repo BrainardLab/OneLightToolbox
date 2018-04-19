@@ -111,7 +111,6 @@ classdef OLBackgroundParams_LightFluxChrom < OLBackgroundParams
                         desiredLum = minLum + (checkLum-minLum)/2;
                     end
                     targetBackgroundSpd = maxBackgroundSpd*(desiredLum/maxLum);
-                    targetBackgroundSpd = minBackgroundSpd;
 
                     % Convert target spd back to primary space.
                     % The problem is that this does not reproduce the

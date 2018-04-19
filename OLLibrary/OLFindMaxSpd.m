@@ -59,7 +59,7 @@ function [maxSpd, maxPrimary, maxLum] = OLFindMaxSpd(cal, targetSpd, initialPrim
 %   'findMin'         - Boolean (default false). Find minimum rather than
 %                       maximum, with everything else the same.
 %   'maxSearchIter'   - Control how long the search goes for.
-%                       Default, 50.  Reduce if you don't need
+%                       Default, 300.  Reduce if you don't need
 %                       to go that long and things will get faster.
 %
 % See also: OLPrimaryInvSolveChrom, OLFindMinSpectrum.

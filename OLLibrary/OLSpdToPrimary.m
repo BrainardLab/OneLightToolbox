@@ -74,19 +74,23 @@ function [primary,predictedSpd,errorFraction,gamutMargin] = OLSpdToPrimary(cal, 
 %                       force an error if difference exceeds tolerance.
 %                       Otherwise, the toleranceFraction actually obtained
 %                       is retruned. Tolerance is given by spdTolerance.
-%   'whichSpdToPrimaryMin' - String, what to minimize (default 'leastSquares')
-%                         'leastSquares' Mimimize sum of squared error,
-%                          respecting lambda parameter as well.  Fast.
-%                         'fractionalError' Minimize fractional squared
-%                          error. Slower.  Also respects lambda constraint,
-%                          but the relative scale of the error is different
-%                          so you need to adjust lambda by hand.
 %   'spdToleranceFraction' - Scalar (default 0.01). If checkSpd is true, the
 %                       tolerance to avoid an error message is this
 %                       fraction times the maximum of targetSpd.
-%   'maxSearchIter'   - Control how long the search goes for.
-%                       Default, 50.  Reduce if you don't need
-%                       to go that long and things will get faster.
+%   'whichSpdToPrimaryMin' - String, what to minimize (default 'leastSquares')
+%                           * 'leastSquares' Mimimize sum of squared error,
+%                             respecting lambda parameter as well.  Fast.
+%                           * 'fractionalError' Minimize fractional squared
+%                              error. Way slower than 'leastSquares'.  This
+%                              method also respects lambda constraint, but
+%                              the relative scale of the error is different
+%                              so you need to adjust lambda by hand. This
+%                              exists mainly for debugging. Not recommended
+%                              for everyday use.
+%   'maxSearchIter'   - Control how long the search goes for, when using
+%                       fractionalError method. Default, 300.  Reduce if you
+%                       don't need to go that long and things will get
+%                       faster.
 %
 % See also:
 %   OLPrimaryToSpd, OLPrimaryToSettings, OLSettingsToStartsStops, OLSpdToPrimaryTest
@@ -101,6 +105,24 @@ function [primary,predictedSpd,errorFraction,gamutMargin] = OLSpdToPrimary(cal, 
 %   06/04/17  dhb  Got rid of old code that dated from before we switched to
 %                  effective primaries concept.
 %   04/04/18  dhb  Change lambda default to 0.005.
+%   04/19/18  dhb  Scale the constraint matrices so that SSE is in a
+%                  reasonable range. This improves the ability of this
+%                  routine to recover the primaries used to produce an spd.
+
+% Examples:
+%{
+    cal = OLGetCalibrationStructure('CalibrationType','DemoCal','CalibrationFolder',fullfile(tbLocateToolbox('OneLightToolbox'),'OLDemoCal'),'CalibrationDate','latest');
+    primaryIn = rand(size(cal.computed.pr650M,2),1);
+    spd1 = OLPrimaryToSpd(cal,primaryIn);
+    primaryOut = OLSpdToPrimary(cal,spd1,'primaryHeadroom',0,'lambda',0);
+    spd2 = OLPrimaryToSpd(cal,primaryOut);
+    figure; clf;
+    plot(primaryIn,primaryOut,'ro','MarkerSize',4,'MarkerFaceColor','r');
+    axis([0 1 0 1]); axis('square');
+    figure; clf; hold
+    plot(spd1,'r','LineWidth',4);
+    plot(spd2,'b','LineWidth',2);
+%}
 
 %% Parse the input
 p = inputParser;
@@ -167,6 +189,12 @@ initialPrimary = 0.5*ones(size(cal.computed.pr650M,2),1);
 C1 = cal.computed.pr650M;
 d1 = targetSpd - darkSpd;
 
+% Scale so that error is in a known range. Prevents lsqlin from
+% thinking it has a good solution when units of light lead to small
+% numbers in the target spectrum.
+C1 = C1;
+d1 = d1;
+
 % The second constraint computes the difference between between neighboring
 % values and tries to make this small.  How much this is weighted 
 % depends on the value of params.lambda.  The bigger params.lambda, the
@@ -180,8 +208,12 @@ end
 d2 = zeros(nPrimaries-1,1);
 
 % Paste together the target and smoothness constraints
-C = [C1 ; C2];
-d = [d1 ; d2];
+%
+% Scale so that SSE for target is in reasonable range. 
+% Scale lambda term as well, to preserve meaning of lambda
+% vis-a-vis the time before we did this scaling.
+C = [C1 ; C2]/mean(targetSpd);
+d = [d1 ; d2]/mean(targetSpd);
 
 %% Primary bounds for searches
 if params.differentialMode
@@ -283,7 +315,7 @@ primaryDiffs = diff(primary).^2;
 f2 = lambda*sum(primaryDiffs);
 
 % Final error.
-f = (f1 + f2);
+f = (f1 + f2)/(mean(targetSpd)^2);
 
 end
 
