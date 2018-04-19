@@ -74,7 +74,7 @@ parser.addParameter('temperature',missing,@isnumeric);
 parser.addParameter('notes',missing);
 
 parser.addParameter('BulbSerial',missing);
-parser.addParameter('Date',datetime('now','Format','MM/dd/yyyy'));
+parser.addParameter('Date',datetime('now','Format','MM/dd/yy'));
 parser.addParameter('TimeOn',missing);
 parser.addParameter('TempOn',missing);
 parser.addParameter('NotesOn',missing);
@@ -96,6 +96,7 @@ if ~isempty(bulbLogTable)
     bulbLogTable.BulbSerial = string(bulbLogTable.BulbSerial);
     bulbLogTable.NotesOn = string(bulbLogTable.NotesOn);
     bulbLogTable.NotesOff = string(bulbLogTable.NotesOff);
+    bulbLogTable.Date = datetime(bulbLogTable.Date,'InputFormat','MM/dd/yyyy','Format','MM/dd/yy');
     bulbLogTable.TimeOn = datetime(bulbLogTable.TimeOn,'InputFormat','HH:mm','Format','HH:mm');
     bulbLogTable.TimeOff = datetime(bulbLogTable.TimeOff,'InputFormat','HH:mm','Format','HH:mm');
 end
@@ -106,7 +107,7 @@ if ismissing(parser.Results.BulbSerial)
 else
     entry.BulbSerial = parser.Results.BulbSerial;
 end
-entry.Date = datetime(parser.Results.Date,'Format','MM/dd/yyyy');
+entry.Date = datetime(parser.Results.Date,'Format','MM/dd/yy');
 entry.TimeOn = datetime(parser.Results.TimeOn,'InputFormat','HH:mm','Format','HH:mm');
 entry.TimeOff = datetime(parser.Results.TimeOff','InputFormat','HH:mm','Format','HH:mm');
 entry.NotesOn = string(parser.Results.NotesOn);
@@ -119,7 +120,7 @@ switch parser.Results.onoff
     case 'on'
         % Overwrite values for turning bulb on
         entry.BulbSerial = string(box);
-        entry.Date = datetime('now','Format','MM/dd/yyyy');
+        entry.Date = datetime('now','Format','MM/dd/yy');
         entry.TimeOn = datetime('now','Format','hh:mm');
         entry.TempOn = parser.Results.temperature;
         entry.NotesOn = string(parser.Results.notes);
@@ -130,11 +131,15 @@ switch parser.Results.onoff
         entry.NotesOff = string(parser.Results.notes);
 
         % See if we are filling in a row from today
-        entryN = find(bulbLogTable.Date == datetime('today'),1,'last');
+        if ~isempty(bulbLogTable)
+            entryN = find( all(datestr(bulbLogTable.Date,'mm/dd/yy') == datestr(datetime('today'),'mm/dd/yy'),2) ,1,'last');
+        else
+            entryN = [];
+        end
         if isempty(entryN)
             entryN = size(bulbLogTable,1)+1;
             entry.BulbSerial = string(box);
-            entry.Date = datetime('now','Format','MM/dd/yyyy');
+            entry.Date = datetime('now','Format','MM/dd/yy');
             warning('No corresponding entry for turning on bulb. Appending row, and indicating missing values');
         else
             entry.BulbSerial = string(bulbLogTable.BulbSerial(entryN));
