@@ -62,11 +62,12 @@ function [primary,predictedSpd,errorFraction,gamutMargin] = OLSpdToPrimary(cal, 
 %   'primaryTolerance  - Scalar. Truncate to range [0,1] if primaries are
 %                        within this tolerance of [0,1]. Default 1e-6, and
 %                        'checkPrimaryOutOfRange' value is true.
-%   'checkPrimaryOutOfRange' - Boolean. Perform primary tolerance check. Default true.
-%   'differentialMode' - Boolean (default false). Run in differential
+%   'checkPrimaryOutOfRange' - Boolean. Perform primary tolerance check.
+%                        Default true.
+%   'differentialMode' - Boolean. Run in differential
 %                       mode.  This means, don't subtract dark light.
 %                       Useful when we want to find delta primaries that
-%                       produce a predicted delta spd.
+%                       produce a predicted delta spd. Default false.
 %   'checkSpd'        - Boolean (default false). Because of smoothing and
 %                       gamut limitations, this is not guaranteed to
 %                       produce primaries that lead to the predictedSpd
@@ -88,7 +89,7 @@ function [primary,predictedSpd,errorFraction,gamutMargin] = OLSpdToPrimary(cal, 
 %                              exists mainly for debugging. Not recommended
 %                              for everyday use.
 %   'maxSearchIter'   - Control how long the search goes for, when using
-%                       fractionalError method. Default, 300.  Reduce if you
+%                       'fractionalError' method. Default, 300.  Reduce if you
 %                       don't need to go that long and things will get
 %                       faster.
 %

@@ -23,6 +23,7 @@ classdef OLBackgroundParams_LightFluxChrom < OLBackgroundParams
         desiredxy(1,2) = [0.54 0.38];                                       % Modulation chromaticity.
         whichXYZ(1,:) char = 'xyzCIEPhys10';                                % Which XYZ cmfs.
         desiredMaxContrast(1,1) = 1;                                        % Desired maximum contrast to go on background.
+        desiredBackgroundLuminance(1,1) = 200;                              % Desired background luminance in cd/m2.
         polarType(1,:) char = 'unipolar';                                   % Background set for unipolar or bipolar modulation?
         search(1,1) struct = struct([]);                                    % Primary search parameter struct
     end
@@ -121,7 +122,6 @@ classdef OLBackgroundParams_LightFluxChrom < OLBackgroundParams
                     [backgroundPrimary,predBackgroundSpd,fractionalError] = OLSpdToPrimary(calibration,targetBackgroundSpd, ...
                         'primaryHeadroom',params.search.primaryHeadroom,'primaryTolerance',params.search.primaryTolerance, ...
                         'lambda',params.search.lambda, 'checkSpd',false, ...
-                        'whichSpdToPrimaryMin',params.search.whichSpdToPrimaryMin, ...
                         'spdToleranceFraction',params.search.spdToleranceFraction, ...
                         'verbose',params.search.verbose);
 
@@ -236,6 +236,10 @@ classdef OLBackgroundParams_LightFluxChrom < OLBackgroundParams
                 
                 % Validate lightFluxDownFactor
                 property = 'desiredMaxContrast';
+                mustBePositive(params.(property));
+                
+                 % Validate desiredBackgroundLuminance
+                property = 'desiredBackgroundLuminance';
                 mustBePositive(params.(property));
                 
                 

@@ -13,6 +13,10 @@ function [maxSpd, maxPrimary, maxLum] = OLFindMaxSpd(cal, targetSpd, initialPrim
 %     Can also find min instead of max, by setting value for key 'findMin'
 %     to true.
 %
+%     The lambda parameter is not currently used, but could be added to the
+%     error function if we decide we want it.  Another possibility is to
+%     rely on OLSpdToPrimary and pass the lambda parameter through to that.
+%
 % Input:
 %     cal                  - Struct. OneLight calibration file after it has been
 %                            processed by OLInitCal.
@@ -34,10 +38,9 @@ function [maxSpd, maxPrimary, maxLum] = OLFindMaxSpd(cal, targetSpd, initialPrim
 %
 % Optional Key-Value Pairs:
 %  'verbose'          - Boolean (default false). Provide more diagnostic output.
-%  'lambda'           - Scalar  (default 0.005). Value of smoothing parameter.
-%                       Smaller lead to less smoothing, with 0 doing no
-%                       smoothing at all. This gets passed through to
-%                       OLSpdToPrimary.
+%  'lambda'           - Scalar  (default 0.005). Value of primary smoothing
+%                       parameter. Smaller lead to less smoothing, with 0
+%                       doing no smoothing at all.
 %   'primaryHeadroom' - Scalar.  Headroom to leave on primaries.  Default
 %                       0.0
 %   'primaryTolerance - Scalar. Truncate to range [0,1] if primaries are
@@ -49,8 +52,6 @@ function [maxSpd, maxPrimary, maxLum] = OLFindMaxSpd(cal, targetSpd, initialPrim
 %                       produce primaries that lead to the predictedSpd
 %                       matching the targetSpd.  Set this to true to check.
 %                       Tolerance is given by spdFractionTolerance.
-%   'whichSpdToPrimaryMin' - String, what to minimize in any OLSpdToPrimary calls
-%                       (default 'leastSquares')
 %   'spdToleranceFraction' - Scalar (default 0.01). If checkSpd is true, the
 %                       tolerance to avoid an error message is this
 %                       fraction times the maximum of targetSpd, with the
@@ -78,7 +79,6 @@ p.addParameter('primaryHeadroom', 0.0, @isscalar);
 p.addParameter('primaryTolerance', 1e-6, @isscalar);
 p.addParameter('checkPrimaryOutOfRange', true, @islogical);
 p.addParameter('checkSpd', false, @islogical);
-p.addParameter('whichSpdToPrimaryMin', 'leastSquares', @ischar);
 p.addParameter('spdToleranceFraction', 0.01, @isscalar);
 p.addParameter('findMin', false, @islogical);
 p.addParameter('maxSearchIter',300,@isscalar);
