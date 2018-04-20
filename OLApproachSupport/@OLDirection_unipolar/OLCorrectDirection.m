@@ -97,7 +97,7 @@ else
 
         %% Correct
         calibration = direction.calibration;
-        correctedDirectionData = OLCorrectCacheFileOOC(directionData, calibration, oneLight, radiometer, 'OBSERVER_AGE', 32);
+        correctedDirectionData = OLCorrectCacheFileOOC(directionData, calibration, oneLight, radiometer, 'OBSERVER_AGE', 32, 'smoothness', parser.Results.smoothness);
 
         %% Update original OLDirection
         % Update direction business end
@@ -127,7 +127,7 @@ else
         % background primary values no longer correspond to the desired
         % combined SPD. Instead, convert the desiredCombinedSPD to some initial
         % primary values predicted to produce it, and correct those.
-        nominalCombinedPrimaryValues = OLSpdToPrimary(direction.calibration,desiredCombinedSPD,'lambda',parser.Results.smoothness);
+        nominalCombinedPrimaryValues = OLSpdToPrimary(direction.calibration,desiredCombinedSPD,'lambda',parser.Results.smoothness, 'primaryHeadroom', 0);
         [correctedCombinedPrimaryValues, correctionData] = OLCorrectPrimaryValues(nominalCombinedPrimaryValues,direction.calibration,oneLight,radiometer,varargin{:});
 
         % Update business end
