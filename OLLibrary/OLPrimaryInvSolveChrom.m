@@ -172,6 +172,9 @@ else
     fminconDisplaySetting = 'off';
 end
 
+% fmincon algorithm
+fminconAlgorithm = 'active-set';
+
 %% Load XYZ functions according to chosen type
 eval(['tempXYZ = load(''T_' p.Results.whichXYZ ''');']);
 eval(['T_xyz = SplineCmf(tempXYZ.S_' p.Results.whichXYZ ',683*tempXYZ.T_' p.Results.whichXYZ ',S);']);
@@ -268,7 +271,7 @@ end
 % This seems to work robustly, and thus we use it for helping to
 % start other options.
 options = optimset('fmincon');
-options = optimset(options,'Diagnostics','off','Display',fminconDisplaySetting,'LargeScale','off','Algorithm','active-set', 'MaxIter', p.Results.maxSearchIter, 'MaxFunEvals', 1000000, 'TolFun', 1e-3, 'TolCon', 1e-6, 'TolX', 1e-4);
+options = optimset(options,'Diagnostics','off','Display',fminconDisplaySetting,'LargeScale','off','Algorithm',fminconAlgorithm, 'MaxIter', p.Results.maxSearchIter, 'MaxFunEvals', 1000000, 'TolFun', 1e-3, 'TolCon', 1e-6, 'TolX', 1e-4);
 vub = ones(size(devicePrimaryBasis, 2), 1)  - maxLumPrimaryHeadroom;
 vlb = zeros(size(devicePrimaryBasis, 2), 1) + maxLumPrimaryHeadroom;
 x = fmincon(@(x) ObjFunctionMaxLum(x, cal, T_xyz), ...
@@ -313,7 +316,7 @@ switch (p.Results.optimizationTarget)
         % Then take resulting maxSpd and find the spd with same
         % relative spectrum that has maximum within gamut luminance.
         options = optimset('fmincon');
-        options = optimset(options,'Diagnostics','off','Display',fminconDisplaySetting,'LargeScale','off','Algorithm','active-set', 'MaxIter', p.Results.maxSearchIter, 'MaxFunEvals', 1000000, 'TolFun', 1e-3, 'TolCon', 1e-6, 'TolX', 1e-4);
+        options = optimset(options,'Diagnostics','off','Display',fminconDisplaySetting,'LargeScale','off','Algorithm',fminconAlgorithm, 'MaxIter', p.Results.maxSearchIter, 'MaxFunEvals', 1000000, 'TolFun', 1e-3, 'TolCon', 1e-6, 'TolX', 1e-4);
         vub = ones(size(devicePrimaryBasis, 2), 1)-p.Results.primaryHeadroom;
         vlb = ones(size(devicePrimaryBasis, 2), 1)*p.Results.primaryHeadroom;
         x = fmincon(@(x) ObjFunctionMinLum(x, cal, T_xyz), ...
@@ -350,7 +353,7 @@ switch (p.Results.optimizationTarget)
         % This does a simultaneous search for max and min, to maximize
         % contrast.
         options = optimset('fmincon');
-        options = optimset(options,'Diagnostics','off','Display',fminconDisplaySetting,'LargeScale','off','Algorithm','active-set', 'MaxIter', p.Results.maxSearchIter, 'MaxFunEvals', 1000000, 'TolFun', 1e-3, 'TolCon', 1e-6, 'TolX', 1e-4);
+        options = optimset(options,'Diagnostics','off','Display',fminconDisplaySetting,'LargeScale','off','Algorithm',fminconAlgorithm, 'MaxIter', p.Results.maxSearchIter, 'MaxFunEvals', 1000000, 'TolFun', 1e-3, 'TolCon', 1e-6, 'TolX', 1e-4);
         vub = ones(size(devicePrimaryBasis, 2), 2)-p.Results.primaryHeadroom;
         vlb = ones(size(devicePrimaryBasis, 2), 2)*p.Results.primaryHeadroom;
         x = fmincon(@(x) ObjFunctionMaxContrast(x, cal, T_xyz, p.Results.targetContrast), ...
