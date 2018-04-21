@@ -66,6 +66,7 @@ p.addOptional('doCorrection', true, @islogical);
 p.addOptional('postreceptoralCombinations', [], @isnumeric);
 p.addOptional('outDir', [], @isstr);
 p.addOptional('takeTemperatureMeasurements', false, @islogical);
+p.addOptional('smoothness',.1, @isnumeric);
 p.parse(varargin{:});
 describe = p.Results;
 powerLevels = describe.powerLevels;
@@ -309,16 +310,15 @@ end
                 % the end to produce.
                 if iter == 1
                     kScale = results.modulationBGMeas.meas.pr650.spectrum \ bgDesiredSpd;
-                    kScale = 1;
                 end
                 
                 % Find out how much we missed by in primary space, by
                 % taking the difference between the measured spectrum and
                 % what we wanted to get.
                 deltaBackgroundPrimaryInferred = OLSpdToPrimary(cal, (kScale*results.modulationBGMeas.meas.pr650.spectrum)-...
-                    bgDesiredSpd, 'differentialMode', true, 'lambda', 0.001);
+                    bgDesiredSpd, 'differentialMode', true, 'lambda', p.Results.smoothness, 'primaryHeadroom', 0);
                 deltaModulationPrimaryInferred = OLSpdToPrimary(cal, (kScale*results.modulationMaxMeas.meas.pr650.spectrum)-...
-                    modDesiredSpd, 'differentialMode', true, 'lambda', 0.001);
+                    modDesiredSpd, 'differentialMode', true, 'lambda', p.Results.smoothness, 'primaryHeadroom', 0);
                 
                 % Also convert measured spds into  measured primaries.
                 % These are a mess, because the smoothness parameter is too
