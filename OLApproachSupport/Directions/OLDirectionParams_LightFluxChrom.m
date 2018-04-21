@@ -6,10 +6,9 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
         desiredxy(1,2) = [0.333 0.333];                                    % Modulation chromaticity.
         whichXYZ(1,:) char = 'xyzCIEPhys10';                               % Which XYZ cmfs.
         desiredMaxContrast(1,1) = 1;                                       % Size of max contrast
-        desiredBackgroundLuminance(1,1) = 200;                              % Desired background luminance in cd/m2.
+        desiredBackgroundLuminance(1,1) = 200;                             % Desired background luminance in cd/m2.
         polarType(1,:) char = 'unipolar';                                  % Unipolar or bipolar light flux direction
-        search(1,1) struct = struct([]);                                    % Primary search parameter struct
-
+        search(1,1) struct = struct([]);                                   % Primary search parameter struct  
     end
     
     methods
@@ -82,18 +81,18 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
             %% Get / make background
             if isempty(parser.Results.background) % No primary specified in call
                 if isempty(directionParams.background) % No primary specified in direction params
-                    % Grab the primaries directly from
+                    % Construct the primaries directly from
                     % OLPrimaryInvSolveChrom, as well as what it things the
                     % best choice is.
-                    [backgroundPrimary,maxBackgroundPrimary,minBackgroundPrimary] = OLBackgroundNominalPrimaryFromParams(directionParams.backgroundParams,calibration);
+                    [backgroundPrimary,modulationPrimary,maxBackgroundPrimary,minBackgroundPrimary] = ...
+                       OLLightFluxBackgroundNominalPrimaryFromParams(directionParams,calibration);
                     background = OLDirection_unipolar(backgroundPrimary,calibration);
-                    background.describe.params = params;
-                    [directionParams.background,maxBackgroundPrimary,minBackgroundPrimary] = OLBackgroundNominalFromParams(directionParams.backgroundParams, calibration);
-                         
+                    background.describe.params = directionParams;
+                    % [directionParams.background,maxBackgroundPrimary,minBackgroundPrimary] = OLBackgroundNominalFromParams(directionParams.backgroundParams, calibration);
+                else 
+                    % Use background stored in directionParams
+                    background = directionParams.background;
                 end
-                
-                % Use background stored in directionParams
-                background = directionParams.background;
             else
                 % Use background specified in function call
                 background = parser.Results.background;
@@ -102,7 +101,7 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
             %% Make direction
             switch (directionParams.polarType)
                 case 'unipolar'
-                    if (~exist('maxBackgroundPrimary','var'))
+                    if (~exist('modulationPrimary','var'))
                         % Old way
                         backgroundPrimary = background.differentialPrimaryValues;
                         targetSpdPositive = OLPrimaryToSpd(calibration,backgroundPrimary)*(1 + directionParams.desiredMaxContrast);
@@ -112,9 +111,9 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
                         % OLPrimaryInvSolveChrom at the desired target
                         % contrast, which you should do if we decide this
                         % method works.
-                        background.differentialPrimaryValues = minBackgroundPrimary;
-                        modulationPrimaryPositive = maxBackgroundPrimary;
-                        targetSpdPositive = OLPrimaryToSpd(calibration,modulationPrimaryPositive);
+                        %background.differentialPrimaryValues = backgroundPrimary;
+                        modulationPrimaryPositive = modulationPrimary;
+                        %targetSpdPositive = OLPrimaryToSpd(calibration,modulationPrimaryPositive);
                     end
                     
                     % Update background
@@ -159,18 +158,19 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
                     
                 otherwise
                     error('Unknown polarType specified');
-            end     
+            end
         end
         
-        function [backgroundPrimary,maxBackgroundPrimary,minBackgroundPrimary] = OLLightFluxBackgroundNominalPrimaryFromParams(params, calibration)
+        function [backgroundPrimary,modulationPrimary,maxBackgroundPrimary,minBackgroundPrimary] = OLLightFluxBackgroundNominalPrimaryFromParams(params,calibration)
             % Generate nominal primary for these parameters, for calibration
             %
             % Syntax:
-            %   backgroundPrimary = OLBackgroundNominalPrimary(OLBackgroundParams_LightFluxChrom,calibration);
+            %   backgroundPrimary = OLLightFluxBackgroundNominalPrimaryFromParams(params,calibration);
             %
             % Description:
             %    Generate the nominal primary values that would correspond
-            %    to the given parameter, under the given calibration.
+            %    to best approximation to the background, for the given parameters,
+            %    under the given calibration.
             %
             %    Background at specified chromaticity that allows a large
             %    light flux pulse modulation.  This is found using
@@ -212,7 +212,7 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
             
             % Input validation
             parser = inputParser();
-            parser.addRequired('params',@(x) isa(x,'OLBackgroundParams_LightFluxChrom'));
+            parser.addRequired('params',@(x) isa(x,'OLDirectionParams_LightFluxChrom'));
             parser.addRequired('calibration',@isstruct);
             parser.parse(params,calibration);
             
@@ -225,35 +225,62 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
             fprintf('Max lum %0.2f, min lum %0.2f\n',maxLum,minLum);
             fprintf('Luminance weber contrast, low to high: %0.2f%%\n',100*(maxLum-minLum)/minLum);
             fprintf('Luminance michaelson contrast, around mean: %0.2f%%\n',100*(maxLum-minLum)/(maxLum+minLum));
-                %}
+            %}
                 
-                % Get background spd
-                maxBackgroundSpd = OLPrimaryToSpd(calibration,maxBackgroundPrimary);
-                minBackgroundSpd = OLPrimaryToSpd(calibration,minBackgroundPrimary);
-                checkLum = maxLum/(1 + params.desiredMaxContrast);
-                switch (params.polarType)
-                    case 'unipolar'
-                        if (checkLum < minLum)
-                            desiredLum = minLum;
-                        else
-                            desiredLum = minLum + (checkLum-minLum)/2;
-                        end
-                        targetBackgroundSpd = maxBackgroundSpd*(desiredLum/maxLum);
-                        
-                        % Convert target spd back to primary space.
-                        % The problem is that this does not reproduce the
-                        % primaries that we got above, even when we pass in the
-                        % spd that results from those primaries. That is,
-                        % OLSpdToPrimary does not invert OLPrimaryToSpd, even
-                        % when there is a perfect inverse possible.  Ugh!
-                        [backgroundPrimary,predBackgroundSpd,fractionalError] = OLSpdToPrimary(calibration,targetBackgroundSpd, ...
-                            'primaryHeadroom',params.search.primaryHeadroom,'primaryTolerance',params.search.primaryTolerance, ...
-                            'lambda',params.search.lambda, 'checkSpd',false, ...
-                            'spdToleranceFraction',params.search.spdToleranceFraction, ...
-                            'verbose',params.search.verbose);
-                        
-                        % Figure for debugging
-                        %{
+            % Get background spd
+            maxBackgroundSpd = OLPrimaryToSpd(calibration,maxBackgroundPrimary);
+            minBackgroundSpd = OLPrimaryToSpd(calibration,minBackgroundPrimary);
+            
+            % Find range of background luminances over which we could get
+            % desired contrast
+            maxFeasibleBackgrounLum = maxLum/(1 + params.desiredMaxContrast);
+            if (maxFeasibleBackgrounLum < minLum)
+                maxFeasibleBackgrounLum = minLum;
+            end
+            minFeasibleBackgroundLum = minLum;
+            desiredBackgroundLum = params.desiredBackgroundLuminance;
+            
+            switch (params.polarType)
+                case 'unipolar'
+                    % The purpose of these next bits is to try to keep the
+                    % background luminance as close as possible to the
+                    % desired level, but not to sacrifice contrast.
+                    if (desiredBackgroundLum < minFeasibleBackgroundLum)
+                        useBackgroundLum = minLum;
+                    elseif (desiredBackgroundLum < maxFeasibleBackgrounLum)
+                        useBackgroundLum = desiredBackgroundLum;
+                    else
+                        useBackgroundLum = maxFeasibleBackgrounLum;
+                    end
+                    
+                    desiredModulationLum = useBackgroundLum*(1 + params.desiredMaxContrast);
+                    if (desiredModulationLum < maxLum)
+                        useModulationLum = desiredModulationLum;
+                    else
+                        useModulationLum = maxLum;
+                    end
+                    
+                    targetBackgroundSpd = maxBackgroundSpd*(useBackgroundLum/maxLum);
+                    targetModulationSpd = maxBackgroundSpd*(useModulationLum/maxLum);
+
+                    % Convert target spd back to primary space.
+                    % The problem is that this does not reproduce the
+                    % primaries that we got above, even when we pass in the
+                    % spd that results from those primaries. That is,
+                    % OLSpdToPrimary does not invert OLPrimaryToSpd, even
+                    % when there is a perfect inverse possible.  Ugh!
+                    [backgroundPrimary,predBackgroundSpd,fractionalError] = OLSpdToPrimary(calibration,targetBackgroundSpd, ...
+                        'primaryHeadroom',params.search.primaryHeadroom,'primaryTolerance',params.search.primaryTolerance, ...
+                        'lambda',params.search.lambda, 'checkSpd',false, ...
+                        'spdToleranceFraction',params.search.spdToleranceFraction, ...
+                        'verbose',params.search.verbose);
+
+                    [modulationPrimary,predBackgroundSpd,fractionalError] = OLSpdToPrimary(calibration,targetModulationSpd, ...
+                        'primaryHeadroom',params.search.primaryHeadroom,'primaryTolerance',params.search.primaryTolerance, ...
+                        'lambda',params.search.lambda, 'checkSpd',false, ...
+                        'spdToleranceFraction',params.search.spdToleranceFraction, ...
+                        'verbose',params.search.verbose);
+                    %{
                     figure; clf; hold on;
                     plot(maxBackgroundSpd,'r','LineWidth',3);
                     plot(minBackgroundSpd,'g','LineWidth',4);
@@ -261,18 +288,18 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
                     plot(targetBackgroundSpd,'b','LineWidth',3);
                     plot(predBackgroundSpd,'k');
                     fprintf('Fractional spd error between desired and found background spectrum: %0.1f%%\n',100*fractionalError);
-                        %}
-                    case 'bipolar'
-                        desiredLum = (maxLum+minLum)/2;
-                        targetBackgroundSpd = maxBackgroundSpd*(desiredLum/maxLum);
-                        
-                        % Convert back spd to primary space
-                        [backgroundPrimary,predBackgroundSpd,fractionalError] = OLSpdToPrimary(calibration,targetBackgroundSpd, ...
-                            'primaryHeadroom',params.search.primaryHeadroom,'primaryTolerance',params.search.primaryTolerance, ...
-                            'lambda',params.search.lambda, 'checkSpd',false, 'spdToleranceFraction',params.search.spdToleranceFraction);
-                        
-                        % Figure for debugging
-                        %{
+                    %}
+                case 'bipolar'
+                    desiredBackgroundLum = (maxLum+minLum)/2;
+                    targetBackgroundSpd = maxBackgroundSpd*(desiredBackgroundLum/maxLum);
+
+                    % Convert back spd to primary space
+                    [backgroundPrimary,predBackgroundSpd,fractionalError] = OLSpdToPrimary(calibration,targetBackgroundSpd, ...
+                        'primaryHeadroom',params.search.primaryHeadroom,'primaryTolerance',params.search.primaryTolerance, ...
+                        'lambda',params.search.lambda, 'checkSpd',false, 'spdToleranceFraction',params.search.spdToleranceFraction);
+
+                    % Figure for debugging
+                    %{
                     figure; clf; hold on;
                     plot(maxBackgroundSpd,'r','LineWidth',3);
                     plot(minBackgroundSpd,'g','LineWidth',3);
@@ -281,10 +308,10 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
                     plot(predBackgroundSpd,'y');
                     fprintf('Fractional spd error between desired and found background spectrum: %0.1f%%\n',100*fractionalError);
                     fprintf('Maximum available bipolar contrast is %0.1f%%\n',100*(maxLum-desiredLum)/desiredLum);
-                        %}
-                    otherwise
-                        error('Unknown background polarType property provided');
-                end
+                    %}
+                otherwise
+                    error('Unknown background polarType property provided');
+            end
         end
         
         function valid = OLDirectionParamsValidate(params)
@@ -323,9 +350,9 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
                 property = 'desiredMaxContrast';
                 mustBePositive(params.(property));
                 
-                 % Validate desiredBackgroundLuminance
+                % Validate desiredBackgroundLuminance
                 property = 'desiredBackgroundLuminance';
-                mustBePositive(params.(property));         
+                mustBePositive(params.(property));
                 
             catch valueException
                 % Add more descriptive message
@@ -338,3 +365,5 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
             valid = true;
         end
     end
+    
+end
