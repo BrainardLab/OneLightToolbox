@@ -416,7 +416,7 @@ end
 function f = ObjFunctionMaxLum(primary, cal, T_xyz)
 
 % Get spectrum and luminance
-theSpd = OLPrimaryToSpd(cal,primary,'skipAllChecks',true);
+theSpd = OLPrimaryToSpdFastAndDirty(cal,primary);
 theLuminance = T_xyz(2,:)*theSpd;
 
 % Maximize the luminance
@@ -427,7 +427,7 @@ end
 function f = ObjFunctionMinLum(primary, cal, T_xyz)
 
 % Get spectrum and luminance
-theSpd = OLPrimaryToSpd(cal,primary,'skipAllChecks',true);
+theSpd = OLPrimaryToSpdFastAndDirty(cal,primary);
 theLuminance = T_xyz(2,:)*theSpd;
 
 % Minimize the luminance
@@ -438,7 +438,7 @@ end
 function f = ObjFunctionMaxContrast(primary, cal, T_xyz, targetContrast)
 
 % Get spectrum and luminance
-theSpds = OLPrimaryToSpd(cal,primary,'skipAllChecks',true);
+theSpds = OLPrimaryToSpdFastAndDirty(cal,primary);
 theLuminances= T_xyz(2,:)*theSpds;
 theContrast = (theLuminances(1)-theLuminances(2))/theLuminances(2);
 
@@ -457,7 +457,7 @@ end
 function [c, ceq] = ChromaticityNonlcon(primary, cal, T_xyz, targetxy, chromaticityTolerance)
 
 % Calculate spectra and chromaticities
-theSpds = OLPrimaryToSpd(cal,primary,'skipAllChecks',true);
+theSpds = OLPrimaryToSpdFastAndDirty(cal,primary);
 theXYZs = T_xyz*theSpds;
 thexyYs = XYZToxyY(theXYZs);
 
@@ -480,7 +480,7 @@ end
 function [c, ceq] = RelativeSpdNonlcon(primary, cal, T_xyz, targetxy, spdToleranceFraction, chromaticityTolerance)
 
 % Calculate spectra
-theSpds = OLPrimaryToSpd(cal,primary,'skipAllChecks',true);
+theSpds = OLPrimaryToSpdFastAndDirty(cal,primary);
 
 % Get how well we're doing on target chromaticity
 [c1, ~] = ChromaticityNonlcon(primary, cal, T_xyz, targetxy, chromaticityTolerance);
