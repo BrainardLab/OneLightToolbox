@@ -347,8 +347,14 @@ switch (p.Results.optimizationTarget)
         maxLum = T_xyz(2,:)*maxSpd;
         
     case 'maxContrast'
-        % Obtain initial primaries from the max
-        initialPrimaries = maxPrimary;
+        % Obtain initial primaries from the initial max search.  For
+        % reasons that are not understood to me, the search below gives up
+        % right at the start if the initial primaries are all ones, which
+        % can happen in real use cases where we set the target chromaticity
+        % to be the native chromaticity of the device at max on.
+        % Multiplying by 0.99 prevents this, without seeming to screw up
+        % anything else in practice.
+        initialPrimaries = 0.99*maxPrimary;
         
         % This does a simultaneous search for max and min, to maximize
         % contrast.
