@@ -45,7 +45,7 @@ function predictedSpd = OLPrimaryToSpd(calibration, primary, varargin)
 %                         ignores checks and makes this run faster.
 %
 % See also:
-%    OLSpdToPrimary, OLPrimaryToSettings, OLSettingsToStartsStops,
+%    OLSpdToPrimary, OLPrimaryToSpdFastAndDirty, OLPrimaryToSettings, OLSettingsToStartsStops,
 %    OLSpdToPrimaryTest
 
 % History:

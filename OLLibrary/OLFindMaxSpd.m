@@ -13,6 +13,10 @@ function [maxSpd, maxPrimary, maxLum] = OLFindMaxSpd(cal, targetSpd, initialPrim
 %     Can also find min instead of max, by setting value for key 'findMin'
 %     to true.
 %
+%     The lambda parameter is not currently used, but could be added to the
+%     error function if we decide we want it.  Another possibility is to
+%     rely on OLSpdToPrimary and pass the lambda parameter through to that.
+%
 % Input:
 %     cal                  - Struct. OneLight calibration file after it has been
 %                            processed by OLInitCal.
@@ -34,10 +38,9 @@ function [maxSpd, maxPrimary, maxLum] = OLFindMaxSpd(cal, targetSpd, initialPrim
 %
 % Optional Key-Value Pairs:
 %  'verbose'          - Boolean (default false). Provide more diagnostic output.
-%  'lambda'           - Scalar  (default 0.005). Value of smoothing parameter.
-%                       Smaller lead to less smoothing, with 0 doing no
-%                       smoothing at all. This gets passed through to
-%                       OLSpdToPrimary.
+%  'lambda'           - Scalar  (default 0.005). Value of primary smoothing
+%                       parameter. Smaller lead to less smoothing, with 0
+%                       doing no smoothing at all.
 %   'primaryHeadroom' - Scalar.  Headroom to leave on primaries.  Default
 %                       0.0
 %   'primaryTolerance - Scalar. Truncate to range [0,1] if primaries are
@@ -57,7 +60,7 @@ function [maxSpd, maxPrimary, maxLum] = OLFindMaxSpd(cal, targetSpd, initialPrim
 %   'findMin'         - Boolean (default false). Find minimum rather than
 %                       maximum, with everything else the same.
 %   'maxSearchIter'   - Control how long the search goes for.
-%                       Default, 50.  Reduce if you don't need
+%                       Default, 300.  Reduce if you don't need
 %                       to go that long and things will get faster.
 %
 % See also: OLPrimaryInvSolveChrom, OLFindMinSpectrum.
@@ -89,7 +92,7 @@ else
 end
 
 %% Make sure that the oneLightCal has been properly processed by OLInitCal.
-assert(isfield(cal, 'computed'), 'OLSpdToPrimary:InvalidCalFile', ...
+assert(isfield(cal, 'computed'), 'OLFindMaxSpd:InvalidCalFile', ...
     'The calibration file needs to be processed by OLInitCal.');
 
 %% Make sure input target isn't insane
@@ -157,7 +160,7 @@ function f = OLFindMaxSpdFun(primary, cal, T_xyz, lambda, findMin)
 
 % Get the prediction.  Constraint checking is done in the constraint
 % function, skipped here
-predictedSpd = OLPrimaryToSpd(cal, primary,'skipAllChecks',true);
+predictedSpd = OLPrimaryToSpdFastAndDirty(cal, primary);
 predictedLum = T_xyz(2,:)*predictedSpd;
 
 % Fix sign depending on whether we are maximizing or minimizing
@@ -181,7 +184,7 @@ function [c, ceq] = OLFindMaxSpdCon(primary, cal, targetSpd, lambda, ...
 c1 = gamutMargin + 0.001*primaryTolerance;
 
 % Get spd from current primaries
-predictedSpd = OLPrimaryToSpd(cal,primary,'skipAllChecks',true);
+predictedSpd = predictedSpd = OLPrimaryToSpdFastAndDirty(cal, primary);
     
 % Check how well we are doing on relative spd
 %
