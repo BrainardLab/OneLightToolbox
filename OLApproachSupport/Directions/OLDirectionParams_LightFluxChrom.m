@@ -115,59 +115,53 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
                     % If we created the background in this routine, then we
                     % also created the modulation and our work is done.
                     % All that is necessary is to put things in the right
-                    % place.
-                    if (exist('modulationPrimary','var'))
-                        modulationPrimaryPositive = modulationPrimaryPos;
-                    else
+                    % place. If not, we do our best.
+                    if (~exist('modulationPrimaryPos','var'))
                         % If we were handed a background, we know what
                         % positive modulation we want, and we use
                         % OLSpdTOPrimary to try to produce it.
                         backgroundPrimary = background.differentialPrimaryValues;
-                        targetSpdPositive = OLPrimaryToSpd(calibration,backgroundPrimary)*(1 + directionParams.desiredMaxContrast);
-                        modulationPrimaryPositive = OLSpdToPrimary(calibration,targetSpdPositive, ...
+                        targetSpdPos = OLPrimaryToSpd(calibration,backgroundPrimary)*(1 + directionParams.desiredMaxContrast);
+                        modulationPrimaryPos = OLSpdToPrimary(calibration,targetSpdPos, ...
                             'lambda',directionParams.search.lambda,'primaryHeadroom',directionParams.search.primaryHeadroom);
                     end
                     
                     % Get differential primary from modulation primary
-                    differentialPrimaryPositive = modulationPrimaryPositive - background.differentialPrimaryValues;
+                    differentialPrimaryPos = modulationPrimaryPos - background.differentialPrimaryValues;
                     
                     % Create direction object
                     describe.directionParams = directionParams;
                     describe.backgroundNominal = background.copy();
                     describe.background = background;
-                    direction = OLDirection_unipolar(differentialPrimaryPositive, calibration, describe);
+                    direction = OLDirection_unipolar(differentialPrimaryPos, calibration, describe);
                     
                 case 'bipolar'
-                    backgroundPrimary = background.differentialPrimaryValues;
-                    backgroundSpd = OLPrimaryToSpd(calibration,backgroundPrimary);
-                    
-                    targetSpdPositive = OLPrimaryToSpd(calibration,backgroundPrimary)*(1 + directionParams.desiredMaxContrast);
-                    targetSpdNegative = backgroundSpd - (targetSpdPositive-backgroundSpd);
-                    
-                    modulationPrimaryPositive = OLSpdToPrimary(calibration,targetSpdPositive,'lambda',directionParams.backgroundParams.search.lambda);
-                    modulationPrimaryNegative = OLSpdToPrimary(calibration,targetSpdNegative,'lambda',directionParams.backgroundParams.search.lambda);
-                    
+                     % If we created the background in this routine, then we
+                    % also created the modulation and our work is done.
+                    % All that is necessary is to put things in the right
+                    % place. If not, we do our best.
+                    if (~exist('modulationPrimaryPos','var'))
+                        % If we were handed a background, we know what
+                        % positive modulation we want, and we use
+                        % OLSpdTOPrimary to try to produce it.
+                        backgroundPrimary = background.differentialPrimaryValues;
+                        targetSpdPos = OLPrimaryToSpd(calibration,backgroundPrimary)*(1 + directionParams.desiredMaxContrast);
+                        targetSpdNeg = OLPrimaryToSpd(calibration,backgroundPrimary)*(1 - directionParams.desiredMaxContrast);
+                        modulationPrimaryPos = OLSpdToPrimary(calibration,targetSpdPos, ...
+                            'lambda',directionParams.search.lambda,'primaryHeadroom',directionParams.search.primaryHeadroom);
+                        modulationPrimaryNeg = OLSpdToPrimary(calibration,targetSpdNeg, ...
+                            'lambda',directionParams.search.lambda,'primaryHeadroom',directionParams.search.primaryHeadroom);
+                    end
+                              
                     % Update background
-                    differentialPrimaryPositive = modulationPrimaryPositive - backgroundPrimary;
-                    differentialPrimaryNegative = modulationPrimaryNegative - backgroundPrimary;
-                    
-                    % Check negative primary does what we want
-                    %{
-                        predSpdPositive = OLPrimaryToSpd(calibration,backgroundPrimary+differentialPrimaryPositive);
-                        predSpdNegative = OLPrimaryToSpd(calibration,backgroundPrimary+differentialPrimaryNegative);
-                        figure; clf; hold on;
-                        plot(targetSpdNegative,'g','LineWidth',3);
-                        plot(predSpdNegative,'k','LineWidth',1);
-                        plot(backgroundSpd,'k','LineWidth',3);
-                        plot(targetSpdPositive,'r','LineWidth',3);
-                        plot(predSpdPositive,'k','LineWidth',1);
-                    %}
-                    
+                    differentialPrimaryPos = modulationPrimaryPos -  background.differentialPrimaryValues;
+                    differentialPrimaryNeg = modulationPrimaryNeg -  background.differentialPrimaryValues;
+               
                     % Create direction object
                     describe.directionParams = directionParams;
                     describe.backgroundNominal = background.copy();
                     describe.background = background;
-                    direction = OLDirection_bipolar(differentialPrimaryPositive, differentialPrimaryNegative, calibration, describe);
+                    direction = OLDirection_bipolar(differentialPrimaryPos, differentialPrimaryNeg, calibration, describe);
                     
                 otherwise
                     error('Unknown polarType specified');
