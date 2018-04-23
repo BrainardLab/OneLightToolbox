@@ -160,7 +160,7 @@ function f = OLFindMaxSpdFun(primary, cal, T_xyz, lambda, findMin)
 
 % Get the prediction.  Constraint checking is done in the constraint
 % function, skipped here
-predictedSpd = OLPrimaryToSpd(cal, primary,'skipAllChecks',true);
+predictedSpd = OLPrimaryToSpdFastAndDirty(cal, primary);
 predictedLum = T_xyz(2,:)*predictedSpd;
 
 % Fix sign depending on whether we are maximizing or minimizing
@@ -184,7 +184,7 @@ function [c, ceq] = OLFindMaxSpdCon(primary, cal, targetSpd, lambda, ...
 c1 = gamutMargin + 0.001*primaryTolerance;
 
 % Get spd from current primaries
-predictedSpd = OLPrimaryToSpd(cal,primary,'skipAllChecks',true);
+predictedSpd = predictedSpd = OLPrimaryToSpdFastAndDirty(cal, primary);
     
 % Check how well we are doing on relative spd
 %
