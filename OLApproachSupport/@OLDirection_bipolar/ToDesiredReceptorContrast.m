@@ -25,9 +25,10 @@ function [contrasts, excitation, excitationDiff] = ToDesiredReceptorContrast(dir
 %                       T.T_energyNormalized matrix will be used
 %
 % Outputs:
-%    contrasts      - Rx2 vector of contrasts on R receptors of direction
-%                     positive component, and direction negative component
-%                     on background
+%    contrasts      - R vector of mean (over pos and neg
+%                     components) contrasts on R receptors. Use extra
+%                     return outputs below and compute,if you want separate
+%                     positive and negative contrast values.
 %    excitation     - Rx3 matrix of excitations of each receptor type to
 %                     background, direction positive component and
 %                     direction negative component.
