@@ -32,6 +32,7 @@ classdef OLDirection_unipolar < OLDirection
             parser.addOptional('describe',struct('createdFrom',struct('constructor','construtor','arguments',{{differentialPrimaryValues,calibration,varargin}}),'correction',[],'validation',[]),@isstruct);
             parser.StructExpand = false;
             parser.parse(differentialPrimaryValues, calibration, varargin{:});
+            differentialPrimaryValues = OLCheckPrimaryGamut(differentialPrimaryValues,'primaryHeadroom',0,'checkPrimaryOutOfRange',true,'primaryTolerance',1e-5,'differentialMode', true);
             
             % Assign
             this.differentialPrimaryValues = differentialPrimaryValues;
