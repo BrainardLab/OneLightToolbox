@@ -45,6 +45,9 @@ if (~obj.Simulate)
     OneLightEngine(OneLightFunctions.SendPattern.UInt32, obj.DeviceID, uint16(starts), uint16(stops));
 else
     if (obj.PlotWhenSimulating)
+        if ~isvalid(obj.SimFig)
+            obj.SimFig = figure();
+        end
         figure(obj.SimFig); clf;
         hold on;
         plot(stops-starts,'ko','MarkerSize',2);
