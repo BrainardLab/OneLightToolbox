@@ -78,15 +78,6 @@ end
 primaryWaveform = primaryValues * waveforms;
 
 %% Check gamut
-gamut = [0 1] - [parser.Results.differential 0]; % set gamut limits
-if any(primaryWaveform(:) < gamut(1)-1e-10 | primaryWaveform(:) > gamut(2)+1e-10)
-    if parser.Results.truncateGamut
-        warning('OneLightToolbox:OLPrimaryWaveform:OutOfGamut','Primary waveform is out of gamut somewhere. This will be truncated');
-        primaryWaveform(primaryWaveform < gamut(1)) = gamut(1);
-        primaryWaveform(primaryWaveform > gamut(2)) = gamut(2);
-    else
-        error('OneLightToolbox:OLPrimaryWaveform:OutOfGamut','Primary waveform is out of gamut somewhere.');
-    end
-end
+primaryWaveform = OLCheckPrimaryGamut(primaryWaveform);
 
 end
