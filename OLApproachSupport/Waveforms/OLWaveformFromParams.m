@@ -61,7 +61,7 @@ switch waveformParams.type
         % Sinusoid: a bipolar variation of some contrast in some direction,
         % from a background, and returning back to that background. Can be
         % windowed.
-        waveform = sin(2*pi*waveformParams.frequency*timebase+(pi/180)*waveformParams.phaseDegs);
+        waveform = sinewave(waveformParams.stimulusDuration,1/timestep,waveformParams.frequency,waveformParams.phaseDegs);
     
     case 'squarewave'
         % Squarewave: a bipolar variation of some contrast in some direction,
