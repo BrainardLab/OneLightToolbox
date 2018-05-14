@@ -97,7 +97,6 @@ try
 	end
 	
 	% Turn the mirrors off.
-    ol.setAll(false);
     if checkKB
         ListenChar(0);
     end
