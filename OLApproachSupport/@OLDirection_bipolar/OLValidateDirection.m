@@ -2,14 +2,13 @@ function [validation, SPDs, excitations, contrasts] = OLValidateDirection(direct
 % Validate SPDs of OLDirection_bipolar
 %
 % Syntax:
-%   validation = OLDirection_bipolar.OLValidateDirection(oneLight, radiometer)
-%   validation = OLValidateDirection(OLDirection_bipolar, oneLight, radiometer)
-%   [validation, SPDs] = OLValidateDirection(OLDirection_bipolar, oneLight, radiometer)
-%   [...] = OLValidateDirection(OLDirection, SimulatedOneLight)
+%   validation = OLDirection_bipolar.OLValidateDirection(background, oneLight, radiometer)
+%   validation = OLValidateDirection(OLDirection_bipolar, background, oneLight, radiometer)
+%   [validation, SPDs] = OLValidateDirection(OLDirection_bipolar, background, oneLight, radiometer)
+%   [...] = OLValidateDirection(OLDirection, background, SimulatedOneLight)
 %   [...] = OLValidateDirection(...,'nAverage', nAverage)
 %   [..., excitation, contrasts] = OLValidateDirection(..., 'receptors', SSTReceptor)
 %   [..., excitation, contrasts] = OLValidateDirection(..., 'receptors', T_receptors)
-
 %
 % Description:
 %    Measures the SPD of an OLDirection_bipolar, and compares it to the
