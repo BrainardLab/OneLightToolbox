@@ -51,10 +51,35 @@ function plotTimeSeries(timeSeries, calFile, combSPDNominalPeaks)
     % Find the earliest and latest time stamp for each dayTimeSeries
     calsNum = numel(timeSeries);
     for calIndex = 1:calsNum
+        plotTemperatureTimeSeries = true;
+        plotSpectralShiftsTimeSeries = true;
+        plotPowerFluctuationTimeSeries = true;
         dayTimeSeries = timeSeries{calIndex};
+        if (isempty(dayTimeSeries.temperature))
+            fprintf(2,'There was no temperature data in calibration #%d / %d\n', calIndex, calsNum);
+            dayTimeSeries.temperature.t = [0];
+            dayTimeSeries.temperature.value = [0];
+            plotTemperatureTimeSeries = false;
+        end
+        
+        if (isempty(dayTimeSeries.spectralShiftsMeas))
+            fprintf(2,'There was no spectralShiftsMeas data in calibration #%d / %d\n', calIndex, calsNum);
+            dayTimeSeries.spectralShiftsMeas.t = [0];
+            dayTimeSeries.spectralShiftsMeas.measSpd = [0];
+            plotSpectralShiftsTimeSeries = false;
+        end
+        
+        if (isempty(dayTimeSeries.powerFluctuationMeas))
+            fprintf(2,'There was no powerFluctuationMeas data in calibration #%d / %d\n', calIndex, calsNum);
+            dayTimeSeries.powerFluctuationMea.t = [0];
+            dayTimeSeries.powerFluctuationMea.measSpd = [0];
+            plotPowerFluctuationTimeSeries = false;
+        end
+        
         time0(calIndex) = min([min(dayTimeSeries.temperature.t) min(dayTimeSeries.spectralShiftsMeas.t) min(dayTimeSeries.powerFluctuationMeas.t)]);
         timeN(calIndex) = max([max(dayTimeSeries.temperature.t) max(dayTimeSeries.spectralShiftsMeas.t) max(dayTimeSeries.powerFluctuationMeas.t)]);
     end
+    time0
     maxDuration = max(timeN-time0);
     
     % Reference SPD (SPD0)
@@ -72,15 +97,24 @@ function plotTimeSeries(timeSeries, calFile, combSPDNominalPeaks)
         legends{numel(legends)+1} = dayTimeSeries.date;
         
         % Plot the temperature data
-        plotDayTemperatureTimeSeries(symbolIndex, colorIndex, colors, markers, dayTimeSeries.temperature.t-time0(calIndex), dayTimeSeries.temperature.value, subplotPosVectors);
+        if (plotTemperatureTimeSeries)
+            plotDayTemperatureTimeSeries(symbolIndex, colorIndex, colors, markers, dayTimeSeries.temperature.t-time0(calIndex), dayTimeSeries.temperature.value, subplotPosVectors);
+        end
         
-        % Plot the power fluctuation data
-        plotPowerFluctuationTimeSeries(symbolIndex, colorIndex, colors, markers, dayTimeSeries.powerFluctuationMeas.t-time0(calIndex), dayTimeSeries.powerFluctuationMeas.measSpd, SPD0power, dayTimeSeries.waveAxis, subplotPosVectors);
+        if (plotPowerFluctuationTimeSeries)
+            % Plot the power fluctuation data
+            dayTimeSeries.powerFluctuationMeas.t
+            time0(calIndex)
+            dayTimeSeries.waveAxis
+            plotPowerFluctuationTimeSeries(symbolIndex, colorIndex, colors, markers, dayTimeSeries.powerFluctuationMeas.t-time0(calIndex), dayTimeSeries.powerFluctuationMeas.measSpd, SPD0power, dayTimeSeries.waveAxis, subplotPosVectors);
+        end
         
-        % Plot the power fluctuation data
-        maxCombSPD(calIndex) = max(dayTimeSeries.spectralShiftsMeas.measSpd(:));
-        [visualizedSpectralShiftWavelength, combSPDComputedPeaks(calIndex,:)] = ...
-            plotSpectralShiftTimeSeries(symbolIndex, colorIndex, colors, markers, dayTimeSeries.spectralShiftsMeas.t-time0(calIndex), dayTimeSeries.spectralShiftsMeas.measSpd, SPD0comb, dayTimeSeries.waveAxis, combSPDNominalPeaks, calIndex, subplotPosVectors);
+        % Plot the spectral shift data
+        if (plotSpectralShiftsTimeSeries)
+            maxCombSPD(calIndex) = max(dayTimeSeries.spectralShiftsMeas.measSpd(:));
+            [visualizedSpectralShiftWavelength, combSPDComputedPeaks(calIndex,:)] = ...
+                plotSpectralShiftTimeSeries(symbolIndex, colorIndex, colors, markers, dayTimeSeries.spectralShiftsMeas.t-time0(calIndex), dayTimeSeries.spectralShiftsMeas.measSpd, SPD0comb, dayTimeSeries.waveAxis, combSPDNominalPeaks, calIndex, subplotPosVectors);
+        end
     end
     
     % Show the figure now
@@ -302,7 +336,11 @@ end
 function cals = loadCalData(approach, calFile)
     cals = {};
     melaMaterialsDir = '/Users/nicolas/Desktop/';
-    calFileName = fullfile(melaMaterialsDir, approach, 'OneLightCalData', calFile);
+    
+    [file, path] = uigetfile(melaMaterialsDir, '*.mat');
+    %calFileName = fullfile(melaMaterialsDir, approach, 'OneLightCalData', calFile);
+    calFileName = fullfile(path,file);
+    
     load(calFileName, 'cals');
     if isempty(cals)
         error('Cal file ''%s'' contained no cals structs', calFileName);
