@@ -12,10 +12,8 @@ function OLAnalyzeCalTimeSeries
     % Provide an estimate of the comb SPD peaks
     combSPDNominalPeaks = [468 530 590 645];
     
-    approach = 'OLApproach_Squint';
-    
     % Load calibrations
-    [cals, calFile] = loadCalData(approach);
+    [cals, calFile] = loadCalData();
     timeSeries = extractTimeSeries(cals);
     
     % Plot the time series analysis
@@ -338,7 +336,7 @@ end
 
 function timeSeries = extractTimeSeries(cals)
     calsNum = numel(cals);
-    fprintf('Found %d cals\n', calsNum);
+    fprintf('Analyzing data from %d cals\n', calsNum);
     timeSeries = [];
     for calIndex = 1:calsNum
         c = cals{calIndex};
@@ -373,9 +371,15 @@ function timeSeries = extractTimeSeries(cals)
     end
 end
 
-function [cals, file] = loadCalData(approach)
+function [cals, file] = loadCalData()
     cals = {};
-    melaMaterialsDir = '/Users/nicolas/Desktop/';
+    systemInfo = GetComputerInfo();
+    if (strcmp(systemInfo.localHostName, 'Ithaca'))
+        melaMaterialsDir = '/Users/nicolas/Desktop/OLApproach_Squint/OneLightCalData';
+    else
+        melaMaterialsDir = getpref('OneLightToolbox', 'OneLightCalData');
+    end
+    melaMaterialsDir
     
     [file, path] = uigetfile(melaMaterialsDir, '*.mat');
     calFileName = fullfile(path,file);
