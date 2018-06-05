@@ -1,7 +1,7 @@
 %%OLAnalyzeCalTimeSeries  Analyze the time series of an OLcalibration file
 % Description:
 %     Analyze the time series of temperature, power fluctuation, and spectral
-%     shift data found in an OLcalibrationFile
+%     shift data found in an OLcalibration file
 %
 
 % History:
@@ -14,11 +14,8 @@ function OLAnalyzeCalTimeSeries
     
     approach = 'OLApproach_Squint';
     
-    %calFile = 'OLBoxDLiquidShortCableDEyePiece1_ND03.mat';
-    calFile = 'OLBoxAShortCableCEyePiece3ND00.mat';
-    
     % Load calibrations
-    cals = loadCalData(approach, calFile);
+    [cals, calFile] = loadCalData(approach);
     timeSeries = extractTimeSeries(cals);
     
     % Plot the time series analysis
@@ -35,12 +32,32 @@ function plotTimeSeries(timeSeries, calFile, combSPDNominalPeaks)
         'rowsNum', 2, ...
         'colsNum', 3, ...
         'heightMargin',   0.1, ...
-        'widthMargin',    0.07, ...
-        'leftMargin',     0.05, ...
-        'rightMargin',    0.01, ...
+        'widthMargin',    0.035, ...
+        'leftMargin',     0.04, ...
+        'rightMargin',    0.001, ...
         'bottomMargin',   0.05, ...
         'topMargin',      0.05);
 
+    tmp = subplotPosVectors(1,1).v;
+    tmp(3) = tmp(3)-0.1;
+    subplotPosVectors(1,1).v = tmp;
+    
+    tmp = subplotPosVectors(2,1).v;
+    tmp(3) = tmp(3)-0.1;
+    subplotPosVectors(2,1).v = tmp;
+    
+    
+    tmp = subplotPosVectors(1,2).v;
+    tmp(1) = tmp(1)-0.12;
+    tmp(3) = tmp(3)+0.12;
+    subplotPosVectors(1,2).v = tmp;
+    
+    tmp = subplotPosVectors(2,2).v;
+    tmp(1) = tmp(1)-0.12;
+    tmp(3) = tmp(3)+0.12;
+    subplotPosVectors(2,2).v = tmp;
+    
+    
     hFig = figure(1); clf;
     set(hFig, 'Color', [1 1 1], ...
         'Position', [10 10 1680 940], ...
@@ -131,20 +148,20 @@ function plotTimeSeries(timeSeries, calFile, combSPDNominalPeaks)
     
     % TEMPERATURE PLOTS
     % Finish OL temperature time series
-    subplot('Position', subplotPosVectors(1,1).v);
+    subplot('Position', subplotPosVectors(1,3).v);
     set(gca, 'XLim', [0 maxDuration/60], 'XTick', 0:10:1000, 'YTick', 1:1:100, 'YLim', [25 40]);
     grid on; box on;
-    legend(legends, 'Location', 'SouthEast');
+    %legend(legends, 'Location', 'EastOutside');
     xlabel('time (minutes)');
     ylabel('temperature (deg C)');
     title('OneLight internal temperature');
     set(gca, 'FontSize', 14);
     
     % Finish ambient temperature time series
-    subplot('Position', subplotPosVectors(2,1).v);
+    subplot('Position', subplotPosVectors(2,3).v);
     set(gca, 'XLim', [0 maxDuration/60], 'XTick', 0:10:1000,  'YTick', 1:1:100, 'YLim', [25 40]);
     grid on; box on;
-    legend(legends, 'Location', 'SouthEast');
+    %legend(legends, 'Location', 'EastOutside');
     xlabel('time (minutes)');
     ylabel('Temperature (deg C)');
     title('Ambient temperature');
@@ -155,14 +172,14 @@ function plotTimeSeries(timeSeries, calFile, combSPDNominalPeaks)
     subplot('Position', subplotPosVectors(1,2).v);
     set(gca, 'XLim', [0 maxDuration/60], 'XTick', 0:10:1000);
     grid on; box on;
-    legend(legends, 'Location', 'SouthEast');
+    legend(legends, 'Location', 'WestOutside');
     xlabel('time (minutes)');
     ylabel('Power fluctuation factor (SPD/SPD0)');
-    title(sprintf('Power fluctuation with respect to the first SPD in\n''%s'.', calFile));
+    title(sprintf('Power fluctuation with respect to the first SPD in\n''%s'.', strrep(strrep(calFile, '.mat', ''), '_', '')));
     set(gca, 'FontSize', 14);
     
     % Finish Full on SPDs
-    subplot('Position', subplotPosVectors(2,2).v);
+    subplot('Position', subplotPosVectors(1,1).v);
     set(gca, 'XLim', [350 750], 'XTick', 200:50:800);
     grid on; box on;
     xlabel('wavelength (nm)');
@@ -172,17 +189,17 @@ function plotTimeSeries(timeSeries, calFile, combSPDNominalPeaks)
     
     % SPECTRAL SHIFTS PLOTS
     % Finish shift amount plot
-    subplot('Position', subplotPosVectors(1,3).v);
+    subplot('Position', subplotPosVectors(2,2).v);
     set(gca, 'XLim', [0 maxDuration/60], 'XTick', 0:10:1000);
     grid on; box on;
-    legend(legends, 'Location', 'SouthEast');
+    legend(legends, 'Location', 'WestOutside');
     xlabel('time (minutes)');
     ylabel(sprintf('Spectral shift (nm)'));
-    title(sprintf('Spectral shift (@%2.0fnm) with respect to the first SPD in\n''%s'.', visualizedSpectralShiftWavelength, calFile));
+    title(sprintf('Spectral shift (@%2.0fnm) with respect to the first SPD in\n''%s'.', visualizedSpectralShiftWavelength, strrep(strrep(calFile, '.mat', ''), '_', '')));
     set(gca, 'FontSize', 14);
     
     % Finish combd SPDs
-    subplot('Position', subplotPosVectors(2,3).v);
+    subplot('Position', subplotPosVectors(2,1).v);
     % Plot nominal and computed peaks
     plot(combSPDNominalPeaks,  1.1*max(maxCombSPD(:))*ones(1,numel(combSPDNominalPeaks)), 'ks', 'MarkerSize', 14);
     for calIndex = 1:calsNum
@@ -203,7 +220,7 @@ function plotDayTemperatureTimeSeries(markerIndex, colorIndex, colors, markers, 
     timeInMinutes = time/60;
     
     
-    subplot('Position', subplotPosVectors(1,1).v);
+    subplot('Position', subplotPosVectors(1,3).v);
     if (any(isnan(value(:))))
 %         t = text(30, 33, 'NO TEMPERATURE DATA');
 %         set(t, 'FontSize', 16);
@@ -217,7 +234,7 @@ function plotDayTemperatureTimeSeries(markerIndex, colorIndex, colors, markers, 
             'LineWidth', 1.5);
     end
     
-    subplot('Position', subplotPosVectors(2,1).v);
+    subplot('Position', subplotPosVectors(2,3).v);
     if (any(isnan(value(:))))
 %         t = text(30, 33, 'NO TEMPERATURE DATA');
 %         set(t, 'FontSize', 16);
@@ -270,7 +287,7 @@ function [visualizedSpectralShiftWavelength, combSPDComputedPeaks] = ...
     combPeakTimeSeries = bsxfun(@minus, combPeakTimeSeries, combPeakReference');
     gainTimeSeries = bsxfun(@times, gainTimeSeries, 1./gainReference');
     
-    subplot('Position', subplotPosVectors(1,3).v);
+    subplot('Position', subplotPosVectors(2,2).v);
     hold on;
     plot(timeInMinutes, squeeze(combPeakTimeSeries(displayedPeakIndex,:)), '-', ...
         'Marker', markers{markerIndex}, ...
@@ -279,7 +296,7 @@ function [visualizedSpectralShiftWavelength, combSPDComputedPeaks] = ...
         'MarkerFaceColor', squeeze(colors(colorIndex,:)), ...
         'LineWidth', 1.5);
     
-    subplot('Position', subplotPosVectors(2,3).v);
+    subplot('Position', subplotPosVectors(2,1).v);
     hold on;
     for tIndex = 1:spectralShiftsMeasurementsNum
         plot(waveAxis, squeeze(SPDs(:,tIndex)), '-', ...
@@ -308,7 +325,7 @@ function plotPowerFluctuationTimeSeries(markerIndex, colorIndex, colors, ...
         'MarkerFaceColor', squeeze(colors(colorIndex,:)), ...
         'LineWidth', 1.5);
     
-    subplot('Position', subplotPosVectors(2,2).v);
+    subplot('Position', subplotPosVectors(1,1).v);
     hold on;
     for tIndex = 1:powerFluctuationMeasurementsNum
         plot(waveAxis, squeeze(SPDs(:,tIndex)), '-', ...
@@ -356,12 +373,11 @@ function timeSeries = extractTimeSeries(cals)
     end
 end
 
-function cals = loadCalData(approach, calFile)
+function [cals, file] = loadCalData(approach)
     cals = {};
     melaMaterialsDir = '/Users/nicolas/Desktop/';
     
     [file, path] = uigetfile(melaMaterialsDir, '*.mat');
-    %calFileName = fullfile(melaMaterialsDir, approach, 'OneLightCalData', calFile);
     calFileName = fullfile(path,file);
     
     load(calFileName, 'cals');
