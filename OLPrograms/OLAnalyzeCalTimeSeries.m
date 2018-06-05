@@ -6,6 +6,7 @@
 
 % History:
 %   5/31/2018  NPC Wrote it.
+%   6/05/2018  NPC Import calFile based on getpref('OneLightToolbox', 'OneLightCalData')
 %
 
 function OLAnalyzeCalTimeSeries
@@ -211,12 +212,14 @@ function plotTimeSeries(timeSeries, calFile, combSPDNominalPeaks)
     set(gca, 'FontSize', 14);
     drawnow;
     
-    NicePlot.exportFigToPDF('CalTimeSeriesAnalysis.pdf', hFig, 300)
+    exportPDF = false;
+    if (exportPDF)
+        NicePlot.exportFigToPDF('CalTimeSeriesAnalysis.pdf', hFig, 300);
+    end
 end
 
 function plotDayTemperatureTimeSeries(markerIndex, colorIndex, colors, markers, time, value, subplotPosVectors)
     timeInMinutes = time/60;
-    
     
     subplot('Position', subplotPosVectors(1,3).v);
     if (any(isnan(value(:))))
