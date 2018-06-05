@@ -42,7 +42,9 @@ function plotTimeSeries(timeSeries, calFile, combSPDNominalPeaks)
         'topMargin',      0.05);
 
     hFig = figure(1); clf;
-    set(hFig, 'Color', [1 1 1], 'Position', [10 10 1680 940], 'Name', sprintf('TIME SERIES ANALYSIS FOR %s', strrep(calFile, '.mat', '')));
+    set(hFig, 'Color', [1 1 1], ...
+        'Position', [10 10 1680 940], ...
+        'Name', sprintf('TIME SERIES ANALYSIS FOR %s', strrep(calFile, '.mat', '')));
     legends = {};
     
     % Do not show the figure as it takes a while to build up
@@ -51,35 +53,41 @@ function plotTimeSeries(timeSeries, calFile, combSPDNominalPeaks)
     % Find the earliest and latest time stamp for each dayTimeSeries
     calsNum = numel(timeSeries);
     for calIndex = 1:calsNum
-        plotTemperatureTimeSeries = true;
-        plotSpectralShiftsTimeSeries = true;
-        plotPowerFluctuationTimeSeries = true;
+        willPlotTemperatureTimeSeries = true;
+        willPlotSpectralShiftsTimeSeries = true;
+        willPlotPowerFluctuationTimeSeries = true;
         dayTimeSeries = timeSeries{calIndex};
         if (isempty(dayTimeSeries.temperature))
-            fprintf(2,'There was no temperature data in calibration #%d / %d\n', calIndex, calsNum);
-            dayTimeSeries.temperature.t = [0];
-            dayTimeSeries.temperature.value = [0];
-            plotTemperatureTimeSeries = false;
+            willPlotTemperatureTimeSeries = false;
         end
         
         if (isempty(dayTimeSeries.spectralShiftsMeas))
             fprintf(2,'There was no spectralShiftsMeas data in calibration #%d / %d\n', calIndex, calsNum);
-            dayTimeSeries.spectralShiftsMeas.t = [0];
-            dayTimeSeries.spectralShiftsMeas.measSpd = [0];
-            plotSpectralShiftsTimeSeries = false;
+            willPlotSpectralShiftsTimeSeries = false;
         end
         
         if (isempty(dayTimeSeries.powerFluctuationMeas))
             fprintf(2,'There was no powerFluctuationMeas data in calibration #%d / %d\n', calIndex, calsNum);
-            dayTimeSeries.powerFluctuationMea.t = [0];
-            dayTimeSeries.powerFluctuationMea.measSpd = [0];
-            plotPowerFluctuationTimeSeries = false;
+            willPlotPowerFluctuationTimeSeries = false;
+        end             
+    
+        if (~willPlotPowerFluctuationTimeSeries||~willPlotSpectralShiftsTimeSeries)
+            fprintf('No spectral shift data\n');
+            return;
+        else
+            if (willPlotTemperatureTimeSeries == false)
+                fprintf('No temperature data in calibration #%d/%d\n', calIndex, calsNum);
+                dayTimeSeries.temperature.t = dayTimeSeries.powerFluctuationMeas.t;
+                dayTimeSeries.temperature.value = nan(numel(dayTimeSeries.temperature.t),2);
+                timeSeries{calIndex} = dayTimeSeries;
+                willPlotTemperatureTimeSeries = true;
+            end
         end
-        
+
         time0(calIndex) = min([min(dayTimeSeries.temperature.t) min(dayTimeSeries.spectralShiftsMeas.t) min(dayTimeSeries.powerFluctuationMeas.t)]);
         timeN(calIndex) = max([max(dayTimeSeries.temperature.t) max(dayTimeSeries.spectralShiftsMeas.t) max(dayTimeSeries.powerFluctuationMeas.t)]);
     end
-    time0
+        
     maxDuration = max(timeN-time0);
     
     % Reference SPD (SPD0)
@@ -97,20 +105,21 @@ function plotTimeSeries(timeSeries, calFile, combSPDNominalPeaks)
         legends{numel(legends)+1} = dayTimeSeries.date;
         
         % Plot the temperature data
-        if (plotTemperatureTimeSeries)
+        if (willPlotTemperatureTimeSeries)
             plotDayTemperatureTimeSeries(symbolIndex, colorIndex, colors, markers, dayTimeSeries.temperature.t-time0(calIndex), dayTimeSeries.temperature.value, subplotPosVectors);
         end
         
-        if (plotPowerFluctuationTimeSeries)
+        if (willPlotPowerFluctuationTimeSeries)
             % Plot the power fluctuation data
-            dayTimeSeries.powerFluctuationMeas.t
-            time0(calIndex)
-            dayTimeSeries.waveAxis
-            plotPowerFluctuationTimeSeries(symbolIndex, colorIndex, colors, markers, dayTimeSeries.powerFluctuationMeas.t-time0(calIndex), dayTimeSeries.powerFluctuationMeas.measSpd, SPD0power, dayTimeSeries.waveAxis, subplotPosVectors);
+            plotPowerFluctuationTimeSeries(...
+                symbolIndex, colorIndex, colors, markers, ...
+                dayTimeSeries.powerFluctuationMeas.t-time0(calIndex), ...
+                dayTimeSeries.powerFluctuationMeas.measSpd, SPD0power, ...
+                dayTimeSeries.waveAxis, subplotPosVectors);
         end
         
         % Plot the spectral shift data
-        if (plotSpectralShiftsTimeSeries)
+        if (willPlotSpectralShiftsTimeSeries)
             maxCombSPD(calIndex) = max(dayTimeSeries.spectralShiftsMeas.measSpd(:));
             [visualizedSpectralShiftWavelength, combSPDComputedPeaks(calIndex,:)] = ...
                 plotSpectralShiftTimeSeries(symbolIndex, colorIndex, colors, markers, dayTimeSeries.spectralShiftsMeas.t-time0(calIndex), dayTimeSeries.spectralShiftsMeas.measSpd, SPD0comb, dayTimeSeries.waveAxis, combSPDNominalPeaks, calIndex, subplotPosVectors);
@@ -123,7 +132,7 @@ function plotTimeSeries(timeSeries, calFile, combSPDNominalPeaks)
     % TEMPERATURE PLOTS
     % Finish OL temperature time series
     subplot('Position', subplotPosVectors(1,1).v);
-    set(gca, 'XLim', [0 maxDuration/60], 'XTick', 0:10:1000, 'YTick', 1:1:100);
+    set(gca, 'XLim', [0 maxDuration/60], 'XTick', 0:10:1000, 'YTick', 1:1:100, 'YLim', [25 40]);
     grid on; box on;
     legend(legends, 'Location', 'SouthEast');
     xlabel('time (minutes)');
@@ -133,7 +142,7 @@ function plotTimeSeries(timeSeries, calFile, combSPDNominalPeaks)
     
     % Finish ambient temperature time series
     subplot('Position', subplotPosVectors(2,1).v);
-    set(gca, 'XLim', [0 maxDuration/60], 'XTick', 0:10:1000,  'YTick', 1:1:100);
+    set(gca, 'XLim', [0 maxDuration/60], 'XTick', 0:10:1000,  'YTick', 1:1:100, 'YLim', [25 40]);
     grid on; box on;
     legend(legends, 'Location', 'SouthEast');
     xlabel('time (minutes)');
@@ -193,26 +202,39 @@ end
 function plotDayTemperatureTimeSeries(markerIndex, colorIndex, colors, markers, time, value, subplotPosVectors)
     timeInMinutes = time/60;
     
+    
     subplot('Position', subplotPosVectors(1,1).v);
-    hold on;
-    plot(timeInMinutes, value(:,1), '-', ...
-        'Marker', markers{markerIndex}, ...
-        'MarkerSize', 6, ...
-        'Color', squeeze(colors(colorIndex,:)), ...
-        'MarkerFaceColor', squeeze(colors(colorIndex,:)), ...
-        'LineWidth', 1.5);
-
+    if (any(isnan(value(:))))
+%         t = text(30, 33, 'NO TEMPERATURE DATA');
+%         set(t, 'FontSize', 16);
+    else
+        hold on;
+        plot(timeInMinutes, value(:,1), '-', ...
+            'Marker', markers{markerIndex}, ...
+            'MarkerSize', 6, ...
+            'Color', squeeze(colors(colorIndex,:)), ...
+            'MarkerFaceColor', squeeze(colors(colorIndex,:)), ...
+            'LineWidth', 1.5);
+    end
+    
     subplot('Position', subplotPosVectors(2,1).v);
-    hold on;
-    plot(timeInMinutes, value(:,2), '-', ...
-        'Marker', markers{markerIndex}, ...
-        'MarkerSize', 6, ...
-        'Color', squeeze(colors(colorIndex,:)), ...
-        'MarkerFaceColor', squeeze(colors(colorIndex,:)), ...
-        'LineWidth', 1.5);
+    if (any(isnan(value(:))))
+%         t = text(30, 33, 'NO TEMPERATURE DATA');
+%         set(t, 'FontSize', 16);
+    else
+        hold on;
+        plot(timeInMinutes, value(:,2), '-', ...
+            'Marker', markers{markerIndex}, ...
+            'MarkerSize', 6, ...
+            'Color', squeeze(colors(colorIndex,:)), ...
+            'MarkerFaceColor', squeeze(colors(colorIndex,:)), ...
+            'LineWidth', 1.5);
+    end
 end
 
-function [visualizedSpectralShiftWavelength, combSPDComputedPeaks] = plotSpectralShiftTimeSeries(markerIndex, colorIndex, colors, markers, time, SPDs, SPD0, waveAxis, combSPDNominalPeaks, calIndex, subplotPosVectors)
+function [visualizedSpectralShiftWavelength, combSPDComputedPeaks] = ...
+    plotSpectralShiftTimeSeries(markerIndex, colorIndex, colors, markers, ...
+    time, SPDs, SPD0, waveAxis, combSPDNominalPeaks, calIndex, subplotPosVectors)
 
     timeInMinutes = time/60;
     spectralShiftsMeasurementsNum = size(SPDs,2);
@@ -267,7 +289,8 @@ function [visualizedSpectralShiftWavelength, combSPDComputedPeaks] = plotSpectra
     end
 end
 
-function plotPowerFluctuationTimeSeries(markerIndex, colorIndex, colors, markers, time, SPDs, SPD0, waveAxis, subplotPosVectors)
+function plotPowerFluctuationTimeSeries(markerIndex, colorIndex, colors, ...
+    markers, time, SPDs, SPD0, waveAxis, subplotPosVectors)
 
     timeInMinutes = time/60;
     powerFluctuationMeasurementsNum = size(SPDs,2);
@@ -275,7 +298,7 @@ function plotPowerFluctuationTimeSeries(markerIndex, colorIndex, colors, markers
     for tIndex = 1:powerFluctuationMeasurementsNum
         scalar(tIndex) = SPD0 \ squeeze(SPDs(:,tIndex));
     end
-    
+
     subplot('Position', subplotPosVectors(1,2).v);
     hold on;
     plot(timeInMinutes, scalar, '-', ...
