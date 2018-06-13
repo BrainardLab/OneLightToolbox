@@ -21,51 +21,53 @@ function OLAnalyzeTempCalFile
             fprintf('Event %d has an empty data struct\n', entryIndex);
         else
             fprintf('%d: %s\n', entryIndex-1, d.methodName);
-            if (contains(d.methodName, 'TakeStateMeasurements - PowerFluctuation measurement'))
-                if (isempty(powerFluctuationSPDs))
-                    powerFluctuationSPDs = d.spdData.spectrum';
-                else
-                    powerFluctuationSPDs = cat(1,powerFluctuationSPDs, d.spdData.spectrum');
-                end
-            elseif (contains(d.methodName, 'TakeStateMeasurements - SpectralShift measurement'))
-                if (isempty(spectralShiftSPDs ))
-                    spectralShiftSPDs  = d.spdData.spectrum';
-                else
-                    spectralShiftSPDs  = cat(1,spectralShiftSPDs, d.spdData.spectrum');
-                end
-            elseif (contains(d.methodName,  'TakePrimaryMeasurement - Primary'))
-                if (isempty(primarySPDs))
-                    primarySPDs  = d.spdData.spectrum';
-                else
-                    primarySPDs  = cat(1,primarySPDs, d.spdData.spectrum');
-                end
-            elseif (contains(d.methodName, 'TakeDarkMeasurement'))
-                if (isempty(darkSPDs))
-                    darkSPDs  = d.spdData.spectrum';
-                else
-                    darkSPDs  = cat(1,darkSPDs, d.spdData.spectrum');
-                end
-            elseif (contains(d.methodName, 'TakeGammaMeasurements'))
-                if (isempty(gammaSPDs))
-                    gammaSPDs  = d.spdData.spectrum';
-                else
-                    gammaSPDs = cat(1,gammaSPDs, d.spdData.spectrum');
-                end
-            end
-            
-            allSPDs(entryIndex,:) = d.spdData.spectrum;
-            if (isfield(d, 'temperatureData'))
-                tempData = d.temperatureData;
-                if (~isempty(fieldnames(tempData)))
-                    if (isempty(temperature.time))
-                        temperature.time = tempData.time;
-                        temperature.values = tempData.value;
+            if (contains(d.methodName, 'Completed'))
+                if (contains(d.methodName, 'TakeStateMeasurements - PowerFluctuation measurement'))
+                    if (isempty(powerFluctuationSPDs))
+                        powerFluctuationSPDs = d.spdData.spectrum';
                     else
-                        temperature.time = cat(1, temperature.time, tempData.time);
-                        temperature.values = cat(1, temperature.values, tempData.value);
+                        powerFluctuationSPDs = cat(1,powerFluctuationSPDs, d.spdData.spectrum');
+                    end
+                elseif (contains(d.methodName, 'TakeStateMeasurements - SpectralShift measurement'))
+                    if (isempty(spectralShiftSPDs ))
+                        spectralShiftSPDs  = d.spdData.spectrum';
+                    else
+                        spectralShiftSPDs  = cat(1,spectralShiftSPDs, d.spdData.spectrum');
+                    end
+                elseif (contains(d.methodName,  'TakePrimaryMeasurement - Primary'))
+                    if (isempty(primarySPDs))
+                        primarySPDs  = d.spdData.spectrum';
+                    else
+                        primarySPDs  = cat(1,primarySPDs, d.spdData.spectrum');
+                    end
+                elseif (contains(d.methodName, 'TakeDarkMeasurement'))
+                    if (isempty(darkSPDs))
+                        darkSPDs  = d.spdData.spectrum';
+                    else
+                        darkSPDs  = cat(1,darkSPDs, d.spdData.spectrum');
+                    end
+                elseif (contains(d.methodName, 'TakeGammaMeasurements'))
+                    if (isempty(gammaSPDs))
+                        gammaSPDs  = d.spdData.spectrum';
+                    else
+                        gammaSPDs = cat(1,gammaSPDs, d.spdData.spectrum');
                     end
                 end
-            end
+            
+                allSPDs(entryIndex,:) = d.spdData.spectrum;
+                if (isfield(d, 'temperatureData'))
+                    tempData = d.temperatureData;
+                    if (~isempty(fieldnames(tempData)))
+                        if (isempty(temperature.time))
+                            temperature.time = tempData.time;
+                            temperature.values = tempData.value;
+                        else
+                            temperature.time = cat(1, temperature.time, tempData.time);
+                            temperature.values = cat(1, temperature.values, tempData.value);
+                        end
+                    end
+                end
+            end  % COMPLETED MEASUREMENT EVENTS
         end
     end
     
