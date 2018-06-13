@@ -19,4 +19,5 @@ function SaveCalProgressionData(calProgressionTemporaryFileName, methodName, spd
     calProgression{numel(calProgression)+1} = newData;
     % Overwrite file with new stuff
     save(calProgressionTemporaryFileName, 'calProgression');
+    fprintf('\n<strong>Updated remporary calibration file: %s</strong>\n\n', calProgressionTemporaryFileName);
 end
