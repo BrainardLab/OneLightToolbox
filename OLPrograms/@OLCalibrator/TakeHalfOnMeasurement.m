@@ -5,21 +5,27 @@
 % 8/13/16   npc     Wrote it
 % 9/29/16   npc     Optionally record temperature
 % 12/21/16  npc     Updated for new class @LJTemperatureProbe
+% 06/13/18  npc     Updated with option to save progression of cal
 
 function cal = TakeHalfOnMeasurement(measurementIndex, cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, varargin)
 
     p = inputParser;
     p.addParameter('takeTemperatureMeasurements', false, @islogical);
+    p.addParameter('calProgressionTemporaryFileName', '', @ischar);
     % Execute the parser
     p.parse(varargin{:});
     takeTemperatureMeasurements = p.Results.takeTemperatureMeasurements;
-
+    calProgressionTemporaryFileName = p.Results.calProgressionTemporaryFileName;
+    
     cal = cal0;
     nPrimaries = cal.describe.numWavelengthBands;
 
     % See if we need to take a new set of state measurements
     if (mod(cal.describe.stateTracking.calibrationStimIndex, cal.describe.stateTracking.calibrationStimInterval) == 0)
-        cal = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
+        cal = OLCalibrator.TakeStateMeasurements(cal, ol, od, ...
+            spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, ...
+            'takeTemperatureMeasurements', takeTemperatureMeasurements, ...
+            'calProgressionTemporaryFileName', calProgressionTemporaryFileName);
     end
 
     % Update calibration stim index
@@ -34,5 +40,21 @@ function cal = TakeHalfOnMeasurement(measurementIndex, cal0, ol, od, spectroRadi
     if (meterToggle(2))
         cal.raw.omniDriver.halfOnMeas(:,measurementIndex) = measTemp.omni.spectrum;
     end
+    
+    if (~isempty(calProgressionTemporaryFileName))
+        % make spdData struct
+        spdData = struct(...
+            'time', measTemp.pr650.time(1), ...
+            'spectrum', measTemp.pr650.spectrum);
+        
+        % empty temperature struct as we do not collect tempoeratures in this method
+        temperatureData = struct();
+        
+        methodName = mfilename();
+        OLCalibrator.SaveCalProgressionData(...
+            calProgressionTemporaryFileName, methodName, ...
+            spdData, temperatureData);
+    end
+    
     fprintf('Done\n');
 end

@@ -39,6 +39,9 @@ classdef OLCalibrator
         % Method to take measurements that assess primary independence
         cal = TakeIndependenceMeasurements(cal0, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, varargin);
 
+        % Method to save cal progression data
+        SaveCalProgressionData(calProgressionTemporaryFileName, methodName, spdData, temperatureData);
+        
         % Method to save barebones state measurements
         SaveStateMeasurements(cal0, cal1, protocolParams);
         

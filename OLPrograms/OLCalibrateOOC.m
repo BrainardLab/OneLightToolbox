@@ -110,6 +110,18 @@ try
        theLJdev = []; 
     end
     
+    % Ask user if we want to save a temporary file with progression of the cal
+    saveCalProgression = GetWithDefault('Save cal progression in a temporary file? [y/n]:','n');
+    if (strcmpi(saveCalProgression, 'y'))
+        tmpCalFileName = sprintf('OL%s_TMP', selectedCalType);
+        calProgressionTemporaryFileName = ...
+            fullfile(getpref('OneLightToolbox', 'OneLightCalData'), tmpCalFileName);
+        calProgression = struct();
+        save(calProgressionTemporaryFileName, 'calProgression');
+    else
+        calProgressionTemporaryFileName = '';
+    end
+    
     % Ask for email recipient
     emailRecipient = GetWithDefault('Send status email to','cottaris@psych.upenn.edu');
     
@@ -219,26 +231,40 @@ try
     
     fprintf('\n<strong>Initial measurements of spectra of interest</strong>\n\n');
     
-    % Take a full on measurement.
     fullMeasurementIndex = 1;
-    cal = OLCalibrator.TakeFullOnMeasurement(fullMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
+    cal = OLCalibrator.TakeFullOnMeasurement(fullMeasurementIndex, cal, ol, od, ...
+        spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, ...
+        'takeTemperatureMeasurements', takeTemperatureMeasurements, ...
+        'calProgressionTemporaryFileName', calProgressionTemporaryFileName);
     
     % Take a half on measurement.
     halfOnMeasurementIndex = 1;
-    cal = OLCalibrator.TakeHalfOnMeasurement(halfOnMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
+    cal = OLCalibrator.TakeHalfOnMeasurement(halfOnMeasurementIndex, cal, ol, od, ...
+        spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, ...
+        'takeTemperatureMeasurements', takeTemperatureMeasurements, ...
+        'calProgressionTemporaryFileName', calProgressionTemporaryFileName);
     
     % Take a wiggly measurement
     wigglyMeasurementIndex = 1;
-    cal = OLCalibrator.TakeWigglyMeasurement(wigglyMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
+    cal = OLCalibrator.TakeWigglyMeasurement(wigglyMeasurementIndex, cal, ol, od, ...
+        spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, ...
+        'takeTemperatureMeasurements', takeTemperatureMeasurements, ...
+        'calProgressionTemporaryFileName', calProgressionTemporaryFileName);
     
     % Take a dark measurement
     darkMeasurementIndex = 1;
-    cal = OLCalibrator.TakeDarkMeasurement(darkMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
+    cal = OLCalibrator.TakeDarkMeasurement(darkMeasurementIndex, cal, ol, od, ...
+        spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, ...
+        'takeTemperatureMeasurements', takeTemperatureMeasurements, ...
+        'calProgressionTemporaryFileName', calProgressionTemporaryFileName);
     
     % Take a specified background measurement, if desired
     if (cal.describe.specifiedBackground)
         specifiedBackgroundMeasurementIndex = 1;
-        cal = OLCalibrator.TakeSpecifiedBackgroundMeasurement(specifiedBackgroundMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
+        cal = OLCalibrator.TakeSpecifiedBackgroundMeasurement(specifiedBackgroundMeasurementIndex, cal, ol, od, ...
+            spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, ...
+            'takeTemperatureMeasurements', takeTemperatureMeasurements, ...
+            'calProgressionTemporaryFileName', calProgressionTemporaryFileName);
     end
     
     % Primary measurements.
@@ -259,7 +285,10 @@ try
         end
         
         for primaryIndex = primaryMeasIter
-            [cal, wavelengthBandMeasurements(primaryIndex)] = OLCalibrator.TakePrimaryMeasurement(cal, primaryIndex, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
+            [cal, wavelengthBandMeasurements(primaryIndex)] = OLCalibrator.TakePrimaryMeasurement(cal, primaryIndex, ol, od, ...
+                spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, ...
+                'takeTemperatureMeasurements', takeTemperatureMeasurements, ...
+                'calProgressionTemporaryFileName', calProgressionTemporaryFileName);
         end
         
         % Refactor the measurements into separate matrices for further calculations.
@@ -316,7 +345,10 @@ try
         end
         
         for gammaBandIndex = gammaMeasIter
-            cal = OLCalibrator.TakeGammaMeasurements(cal, gammaBandIndex, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
+            cal = OLCalibrator.TakeGammaMeasurements(cal, gammaBandIndex, ol, od, ...
+                spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, ...
+                'takeTemperatureMeasurements', takeTemperatureMeasurements, ...
+                'calProgressionTemporaryFileName', calProgressionTemporaryFileName);
         end
     end  % if (cal.describe.doGamma)
     
@@ -352,34 +384,55 @@ try
             end
         end % if ~(cal.describe.doPrimaries)
         
-        cal = OLCalibrator.TakeIndependenceMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
+        cal = OLCalibrator.TakeIndependenceMeasurements(cal, ol, od, ...
+            spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, ...
+            'takeTemperatureMeasurements', takeTemperatureMeasurements, ...
+            'calProgressionTemporaryFileName', calProgressionTemporaryFileName);
     end
     
     % Take a specified background measurement at the end, if desired
     if (cal.describe.specifiedBackground)
         specifiedBackgroundMeasurementIndex = size(cal.raw.specifiedBackgroundMeas,2) + 1;
-        cal = OLCalibrator.TakeSpecifiedBackgroundMeasurement(specifiedBackgroundMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
+        cal = OLCalibrator.TakeSpecifiedBackgroundMeasurement(specifiedBackgroundMeasurementIndex, cal, ol, od, ...
+            spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, ...
+            'takeTemperatureMeasurements', takeTemperatureMeasurements, ...
+            'calProgressionTemporaryFileName', calProgressionTemporaryFileName);
     end
     
     % Take another dark measurement
     darkMeasurementIndex = size(cal.raw.darkMeas,2)+1;
-    cal = OLCalibrator.TakeDarkMeasurement(darkMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
+    cal = OLCalibrator.TakeDarkMeasurement(darkMeasurementIndex, cal, ol, od, ...
+        spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, ...
+        'takeTemperatureMeasurements', takeTemperatureMeasurements, ...
+        'calProgressionTemporaryFileName', calProgressionTemporaryFileName);
     
     % Take another wiggly measurement.
     wigglyMeasurementIndex = size(cal.raw.wigglyMeas.measSpd,2)+1;
-    cal = OLCalibrator.TakeWigglyMeasurement(wigglyMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
+    cal = OLCalibrator.TakeWigglyMeasurement(wigglyMeasurementIndex, cal, ol, od, ...
+        spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, ...
+        'takeTemperatureMeasurements', takeTemperatureMeasurements, ...
+        'calProgressionTemporaryFileName', calProgressionTemporaryFileName);
     
     % Take another half on measurement.
     halfOnMeasurementIndex = size(cal.raw.halfOnMeas,2)+1;
-    cal = OLCalibrator.TakeHalfOnMeasurement(halfOnMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
+    cal = OLCalibrator.TakeHalfOnMeasurement(halfOnMeasurementIndex, cal, ol, od, ...
+        spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, ...
+        'takeTemperatureMeasurements', takeTemperatureMeasurements, ...
+        'calProgressionTemporaryFileName', calProgressionTemporaryFileName);
     
     % Take another full on measurement.
     fullMeasurementIndex = size(cal.raw.fullOn,2)+1;
-    cal = OLCalibrator.TakeFullOnMeasurement(fullMeasurementIndex, cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
+    cal = OLCalibrator.TakeFullOnMeasurement(fullMeasurementIndex, cal, ol, od, ...
+        spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, ...
+        'takeTemperatureMeasurements', takeTemperatureMeasurements, ...
+        'calProgressionTemporaryFileName', calProgressionTemporaryFileName);
     
     % Take a final set of state measurements
-    cal = OLCalibrator.TakeStateMeasurements(cal, ol, od, spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, 'takeTemperatureMeasurements', takeTemperatureMeasurements);
-    
+    cal = OLCalibrator.TakeStateMeasurements(cal, ol, od, ...
+        spectroRadiometerOBJ, meterToggle, nAverage, theLJdev, ...
+        'takeTemperatureMeasurements', takeTemperatureMeasurements, ...
+        'calProgressionTemporaryFileName', calProgressionTemporaryFileName);
+        
     % Store the type of calibration and unique calibration ID
     cal.describe.calType = selectedCalType;
     cal.describe.calID = OLGetCalID(cal);
@@ -413,6 +466,12 @@ try
     
     % Notify user we are done
     fprintf('\n<strong>Calibration Complete</strong>\n\n');
+    
+    if (strcmpi(saveCalProgression, 'y'))
+        % If we reached this point, we can delete the temporary calibration
+        fprintf('\n<strong>Deleting temporary calibration file</strong>\n\n');
+        %delete(calProgressionTemporaryFileName);
+    end
     
     % Shutdown the PR670/650
     spectroRadiometerOBJ.shutDown();
