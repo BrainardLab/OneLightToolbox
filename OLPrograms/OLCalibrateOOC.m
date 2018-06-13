@@ -116,7 +116,10 @@ try
         tmpCalFileName = sprintf('OL%s_TMP', selectedCalType);
         calProgressionTemporaryFileName = ...
             fullfile(getpref('OneLightToolbox', 'OneLightCalData'), tmpCalFileName);
-        calProgression{1} = struct();
+        calProgression{1} = struct(...
+            'methodName', 'LOG START', ...
+            'spdData', struct(), ...
+            'temperatureData', struct());
         save(calProgressionTemporaryFileName, 'calProgression');
     else
         calProgressionTemporaryFileName = '';
@@ -468,6 +471,12 @@ try
     fprintf('\n<strong>Calibration Complete</strong>\n\n');
     
     if (strcmpi(saveCalProgression, 'y'))
+        calProgression{numel(calProgression)+1} = struct(...
+            'methodName', 'LOG END', ...
+            'spdData', struct(), ...
+            'temperatureData', struct());
+        save(calProgressionTemporaryFileName, 'calProgression');
+        
         % If we reached this point, we can delete the temporary calibration
         fprintf('\n<strong>Temporary calibration file located in %s</strong>\n\n', calProgressionTemporaryFileName);
         %delete(calProgressionTemporaryFileName);
