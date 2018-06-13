@@ -18,6 +18,19 @@ function cal = TakeIndependenceMeasurements(cal0, ol, od, spectroRadiometerOBJ, 
     takeTemperatureMeasurements = p.Results.takeTemperatureMeasurements;
     calProgressionTemporaryFileName = p.Results.calProgressionTemporaryFileName;
     
+    if (~isempty(calProgressionTemporaryFileName))
+        % make spdData struct
+        spdData = struct();
+
+        % empty temperature struct as we do not collect temperatures in this method
+        temperatureData = struct();
+
+        methodName = sprintf('Starting %s - Independence measurement', mfilename());
+        OLCalibrator.SaveCalProgressionData(...
+            calProgressionTemporaryFileName, methodName, ...
+            spdData, temperatureData);
+    end
+    
     cal = cal0;
     nPrimaries = cal.describe.numWavelengthBands;
 
@@ -71,7 +84,7 @@ function cal = TakeIndependenceMeasurements(cal0, ol, od, spectroRadiometerOBJ, 
             % empty temperature struct as we do not collect temperatures in this method
             temperatureData = struct();
 
-            methodName = sprintf('%s - Independence measurement for column #%d', mfilename(), i);
+            methodName = sprintf('Completed %s - Independence measurement (column #%d/%d)', mfilename(), i, cal.describe.independence.nGammaBands);
             OLCalibrator.SaveCalProgressionData(...
                 calProgressionTemporaryFileName, methodName, ...
                 spdData, temperatureData);
@@ -119,7 +132,7 @@ function cal = TakeIndependenceMeasurements(cal0, ol, od, spectroRadiometerOBJ, 
         % empty temperature struct as we do not collect temperatures in this method
         temperatureData = struct();
 
-        methodName = sprintf('%s - Independence measurement (cumulative)', mfilename());
+        methodName = sprintf('Completed %s - Independence measurement (cumulative)', mfilename());
         OLCalibrator.SaveCalProgressionData(...
             calProgressionTemporaryFileName, methodName, ...
             spdData, temperatureData);

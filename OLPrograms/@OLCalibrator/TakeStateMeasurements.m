@@ -27,6 +27,19 @@ function [cal, calMeasOnly] = TakeStateMeasurements(cal0, ol, od, spectroRadiome
         calMeasOnly.describe.dateStateMeas = datestr(now);
     end
 
+    if (~isempty(calProgressionTemporaryFileName))
+        % make spdData struct
+        spdData = struct();
+        
+        % empty temperature struct
+        temperatureData = struct();
+        
+        methodName = sprintf('Starting %s',mfilename());
+        OLCalibrator.SaveCalProgressionData(...
+            calProgressionTemporaryFileName, methodName, ...
+            spdData, temperatureData);
+    end
+    
     cal = cal0;
     cal.describe.stateTracking.stateMeasurementIndex = cal.describe.stateTracking.stateMeasurementIndex + 1;
 
@@ -72,7 +85,7 @@ function [cal, calMeasOnly] = TakeStateMeasurements(cal0, ol, od, spectroRadiome
             temperatureData = struct();
         end
         
-        methodName = sprintf('%s - PowerFluctuation measurement',mfilename());
+        methodName = sprintf('Completed %s - PowerFluctuation measurement (1/2)',mfilename());
         OLCalibrator.SaveCalProgressionData(...
             calProgressionTemporaryFileName, methodName, ...
             spdData, temperatureData);
@@ -106,7 +119,7 @@ function [cal, calMeasOnly] = TakeStateMeasurements(cal0, ol, od, spectroRadiome
             temperatureData = struct();
         end
         
-        methodName = sprintf('%s - SpectralShift measurement',mfilename());
+        methodName = sprintf('Completed %s - SpectralShift measurement (2/2)',mfilename());
         OLCalibrator.SaveCalProgressionData(...
             calProgressionTemporaryFileName, methodName, ...
             spdData, temperatureData);

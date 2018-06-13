@@ -18,6 +18,19 @@ function cal = TakeDarkMeasurement(measurementIndex, cal0, ol, od, spectroRadiom
     takeTemperatureMeasurements = p.Results.takeTemperatureMeasurements;
     calProgressionTemporaryFileName = p.Results.calProgressionTemporaryFileName;
     
+    if (~isempty(calProgressionTemporaryFileName))
+        % make spdData struct
+        spdData = struct();
+        
+        % empty temperature struct as we do not collect tempoeratures in this method
+        temperatureData = struct();
+        
+        methodName = sprintf('Starting %s', mfilename());
+        OLCalibrator.SaveCalProgressionData(...
+            calProgressionTemporaryFileName, methodName, ...
+            spdData, temperatureData);
+    end
+    
     % Take a dark measurement at the end.  Use special case provided by OLSettingsToStartsStops that turns all mirrors off.
     cal = cal0;
     nPrimaries = cal.describe.numWavelengthBands;
@@ -53,7 +66,7 @@ function cal = TakeDarkMeasurement(measurementIndex, cal0, ol, od, spectroRadiom
         % empty temperature struct as we do not collect tempoeratures in this method
         temperatureData = struct();
         
-        methodName = mfilename();
+        methodName = sprintf('Completed %s (1/2)', mfilename());
         OLCalibrator.SaveCalProgressionData(...
             calProgressionTemporaryFileName, methodName, ...
             spdData, temperatureData);
@@ -86,7 +99,7 @@ function cal = TakeDarkMeasurement(measurementIndex, cal0, ol, od, spectroRadiom
         % empty temperature struct as we do not collect tempoeratures in this method
         temperatureData = struct();
         
-        methodName = sprintf('%s - CheckDark', mfilename());
+        methodName = sprintf('Completed %s - CheckDark (2/2)', mfilename());
         OLCalibrator.SaveCalProgressionData(...
             calProgressionTemporaryFileName, methodName, ...
             spdData, temperatureData);

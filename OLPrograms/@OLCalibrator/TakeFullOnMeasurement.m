@@ -16,6 +16,20 @@ function cal = TakeFullOnMeasurement(measurementIndex, cal0, ol, od, spectroRadi
     takeTemperatureMeasurements = p.Results.takeTemperatureMeasurements;
     calProgressionTemporaryFileName = p.Results.calProgressionTemporaryFileName;
     
+    
+    if (~isempty(calProgressionTemporaryFileName))
+        % make spdData struct
+        spdData = struct();
+        
+        % empty temperature struct as we do not collect tempoeratures in this method
+        temperatureData = struct();
+        
+        methodName = sprintf('Starting %s', mfilename());
+        OLCalibrator.SaveCalProgressionData(...
+            calProgressionTemporaryFileName, methodName, ...
+            spdData, temperatureData);
+    end
+    
     cal = cal0;
     nPrimaries = cal.describe.numWavelengthBands;
 
@@ -49,7 +63,7 @@ function cal = TakeFullOnMeasurement(measurementIndex, cal0, ol, od, spectroRadi
         % empty temperature struct as we do not collect tempoeratures in this method
         temperatureData = struct();
         
-        methodName = mfilename();
+        methodName = sprintf('Completed %s', mfilename());
         OLCalibrator.SaveCalProgressionData(...
             calProgressionTemporaryFileName, methodName, ...
             spdData, temperatureData);

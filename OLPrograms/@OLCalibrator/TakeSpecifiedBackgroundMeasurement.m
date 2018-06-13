@@ -18,6 +18,19 @@ function cal = TakeSpecifiedBackgroundMeasurement(measurementIndex, cal0, ol, od
     takeTemperatureMeasurements = p.Results.takeTemperatureMeasurements;
     calProgressionTemporaryFileName = p.Results.calProgressionTemporaryFileName;
     
+    if (~isempty(calProgressionTemporaryFileName))
+        % make spdData struct
+        spdData = struct();
+        
+        % empty temperature struct as we do not collect tempoeratures in this method
+        temperatureData = struct();
+        
+        methodName = sprintf('Starting %s', mfilename());
+        OLCalibrator.SaveCalProgressionData(...
+            calProgressionTemporaryFileName, methodName, ...
+            spdData, temperatureData);
+    end
+    
     cal = cal0;
 
     % See if we need to take a new set of state measurements
@@ -51,7 +64,7 @@ function cal = TakeSpecifiedBackgroundMeasurement(measurementIndex, cal0, ol, od
         % empty temperature struct as we do not collect tempoeratures in this method
         temperatureData = struct();
         
-        methodName = mfilename();
+        methodName = sprintf('Completed %s', mfilename());
         OLCalibrator.SaveCalProgressionData(...
             calProgressionTemporaryFileName, methodName, ...
             spdData, temperatureData);

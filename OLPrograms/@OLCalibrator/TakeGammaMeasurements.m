@@ -18,6 +18,19 @@ function cal = TakeGammaMeasurements(cal0, gammaBandIndex, ol, od, spectroRadiom
     takeTemperatureMeasurements = p.Results.takeTemperatureMeasurements;
     calProgressionTemporaryFileName = p.Results.calProgressionTemporaryFileName;
     
+    if (~isempty(calProgressionTemporaryFileName))
+            % make spdData struct
+            spdData = struct();
+
+            % empty temperature struct as we do not collect tempoeratures in this method
+            temperatureData = struct();
+
+            methodName = sprintf('Starting %s - Gamma for gamma band #%d', mfilename(), gammaBandIndex);
+            OLCalibrator.SaveCalProgressionData(...
+                calProgressionTemporaryFileName, methodName, ...
+                spdData, temperatureData);
+    end
+        
     cal = cal0;
     nPrimaries = cal.describe.numWavelengthBands;
 
@@ -78,7 +91,7 @@ function cal = TakeGammaMeasurements(cal0, gammaBandIndex, ol, od, spectroRadiom
             % empty temperature struct as we do not collect tempoeratures in this method
             temperatureData = struct();
 
-            methodName = sprintf('%s - Background for gamma band #%d', mfilename(), gammaBandIndex);
+            methodName = sprintf('Completed %s - Background for gamma band #%d', mfilename(), gammaBandIndex);
             OLCalibrator.SaveCalProgressionData(...
                 calProgressionTemporaryFileName, methodName, ...
                 spdData, temperatureData);
@@ -123,7 +136,7 @@ function cal = TakeGammaMeasurements(cal0, gammaBandIndex, ol, od, spectroRadiom
             % empty temperature struct as we do not collect tempoeratures in this method
             temperatureData = struct();
 
-            methodName = sprintf('%s - Gamma level #%d for gamma band #%d', mfilename(), gammaLevelIndex, gammaBandIndex);
+            methodName = sprintf('Completed %s - Gamma level for gamma band #%d (level #%d/%d)', mfilename(), gammaBandIndex, gammaLevelIndex, gammaLevelsIter);
             OLCalibrator.SaveCalProgressionData(...
                 calProgressionTemporaryFileName, methodName, ...
                 spdData, temperatureData);

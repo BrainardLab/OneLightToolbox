@@ -18,6 +18,19 @@ function [cal, primaryMeasurement] = TakePrimaryMeasurement(cal0, primaryIndex, 
     takeTemperatureMeasurements = p.Results.takeTemperatureMeasurements;
     calProgressionTemporaryFileName = p.Results.calProgressionTemporaryFileName;
     
+    if (~isempty(calProgressionTemporaryFileName))
+        % make spdData struct
+        spdData = struct();
+        
+        % empty temperature struct as we do not collect tempoeratures in this method
+        temperatureData = struct();
+        
+        methodName = sprintf('Starting %s - Primary #%d', mfilename(), primaryIndex);
+        OLCalibrator.SaveCalProgressionData(...
+            calProgressionTemporaryFileName, methodName, ...
+            spdData, temperatureData);
+    end
+    
     cal = cal0;
     nPrimaries = cal.describe.numWavelengthBands;
 
@@ -65,7 +78,7 @@ function [cal, primaryMeasurement] = TakePrimaryMeasurement(cal0, primaryIndex, 
             % empty temperature struct as we do not collect tempoeratures in this method
             temperatureData = struct();
 
-            methodName = sprintf('%s - Background for primary #%d', mfilename(), primaryIndex);
+            methodName = sprintf('Completed %s - Background for primary #%d (1/2)', mfilename(), primaryIndex);
             OLCalibrator.SaveCalProgressionData(...
                 calProgressionTemporaryFileName, methodName, ...
                 spdData, temperatureData);
@@ -110,7 +123,7 @@ function [cal, primaryMeasurement] = TakePrimaryMeasurement(cal0, primaryIndex, 
         % empty temperature struct as we do not collect tempoeratures in this method
         temperatureData = struct();
         
-        methodName = sprintf('%s - Primary #%d', mfilename(), primaryIndex);
+        methodName = sprintf('Completed %s - Primary #%d (2/2)', mfilename(), primaryIndex);
         OLCalibrator.SaveCalProgressionData(...
             calProgressionTemporaryFileName, methodName, ...
             spdData, temperatureData);
