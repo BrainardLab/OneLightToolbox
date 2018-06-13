@@ -64,12 +64,12 @@ function [cal, calMeasOnly] = TakeStateMeasurements(cal0, ol, od, spectroRadiome
             'spectrum', measTemp.pr650.spectrum);
         
         if (takeTemperatureMeasurements)
-            % empty temperature struct
-            temperatureData = struct();
-        else
             temperatureData = struct(...
                 'time', measTemp.pr650.time(1), ...
                 'value', temperatureValue);
+        else
+            % empty temperature struct
+            temperatureData = struct();
         end
         
         methodName = sprintf('%s - PowerFluctuation measurement',mfilename());
@@ -98,12 +98,12 @@ function [cal, calMeasOnly] = TakeStateMeasurements(cal0, ol, od, spectroRadiome
             'spectrum', measTemp.pr650.spectrum);
         
         if (takeTemperatureMeasurements)
-            % empty temperature struct
-            temperatureData = struct();
-        else
             temperatureData = struct(...
                 'time', measTemp.pr650.time(1), ...
                 'value', temperatureValue);
+        else
+            % empty temperature struct
+            temperatureData = struct();
         end
         
         methodName = sprintf('%s - SpectralShift measurement',mfilename());
