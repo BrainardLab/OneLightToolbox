@@ -84,6 +84,7 @@ function [validation, SPDs, excitations, contrasts] = OLValidateDirection(direct
 %                  multiple OLDirection_unipolar directions.
 %    03/19/18  jv  validation must be around a background (to allow
 %                  validation of differential directions).
+%    06/29/18  npc implemented temperature recording
 
 %% Input validation
 parser = inputParser;
@@ -177,8 +178,14 @@ else
     % all directions
     validation.differentialPrimaryValues = direction.differentialPrimaryValues;
     validation.measuredPrimaryValues = [background.differentialPrimaryValues, direction.differentialPrimaryValues+background.differentialPrimaryValues];
-    SPDs = OLValidatePrimaryValues([background.differentialPrimaryValues, direction.differentialPrimaryValues+background.differentialPrimaryValues],direction.calibration,oneLight,radiometer, 'nAverage', parser.Results.nAverage, 'temperatureProbe', parser.Results.temperatureProbe);
+    [SPDs, temperatures] = OLValidatePrimaryValues([background.differentialPrimaryValues, direction.differentialPrimaryValues+background.differentialPrimaryValues],...
+        direction.calibration,oneLight,radiometer, ...
+        'nAverage', parser.Results.nAverage, ...
+        'temperatureProbe', parser.Results.temperatureProbe);
 
+    % Add temperatures to validation
+    validation.temperatures = temperatures;
+    
     % Add desired SPDs to the SPDs structarray
     SPDs(1).desiredSPD = SPDbackgroundDesired; % background
     SPDs(2).desiredSPD = SPDcombinedDesired;   % direction

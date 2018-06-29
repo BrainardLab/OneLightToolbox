@@ -1,10 +1,10 @@
-function SPD = OLValidatePrimaryValues(primaryValues, calibration, oneLight, varargin)
+function [SPD, temperatures] = OLValidatePrimaryValues(primaryValues, calibration, oneLight, varargin)
 % Validates SPD that OneLight puts out for given primary values vector(s)
 %
 % Syntax:
-%   results = OLValidatePrimary(primaryValues, calibration, oneLight, radiometer)
-%   results = OLValidatePrimary(primaryValues, calibration, OneLight, radiometer, nAverage)
-%   results = OLValidatePrimary(primaryValues, calibration, SimulatedOneLight)
+%   [SPD, temperatures] = OLValidatePrimaryValues(primaryValues, calibration, oneLight, radiometer)
+%   [SPD, temperatures] = OLValidatePrimaryValuesOLValidatePrimary(primaryValues, calibration, OneLight, radiometer, nAverage)
+%   [SPD, temperatures] = OLValidatePrimaryValuesOLValidatePrimary(primaryValues, calibration, SimulatedOneLight)
 %
 % Description:
 %    Sends a vector of primary values to a OneLight, measures the SPD and
@@ -26,6 +26,9 @@ function SPD = OLValidatePrimaryValues(primaryValues, calibration, oneLight, var
 %    results          - 1xN struct-array containing measurement information
 %                       (as returned by radiometer), predictedSPD, error
 %                       between the two, for all N spectra
+%    temperatures     - array of structs, one struct per primary measurement, 
+%                       with each struct contaning temperature and time of 
+%                       measurement
 %
 % Optional key/value pairs:
 %    nAverage         - number of measurements to average. Default 1.
@@ -37,7 +40,7 @@ function SPD = OLValidatePrimaryValues(primaryValues, calibration, oneLight, var
 
 % History:
 %    11/29/17  jv  created. based on OLValidateCacheFileOOC
-%
+%    06/29/18  npc implemented temperature recording
 
 %% Input validation
 parser = inputParser;
@@ -55,7 +58,8 @@ radiometer = parser.Results.radiometer;
 predictedSPDs = OLPrimaryToSpd(calibration,primaryValues);
 
 %% Measure SPD(s)
-measurement = OLMeasurePrimaryValues(primaryValues,calibration,oneLight,radiometer,'nAverage',parser.Results.nAverage,'temperatureProbe',parser.Results.temperatureProbe);
+[measurement, temperatures] = OLMeasurePrimaryValues(primaryValues,calibration,oneLight,radiometer,...
+    'nAverage',parser.Results.nAverage,'temperatureProbe',parser.Results.temperatureProbe);
 
 %% Analyze and output
 SPD = [];

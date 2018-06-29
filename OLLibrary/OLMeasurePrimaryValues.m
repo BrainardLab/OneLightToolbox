@@ -2,9 +2,9 @@ function [SPD, temperatures] = OLMeasurePrimaryValues(primaryValues,calibration,
 % Measure the SPD put out by the given primary values vector(s)
 %
 % Syntax:
-%   SPD = OLMeasurePrimary(primaryValues, calibration, oneLight, radiometer)
-%   SPD = OLMeasurePrimary(primaryValues, calibration, oneLight, radiometer, nAverage)
-%   SPD = OLMeasurePrimary(primaryValues, calibration, SimulatedOneLight)
+%   [SPD, temperatures] = OLMeasurePrimary(primaryValues, calibration, oneLight, radiometer)
+%   [SPD, temperatures] = OLMeasurePrimary(primaryValues, calibration, oneLight, radiometer, nAverage)
+%   [SPD, temperatures] = OLMeasurePrimary(primaryValues, calibration, SimulatedOneLight)
 %
 % Description:
 %    Sends a vector of primary values to a OneLight, measures the SPD and
@@ -26,6 +26,9 @@ function [SPD, temperatures] = OLMeasurePrimaryValues(primaryValues,calibration,
 % Outputs:
 %    SPD              - nWlsxN array of spectral power, where N is the
 %                       number of vector of primary values to measure
+%    temperatures     - array of structs, one struct per primary measurement, 
+%                       with each struct contaning temperature and time of 
+%                       measurement
 %
 % Optional key/value pairs:
 %    nAverage         - number of measurements to average. 
@@ -37,6 +40,7 @@ function [SPD, temperatures] = OLMeasurePrimaryValues(primaryValues,calibration,
 
 % History:
 %    12/14/17  jv  created.
+%    06/29/18  npc implemented temperature recording
 
 %% Validate input
 parser = inputParser;
@@ -57,8 +61,9 @@ olSettings = OLPrimaryToSettings(calibration, primaryValues, 'primaryTolerance',
 
 %% Measure (or simulate)
 SPD = [];
+temperatures = [];
+
 if ~isempty(radiometer)
-    
     % Actually measure
     oneLight.setAll(true);
             
@@ -69,8 +74,12 @@ if ~isempty(radiometer)
             
             oneLight.setMirrors(starts(p,:),stops(p,:));
 
-            % TODO: Temperature measurement
-
+            % Take temperature measurement
+            if (~isempty(p.Results.temperatureProbe))
+                [~, temperatureValue] = p.Results.temperatureProbe.measure();
+                temperatures(p,i) = struct('value', temperatureValue, 'time', mglGetSecs());
+            end
+        
             % Radiometeric measurement
             SPDall(:,i) = radiometer.measure();
         end
