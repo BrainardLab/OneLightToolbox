@@ -54,6 +54,7 @@ parser.addParameter('primaryTolerance',1e-5,@isnumeric);
 parser.parse(primaryValues,calibration,oneLight,varargin{:});
 
 radiometer = parser.Results.radiometer;
+theLJDev = parser.Results.temperatureProbe;
 
 %% Convert primary values to starts and stops
 olSettings = OLPrimaryToSettings(calibration, primaryValues, 'primaryTolerance', parser.Results.primaryTolerance);
@@ -61,7 +62,7 @@ olSettings = OLPrimaryToSettings(calibration, primaryValues, 'primaryTolerance',
 
 %% Measure (or simulate)
 SPD = [];
-temperatures = [];
+temperatures = {};
 
 if ~isempty(radiometer)
     % Actually measure
@@ -75,9 +76,9 @@ if ~isempty(radiometer)
             oneLight.setMirrors(starts(p,:),stops(p,:));
 
             % Take temperature measurement
-            if (~isempty(p.Results.temperatureProbe))
-                [~, temperatureValue] = p.Results.temperatureProbe.measure();
-                temperatures(p,i) = struct('value', temperatureValue, 'time', mglGetSecs());
+            if (~isempty(theLJDev))
+                [~, temperatureValue] = theLJDev.measure();
+                temperatures{p,i} = struct('value', temperatureValue, 'time', mglGetSecs());
             end
         
             % Radiometeric measurement
