@@ -52,6 +52,7 @@ function correctedDirection = OLCorrectDirection(direction, background, oneLight
 %    02/09/18  jv  created around OLCorrectPrimaryValues, based on
 %                  OLCorrectCacheFileOOC.
 %    03/15/18  jv  adapted for OLDirection_unipolar objects.
+%    06/29/18  npc implemented temperature recording
 
 %% Input validation
 parser = inputParser;
@@ -61,6 +62,7 @@ parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
 parser.addRequired('radiometer',@(x) isempty(x) || isa(x,'Radiometer'));
 parser.addParameter('smoothness',.001,@isnumeric);
 parser.addParameter('legacyMode',true,@islogical);
+parser.addParameter('temperatureProbe',[],@(x) isempty(x) || isa(x,'LJTemperatureProbe'));
 parser.KeepUnmatched = true; % allows fastforwarding of kwargs to OLCorrectPrimaryValues
 parser.parse(direction,background,oneLight,radiometer,varargin{:});
 radiometer = parser.Results.radiometer;
@@ -97,7 +99,9 @@ else
 
         %% Correct
         calibration = direction.calibration;
-        correctedDirectionData = OLCorrectCacheFileOOC(directionData, calibration, oneLight, radiometer, 'OBSERVER_AGE', 32, 'smoothness', parser.Results.smoothness);
+        correctedDirectionData = OLCorrectCacheFileOOC(directionData, calibration, oneLight, radiometer, ...
+            'OBSERVER_AGE', 32, 'smoothness', parser.Results.smoothness, ...
+            'takeTemperatureMeasurements', isa(parser.Results.temperatureProbe,'LJTemperatureProbe'));
 
         %% Update original OLDirection
         % Update direction business end
@@ -110,6 +114,9 @@ else
         
         % Update describe
         correctionDescribe = correctedDirectionData.data(32).correction;
+        
+        % Add temperature data
+        correctionDescribe.temperatures = correctedDirectionData.temperature;
     else
         %% Use refactored code, by calling OLCorrectPrimaryValues
         

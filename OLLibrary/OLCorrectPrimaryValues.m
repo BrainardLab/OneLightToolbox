@@ -97,12 +97,14 @@ iterativeSearch = parser.Results.iterativeSearch;
 targetSPD = OLPrimaryToSpd(calibration, nominalPrimaryValues, 'differentialMode', false);
 
 %% Correct
+temperaturesForAllIterations = cell(1, nIterations);
 NextPrimaryTruncatedLearningRate = nominalPrimaryValues; % initialize
 for iter = 1:nIterations
     % Take the measurements
     primariesThisIter = NextPrimaryTruncatedLearningRate;
-    measuredSPD = OLMeasurePrimaryValues(primariesThisIter,calibration,oneLight,radiometer);
-  
+    [measuredSPD, temperaturesForAllIterations{iter}] = OLMeasurePrimaryValues(primariesThisIter,calibration,oneLight,radiometer, ...
+        'temperatureProbe',parser.Results.temperatureProbe);
+    
     % If first time through, figure out a scaling factor from the first
     % measurement which puts the measured spectrum into the same range as
     % the predicted spectrum. This deals with fluctuations with absolute
@@ -164,4 +166,7 @@ detailedData.RMSQE = RMSQE;
 detailedData.NextPrimaryTruncatedLearningRate = NextPrimaryTruncatedLearningRateAll;
 detailedData.DeltaPrimaryTruncatedLearningRate = DeltaPrimaryTruncatedLearningRateAll;
 detailedData.correctedPrimaryValues = correctedPrimaryValues;
+
+% Store temperature data
+detailedData.temperatures = temperaturesForAllIterations;
 end

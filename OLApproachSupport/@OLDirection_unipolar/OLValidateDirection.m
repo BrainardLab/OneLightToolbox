@@ -69,7 +69,7 @@ function [validation, SPDs, excitations, contrasts] = OLValidateDirection(direct
 %    receptors        - an SSTReceptor object, specifying the receptors on
 %                       which to calculate contrasts.
 %    nAverage         - number of measurements to average. Default 1.
-%    temperatureProbe - TODO: LJTemperatureProbe object to drive a
+%    temperatureProbe - LJTemperatureProbe object to drive a
 %                       LabJack temperature probe
 %    label            - user-defined string to label validation with (ends
 %                       up in validation.label)
