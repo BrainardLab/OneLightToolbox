@@ -1,10 +1,10 @@
-function [SPD, temperatures] = OLMeasurePrimaryValues(primaryValues,calibration,oneLight,varargin)
+function [SPD, temperatures, stateTrackingData] = OLMeasurePrimaryValues(primaryValues,calibration,oneLight,varargin)
 % Measure the SPD put out by the given primary values vector(s)
 %
 % Syntax:
-%   [SPD, temperatures] = OLMeasurePrimary(primaryValues, calibration, oneLight, radiometer)
-%   [SPD, temperatures] = OLMeasurePrimary(primaryValues, calibration, oneLight, radiometer, nAverage)
-%   [SPD, temperatures] = OLMeasurePrimary(primaryValues, calibration, SimulatedOneLight)
+%   [SPD, temperatures, stateTrackingData] = OLMeasurePrimary(primaryValues, calibration, oneLight, radiometer)
+%   [SPD, temperatures, stateTrackingData] = OLMeasurePrimary(primaryValues, calibration, oneLight, radiometer, nAverage)
+%   [SPD, temperatures, stateTrackingData] = OLMeasurePrimary(primaryValues, calibration, SimulatedOneLight)
 %
 % Description:
 %    Sends a vector of primary values to a OneLight, measures the SPD and
@@ -29,6 +29,7 @@ function [SPD, temperatures] = OLMeasurePrimaryValues(primaryValues,calibration,
 %    temperatures     - array of structs, one struct per primary measurement, 
 %                       with each struct contaning temperature and time of 
 %                       measurement
+%    stateStrackingData - struct with state tracking SPDs
 %
 % Optional key/value pairs:
 %    nAverage         - number of measurements to average. 
@@ -37,10 +38,13 @@ function [SPD, temperatures] = OLMeasurePrimaryValues(primaryValues,calibration,
 %                       temperature probe
 %    primaryTolerance - tolerance for primary values being out of gamut.
 %                       Default 1e-7.
-
+%    measureStateTrackingSPDs - boolean, indicating whether to collect
+%                               state tracking data
+%
 % History:
 %    12/14/17  jv  created.
 %    06/29/18  npc implemented temperature recording
+%    06/30/18  npc implemented state tracking SPD recording
 
 %% Validate input
 parser = inputParser;
@@ -51,11 +55,36 @@ parser.addOptional('radiometer',[]);
 parser.addParameter('nAverage',1,@isnumeric);
 parser.addParameter('temperatureProbe',[],@(x) isempty(x) || isa(x,'LJTemperatureProbe'));
 parser.addParameter('primaryTolerance',1e-5,@isnumeric);
+parser.addParameter('measureStateTrackingSPDs', false, @islogical);
 parser.parse(primaryValues,calibration,oneLight,varargin{:});
 
 radiometer = parser.Results.radiometer;
 theLJDev = parser.Results.temperatureProbe;
+measureStateTrackingSPDs = parser.Results.measureStateTrackingSPDs;
 
+%% Measure state tracking SPDs
+stateTrackingData = struct();
+if (~isempty(radiometer)) && (measureStateTrackingSPDs)
+    % Generate temporary calibration struct with stateTracking info
+    tmpCal = calibration;
+    tmpCal.describe.stateTracking = OLGenerateStateTrackingStruct(calibration);
+
+    % Take 1 measurement using the PR670
+    od = []; meterToggle = [true false]; nAverage = 1;
+    [~, calMeasOnly] = TakeStateMeasurements(tmpCal, oneLight, od, radiometer, ...
+        meterToggle, nAverage, temperatureProbe, ...
+        'standAlone', true);
+
+    % Save the data
+    stateTrackingData.spectralShift.spd    = calMeasOnly.raw.spectralShiftsMeas.measSpd;
+    stateTrackingData.spectralShift.t      = calMeasOnly.raw.spectralShiftsMeas.t;
+    stateTrackingData.powerFluctuation.spd = calMeasOnly.raw.powerFluctuationMeas.measSpd;
+    stateTrackingData.powerFluctuation.t   = calMeasOnly.raw.powerFluctuationMeas.t;
+
+    % Remove tmpCal
+    clear('tmpCal')
+end
+    
 %% Convert primary values to starts and stops
 olSettings = OLPrimaryToSettings(calibration, primaryValues, 'primaryTolerance', parser.Results.primaryTolerance);
 [starts, stops] = OLSettingsToStartsStops(calibration, olSettings);

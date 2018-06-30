@@ -63,6 +63,8 @@ parser.addRequired('radiometer',@(x) isempty(x) || isa(x,'Radiometer'));
 parser.addParameter('smoothness',.001,@isnumeric);
 parser.addParameter('legacyMode',true,@islogical);
 parser.addParameter('temperatureProbe',[],@(x) isempty(x) || isa(x,'LJTemperatureProbe'));
+parser.addParameter('measureStateTrackingSPDs',false,islogical);
+
 parser.KeepUnmatched = true; % allows fastforwarding of kwargs to OLCorrectPrimaryValues
 parser.parse(direction,background,oneLight,radiometer,varargin{:});
 radiometer = parser.Results.radiometer;
@@ -101,7 +103,8 @@ else
         calibration = direction.calibration;
         correctedDirectionData = OLCorrectCacheFileOOC(directionData, calibration, oneLight, radiometer, ...
             'OBSERVER_AGE', 32, 'smoothness', parser.Results.smoothness, ...
-            'takeTemperatureMeasurements', isa(parser.Results.temperatureProbe,'LJTemperatureProbe'));
+            'takeTemperatureMeasurements', isa(parser.Results.temperatureProbe,'LJTemperatureProbe'), ...
+            'measureStateTrackingSPDs', parser.Results.measureStateTrackingSPDs);
 
         %% Update original OLDirection
         % Update direction business end
@@ -117,6 +120,9 @@ else
         
         % Add temperature data
         correctionDescribe.temperatures = correctedDirectionData.temperature;
+        
+        % Add state tracking data
+        correctionDescribe.stateTrackingData = correctedDirectionData.stateTrackingData;
     else
         %% Use refactored code, by calling OLCorrectPrimaryValues
         

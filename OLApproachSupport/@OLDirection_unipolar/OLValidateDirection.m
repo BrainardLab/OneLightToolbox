@@ -85,6 +85,7 @@ function [validation, SPDs, excitations, contrasts] = OLValidateDirection(direct
 %    03/19/18  jv  validation must be around a background (to allow
 %                  validation of differential directions).
 %    06/29/18  npc implemented temperature recording
+%    06/30/18  npc implemented state tracking SPD recording
 
 %% Input validation
 parser = inputParser;
@@ -92,6 +93,7 @@ parser.addOptional('radiometer',[],@(x) isempty(x) || isa(x,'Radiometer'));
 parser.addParameter('receptors',[],@(x) isa(x,'SSTReceptor') || isnumeric(x));
 parser.addParameter('nAverage',1,@isnumeric);
 parser.addParameter('temperatureProbe',[],@(x) isempty(x) || isa(x,'LJTemperatureProbe'));
+parser.addParameter('measureStateTrackingSPDs',false,islogical);
 parser.addParameter('label',"");
 parser.parse(varargin{:});
 
@@ -178,13 +180,17 @@ else
     % all directions
     validation.differentialPrimaryValues = direction.differentialPrimaryValues;
     validation.measuredPrimaryValues = [background.differentialPrimaryValues, direction.differentialPrimaryValues+background.differentialPrimaryValues];
-    [SPDs, temperatures] = OLValidatePrimaryValues([background.differentialPrimaryValues, direction.differentialPrimaryValues+background.differentialPrimaryValues],...
+    [SPDs, temperatures, stateTrackingData] = OLValidatePrimaryValues([background.differentialPrimaryValues, direction.differentialPrimaryValues+background.differentialPrimaryValues],...
         direction.calibration,oneLight,radiometer, ...
         'nAverage', parser.Results.nAverage, ...
-        'temperatureProbe', parser.Results.temperatureProbe);
+        'temperatureProbe', parser.Results.temperatureProbe, ...
+        'measureStateTrackingSPDs', parser.Results.measureStateTrackingSPDs);
 
     % Add temperatures to validation
     validation.temperatures = temperatures;
+    
+    % Add stateTrackingData to validation
+    validation.stateTrackingData = stateTrackingData;
     
     % Add desired SPDs to the SPDs structarray
     SPDs(1).desiredSPD = SPDbackgroundDesired; % background

@@ -50,7 +50,9 @@ function [correctedPrimaryValues, detailedData] = OLCorrectPrimaryValues(nominal
 
 % History:
 %    02/09/18  jv  extracted from OLCorrectCacheFileOOC.
-%
+%    06/29/18  npc implemented temperature recording
+%    06/30/18  npc implemented state tracking SPD recording
+
 
 % Examples:
 %{
@@ -82,6 +84,7 @@ parser.addParameter('asympLearningRateFactor',0.5,@isscalar);
 parser.addParameter('smoothness', 0.001, @isscalar);
 parser.addParameter('iterativeSearch',true, @islogical);
 parser.addParameter('temperatureProbe',[],@(x) isempty(x) || isa(x,'LJTemperatureProbe'));
+parser.addParameter('measureStateTrackingSPDs', false, @islogical);
 parser.KeepUnmatched = true;
 parser.parse(nominalPrimaryValues,calibration,oneLight,radiometer,varargin{:});
 
@@ -91,6 +94,30 @@ learningRateDecrease = parser.Results.learningRateDecrease;
 asympLearningRateFactor = parser.Results.asympLearningRateFactor;
 smoothness = parser.Results.smoothness;
 iterativeSearch = parser.Results.iterativeSearch;
+measureStateTrackingSPDs = parser.Results.measureStateTrackingSPDs;
+
+%% Measure state-tracking SPDs
+stateTrackingData = struct();
+if (measureStateTrackingSPDs)
+    % Generate temporary calibration struct with stateTracking info
+    tmpCal = calibration;
+    tmpCal.describe.stateTracking = OLGenerateStateTrackingStruct(calibration);
+    
+    % Take 1 measurement using the PR670
+    od = []; meterToggle = [true false]; nAverage = 1;
+    [~, calMeasOnly] = TakeStateMeasurements(tmpCal, oneLight, od, radiometer, ...
+        meterToggle, nAverage, temperatureProbe, ...
+        'standAlone', true);
+    
+    % Save the data
+    stateTrackingData.spectralShift.spd    = calMeasOnly.raw.spectralShiftsMeas.measSpd;
+    stateTrackingData.spectralShift.t      = calMeasOnly.raw.spectralShiftsMeas.t;
+    stateTrackingData.powerFluctuation.spd = calMeasOnly.raw.powerFluctuationMeas.measSpd;
+    stateTrackingData.powerFluctuation.t   = calMeasOnly.raw.powerFluctuationMeas.t;
+    
+    % Remove tmpCal
+    clear('tmpCal')
+end
 
 %% Target (predicted) SPD
 % also add in the Mean Dark light ('differentialMode' = true)
@@ -167,6 +194,7 @@ detailedData.NextPrimaryTruncatedLearningRate = NextPrimaryTruncatedLearningRate
 detailedData.DeltaPrimaryTruncatedLearningRate = DeltaPrimaryTruncatedLearningRateAll;
 detailedData.correctedPrimaryValues = correctedPrimaryValues;
 
-% Store temperature data
+% Store temperature data and stateTrackingData
 detailedData.temperatures = temperaturesForAllIterations;
+detailedData.stateTrackingData = stateTrackingData;
 end

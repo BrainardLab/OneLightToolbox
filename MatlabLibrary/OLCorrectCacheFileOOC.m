@@ -45,6 +45,7 @@ function cacheData = OLCorrectCacheFileOOC(cacheData, cal, ol, spectroRadiometer
 % 10/20/16  npc      Added ability to record temperature measurements
 % 12/21/16  npc      Updated for new class @LJTemperatureProbe
 % 01/03/16  dhb      Refactoring, cleaning, documenting.
+% 06/30/18  npc      Implemented state tracking SPD recording
 
 % Parse the input
 p = inputParser;
@@ -67,10 +68,12 @@ p.addOptional('postreceptoralCombinations', [], @isnumeric);
 p.addOptional('outDir', [], @isstr);
 p.addOptional('takeTemperatureMeasurements', false, @islogical);
 p.addOptional('smoothness',.1, @isnumeric);
+p.addOptional('measureStateTrackingSPDs', false, @islogical);
 p.parse(varargin{:});
 describe = p.Results;
 powerLevels = describe.powerLevels;
 takeTemperatureMeasurements = describe.takeTemperatureMeasurements;
+measureStateTrackingSPDs = describe.measureStateTrackingSPDs;
 
 % All variables assigned in the following if (isempty(..)) block (except
 % spectroRadiometerOBJ) must be declared as persistent
@@ -92,10 +95,32 @@ else
     theLJdev = [];
 end
 
+%% Measure state-tracking SPDs
+stateTrackingData = struct();
+if (measureStateTrackingSPDs)
+    % Generate temporary calibration struct with stateTracking info
+    tmpCal = cal;
+    tmpCal.describe.stateTracking = OLGenerateStateTrackingStruct(cal);
+    
+    % Take 1 measurement using the PR670
+    od = []; meterToggle = [true false]; nAverage = 1;
+    [~, calMeasOnly] = TakeStateMeasurements(tmpCal, ol, od, spectroRadiometerOBJ, ...
+        meterToggle, nAverage, temperatureProbe, ...
+        'standAlone', true);
+    
+    % Save the data
+    stateTrackingData.spectralShift.spd    = calMeasOnly.raw.spectralShiftsMeas.measSpd;
+    stateTrackingData.spectralShift.t      = calMeasOnly.raw.spectralShiftsMeas.t;
+    stateTrackingData.powerFluctuation.spd = calMeasOnly.raw.powerFluctuationMeas.measSpd;
+    stateTrackingData.powerFluctuation.t   = calMeasOnly.raw.powerFluctuationMeas.t;
+    
+    % Remove tmpCal
+    clear('tmpCal')
+end
 
 
-    startMeas = GetSecs;
-    fprintf('- Performing radiometer measurements.\n');
+startMeas = GetSecs;
+fprintf('- Performing radiometer measurements.\n');
     
 %     % Take reference measurements
 %     if describe.FullOnMeas
@@ -415,6 +440,10 @@ end
     
     if (takeTemperatureMeasurements)  
         cacheData.temperatureData = results.temperature;
+    end
+    
+    if (measureStateTrackingSPDs)  
+        cacheData.stateTrackingData = stateTrackingData;
     end
     
     % Turn the OneLight mirrors off.
