@@ -33,30 +33,23 @@ parser.addParameter('visualizedProperty' , 'SConeContrast');
 parser.addParameter('excludedSubjectNames', defaultExcludedSubjectNames, @iscell);
 parser.parse(varargin{:});
 
-% Autogeneration of OL plots?
-% Box D, and one thing we'd really like to know is how the temperature
-% inside the box on days where its flakey compares to that one days where it isn't.
-% Results from warmup script and/or validation scripts would be great.
-% Also, we should have a really simple program that you run and it just spits out the current
-% temperature inside the box and in the room.
+approachName = parser.Results.approachName;
+protocolParams.protocol = parser.Results.protocolName;
+objectType = parser.Results.objectType;
+excludedSubjectNames = parser.Results.excludedSubjectNames;
+objectName = parser.Results.objectName;
+visualizedProperty = parser.Results.visualizedProperty;
 
-    approachName = parser.Results.approachName;
-    protocolParams.protocol = parser.Results.protocolName;
-    objectType = parser.Results.objectType;
-    excludedSubjectNames = parser.Results.excludedSubjectNames;
-    objectName = parser.Results.objectName;
-    visualizedProperty = parser.Results.visualizedProperty;
-    
-    % Serialize folders based on their session date
-    objectsDataPath = RetrieveObjectsDataPath(approachName, protocolParams, objectType);
-    [serializedData, subjectNames] = serializeObjectsInDataPath(objectsDataPath, excludedSubjectNames);
-    
-    % Plot the data
-    validationPrefix = 'preCorrection';
-    PlotStuff(serializedData, subjectNames, ...
-        approachName, protocolParams.protocol, ...
-        objectType, objectName, ...
-        visualizedProperty);
+% Serialize folders based on their session date
+objectsDataPath = RetrieveObjectsDataPath(approachName, protocolParams, objectType);
+[serializedData, subjectNames] = serializeObjectsInDataPath(objectsDataPath, excludedSubjectNames);
+
+% Plot the data
+validationPrefix = 'preCorrection';
+PlotStuff(serializedData, subjectNames, ...
+    approachName, protocolParams.protocol, ...
+    objectType, objectName, ...
+    visualizedProperty);
     
 end
 
