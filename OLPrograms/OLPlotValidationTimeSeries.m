@@ -1,12 +1,8 @@
 function OLPlotValidationTimeSeries(varargin)
 % Plots time series of validation measurements
 %
-% History:
-%    07/01/18  npc  wrote it.
-%
 % Example usage:
 %{
-
 OLPlotValidationTimeSeries(...
     'approachName', 'OLApproach_Squint', ...
     'protocolName', 'SquintToPulse', ...
@@ -15,8 +11,12 @@ OLPlotValidationTimeSeries(...
     'visualizedProperty' , 'SConeContrast', ...
     'excludedSubjectNames', {'HERO_instantiationCheck', 'boxAModulationCheck', 'temperatureCheck'} ...
 );
-
 %}
+%
+% History:
+%    07/01/18  npc  wrote it.
+%
+%
 
 defaultExcludedSubjectNames = {...
         'boxAModulationCheck'...
