@@ -97,7 +97,7 @@ function PlotStuff(serializedData, subjectNames, approachName, protocolName, obj
             validationPrefices{2}, val{2}, ...
             validationPrefices{3}, val{3} ...
             );
-        XTickLabels{sessionIndex} = strrep(sprintf('\\color{cyan}\\bf%s\\rm - \\color{white}%s\\color{cyan}.%d', d.subjectName, d.sessionDate, d.sessionIndex), '_', '');
+        XTickLabels{sessionIndex} = strrep(sprintf('\\color{cyan}\\bf%s\\rm - \\color{white}%s\\color{green}.%d', d.subjectName, d.sessionDate, d.sessionIndex), '_', '');
     end
     close(hWaitBar);
 
