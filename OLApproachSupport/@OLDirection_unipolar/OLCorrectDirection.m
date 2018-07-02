@@ -63,7 +63,7 @@ parser.addRequired('radiometer',@(x) isempty(x) || isa(x,'Radiometer'));
 parser.addParameter('smoothness',.001,@isnumeric);
 parser.addParameter('legacyMode',true,@islogical);
 parser.addParameter('temperatureProbe',[],@(x) isempty(x) || isa(x,'LJTemperatureProbe'));
-parser.addParameter('measureStateTrackingSPDs',false,islogical);
+parser.addParameter('measureStateTrackingSPDs',false, @islogical);
 
 parser.KeepUnmatched = true; % allows fastforwarding of kwargs to OLCorrectPrimaryValues
 parser.parse(direction,background,oneLight,radiometer,varargin{:});
@@ -119,7 +119,7 @@ else
         correctionDescribe = correctedDirectionData.data(32).correction;
         
         % Add temperature data
-        correctionDescribe.temperatures = correctedDirectionData.temperature;
+        correctionDescribe.temperatures = correctedDirectionData.temperatureData;
         
         % Add state tracking data
         correctionDescribe.stateTrackingData = correctedDirectionData.stateTrackingData;

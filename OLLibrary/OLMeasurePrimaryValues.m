@@ -61,6 +61,7 @@ parser.parse(primaryValues,calibration,oneLight,varargin{:});
 radiometer = parser.Results.radiometer;
 theLJDev = parser.Results.temperatureProbe;
 measureStateTrackingSPDs = parser.Results.measureStateTrackingSPDs;
+temperatureProbe = parser.Results.temperatureProbe;
 
 %% Measure state tracking SPDs
 stateTrackingData = struct();
@@ -71,7 +72,7 @@ if (~isempty(radiometer)) && (measureStateTrackingSPDs)
 
     % Take 1 measurement using the PR670
     od = []; meterToggle = [true false]; nAverage = 1;
-    [~, calMeasOnly] = TakeStateMeasurements(tmpCal, oneLight, od, radiometer, ...
+    [~, calMeasOnly] = OLCalibrator.TakeStateMeasurements(tmpCal, oneLight, od, radiometer, ...
         meterToggle, nAverage, temperatureProbe, ...
         'standAlone', true);
 

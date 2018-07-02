@@ -93,7 +93,7 @@ parser.addOptional('radiometer',[],@(x) isempty(x) || isa(x,'Radiometer'));
 parser.addParameter('receptors',[],@(x) isa(x,'SSTReceptor') || isnumeric(x));
 parser.addParameter('nAverage',1,@isnumeric);
 parser.addParameter('temperatureProbe',[],@(x) isempty(x) || isa(x,'LJTemperatureProbe'));
-parser.addParameter('measureStateTrackingSPDs',false,islogical);
+parser.addParameter('measureStateTrackingSPDs',false, @islogical);
 parser.addParameter('label',"");
 parser.parse(varargin{:});
 
