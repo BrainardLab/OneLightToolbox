@@ -377,12 +377,13 @@ end
 function [cals, file] = loadCalData()
     cals = {};
     systemInfo = GetComputerInfo();
-    if (strcmp(systemInfo.localHostName, 'Ithaca'))
-        melaMaterialsDir = '/Users/nicolas/Desktop/OLApproach_Squint/OneLightCalData';
-    else
-        melaMaterialsDir = getpref('OneLightToolbox', 'OneLightCalData');
-    end
-    melaMaterialsDir
+    melaMaterialsDir = getpref('OneLightToolbox', 'OneLightCalData');
+    
+%     if (strcmp(systemInfo.localHostName, 'Ithaca'))
+%         melaMaterialsDir = '/Users/nicolas/Desktop/OLApproach_Squint/OneLightCalData';
+%     else
+%         melaMaterialsDir = getpref('OneLightToolbox', 'OneLightCalData');
+%     end
     
     [file, path] = uigetfile(melaMaterialsDir, '*.mat');
     calFileName = fullfile(path,file);

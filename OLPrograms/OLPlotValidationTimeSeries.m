@@ -379,10 +379,5 @@ end
 function  objectsDataPath = RetrieveObjectsDataPath(approachName, protocolParams, objectType)
     p = getpref(approachName);
     melaDataPath = p.DataPath;
-    computerInfo = GetComputerInfo();
-    if (strcmp(computerInfo.userShortName, 'nicolas'))
-        melaDataPath = strrep(melaDataPath, 'MELA_data', 'MELA_data (1)');
-    end
-    
     objectsDataPath = fullfile(melaDataPath, 'Experiments', approachName, protocolParams.protocol, objectType);
 end
