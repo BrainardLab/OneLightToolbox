@@ -15,10 +15,10 @@ filename = sprintf('TemperatureTest_Box%s_%s.csv',box,datestr(now,'YYYY-mm-DD-HH
 fileID = fopen(fullfile(bulbLogsDir,filename),'a');
 
 %% Loop
-cleanupRoutine = onCleanup(@() cleanup(temperatureProbe, oneLight, fileID);
+cleanupRoutine = onCleanup(@() cleanup(temperatureProbe, oneLight, fileID));
+allOn = false;
 while true
     %% Cycle between all-on, all-off
-    allOn = false;
     if ~allOn
         oneLight.setAll(true);
         allOn = true;
@@ -32,10 +32,10 @@ while true
 
     %% Save measured temperature to some file
     onString = {'ALLON','ALLOFF'};
-    fprintf(fileID,'%s,%s,%.2f,\n',datestr(now,'HH:MM:SS.FFF'),onString{allOn+1},temperature)
+    fprintf(fileID,'%s,%s,%2.2f,%2.2f,\n',datestr(now,'HH:MM:SS.FFF'),onString{allOn+1},temperature);
 
     %% Print measured temperature to console
-    fprintf('\t%s\t%s\t%.2f\n',datestr(now,'HH:MM:SS.FFF'),onString{allOn+1},temperature)
+    fprintf('\t%s\t%s\t%2.2f\t%2.2f\n',datestr(now,'HH:MM:SS.FFF'),onString{allOn+1},temperature);
 end
 
 end
