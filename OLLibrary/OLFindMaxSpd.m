@@ -184,7 +184,7 @@ function [c, ceq] = OLFindMaxSpdCon(primary, cal, targetSpd, lambda, ...
 c1 = gamutMargin + 0.001*primaryTolerance;
 
 % Get spd from current primaries
-predictedSpd = predictedSpd = OLPrimaryToSpdFastAndDirty(cal, primary);
+predictedSpd = OLPrimaryToSpdFastAndDirty(cal, primary);
     
 % Check how well we are doing on relative spd
 %

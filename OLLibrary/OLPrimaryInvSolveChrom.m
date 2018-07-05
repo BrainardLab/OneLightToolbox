@@ -373,7 +373,7 @@ switch (p.Results.optimizationTarget)
         % Take a look at how well we did on contraints
         %{
         [c, ceq] = RelativeSpdNonlcon(x, cal, ...
-            T_xyz, targetxy, p.Results.spdToleranceFraction, p.Results.chromatiticyTolerance);
+            T_xyz, targetxy, p.Results.spdToleranceFraction, p.Results.chromaticityTolerance);
         %}
         
         % Check that primaries are within gamut to tolerance.
