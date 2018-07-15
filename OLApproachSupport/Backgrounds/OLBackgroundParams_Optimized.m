@@ -114,14 +114,32 @@ classdef OLBackgroundParams_Optimized < OLBackgroundParams
             fractionBleached = zeros(1,length(params.photoreceptorClasses));
             T_receptors = GetHumanPhotoreceptorSS(calibration.describe.S, params.photoreceptorClasses, params.fieldSizeDegrees, params.backgroundObserverAge, params.pupilDiameterMm, lambdaMaxShift, fractionBleached);
             
-            %% Isolate the receptors by calling the wrapper
-            optimizedBackgroundPrimaries = ReceptorIsolateOptimBackgroundMulti(T_receptors, params.whichReceptorsToIsolate, ...
-                params.whichReceptorsToIgnore,params.whichReceptorsToMinimize,B_primary,initialPrimary,...
-                initialPrimary,whichPrimariesToPin,params.primaryHeadRoom,params.maxPowerDiff,...
-                desiredContrasts,ambientSpd,params.directionsYoked,params.directionsYokedAbs,params.pegBackground);
+            %% Newer code try on branch.  Let's optimize the unipolar modulation directly.
+            %targetContrast = [4 4 4 0];
+            targetContrast = [0 0 0 4];
+            %desiredChromaticity = [0.5 0.4];
+            desiredChromaticity = [0.60 0.38];
+            tparams.search.primaryHeadroom = 0.000;
+            tparams.search.primaryTolerance = 1e-6;
+            tparams.search.checkPrimaryOutOfRange = true;
+            tparams.search.lambda = 0;
+            tparams.search.spdToleranceFraction = 30e-3;
+            tparams.search.chromaticityTolerance = 0.03;
+            tparams.search.primaryHeadroomForInitialMax = 0.000;
+            tparams.search.maxSearchIter = 3000;
+            tparams.search.verbose = true;
+            [maxPrimary,backgroundPrimary,maxLum,minLum] = OLPrimaryInvSolveChrom(calibration, desiredChromaticity, ...
+                'optimizationTarget','receptorContrast','T_receptors',T_receptors,'targetContrast',targetContrast, ...
+                tparams.search);
             
-            %% Pull out what we want
-            backgroundPrimary = optimizedBackgroundPrimaries{1};
+%             %% Isolate the receptors by calling the wrapper
+%             optimizedBackgroundPrimaries = ReceptorIsolateOptimBackgroundMulti(T_receptors, params.whichReceptorsToIsolate, ...
+%                 params.whichReceptorsToIgnore,params.whichReceptorsToMinimize,B_primary,initialPrimary,...
+%                 initialPrimary,whichPrimariesToPin,params.primaryHeadRoom,params.maxPowerDiff,...
+%                 desiredContrasts,ambientSpd,params.directionsYoked,params.directionsYokedAbs,params.pegBackground);
+%             
+%             %% Pull out what we want
+%             backgroundPrimary = optimizedBackgroundPrimaries{1};
         end
         
         function background = OLBackgroundNominalFromParams(params, calibration)

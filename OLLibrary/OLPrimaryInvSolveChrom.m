@@ -71,11 +71,18 @@ function [maxPrimary,minPrimary,maxLum,minLum] = ...
 %                                 'maxLum' maximize max luminance.
 %                                 'minLum' minimize min luminance'
 %                                 'maxContrast' maximize contrast.
+%                                 'receptorContrast' optimize receptor contrasts                                 
 %                               Default 'maxLum'.
 %   'targetContrast'          - Scalar (default []). If not empty and
-%                               target is 'maxContrast', then tries to
-%                               produce this contrast instead of
-%                               maximizing.
+%                               target is 'maxContrast' or
+%                               'receptorContrast', then tries to produce
+%                               this contrast instead of maximizing.  Must
+%                               be a non-empty vector with target contrasts
+%                               when we are trying to target specific
+%                               receptor contrasts ('receptorContrast')
+%                               Default empty.
+%   'T_receptors'             - Receptor matrix, used when we are targeting
+%                               receptor contrasts. Default empty.
 %   'primaryHeadroomForInitialMax' - Use this headroom when finding initial
 %                               max luminance spd to use in turn to
 %                               initialize search for minLum or maxContrast
@@ -160,6 +167,7 @@ p.addParameter('chromaticityTolerance',0.0001, @isnumeric);
 p.addParameter('optimizationTarget', 'maxLum', @ischar);
 p.addParameter('primaryHeadroomForInitialMax', 0.005, @isnumeric);
 p.addParameter('targetContrast', [], @(x) (isempty(x) || isnumeric(x)));
+p.addParameter('T_receptors',[], @(x) (isempty(x) || isnumeric(x)));
 p.addParameter('maxSearchIter',300,@isnumeric);
 p.addParameter('verbose', false, @islogical);
 p.parse(varargin{:});
@@ -201,7 +209,7 @@ ambientLuminance = ambientXYZ(2);
 switch (p.Results.optimizationTarget)
     case 'maxLum'
         maxLumPrimaryHeadroom = p.Results.primaryHeadroom;
-    case {'minLum', 'maxContrast'}
+    case {'minLum', 'maxContrast' 'receptorContrast'}
         maxLumPrimaryHeadroom = p.Results.primaryHeadroomForInitialMax;
     otherwise
         error('Unknown optimization target specified');
@@ -396,6 +404,78 @@ switch (p.Results.optimizationTarget)
             maxContrast = (maxLum-minLum)/minLum
         end
         
+    case 'receptorContrast'
+        % Try to hit target receptor contrasts while keeping background at
+        % the specified chromaticity.
+        if (isempty(p.Results.T_receptors))
+            error('Nope! Cannot optimize receptor contrasts if you do not pass receptor sensitivities');
+        end
+        if (isempty(p.Results.targetContrast))
+            error('Must specify target contrasts to optimize receptor contrasts');
+        end
+        if (length(p.Results.targetContrast) ~= size(p.Results.T_receptors,1))
+            error('Number of target contrasts much match number of receptors in sensitivity matrix');
+        end
+
+        % When we're here, we have a desired background chromaticity as
+        % well as target receptor contrasts.
+        % Obtain initial primaries from the initial max search.  For
+        % reasons that are not understood to me, the search below gives up
+        % right at the start if the initial primaries are all ones, which
+        % can happen in real use cases where we set the target chromaticity
+        % to be the native chromaticity of the device at max on.
+        % Multiplying by 0.99 prevents this, without seeming to screw up
+        % anything else in practice.
+        initialPrimaries = 0.99*maxPrimary;
+        
+        % This does a simultaneous search for max and min, to maximize
+        % contrast.
+        fminconDisplaySetting = 'iter';
+        options = optimset('fmincon');
+        options = optimset(options,'Diagnostics','off','Display',fminconDisplaySetting,'LargeScale','off','Algorithm',fminconAlgorithm, 'MaxIter', p.Results.maxSearchIter, 'MaxFunEvals', 1000000, 'TolFun', 1e-3, 'TolCon', 1e-6, 'TolX', 1e-4);
+        vub = ones(size(devicePrimaryBasis, 2), 2)-p.Results.primaryHeadroom;
+        vlb = ones(size(devicePrimaryBasis, 2), 2)*p.Results.primaryHeadroom;
+        x = fmincon(@(x) ObjFunctionReceptorContrast(x, cal, p.Results.T_receptors, p.Results.targetContrast), ...
+            [initialPrimaries initialPrimaries],[],[],[],[],vlb,vub, ...
+            @(x)ReceptorContrastNonlcon(x, cal, T_xyz, targetxy, p.Results.chromaticityTolerance), ...
+            options);
+        maxPrimary = x(:,2);
+        minPrimary = x(:,1);
+        clear x;
+        
+        % Take a look at how well we did on contraints
+        %{
+        [c, ceq] = RelativeSpdNonlcon(x, cal, ...
+            T_xyz, targetxy, p.Results.spdToleranceFraction, p.Results.chromaticityTolerance);
+        %}
+        
+        % Check that primaries are within gamut to tolerance.
+        maxPrimary = OLCheckPrimaryGamut(maxPrimary,...
+            'primaryHeadroom',p.Results.primaryHeadroom, ...
+            'primaryTolerance',p.Results.primaryTolerance, ...
+            'checkPrimaryOutOfRange',p.Results.checkPrimaryOutOfRange);
+        minPrimary = OLCheckPrimaryGamut(minPrimary,...
+            'primaryHeadroom',p.Results.primaryHeadroom, ...
+            'primaryTolerance',p.Results.primaryTolerance, ...
+            'checkPrimaryOutOfRange',p.Results.checkPrimaryOutOfRange);
+        
+        % Get spds and their receptor contrasts, chromaticities, luminances
+        maxSpd = OLPrimaryToSpd(cal,maxPrimary);
+        maxXYZ = T_xyz*maxSpd;
+        maxLum = maxXYZ(2);
+        maxReceptors = p.Results.T_receptors*maxSpd;
+        minSpd = OLPrimaryToSpd(cal,minPrimary);
+        minXYZ= T_xyz*minSpd;
+        minReceptors = p.Results.T_receptors*minSpd;
+        minLum = minXYZ(2);
+        receptorContrasts = (maxReceptors-minReceptors)./minReceptors;
+        minxy = XYZToxyY(minXYZ);   
+        if (p.Results.verbose)
+            minLum
+            minxy
+            receptorContrasts
+        end
+        
     otherwise
         error('Unknown optimization target');
 end
@@ -455,6 +535,21 @@ else
     % Minimize deviation from target
     f = (theContrast-targetContrast)^2;
 end
+end
+
+%% Objective function to hit target receptor contrast
+function f = ObjFunctionReceptorContrast(primary, cal, T_receptors, targetContrasts)
+
+% Get spectrum and luminance
+theSpds = OLPrimaryToSpdFastAndDirty(cal,primary);
+theReceptorResponses = T_receptors*theSpds;
+theContrasts = (theReceptorResponses(:,2)-theReceptorResponses(:,1))./theReceptorResponses(:,1);
+
+% Minimize deviation from target contrasts. Multiply
+% by 100 to put error in a range that keeps fmincon chugging
+% away for long enough.
+f = 100*sum((theContrasts(:)-targetContrasts(:)).^2);
+
 end
 
 %% Constraint function for chromaticity optimization
@@ -519,5 +614,21 @@ figure; clf; hold on
 plot(targetSpd,'k','LineWidth',3);
 plot(predTargetSpd,'r');
 %}
+
+end
+
+%% Constraint function for relative spd optimization
+%
+% Forces chromaticities to stay at target and relative spds to match within
+% tolerance.  This constraint is only imposed on the background, from the
+% first column of primary.
+function [c, ceq] = ReceptorContrastNonlcon(primary, cal, T_xyz, targetxy, chromaticityTolerance)
+
+% Get how well we're doing on target chromaticity
+[c, ~] = ChromaticityNonlcon(primary(:,1), cal, T_xyz, targetxy, chromaticityTolerance);
+
+% No equality constraint
+ceq = [];
+
 
 end
