@@ -30,12 +30,20 @@ classdef OLBackgroundParams_Optimized < OLBackgroundParams
         pupilDiameterMm(1,1) = 8.0;                                         % Pupil diameter used in background seeking. Affects fundamentals.
         backgroundObserverAge(1,1) = 32;                                    % Observer age used in background seeking. Affects fundamentals.
         maxPowerDiff(1,1) = 0.1;                                            % Smoothing parameter for routine that finds backgrounds.
-        modulationContrast = [];                                         % Vector of constrasts sought in isolation.
+        modulationContrast = [];                                            % Vector of constrasts sought in isolation.
         whichReceptorsToIsolate = {[]};                                    % Which receptor classes are not being silenced.
         whichReceptorsToIgnore = {[]};                                      % Receptor classes ignored in calculations.
         whichReceptorsToMinimize = {[]};                                    % These receptors are minimized in contrast, subject to other constraints.
         directionsYoked = [0];                                              % See ReceptorIsolate.
         directionsYokedAbs = [0];                                           % See ReceptorIsolate.
+        
+        % When we are doing chrom/lum constraint, we use these parameters.
+        T_receptors = [];
+        targetContrast = [];
+        whichXYZ = '';
+        desiredxy = [];
+        desiredLum = [];
+        search(1,1) struct = struct([]); 
     end
     
     methods
@@ -106,6 +114,7 @@ classdef OLBackgroundParams_Optimized < OLBackgroundParams
             end
             
             %% Initial background
+            %
             % Start at mid point of primaries.
             initialPrimary = 0.5*ones(size(B_primary,2),1);
             
@@ -114,32 +123,35 @@ classdef OLBackgroundParams_Optimized < OLBackgroundParams
             fractionBleached = zeros(1,length(params.photoreceptorClasses));
             T_receptors = GetHumanPhotoreceptorSS(calibration.describe.S, params.photoreceptorClasses, params.fieldSizeDegrees, params.backgroundObserverAge, params.pupilDiameterMm, lambdaMaxShift, fractionBleached);
             
-            %% Newer code try on branch.  Let's optimize the unipolar modulation directly.
-            %targetContrast = [4 4 4 0];
-            targetContrast = [0 0 0 4];
-            %desiredChromaticity = [0.5 0.4];
-            desiredChromaticity = [0.60 0.38];
-            tparams.search.primaryHeadroom = 0.000;
-            tparams.search.primaryTolerance = 1e-6;
-            tparams.search.checkPrimaryOutOfRange = true;
-            tparams.search.lambda = 0;
-            tparams.search.spdToleranceFraction = 30e-3;
-            tparams.search.chromaticityTolerance = 0.03;
-            tparams.search.primaryHeadroomForInitialMax = 0.000;
-            tparams.search.maxSearchIter = 3000;
-            tparams.search.verbose = true;
-            [maxPrimary,backgroundPrimary,maxLum,minLum] = OLPrimaryInvSolveChrom(calibration, desiredChromaticity, ...
-                'optimizationTarget','receptorContrast','T_receptors',T_receptors,'targetContrast',targetContrast, ...
-                tparams.search);
+            %% Find the background. We have more than one way of doing this.
+            %
+            % Find the background through unipolar optimization
+            if (~isempty(params.targetContrast))
+                % Check
+                if (~strcmp(params.search.optimizationTarget,'receptorContrast'))
+                    error('If we are here we need param.search and for the optimization target to be ''receptorContrast''');
+                end
+                              
+                [maxPrimary,backgroundPrimary,maxLum,minLum] = OLPrimaryInvSolveChrom(calibration, params.desiredxy, ...
+                    'desiredLum', params.desiredLum, ...
+                    'optimizationTarget',params.search.optimizationTarget,'T_receptors',T_receptors,'targetContrast',params.targetContrast, ...
+                    params.search);
+                
+                % Pull out what we want
+                backgroundPrimary = backgroundPrimary;
+                
+            % Find the background through bipolar method
+            else
+                optimizedBackgroundPrimaries = ReceptorIsolateOptimBackgroundMulti(T_receptors, params.whichReceptorsToIsolate, ...
+                    params.whichReceptorsToIgnore,params.whichReceptorsToMinimize,B_primary,initialPrimary,...
+                    initialPrimary,whichPrimariesToPin,params.primaryHeadRoom,params.maxPowerDiff,...
+                    desiredContrasts,ambientSpd,params.directionsYoked,params.directionsYokedAbs,params.pegBackground);
+                
+                % Pull out what we want
+                backgroundPrimary = optimizedBackgroundPrimaries{1};
+            end
             
-%             %% Isolate the receptors by calling the wrapper
-%             optimizedBackgroundPrimaries = ReceptorIsolateOptimBackgroundMulti(T_receptors, params.whichReceptorsToIsolate, ...
-%                 params.whichReceptorsToIgnore,params.whichReceptorsToMinimize,B_primary,initialPrimary,...
-%                 initialPrimary,whichPrimariesToPin,params.primaryHeadRoom,params.maxPowerDiff,...
-%                 desiredContrasts,ambientSpd,params.directionsYoked,params.directionsYokedAbs,params.pegBackground);
-%             
-%             %% Pull out what we want
-%             backgroundPrimary = optimizedBackgroundPrimaries{1};
+            
         end
         
         function background = OLBackgroundNominalFromParams(params, calibration)
@@ -243,7 +255,7 @@ classdef OLBackgroundParams_Optimized < OLBackgroundParams
                 
                 % Validate modulationContrast
                 property = ('modulationContrast');
-                mustBeNonempty(params.(property));
+                % mustBeNonempty(params.(property));
                 
                 % Validate whichReceptorsToMinimize
                 property = ('whichReceptorsToMinimize');
@@ -255,13 +267,13 @@ classdef OLBackgroundParams_Optimized < OLBackgroundParams
                 
                 % Validate directionsYokedAbs
                 property = ('directionsYokedAbs');
-                mustBeInteger(params.(property));
-                mustBeLessThanOrEqual(numel(params.(property)), numel(params.photoreceptorClasses));   
+                % mustBeInteger(params.(property));
+                % mustBeLessThanOrEqual(numel(params.(property)), numel(params.photoreceptorClasses));   
                 
                 % Validate directionsYoked
                 property = ('directionsYoked');
-                mustBeInteger(params.(property));
-                mustBeLessThanOrEqual(numel(params.(property)), numel(params.photoreceptorClasses));    
+                % mustBeInteger(params.(property));
+                % mustBeLessThanOrEqual(numel(params.(property)), numel(params.photoreceptorClasses));    
 
             catch valueException
                 % Add more descriptive message

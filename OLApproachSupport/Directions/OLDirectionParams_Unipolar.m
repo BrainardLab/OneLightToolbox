@@ -4,20 +4,29 @@ classdef OLDirectionParams_Unipolar < OLDirectionParams
     
     properties
         photoreceptorClasses = {'LConeTabulatedAbsorbance'  'MConeTabulatedAbsorbance'  'SConeTabulatedAbsorbance'  'Melanopsin'};
-        T_receptors = [];
         fieldSizeDegrees(1,1) = 27.5;
         pupilDiameterMm(1,1) = 8.0;
+        
+        % These have to do with the original way we search
         maxPowerDiff(1,1) = 0.1;
         baseModulationContrast = [];
         modulationContrast = [];
         whichReceptorsToIsolate = [];
         whichReceptorsToIgnore = [];
         whichReceptorsToMinimize = [];
-        whichPrimariesToPin = [];
+        whichPrimariesToPin = []; 
         directionsYoked = 0;
         directionsYokedAbs = 0;
         receptorIsolateMode = 'Standard';
         doSelfScreening = false;
+        
+        % When we are doing chrom/lum constraint, we use these parameters.
+        T_receptors = [];
+        targetContrast = [];
+        whichXYZ = '';
+        desiredxy = [];
+        desiredLum = [];
+        search(1,1) struct = struct([]); 
     end
     
     methods
@@ -168,34 +177,58 @@ classdef OLDirectionParams_Unipolar < OLDirectionParams
                 % Construct the receptor matrix based on the bleaching fraction to this background.
                 directionParams.T_receptors = GetHumanPhotoreceptorSS(S,directionParams.photoreceptorClasses,directionParams.fieldSizeDegrees,observerAgeInYears,directionParams.pupilDiameterMm,lambdaMaxShift,fractionBleached);
                 
-                %% Determine primary values for modulation positive endpoint
-                initialPrimary = background.differentialPrimaryValues;
-                modulationPrimaryPositive = ReceptorIsolate(directionParams.T_receptors, directionParams.whichReceptorsToIsolate, ...
-                    directionParams.whichReceptorsToIgnore,directionParams.whichReceptorsToMinimize,B_primary,background.differentialPrimaryValues,...
-                    initialPrimary,directionParams.whichPrimariesToPin,directionParams.primaryHeadRoom,directionParams.maxPowerDiff,...
-                    desiredContrasts,ambientSpd);
+                % Determine primary values using unipolar method
+                if (~isempty(directionParams.targetContrast))
+                    % Check
+                    if (~strcmp(directionParams.search.optimizationTarget,'receptorContrast'))
+                        error('If we are here we need param.search and for the optimization target to be ''receptorContrast''');
+                    end
+                    
+                    [modulationPrimaryPositive,~,~,~] = OLPrimaryInvSolveChrom(calibration, directionParams.desiredxy, ...
+                        'desiredLum', directionParams.desiredLum, ...
+                        'optimizationTarget',directionParams.search.optimizationTarget,'T_receptors',directionParams.T_receptors,'targetContrast',directionParams.targetContrast, ... 
+                        'backgroundPrimary',background.differentialPrimaryValues, ...     
+                        directionParams.search);
+                    
+                    % Convert to unipolar direction
+                    % Background is already OK here and doesn't need to be tweaked.
+                    differentialPrimaryValues = modulationPrimaryPositive - background.differentialPrimaryValues;
                 
-                %% Convert to unipolar direction
-                % Negative arm becomes background primary
-                differentialPrimaryValues = modulationPrimaryPositive - background.differentialPrimaryValues;
-                background = OLDirection_unipolar(background.differentialPrimaryValues-differentialPrimaryValues,calibration,background.describe);
-                differentialPrimaryValues = modulationPrimaryPositive - background.differentialPrimaryValues;
-                
-                %% Create direction object
+                % Determine primary values for modulation positive endpoint
+                % using bipolar method
+                else 
+                    initialPrimary = background.differentialPrimaryValues;
+                    modulationPrimaryPositive = ReceptorIsolate(directionParams.T_receptors, directionParams.whichReceptorsToIsolate, ...
+                        directionParams.whichReceptorsToIgnore,directionParams.whichReceptorsToMinimize,B_primary,background.differentialPrimaryValues,...
+                        initialPrimary,directionParams.whichPrimariesToPin,directionParams.primaryHeadRoom,directionParams.maxPowerDiff,...
+                        desiredContrasts,ambientSpd);
+                    
+                    % Convert to unipolar direction
+                    differentialPrimaryValues = modulationPrimaryPositive - background.differentialPrimaryValues;
+                    
+                    % Negative arm of bipolar modulation becomes background primary
+                    background = OLDirection_unipolar(background.differentialPrimaryValues-differentialPrimaryValues,calibration,background.describe);
+                    differentialPrimaryValues = modulationPrimaryPositive - background.differentialPrimaryValues;
+                end
+                    
+                % Create direction object
                 describe.observerAge = observerAgeInYears;
                 describe.directionParams = directionParams;
                 describe.backgroundNominal = background.copy();
                 describe.background = background;
                 direction(observerAgeInYears) = OLDirection_unipolar(differentialPrimaryValues, calibration, describe);
-                
+
                 %% Check gamut
                 modulation = background + direction(observerAgeInYears);
                 if any(modulation.differentialPrimaryValues > 1)  || any(modulation.differentialPrimaryValues < 0)
                     error('Out of bounds.')
+                    
                 end
             end
+            
+            % Return just the single OLDirection
+            % rather than an array,if there is only one direction
             if numel(parser.Results.observerAge) == 1
-                % Return just the single OLDirection
                 direction = direction(parser.Results.observerAge);
             end
         end

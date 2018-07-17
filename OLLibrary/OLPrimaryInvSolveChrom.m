@@ -25,6 +25,9 @@ function [maxPrimary,minPrimary,maxLum,minLum] = ...
 % Inputs:
 %   cal                       - OneLight calibration structure
 %   desiredChrmaticity        - Column vector with desired CIE 1931 chromaticity.
+%                               When receptor contrasts are being
+%                               optimizedd, this just applies to the
+%                               background.   
 %
 % Outputs:
 %   maxPrimary                - Primary settings that produce a spectrum
@@ -67,6 +70,8 @@ function [maxPrimary,minPrimary,maxLum,minLum] = ...
 %                               and max. Default 0.01.
 %   'chromaticityTolerance'  -  How close to desired chromaticity do we
 %                               need to stay? Default 0.0001;
+%   'lumToleranceFraction'   -  How close to desired luminance do we need
+%                               to stay, in fractional terms? Default 0.2.
 %   'optimizationTarget'     -  String. What to try to optimize.
 %                                 'maxLum' maximize max luminance.
 %                                 'minLum' minimize min luminance'
@@ -100,6 +105,14 @@ function [maxPrimary,minPrimary,maxLum,minLum] = ...
 %                               doesn't do the trick.  If that fails,
 %                               adjusting this may help. Probably you don't
 %                               need to worry about this. Default 0.2.
+%   'backgroundPrimary'       - If not empty, just use this as the
+%                               background.  Only has an effect for the
+%                               'receptorContrast' option.  This works by locking
+%                               the background primary parameters in the search.
+%                               A little more thought could skip some of the preliminary
+%                               calculations when this is provided. Default empty.
+%   'desiredLum'              - Desired luminance of background, if not
+%                               empty. Default empty.
 %   'verbose'                 - Boolean, provide various output if true.
 %                               Defalt false.
 %
@@ -164,11 +177,14 @@ p.addParameter('lambda', 0.005, @isnumeric);
 p.addParameter('whichSpdToPrimaryMin', 'leastSquares', @ischar);
 p.addParameter('spdToleranceFraction', 0.01, @isnumeric);
 p.addParameter('chromaticityTolerance',0.0001, @isnumeric);
+p.addParameter('lumToleranceFraction',0.2, @isnumeric);
 p.addParameter('optimizationTarget', 'maxLum', @ischar);
 p.addParameter('primaryHeadroomForInitialMax', 0.005, @isnumeric);
 p.addParameter('targetContrast', [], @(x) (isempty(x) || isnumeric(x)));
 p.addParameter('T_receptors',[], @(x) (isempty(x) || isnumeric(x)));
 p.addParameter('maxSearchIter',300,@isnumeric);
+p.addParameter('backgroundPrimary',[], @(x) (isempty(x) || isnumeric(x)));
+p.addParameter('desiredLum',[], @(x) (isempty(x) || isnumeric(x)));
 p.addParameter('verbose', false, @islogical);
 p.parse(varargin{:});
 
@@ -284,12 +300,14 @@ vub = ones(size(devicePrimaryBasis, 2), 1)  - maxLumPrimaryHeadroom;
 vlb = zeros(size(devicePrimaryBasis, 2), 1) + maxLumPrimaryHeadroom;
 x = fmincon(@(x) ObjFunctionMaxLum(x, cal, T_xyz), ...
     initialPrimaries,[],[],[],[],vlb,vub, ...
-    @(x)ChromaticityNonlcon(x, cal, T_xyz, targetxy, p.Results.chromaticityTolerance), ...
+    @(x)ChromaticityNonlcon(x, cal, T_xyz, targetxy, p.Results.desiredLum, p.Results.chromaticityTolerance, p.Results.lumToleranceFraction), ...
     options);
 maxPrimary = x; clear x;
 
 %{
-[c, ceq] = ChromaticityNonlcon(x, devicePrimaryBasis, ambientSpd, T_xyz, targetxy, p.Results.chromaticityTolerance)
+[c, ceq] = ChromaticityNonlcon(x, cal, T_xyz, targetxy, ...
+    p.Results.desriredLum, ...
+    p.Results.chromaticityTolerance,p.Results.lumToleranceFraction);
 %}
 
 %% Check that primaries are within gamut to tolerance.
@@ -329,7 +347,7 @@ switch (p.Results.optimizationTarget)
         vlb = ones(size(devicePrimaryBasis, 2), 1)*p.Results.primaryHeadroom;
         x = fmincon(@(x) ObjFunctionMinLum(x, cal, T_xyz), ...
             initialPrimaries,[],[],[],[],vlb,vub, ...
-            @(x)ChromaticityNonlcon(x, cal, T_xyz, targetxy, p.Results.chromaticityTolerance), ...
+            @(x)ChromaticityNonlcon(x, cal, T_xyz, targetxy, p.Results.desriredLum, p.Results.chromaticityTolerance, p.Results.lumToleranceFraction), ...
             options);
         minPrimary = x; clear x;
         
@@ -435,9 +453,17 @@ switch (p.Results.optimizationTarget)
         options = optimset(options,'Diagnostics','off','Display',fminconDisplaySetting,'LargeScale','off','Algorithm',fminconAlgorithm, 'MaxIter', p.Results.maxSearchIter, 'MaxFunEvals', 1000000, 'TolFun', 1e-3, 'TolCon', 1e-6, 'TolX', 1e-4);
         vub = ones(size(devicePrimaryBasis, 2), 2)-p.Results.primaryHeadroom;
         vlb = ones(size(devicePrimaryBasis, 2), 2)*p.Results.primaryHeadroom;
+        
+        % Special case where background primaries are given
+        if (~isempty(p.Results.backgroundPrimary))
+            vub(:,1) = p.Results.backgroundPrimary;
+            vlb(:,1) = p.Results.backgroundPrimary;
+            initialPrimaries(:,1) = p.Results.backgroundPrimary;
+        end
+        
         x = fmincon(@(x) ObjFunctionReceptorContrast(x, cal, p.Results.T_receptors, p.Results.targetContrast), ...
             [initialPrimaries initialPrimaries],[],[],[],[],vlb,vub, ...
-            @(x)ReceptorContrastNonlcon(x, cal, T_xyz, targetxy, p.Results.chromaticityTolerance), ...
+            @(x)ReceptorContrastNonlcon(x, cal, T_xyz, targetxy, p.Results.desiredLum, p.Results.chromaticityTolerance, p.Results.lumToleranceFraction), ...
             options);
         maxPrimary = x(:,2);
         minPrimary = x(:,1);
@@ -544,18 +570,26 @@ function f = ObjFunctionReceptorContrast(primary, cal, T_receptors, targetContra
 theSpds = OLPrimaryToSpdFastAndDirty(cal,primary);
 theReceptorResponses = T_receptors*theSpds;
 theContrasts = (theReceptorResponses(:,2)-theReceptorResponses(:,1))./theReceptorResponses(:,1);
+targetContrasts = targetContrasts(:);
 
-% Minimize deviation from target contrasts. Multiply
-% by 100 to put error in a range that keeps fmincon chugging
-% away for long enough.
-f = 100*sum((theContrasts(:)-targetContrasts(:)).^2);
-
+% Minimize deviation from target contrasts. A bit of fussing
+% to try to get the right balance between zeroing silenced contrasts
+% and hitting other target contrasts.
+index1 = find(targetContrasts == 0);
+index2 = find(targetContrasts ~= 0);
+f = 0;
+if (~isempty(index1))
+    f = f + 1000*sum((theContrasts(index1)-targetContrasts(index1)).^2,1);
+end
+if (~isempty(index2))
+    f = f + 100*sum((theContrasts(index2)-targetContrasts(index2)).^2,1);
+end
 end
 
 %% Constraint function for chromaticity optimization
 %
 % Forces chromaticities to stay at target
-function [c, ceq] = ChromaticityNonlcon(primary, cal, T_xyz, targetxy, chromaticityTolerance)
+function [c, ceq] = ChromaticityNonlcon(primary, cal, T_xyz, targetxy, targetLum, chromaticityTolerance, lumToleranceFraction)
 
 % Calculate spectra and chromaticities
 theSpds = OLPrimaryToSpdFastAndDirty(cal,primary);
@@ -566,10 +600,20 @@ chromErrs = zeros(size(thexyYs,2),1);
 for kk = 1:size(thexyYs,2)
     chromErrs(kk) = sqrt(sum((targetxy-thexyYs(1:2,kk)).^2));
 end
+chromErrs = chromErrs - 0.95*chromaticityTolerance;
 
-% Set constraints.  The 0.95 gives us a little room in the numercal
-% search.
-c = chromErrs - 0.95*chromaticityTolerance;
+if (~isempty(targetLum))
+    lumErrs = zeros(size(thexyYs,2),1);
+    for kk = 1:size(thexyYs,2)
+        lumErrs(kk) = sqrt(sum((targetLum-thexyYs(3,kk)).^2));
+    end
+    lumErrs = lumErrs - 0.95*targetLum*lumToleranceFraction;
+else
+    lumErrs = -1*ones(size(thexyYs,2),1);
+end
+
+% Set constraints.  
+c = [chromErrs ; lumErrs];
 ceq = [];
 
 end
@@ -584,7 +628,7 @@ function [c, ceq] = RelativeSpdNonlcon(primary, cal, T_xyz, targetxy, spdToleran
 theSpds = OLPrimaryToSpdFastAndDirty(cal,primary);
 
 % Get how well we're doing on target chromaticity
-[c1, ~] = ChromaticityNonlcon(primary, cal, T_xyz, targetxy, chromaticityTolerance);
+[c1, ~] = ChromaticityNonlcon(primary, cal, T_xyz, targetxy, [], chromaticityTolerance, []);
 
 % Take mean spectra as target for relative spds
 targetSpd = mean(theSpds,2);
@@ -617,15 +661,15 @@ plot(predTargetSpd,'r');
 
 end
 
-%% Constraint function for relative spd optimization
+%% Constraint function for receptor contrast optimization
 %
 % Forces chromaticities to stay at target and relative spds to match within
 % tolerance.  This constraint is only imposed on the background, from the
 % first column of primary.
-function [c, ceq] = ReceptorContrastNonlcon(primary, cal, T_xyz, targetxy, chromaticityTolerance)
+function [c, ceq] = ReceptorContrastNonlcon(primary, cal, T_xyz, targetxy, targetLum, chromaticityTolerance, lumToleranceFraction)
 
 % Get how well we're doing on target chromaticity
-[c, ~] = ChromaticityNonlcon(primary(:,1), cal, T_xyz, targetxy, chromaticityTolerance);
+[c, ~] = ChromaticityNonlcon(primary(:,1), cal, T_xyz, targetxy, targetLum, chromaticityTolerance, lumToleranceFraction);
 
 % No equality constraint
 ceq = [];
