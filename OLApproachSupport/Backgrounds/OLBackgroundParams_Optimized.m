@@ -31,7 +31,7 @@ classdef OLBackgroundParams_Optimized < OLBackgroundParams
         backgroundObserverAge(1,1) = 32;                                    % Observer age used in background seeking. Affects fundamentals.
         maxPowerDiff(1,1) = 0.1;                                            % Smoothing parameter for routine that finds backgrounds.
         modulationContrast = [];                                            % Vector of constrasts sought in isolation.
-        whichReceptorsToIsolate = {[]};                                    % Which receptor classes are not being silenced.
+        whichReceptorsToIsolate = {[]};                                     % Which receptor classes are not being silenced.
         whichReceptorsToIgnore = {[]};                                      % Receptor classes ignored in calculations.
         whichReceptorsToMinimize = {[]};                                    % These receptors are minimized in contrast, subject to other constraints.
         directionsYoked = [0];                                              % See ReceptorIsolate.
@@ -73,7 +73,7 @@ classdef OLBackgroundParams_Optimized < OLBackgroundParams
             %    don't need to fuss with small effects.
             %
             % Inputs:
-            %    params            - OLBackgroundParams_optimized
+            %    params            - OLBackgroundParams_Optimized
             %                        defining the parameters for this
             %                        optimized background.
             %    calibration       - OneLight calibration struct
@@ -191,6 +191,7 @@ classdef OLBackgroundParams_Optimized < OLBackgroundParams
             
             % History:
             %    03/22/18  jv  OLDirection_unipolar from backgroundParams
+            
             backgroundPrimary = OLBackgroundNominalPrimaryFromParams(params,calibration);
             background = OLDirection_unipolar(backgroundPrimary,calibration);
             background.describe.params = params;
