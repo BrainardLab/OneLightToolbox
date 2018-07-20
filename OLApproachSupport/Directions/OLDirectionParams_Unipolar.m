@@ -21,11 +21,10 @@ classdef OLDirectionParams_Unipolar < OLDirectionParams
         doSelfScreening = false;
         
         % When we are doing chrom/lum constraint, we use these parameters.
+        % The chrom/lum contraint only applies to the background, so we
+        % don't use those fields in this object.
         T_receptors = [];
         targetContrast = [];
-        whichXYZ = '';
-        desiredxy = [];
-        desiredLum = [];
         search(1,1) struct = struct([]); 
     end
     
@@ -184,8 +183,14 @@ classdef OLDirectionParams_Unipolar < OLDirectionParams
                         error('If we are here we need param.search and for the optimization target to be ''receptorContrast''');
                     end
                     
-                    [modulationPrimaryPositive,~,~,~] = OLPrimaryInvSolveChrom(calibration, directionParams.desiredxy, ...
-                        'desiredLum', directionParams.desiredLum, ...
+                    % We are passing the background, but
+                    % OLPRimaryInvSolveChrom isn't quite smart enough to
+                    % skip all background related calcs in this case, so we
+                    % pass the desiredxy, desiredLum, and whichXYZ fields
+                    % from the background as well, just to keep everything
+                    % happy.
+                    [modulationPrimaryPositive,~,~,~] = OLPrimaryInvSolveChrom(calibration, background.describe.params.desiredxy, ...
+                        'desiredLum', background.describe.params.desiredLum, 'whichXYZ', background.describe.params.whichXYZ, ...
                         'optimizationTarget',directionParams.search.optimizationTarget,'T_receptors',directionParams.T_receptors,'targetContrast',directionParams.targetContrast, ... 
                         'backgroundPrimary',background.differentialPrimaryValues, ...     
                         directionParams.search);

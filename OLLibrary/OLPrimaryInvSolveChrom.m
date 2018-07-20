@@ -448,7 +448,6 @@ switch (p.Results.optimizationTarget)
         
         % This does a simultaneous search for max and min, to maximize
         % contrast.
-        fminconDisplaySetting = 'iter';
         options = optimset('fmincon');
         options = optimset(options,'Diagnostics','off','Display',fminconDisplaySetting,'LargeScale','off','Algorithm',fminconAlgorithm, 'MaxIter', p.Results.maxSearchIter, 'MaxFunEvals', 1000000, 'TolFun', 1e-3, 'TolCon', 1e-6, 'TolX', 1e-4);
         vub = ones(size(devicePrimaryBasis, 2), 2)-p.Results.primaryHeadroom;
