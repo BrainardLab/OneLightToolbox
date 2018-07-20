@@ -6,7 +6,7 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
         desiredxy(1,2) = [0.333 0.333];                                    % Modulation chromaticity.
         whichXYZ(1,:) char = 'xyzCIEPhys10';                               % Which XYZ cmfs.
         desiredMaxContrast(1,1) = 1;                                       % Size of max contrast
-        desiredBackgroundLuminance(1,1) = 200;                             % Desired background luminance in cd/m2.
+        desiredLum(1,1) = 200;                                             % Desired background luminance in cd/m2.
         polarType(1,:) char = 'unipolar';                                  % Unipolar or bipolar light flux direction
         search(1,1) struct = struct([]);                                   % Primary search parameter struct  
     end
@@ -240,7 +240,7 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
             
             % Find range of background luminances over which we could get
             % desired contrast
-            desiredBackgroundLum = params.desiredBackgroundLuminance;
+            desiredBackgroundLum = params.desiredLum;
            
             
             switch (params.polarType)
@@ -412,8 +412,8 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
                 property = 'desiredMaxContrast';
                 mustBePositive(params.(property));
                 
-                % Validate desiredBackgroundLuminance
-                property = 'desiredBackgroundLuminance';
+                % Validate desired background luminance
+                property = 'desiredLum';
                 mustBePositive(params.(property));
                 
             catch valueException

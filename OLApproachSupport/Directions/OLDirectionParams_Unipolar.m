@@ -4,7 +4,7 @@ classdef OLDirectionParams_Unipolar < OLDirectionParams
     
     properties
         photoreceptorClasses = {'LConeTabulatedAbsorbance'  'MConeTabulatedAbsorbance'  'SConeTabulatedAbsorbance'  'Melanopsin'};
-        fieldSizeDegrees(1,1) = 27.5;
+        fieldSizeDegrees = 27.5;
         pupilDiameterMm(1,1) = 8.0;
         
         % These have to do with the original way we search
