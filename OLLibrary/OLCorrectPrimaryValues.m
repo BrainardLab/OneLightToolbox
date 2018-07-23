@@ -73,7 +73,7 @@ function [correctedPrimaryValues, detailedData] = OLCorrectPrimaryValues(nominal
 
 %% Input validation
 parser = inputParser;
-parser.addRequired('primaryValues',@isnumeric);
+parser.addRequired('nominalPrimaryValues',@isnumeric);
 parser.addRequired('calibration',@isstruct);
 parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
 parser.addRequired('radiometer',@(x) isempty(x) || isa(x,'Radiometer'));

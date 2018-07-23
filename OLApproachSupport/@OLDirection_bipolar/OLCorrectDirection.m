@@ -89,10 +89,10 @@ else
     % combined SPD. Instead, convert the desiredCombinedSPD to some initial
     % primary values predicted to produce it, and correct those.
     nominalCombinedPrimaryValuesPositive = OLSpdToPrimary(direction.calibration,desiredCombinedSPD(:,1));
-    [correctedCombinedPrimaryValuesPositive, correctionDataPositive] = OLCorrectPrimaryValues(nominalCombinedPrimaryValuesPositive,direction.calibration,oneLight,radiometer,varargin{:});
+    [correctedCombinedPrimaryValuesPositive, correctionDataPositive] = OLCorrectPrimaryValues(nominalCombinedPrimaryValuesPositive,direction.calibration,oneLight,radiometer);
     
     nominalCombinedPrimaryValuesNegative = OLSpdToPrimary(direction.calibration,desiredCombinedSPD(:,1));   
-    [correctedCombinedPrimaryValuesNegative, correctionDataNegative] = OLCorrectPrimaryValues(nominalCombinedPrimaryValuesNegative,direction.calibration,oneLight,radiometer,varargin{:});
+    [correctedCombinedPrimaryValuesNegative, correctionDataNegative] = OLCorrectPrimaryValues(nominalCombinedPrimaryValuesNegative,direction.calibration,oneLight,radiometer);
     
     %% Update original OLDirection
     % Update business end
