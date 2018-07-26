@@ -37,6 +37,13 @@ parser.addParameter('visualizedProperty' , 'SConeContrast');
 parser.addParameter('visualizedStatistics','medians only',@(x)ismember(x, {'medians only', 'data points only', 'medians and data points'}));
 parser.addParameter('plottingTheme','bright',@(x)ismember(x, {'dark', 'bright'}));
 parser.addParameter('excludedSubjectNames', defaultExcludedSubjectNames, @iscell);
+parser.addParameter('yLim', [], @isnumeric);
+parser.addParameter('limits', [], @isnumeric);
+parser.addParameter('calibrations',{},@iscell);
+parser.addParameter('saveDir','.', @ischar);
+
+
+
 parser.parse(varargin{:});
 approachName = parser.Results.approachName;
 protocolParams.protocol = parser.Results.protocolName;
@@ -61,7 +68,7 @@ objectsDataPath = ...
 PlotAllSessionsData(sessionData, timeLabels, approachName, ...
     protocolParams.protocol, objectType, objectName, visualizedProperty, ...
     'visualizedStatistics', visualizedStatistics, ...
-    'plottingTheme', plottingTheme);
+    'plottingTheme', plottingTheme, 'yLim', parser.Results.yLim, 'limits', parser.Results.limits, 'calibrations', parser.Results.calibrations, 'saveDir', parser.Results.saveDir);
 end
 
 % ----------------------- SUPPORTING FUNCTIONS ----------------------------
@@ -71,6 +78,12 @@ function PlotAllSessionsData(sessionData, timeLabels, approachName, protocolName
     parser = inputParser;
     parser.addParameter('visualizedStatistics','medians only',@(x)ismember(x, {'medians only', 'data points only', 'medians and data points'}));
     parser.addParameter('plottingTheme','bright',@(x)ismember(x, {'dark', 'bright'}));
+    parser.addParameter('yLim', [], @isnumeric);
+    parser.addParameter('limits', [], @isnumeric);
+    parser.addParameter('calibrations',{},@iscell);
+    parser.addParameter('saveDir','.', @ischar);
+
+
     parser.parse(varargin{:});
     visualizedStatistics = parser.Results.visualizedStatistics;
     
@@ -102,7 +115,7 @@ function PlotAllSessionsData(sessionData, timeLabels, approachName, protocolName
     set(hFig, 'Position', [10 10 2100 1300], 'Color', plottingTheme.figBackground);
     
     % Compute subplot positions
-    validationPrefices = {'precorrection', 'postcorrection', 'postexperiment'};
+    validationPrefices = {'postcorrection', 'postexperiment'};
     subplotPosVectors = NicePlot.getSubPlotPosVectors(...
          'rowsNum', numel(validationPrefices), ...
          'colsNum', 1, ...
@@ -160,33 +173,71 @@ function PlotAllSessionsData(sessionData, timeLabels, approachName, protocolName
             'YColor', plottingTheme.axes, 'Color', plottingTheme.background, 'FontSize', 14, 'LineWidth', 1.0);
         ylabel(gca, visualizedProperty, 'FontWeight', 'bold');
         
+        if strcmp(validationPrefix, 'postcorrection')
+            validationPrefixForTitle = 'preexperiment';
+        else
+            validationPrefixForTitle = validationPrefix;
+        end
         if (strcmp(parser.Results.plottingTheme, 'dark'))
+            
             titleName = sprintf('\\color{white}\\rm[%s - %s - %s - %s]  -> \\bf\\color{yellow} %s', ...
                 strrep(approachName, '_', ''), ...
                 strrep(protocolName, '_', ''), ...
                 strrep(objectType, '_', ''), ...
                 strrep(objectName, '_', ''), ...
-                validationPrefix);
+                validationPrefixForTitle);
         else
             titleName = sprintf('\\color{black}\\rm[%s - %s - %s - %s]  -> \\bf\\color{red} %s', ...
                 strrep(approachName, '_', ''), ...
                 strrep(protocolName, '_', ''), ...
                 strrep(objectType, '_', ''), ...
                 strrep(objectName, '_', ''), ...
-                validationPrefix);
+                validationPrefixForTitle);
         end
         title(gca, titleName);
         xtickangle(gca, 20);
         ytickformat('%+.2f');
         box on; grid on;
+        if ~isempty(parser.Results.yLim)
+            ylim([parser.Results.yLim])
+        end
+        
+        
+        axes = gca;
+        if ~isempty(parser.Results.limits)
+            
+            line(axes.XLim, [parser.Results.limits(1) parser.Results.limits(1)], 'Color', 'r', 'LineStyle', '--');            
+            line(axes.XLim, [parser.Results.limits(2) parser.Results.limits(2)], 'Color', 'r', 'LineStyle', '--');
+
+        end
+        
+        
+        if ~isempty(parser.Results.calibrations)
+            dates = [];
+            for ii = 1:length(timeLabels)
+                date = strsplit(timeLabels{ii}, '}');
+                date = strsplit(date{3}, '\');
+                dates{ii} = date{1};
+            end
+            
+            for cc = 1:length(parser.Results.calibrations)
+                indices = find(strcmp(dates, parser.Results.calibrations{cc}));
+                index = max(indices);
+                line([index index], axes.YLim, 'Color', 'k');
+            end
+                
+            
+        end
+        
     end
     
     figName = sprintf('%s_%s_%s_%s_%s', ...
             strrep(approachName, '_', ''), ...
             strrep(protocolName, '_', ''), ...
             strrep(objectType, '_', ''), ...
-            strrep(objectName, '_', ''));
-    NicePlot.exportFigToPDF(sprintf('%s.pdf', figName), hFig, 300);
+            strrep(objectName, '_', ''), ...
+            visualizedProperty);
+    NicePlot.exportFigToPDF(fullfile(parser.Results.saveDir, sprintf('%s.pdf', figName)), hFig, 300);
 end
 
 function oldStuff()
@@ -322,14 +373,16 @@ function [serializedData, subjectNames] = SerializeObjectsInDataPathBasedOnDates
             validSessionIndex = 0;
             for kk = 1 : length(subFolders2)
                 theSessionName = subFolders2(kk).name;
-                if (~ismember(theSessionName, invalidFolderNames))
-                    validSessionIndex = validSessionIndex + 1;
-                    % Compute full sessionPath
-                    sessionPath = fullfile(subjectNamePath,theSessionName);
-                    sessionNames{validSessionIndex} = theSessionName;
-                    sessionPathsForAllSubjects{numel(sessionPathsForAllSubjects)+1} = sessionPath;
-                    subjectNamesForAllSessions{numel(subjectNamesForAllSessions)+1} = theSubjectName;
-                end % if
+                if ~strcmp(theSessionName(1), 'x')
+                    if (~ismember(theSessionName, invalidFolderNames))
+                        validSessionIndex = validSessionIndex + 1;
+                        % Compute full sessionPath
+                        sessionPath = fullfile(subjectNamePath,theSessionName);
+                        sessionNames{validSessionIndex} = theSessionName;
+                        sessionPathsForAllSubjects{numel(sessionPathsForAllSubjects)+1} = sessionPath;
+                        subjectNamesForAllSessions{numel(subjectNamesForAllSessions)+1} = theSubjectName;
+                    end % if
+                end
             end % for kk
             sessionNamesForSubject{validSubjectIndex} = sessionNames;
         end % if
