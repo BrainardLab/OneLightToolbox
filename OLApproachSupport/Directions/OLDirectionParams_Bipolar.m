@@ -5,7 +5,7 @@ classdef OLDirectionParams_Bipolar < OLDirectionParams
     properties
         photoreceptorClasses = {'LConeTabulatedAbsorbance'  'MConeTabulatedAbsorbance'  'SConeTabulatedAbsorbance'  'Melanopsin'};
         T_receptors = [];
-        fieldSizeDegrees(1,1) = 27.5;
+        fieldSizeDegrees = 27.5;
         pupilDiameterMm(1,1) = 8.0;
         maxPowerDiff(1,1) = 0.1;
         baseModulationContrast = [];
