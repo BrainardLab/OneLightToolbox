@@ -57,15 +57,80 @@ function [primary, inGamut, gamutMargin] = OLCheckPrimaryGamut(primary,varargin)
 %   04/12/18  dhb  Wrote it.
 
 % Examples:
+
 %{
-    %% Truncate to gamut
+    %% Out of gamut; throw error
+    try
+        OLCheckPrimaryGamut(1.1);
+    catch e
+        disp('Threw an error');
+    end
+%}
+%{
+    %% Out of gamut, but within tolerance. Get truncated to gamut.
+    [outputPrimary,inGamut,gamutMargin] = OLCheckPrimaryGamut(1+1e-7);
+
+    % Check
+    assert(round(outputPrimary,5) == 1);
+    assert(inGamut);
+    assert(round(gamutMargin,5) == 0);
+
+    %% Out of gamut, but within tolerance. Get truncated to gamut.
+    [outputPrimary,inGamut,gamutMargin] = OLCheckPrimaryGamut(1+1e-8,...
+        'primaryTolerance',1e-7);
+
+    % Check
+    assert(round(outputPrimary,5) == 1);
+    assert(inGamut);
+    assert(round(gamutMargin,5) == 0);
+%}
+%{
+    %% Out of gamut, but force truncate
+    [outputPrimary,inGamut,gamutMargin] = OLCheckPrimaryGamut(1.1,...
+        'checkPrimaryOutOfRange',false);
+
+    % Check
+    assert(inGamut);
+    assert(round(outputPrimary,5) == 1);
+    assert(round(gamutMargin,5) == .1);
+%}
+%{
+    %% Truncate to gamut max
+    [outputPrimary,inGamut,gamutMargin] = OLCheckPrimaryGamut(1.01, ...
+        'checkPrimaryOutOfRange',false);
+
+    % Check
+    assert(round(outputPrimary,5) == 1);
+    assert(~inGamut);
+    assert(round(gamutMargin,5) == .01);
+%}
+%{
+    %% Truncate to gamut min
     [outputPrimary,inGamut,gamutMargin] = OLCheckPrimaryGamut(-0.01, ...
         'checkPrimaryOutOfRange',false);
 
     % Check
-    assert(outputPrimary == 0);
+    assert(round(outputPrimary,5) == 0);
     assert(~inGamut);
-    assert(gamutMargin == .01);
+    assert(round(gamutMargin,5) == .01);
+%}
+%{
+    %% Truncate to gamut
+    [outputPrimary,inGamut,gamutMargin] = OLCheckPrimaryGamut([-0.01 .4 1.005], ...
+        'checkPrimaryOutOfRange',false);
+
+    % Check
+    assert(all(round(outputPrimary,5) == [0 .4 1]));
+    assert(~inGamut);
+    assert(round(gamutMargin,5) == .01);
+%}
+%{
+    %% In gamut, but out of headroom. Throw error
+    try
+        OLCheckPrimaryGamut(.98,'primaryHeadroom',.05);
+    catch e
+        disp('Threw an error');
+    end
 %}
 %{
     %% Truncate up to headroom
@@ -73,9 +138,9 @@ function [primary, inGamut, gamutMargin] = OLCheckPrimaryGamut(primary,varargin)
         'checkPrimaryOutOfRange',false,'primaryHeadroom',0.005);
 
     % Check
-    assert(outputPrimary == 0.005);
+    assert(round(outputPrimary,5) == 0.005);
     assert(~inGamut);
-    assert(gamutMargin == .0150);
+    assert(round(gamutMargin,5) == .0150);
 %}
 %{
     %% Truncate down to headroom
@@ -83,24 +148,9 @@ function [primary, inGamut, gamutMargin] = OLCheckPrimaryGamut(primary,varargin)
         'checkPrimaryOutOfRange',false,'primaryHeadroom',0.005);
 
     % Check
-    assert(outputPrimary == 0.9950);
+    assert(round(outputPrimary,5) == 0.9950);
     assert(~inGamut);
-    assert(gamutMargin == .0150);
-%}
-%{
-    %% Truncate by tolerance
-    [outputPrimary,inGamut,gamutMargin] = OLCheckPrimaryGamut(1+1e-7, ...
-        'checkPrimaryOutOfRange',true,'primaryHeadroom',0);
-
-    % Check
-    assert(outputPrimary == 1);
-    assert(inGamut);
-    assert(gamutMargin == 0);
-%}
-%{
-    %% Throw error, for checkPrimaryOutOfRange
-    [outputPrimary,inGamut,gamutMargin] = OLCheckPrimaryGamut(1+1e-7, ...
-        'checkPrimaryOutOfRange',true,'primaryHeadroom',0,'primaryTolerance',1e-8)
+    assert(round(gamutMargin,5) == .0150);
 %}
 
 %% Parse input
