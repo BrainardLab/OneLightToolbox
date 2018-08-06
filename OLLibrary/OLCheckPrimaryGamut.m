@@ -58,16 +58,49 @@ function [primary, inGamut, gamutMargin] = OLCheckPrimaryGamut(primary,varargin)
 
 % Examples:
 %{
-[outputPrimary,inGamut,gamutMargin] = OLCheckPrimaryGamut(-0.01, ...
-    'checkPrimaryOutOfRange',false)
-[outputPrimary,inGamut,gamutMargin] = OLCheckPrimaryGamut(-0.01, ...
-    'checkPrimaryOutOfRange',false,'primaryHeadroom',0.005)
-[outputPrimary,inGamut,gamutMargin] = OLCheckPrimaryGamut(1.01, ...
-    'checkPrimaryOutOfRange',false,'primaryHeadroom',0.005)
-[outputPrimary,inGamut,gamutMargin] = OLCheckPrimaryGamut(1+1e-7, ...
-    'checkPrimaryOutOfRange',true,'primaryHeadroom',0)
-[outputPrimary,inGamut,gamutMargin] = OLCheckPrimaryGamut(1+1e-7, ...
-    'checkPrimaryOutOfRange',true,'primaryHeadroom',0,'primaryTolerance',1e-8)
+    %% Truncate to gamut
+    [outputPrimary,inGamut,gamutMargin] = OLCheckPrimaryGamut(-0.01, ...
+        'checkPrimaryOutOfRange',false);
+
+    % Check
+    assert(outputPrimary == 0);
+    assert(~inGamut);
+    assert(gamutMargin == .01);
+%}
+%{
+    %% Truncate up to headroom
+    [outputPrimary,inGamut,gamutMargin] = OLCheckPrimaryGamut(-0.01, ...
+        'checkPrimaryOutOfRange',false,'primaryHeadroom',0.005);
+
+    % Check
+    assert(outputPrimary == 0.005);
+    assert(~inGamut);
+    assert(gamutMargin == .0150);
+%}
+%{
+    %% Truncate down to headroom
+    [outputPrimary,inGamut,gamutMargin] = OLCheckPrimaryGamut(1.01, ...
+        'checkPrimaryOutOfRange',false,'primaryHeadroom',0.005);
+
+    % Check
+    assert(outputPrimary == 0.9950);
+    assert(~inGamut);
+    assert(gamutMargin == .0150);
+%}
+%{
+    %% Truncate by tolerance
+    [outputPrimary,inGamut,gamutMargin] = OLCheckPrimaryGamut(1+1e-7, ...
+        'checkPrimaryOutOfRange',true,'primaryHeadroom',0);
+
+    % Check
+    assert(outputPrimary == 1);
+    assert(inGamut);
+    assert(gamutMargin == 0);
+%}
+%{
+    %% Throw error, for checkPrimaryOutOfRange
+    [outputPrimary,inGamut,gamutMargin] = OLCheckPrimaryGamut(1+1e-7, ...
+        'checkPrimaryOutOfRange',true,'primaryHeadroom',0,'primaryTolerance',1e-8)
 %}
 
 %% Parse input
