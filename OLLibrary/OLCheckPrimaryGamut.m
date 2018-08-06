@@ -26,10 +26,10 @@ function [primary, inGamut, gamutMargin] = OLCheckPrimaryGamut(primary,varargin)
 % Outputs:
 %    primary                  - Numeric matrix (NxM) of primary values, 
 %                               after truncation and check
-%    inGamut                  - Boolean scalar. True if input primaries
+%    inGamut                  - Boolean scalar. True if returned primaries
 %                               are in gamut, false if not.  You can only
 %                               get false if checkPrimaryOutOfRange is
-%                               false
+%                               false.
 %    gamutMargin              - Numeric scalar. Negative if primaries are
 %                               in gamut, amount negative tells you
 %                               magnitude of margin. Otherwise this is the
