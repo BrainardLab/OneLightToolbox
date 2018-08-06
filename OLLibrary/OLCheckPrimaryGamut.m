@@ -2,50 +2,60 @@ function [primary, inGamut, gamutMargin] = OLCheckPrimaryGamut(primary,varargin)
 % Check whether primaries are sufficiently in gamut, guarantee return in 0-1
 %
 % Syntax:
-%     [primary, inGamut = OLCheckPrimaryGamut(primary)   
+%   truncatedPrimaryValues = OLCheckPrimaryGamut(primaryValues)
+%   [truncatedPrimaryValues, inGamut] = OLCheckPrimaryGamut(primaryValues)
+%   [truncatedPrimaryValues, inGamut, gamutMargin] = OLCheckPrimaryGamut(primaryValues)
+%   [...] = OLCheckPrimaryGamut(...,'differentialMode',true);
+%   [...] = OLCheckPrimaryGamut(...,'primaryHeadroom',.005);
+%   [...] = OLCheckPrimaryGamut(...,'primaryTolerance',1e-6);
+%   [...] = OLCheckPrimaryGamut(...,'checkPrimaryOutOfRange',true);
 %
 % Description:
-%     If primaries are very close to in gamut, truncate to gamut.  If they
-%     are too far out of gamut, throw an error.
+%    If primaries are very close to in gamut, truncate to gamut.  If they
+%    are too far out of gamut, throw an error.
 %
-%     This routine respects a set of key/value pairs that are common to
-%     many of our routines for finding and dealing with primaries.  These
-%     allow it to, for example, enforce headroom as part of what it means
-%     to be in gamut. See below for details.
+%    This routine respects a set of keyword arguments that are common to
+%    many of our routines for finding and dealing with primaries.  These
+%    allow it to, for example, enforce headroom as part of what it means
+%    to be in gamut. See below for details.
 %
 % Inputs:
-%     primary                 - A scalar, vector or matrix containing
-%                               primary values. 
+%    primary                  - Numeric matrix (NxM), of primary values to
+%                               be checked
 %
 % Outputs:
-%     primary                 - Same as input, after truncation and check.
-%     inGamut                 - Boolean. True if returned primaries are in
-%                               gamut, false if not.  You can only get
-%                               false if checkPrimaryOutOfRange is false.
-%     gamutMargin             - Negative if primaries are in gamut, amount negative
-%                               tells you magnitude of margin. Otherwise this is the
-%                               magnitude of the largest deviation.
+%    primary                  - Numeric matrix (NxM) of primary values, 
+%                               after truncation and check
+%    inGamut                  - Boolean scalar. True if input primaries
+%                               are in gamut, false if not.  You can only
+%                               get false if checkPrimaryOutOfRange is
+%                               false
+%    gamutMargin              - Numeric scalar. Negative if primaries are
+%                               in gamut, amount negative tells you
+%                               magnitude of margin. Otherwise this is the
+%                               magnitude of the largest deviation
 % 
-% Optional key/value pairs:
-%   'primaryHeadroom'         - Scalar.  Headroom to leave on primaries.  Default
-%                               0. How much headroom to protect in
+% Optional keyword arguments:
+%    'differentialMode'       - Boolean scalar. If true, allowable gamut
+%                               starts at [-1,1] not at [0,1], and then is
+%                               adjusted by primaryHeadroom. Default false
+%    'primaryHeadroom'        - Numeric scalar.  Headroom to leave on
+%                               primaries. How much headroom to protect in
 %                               definition of in gamut.  Range used for
 %                               check and truncation is [primaryHeadroom
-%                               1-primaryHeadroom]. Do not change this
-%                               default.  Sometimes assumed to be true by a
-%                               caller.
-%   'primaryTolerance         - Scalar. Truncate to range [0,1] if primaries are
-%                               within this tolerance of [0,1]. Default 1e-6, and
-%                               'checkPrimaryOutOfRange' value is true.
-%   'checkPrimaryOutOfRange'  - Boolean. Perform primary tolerance check. Default true.
-%                               Do not change this default.  Sometimes
-%                               assumed to be true by a caller.  When
-%                               false, the inGamut flag is set and the
-%                               returned primaries are truncated into
-%                               range.
-%   'differentialMode'        - Boolean. If true, allowable gamut starts at [-1,1] not at
-%                               [0,1], and then is adjusted by
-%                               primaryHeadroom. Default false.
+%                               1-primaryHeadroom]. Default 0; do not
+%                               change this default
+%    'primaryTolerance'       - Numeric scalar. Truncate to range [0,1] if
+%                               primaries are within this tolerance of
+%                               [0,1]. Default 1e-6; do not change this
+%                               default
+%    'checkPrimaryOutOfRange' - Boolean scalar. Throw error if primary
+%                               (after tolerance truncation) is out of
+%                               gamut. When false, the inGamut flag is set
+%                               true and the returned primaries are
+%                               truncated into range. Default true; Do not
+%                               change this default, Sometimes assumed to
+%                               be true by a caller
 %
 % Examples are provided in the source code.
 %
@@ -90,7 +100,7 @@ function [primary, inGamut, gamutMargin] = OLCheckPrimaryGamut(primary,varargin)
         'checkPrimaryOutOfRange',false);
 
     % Check
-    assert(inGamut);
+    assert(~inGamut);
     assert(round(outputPrimary,5) == 1);
     assert(round(gamutMargin,5) == .1);
 %}
@@ -157,10 +167,10 @@ function [primary, inGamut, gamutMargin] = OLCheckPrimaryGamut(primary,varargin)
 %
 % Don't change defaults.  Some calling routines count on them.
 p = inputParser;
+p.addParameter('differentialMode', false, @islogical);
 p.addParameter('primaryHeadroom', 0, @isscalar);
 p.addParameter('primaryTolerance', 1e-6, @isscalar);
 p.addParameter('checkPrimaryOutOfRange', true, @islogical);
-p.addParameter('differentialMode', false, @islogical);
 p.parse(varargin{:});
 
 %% Initialize
