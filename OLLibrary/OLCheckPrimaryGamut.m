@@ -23,12 +23,16 @@ function [primary, inGamut, gamutMargin] = OLCheckPrimaryGamut(primary,varargin)
 %    very small violation of gamut as in gamut.  In cases where the
 %    primaries are just a hair out of gamut, it puts them in gamut.  It
 %    does not, however, touch input primaries that are out of gamut by more
-%    than the primaryTolerance (default 1e-6).  The inGamut flag refers to
-%    the primaries that are returned, that is, this flag tells you about
-%    what comes back, not what was passed in.  The reason we need to do
-%    this is that some of the underlying search routines (e.g. fmincon)
-%    respect their constraints only up to a tolerance, and this routine can
-%    be used to handle such cases in a unified manner.
+%    than the primaryTolerance (default 1e-6).
+%
+%    One reason we need to do this is that some of the underlying search
+%    routines (e.g. fmincon) respect their constraints only up to a
+%    tolerance, and this routine can be used to handle such cases in a
+%    unified manner.
+%
+%    The inGamut flag refers to whether the passed primaries were within
+%    primaryTolerance of being within gamut. That is, the flat state
+%    tolerates a small amount of out of gamut before it is set to false.
 %
 %    Note that primaryTolerance is different from primaryHeadroom.  We used
 %    primaryHeadroom (default 0) as a way to use only the central part of
@@ -42,10 +46,14 @@ function [primary, inGamut, gamutMargin] = OLCheckPrimaryGamut(primary,varargin)
 % Outputs:
 %    primary                  - Numeric matrix (NxM) of primary values, 
 %                               after truncation and check
-%    inGamut                  - Boolean scalar. True if returned primaries
-%                               are in gamut, false if not.  You can only
-%                               get false if checkPrimaryOutOfRange is
-%                               false.
+%    inGamut                  - Boolean scalar. True if passed primaries
+%                               were within primaryTolerance of being in
+%                               gamut, false if not.  You can only get
+%                               false if checkPrimaryOutOfRange is false,
+%                               because when that flag is true the same
+%                               conditions that would cause this flag to be
+%                               false cause an error to be thrown before
+%                               return.
 %    gamutMargin              - Numeric scalar. Negative if primaries are
 %                               in gamut, amount negative tells you
 %                               magnitude of margin. Otherwise this is the
@@ -68,10 +76,11 @@ function [primary, inGamut, gamutMargin] = OLCheckPrimaryGamut(primary,varargin)
 %    'checkPrimaryOutOfRange' - Boolean scalar. Throw error if primary
 %                               (after tolerance truncation) is out of
 %                               gamut. When false, the inGamut flag is set
-%                               true and the returned primaries are
-%                               truncated into range. Default true; Do not
-%                               change this default, Sometimes assumed to
-%                               be true by a caller
+%                               according to the input and the returned
+%                               primaries are truncated into gamut no
+%                               matter how far out of gamut they were.
+%                               Default true; Do not change this default,
+%                               Sometimes assumed to be true by a caller
 %
 % Examples are provided in the source code.
 %
