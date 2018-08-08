@@ -19,6 +19,22 @@ function [primary, inGamut, gamutMargin] = OLCheckPrimaryGamut(primary,varargin)
 %    allow it to, for example, enforce headroom as part of what it means
 %    to be in gamut. See below for details.
 %
+%    The purpose of this routine is to check the primaries, but to accept a
+%    very small violation of gamut as in gamut.  In cases where the
+%    primaries are just a hair out of gamut, it puts them in gamut.  It
+%    does not, however, touch input primaries that are out of gamut by more
+%    than the primaryTolerance (default 1e-6).  The inGamut flag refers to
+%    the primaries that are returned, that is, this flag tells you about
+%    what comes back, not what was passed in.  The reason we need to do
+%    this is that some of the underlying search routines (e.g. fmincon)
+%    respect their constraints only up to a tolerance, and this routine can
+%    be used to handle such cases in a unified manner.
+%
+%    Note that primaryTolerance is different from primaryHeadroom.  We used
+%    primaryHeadroom (default 0) as a way to use only the central part of
+%    the full [0,1] primary gamut. We might want to do this to leave room
+%    for spectrum seeking routines to have somewhere to go, for example.
+%
 % Inputs:
 %    primary                  - Numeric matrix (NxM), of primary values to
 %                               be checked
