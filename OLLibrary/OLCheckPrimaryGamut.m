@@ -116,7 +116,7 @@ function [primary, inGamut, gamutMargin] = OLCheckPrimaryGamut(primary,varargin)
         'checkPrimaryOutOfRange',false);
 
     % Check
-    assert(~inGamut);
+    assert(inGamut);
     assert(round(outputPrimary,5) == 1);
     assert(round(gamutMargin,5) == .1);
 %}
@@ -127,7 +127,7 @@ function [primary, inGamut, gamutMargin] = OLCheckPrimaryGamut(primary,varargin)
 
     % Check
     assert(round(outputPrimary,5) == 1);
-    assert(~inGamut);
+    assert(inGamut);
     assert(round(gamutMargin,5) == .01);
 %}
 %{
@@ -137,7 +137,7 @@ function [primary, inGamut, gamutMargin] = OLCheckPrimaryGamut(primary,varargin)
 
     % Check
     assert(round(outputPrimary,5) == 0);
-    assert(~inGamut);
+    assert(inGamut);
     assert(round(gamutMargin,5) == .01);
 %}
 %{
@@ -147,7 +147,7 @@ function [primary, inGamut, gamutMargin] = OLCheckPrimaryGamut(primary,varargin)
 
     % Check
     assert(all(round(outputPrimary,5) == [0 .4 1]));
-    assert(~inGamut);
+    assert(inGamut);
     assert(round(gamutMargin,5) == .01);
 %}
 %{
@@ -165,7 +165,7 @@ function [primary, inGamut, gamutMargin] = OLCheckPrimaryGamut(primary,varargin)
 
     % Check
     assert(round(outputPrimary,5) == 0.005);
-    assert(~inGamut);
+    assert(inGamut);
     assert(round(gamutMargin,5) == .0150);
 %}
 %{
@@ -175,7 +175,7 @@ function [primary, inGamut, gamutMargin] = OLCheckPrimaryGamut(primary,varargin)
 
     % Check
     assert(round(outputPrimary,5) == 0.9950);
-    assert(~inGamut);
+    assert(inGamut);
     assert(round(gamutMargin,5) == .0150);
 %}
 
@@ -218,7 +218,6 @@ if ( (any(primary(:) > upperGamut - p.Results.primaryHeadroom) || any(primary(:)
         error('At one least primary value is out of gamut');
     else
         % In this case, force primaries to be within gamut
-        inGamut = false;
         primary(primary > upperGamut - p.Results.primaryHeadroom) = upperGamut - p.Results.primaryHeadroom;
         primary(primary < lowerGamut + p.Results.primaryHeadroom) = lowerGamut + p.Results.primaryHeadroom;
     end
