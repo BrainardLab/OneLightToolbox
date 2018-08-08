@@ -218,7 +218,6 @@ if ( (any(primary(:) > upperGamut - p.Results.primaryHeadroom) || any(primary(:)
         error('At one least primary value is out of gamut');
     else
         % In this case, force primaries to be within gamut
-        inGamut = false;
         primary(primary > upperGamut - p.Results.primaryHeadroom) = upperGamut - p.Results.primaryHeadroom;
         primary(primary < lowerGamut + p.Results.primaryHeadroom) = lowerGamut + p.Results.primaryHeadroom;
     end
