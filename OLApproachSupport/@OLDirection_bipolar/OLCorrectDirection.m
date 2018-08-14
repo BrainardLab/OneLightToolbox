@@ -54,6 +54,7 @@ parser.addRequired('direction',@(x) isa(x,'OLDirection_bipolar'));
 parser.addRequired('background',@(x) isa(x,'OLDirection_unipolar'));
 parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
 parser.addRequired('radiometer',@(x) isempty(x) || isa(x,'Radiometer'));
+parser.addParameter('smoothness',.001,@isnumeric);
 parser.KeepUnmatched = true; % allows fastforwarding of kwargs to OLCorrectPrimaryValues
 parser.parse(direction,background,oneLight,radiometer,varargin{:});
 
