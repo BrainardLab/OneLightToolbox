@@ -255,7 +255,7 @@ fprintf('- Performing radiometer measurements.\n');
                     
                     % Take the measurements
                     %results.modulationAllMeas(i).meas = OLTakeMeasurementOOC(ol, [], spectroRadiometerOBJ, starts, stops, S, [true false], nAverage);
-                    results.modulationAllMeas(i).meas.pr650.spectrum = OLMeasurePrimaryValues(primaries,cal,ol);
+                    results.modulationAllMeas(i).meas.pr650.spectrum = OLMeasurePrimaryValues(primaries,cal,ol,spectroRadiometerOBJ);
                     
                     % Save out information about this.
                     results.modulationAllMeas(i).powerLevel = powerLevels(i);
