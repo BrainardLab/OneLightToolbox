@@ -109,7 +109,9 @@ function [primary,predictedSpd,errorFraction,gamutMargin] = OLSpdToPrimary(cal, 
 %   04/19/18  dhb  Scale the constraint matrices so that SSE is in a
 %                  reasonable range. This improves the ability of this
 %                  routine to recover the primaries used to produce an spd.
-
+%   08/15/18  dhb  Fix up mean scaling of constraints to work even when
+%                  target spd is near zero.
+ 
 % Examples:
 %{
     cal = OLGetCalibrationStructure('CalibrationType','DemoCal','CalibrationFolder',fullfile(tbLocateToolbox('OneLightToolbox'),'OLDemoCal'),'CalibrationDate','latest');
@@ -213,6 +215,14 @@ d2 = zeros(nPrimaries-1,1);
 % Scale so that SSE for target is in reasonable range. 
 % Scale lambda term as well, to preserve meaning of lambda
 % vis-a-vis the time before we did this scaling.
+%
+% Check for very small means, which can happen in differential mode,
+% and put in a reasonable numerical value. This value was obtained from
+% the dark measurement level in the demo calibration file.
+meanScale = abs(mean(targetSpd));
+if (meanScale < 5e-5)
+    meanScale = 5e-5;
+end
 C = [C1 ; C2]/mean(targetSpd);
 d = [d1 ; d2]/mean(targetSpd);
 
