@@ -90,7 +90,7 @@ else
     nominalCombinedPrimaryValuesPositive = OLSpdToPrimary(direction.calibration,desiredCombinedSPD(:,1));
     [correctedCombinedPrimaryValuesPositive, correctionDataPositive] = OLCorrectPrimaryValues(nominalCombinedPrimaryValuesPositive,direction.calibration,oneLight,radiometer,varargin{:});
     
-    nominalCombinedPrimaryValuesNegative = OLSpdToPrimary(direction.calibration,desiredCombinedSPD(:,1));   
+    nominalCombinedPrimaryValuesNegative = OLSpdToPrimary(direction.calibration,desiredCombinedSPD(:,2));   
     [correctedCombinedPrimaryValuesNegative, correctionDataNegative] = OLCorrectPrimaryValues(nominalCombinedPrimaryValuesNegative,direction.calibration,oneLight,radiometer,varargin{:});
     
     %% Update original OLDirection
