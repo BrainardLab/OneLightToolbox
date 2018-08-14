@@ -79,7 +79,7 @@ else
     %% Correct a single direction
     assert(matchingCalibration(direction,background),'OneLightToolbox:ApproachSupport:OLCorrectDirection:MismatchedCalibration',...
         'Direction and background do not share a calibration');
-    time = now;
+    time = datetime;
 
     %% Copy nominal primary into separate object
     nominalDirection = direction.copy(); % store unlinked copy of nominalDirection
@@ -119,10 +119,14 @@ else
         correctionDescribe = correctedDirectionData.data(32).correction;
         
         % Add temperature data
-        correctionDescribe.temperatures = correctedDirectionData.temperatureData;
+        if isfield(correctedDirectionData,'temperatureData')
+            correctionDescribe.temperatures = correctedDirectionData.temperatureData;
+        end
         
         % Add state tracking data
-        correctionDescribe.stateTrackingData = correctedDirectionData.stateTrackingData;
+        if isfield(correctedDirectionData,'stateTrackingData')
+            correctionDescribe.stateTrackingData = correctedDirectionData.stateTrackingData;
+        end
     else
         %% Use refactored code, by calling OLCorrectPrimaryValues
         
@@ -152,7 +156,7 @@ else
     
     % Update describe
     correctionDescribe.legacyMode = parser.Results.legacyMode;
-    correctionDescribe.time = [time now];
+    correctionDescribe.time = [time datetime];
     correctionDescribe.background = background; 
     correctionDescribe.nominalDirection = nominalDirection;
     correctionDescribe.nominalBackground = nominalBackground;
