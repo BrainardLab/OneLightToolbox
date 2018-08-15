@@ -223,8 +223,8 @@ meanScale = abs(mean(targetSpd));
 if (meanScale < 5e-5)
     meanScale = 5e-5;
 end
-C = [C1 ; C2]/mean(targetSpd);
-d = [d1 ; d2]/mean(targetSpd);
+C = [C1 ; C2]/meanScale;
+d = [d1 ; d2]/meanScale;
 
 %% Primary bounds for searches
 if params.differentialMode
