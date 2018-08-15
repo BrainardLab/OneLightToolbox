@@ -122,7 +122,7 @@ function [primary,predictedSpd,errorFraction,gamutMargin] = OLSpdToPrimary(cal, 
     figure; clf;
     plot(primaryIn,primaryOut,'ro','MarkerSize',4,'MarkerFaceColor','r');
     axis([0 1 0 1]); axis('square');
-    figure; clf; hold
+    figure; clf; hold on;
     plot(spd1,'r','LineWidth',4);
     plot(spd2,'b','LineWidth',2);
 %}
