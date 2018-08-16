@@ -66,8 +66,8 @@ calibration = OLZeroCalPrimariesAwayFromPeak(calibration,zeroItWLRangeMinus,zero
 initialPrimaryValues = correctionDebuggingData.initialPrimaryValues;
 targetSPD = correctionDebuggingData.targetSPD;
 
-SPDMeasured = [];
-primaryUsed = [];
+SPDMeasuredAll = [];
+primaryUsedAll = [];
 
 for ii = 1:nIterationsMeasured
     % Pull out some data for convenience
@@ -147,7 +147,7 @@ for ii = 1:nIterationsMeasured
     fprintf('<strong>Iteration %d:</strong>\n',ii);
     fprintf('\t<strong>Learning rate:</strong> %0.4f\n',learningRateThisIter);
     fprintf('\t<strong>number 0 primaries</strong>: %d<strong>, 1 primaries</strong>: %d\n',nZeroPrimaries(ii),nOnePrimaries(ii));
-    fprintf('\t<strong>RMSQE:</strong>%0.4f\n',correctionDebuggingData.RMSQE);
+    fprintf('\t<strong>RMSQE:</strong>%0.4f\n',correctionDebuggingData.RMSQE(ii));
     
     % Tracking plot
     % Black is the spectrum our little heart desires.
