@@ -130,13 +130,17 @@ else
     else
         %% Use refactored code, by calling OLCorrectPrimaryValues
         
+        %% Measure background SPD
+        desiredBackgroundSPD = background.SPDdifferentialDesired + background.calibration.computed.pr650MeanDark;
+        measuredBackgroundSPD = OLMeasurePrimaryValues(background.differentialPrimaryValues,background.calibration,oneLight,radiometer);
+        
         %% Correct differential primary values
         % Correcting a direction (on top of a background) means correcting the
         % primary values that would combine direction and background into the
         % desired combined SPD, then subtracting the background primary values,
         % to end up with the differential primary values to add to the
         % background, i.e., the direction.
-        desiredCombinedSPD = direction.SPDdifferentialDesired + background.SPDdifferentialDesired;
+        desiredCombinedSPD = direction.SPDdifferentialDesired + desiredBackgroundSPD;
 
         % To get the combined primary values, the direction and background have
         % to be added. However, when calling this routine, the background may
@@ -161,6 +165,7 @@ else
     correctionDescribe.nominalDirection = nominalDirection;
     correctionDescribe.nominalBackground = nominalBackground;
     correctionDescribe.correctedBackground = background;
+    correctionDescribe.measuredBackgroundSPD = measuredBackgroundSPD;
     %correctionDescribe.nominalCombinedPrimaryValues = nominalCombinedPrimaryValues;
     %correctionDescribe.correctedCombinedPrimaryValues = correctedCombinedPrimaryValues;
     % Add to direction.describe; append if correction already present
