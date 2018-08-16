@@ -165,6 +165,7 @@ else
     correctionDescribe.nominalDirection = nominalDirection;
     correctionDescribe.nominalBackground = nominalBackground;
     correctionDescribe.correctedBackground = background;
+    correctionDescribe.desiredBackgroundSPD = desiredBackgroundSPD;
     correctionDescribe.measuredBackgroundSPD = measuredBackgroundSPD;
     %correctionDescribe.nominalCombinedPrimaryValues = nominalCombinedPrimaryValues;
     %correctionDescribe.correctedCombinedPrimaryValues = correctedCombinedPrimaryValues;
