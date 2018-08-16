@@ -1,4 +1,4 @@
-function [correctedPrimaryValues, detailedData] = OLCorrectPrimaryValues(nominalPrimaryValues, targetSPD, calibration, oneLight, radiometer, varargin)
+function [correctedPrimaryValues, detailedData] = OLCorrectPrimaryValues(nominalPrimaryValues, calibration, oneLight, radiometer, varargin)
 % Corrects primary values iteratively to attain predicted SPD
 %
 % Syntax:
@@ -10,13 +10,10 @@ function [correctedPrimaryValues, detailedData] = OLCorrectPrimaryValues(nominal
 %    Detailed explanation goes here
 %
 % Inputs:
-%    nominalPrimaryValues   - Px1 column vector of primary values, where P 
-%                             is the number of primary values
-%    targetSPD              - nWlsx1 column vector specifying the Spectral
-%                             Power Distribution that the primary values
-%                             should be producing. If passed the empty
-%                             matrix [], targetSPD is predicted from
-%                             nominalPrimaryValues and calibration
+%    nominalPrimaryValues   - PxN array of primary values, where P is the
+%                             number of primary values per spectrum, and N
+%                             is the number of spectra to validate (i.e., a
+%                             column vector per spectrum)
 %    calibration            - struct containing calibration for oneLight
 %    oneLight               - a OneLight device driver object to control a
 %                             OneLight device, can be real or simulated
@@ -25,9 +22,11 @@ function [correctedPrimaryValues, detailedData] = OLCorrectPrimaryValues(nominal
 %                             simulating
 %
 % Outputs:
-%    correctedPrimaryValues - Px1 column vector of primary values, where P 
-%                             is the number of primary values
-%    detailedData           - A ton of data, for debugging purposes
+%    correctedPrimaryValues - PxN array of primary values, where P is the
+%                             number of primary values per spectrum, and N
+%                             is the number of spectra to validate (i.e., a
+%                             column vector per spectrum)
+%    detailedData           - A ton of data, for debugging purposes.
 %
 % Optional key/value pairs:
 %    nIterations            - Number of iterations. Default is 20.
@@ -46,7 +45,7 @@ function [correctedPrimaryValues, detailedData] = OLCorrectPrimaryValues(nominal
 %                             temperature probe
 %
 % See also:
-%    OLValidatePrimaryValues, OLPrimaryToSpd
+%    OLValidatePrimaryValues
 %
 
 % History:
@@ -75,7 +74,6 @@ function [correctedPrimaryValues, detailedData] = OLCorrectPrimaryValues(nominal
 %% Input validation
 parser = inputParser;
 parser.addRequired('primaryValues',@isnumeric);
-parser.addRequired('targetSPD',@isnumeric);
 parser.addRequired('calibration',@isstruct);
 parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
 parser.addRequired('radiometer',@(x) isempty(x) || isa(x,'Radiometer'));
@@ -122,20 +120,8 @@ if (measureStateTrackingSPDs)
 end
 
 %% Target (predicted) SPD
-% If targetSPD is not specified, predict it from the nominal primary
-% values, by OLPrimaryToSpd, and also add in the Mean Dark light
-% ('differentialMode' = false). 
-% If targetSPD is not specified, also do an overall scaling of the
-% targetSPD to bring it in the range of gthe measured SPD. This deals with
-% fluctuations with absolute light level. If targetSPD was specified,
-% assume the caller already did this scaling...
-if isempty(targetSPD)
-    targetSPD = OLPrimaryToSpd(calibration, nominalPrimaryValues, 'differentialMode', false);
-    doScaling = true;
-else
-    doScaling = false;
-    kScale = 1;
-end
+% also add in the Mean Dark light ('differentialMode' = true)
+targetSPD = OLPrimaryToSpd(calibration, nominalPrimaryValues, 'differentialMode', false);
 
 %% Correct
 temperaturesForAllIterations = cell(1, nIterations);
@@ -150,9 +136,8 @@ for iter = 1:nIterations
     % measurement which puts the measured spectrum into the same range as
     % the predicted spectrum. This deals with fluctuations with absolute
     % light level.
-    if iter == 1 && doScaling
-        kScale = measuredSPD / targetSPD;
-        targetSPD = kScale * targetSPD;
+    if iter == 1
+        kScale = measuredSPD \ targetSPD;
     end
     
     % Set learning rate to use this iteration
@@ -163,12 +148,12 @@ for iter = 1:nIterations
     end
     
     % Find delta primaries using small signal linear methods.
-    DeltaPrimaryTruncatedLearningRate = OLLinearDeltaPrimaries(primariesThisIter,measuredSPD,targetSPD,learningRateThisIter,smoothness,calibration);
+    DeltaPrimaryTruncatedLearningRate = OLLinearDeltaPrimaries(primariesThisIter,kScale*measuredSPD,targetSPD,learningRateThisIter,smoothness,calibration);
     
     % Optionally use fmincon to improve the truncated learning
     % rate delta primaries by iterative search.
     if iterativeSearch
-        DeltaPrimaryTruncatedLearningRate = OLIterativeDeltaPrimaries(DeltaPrimaryTruncatedLearningRate,primariesThisIter,measuredSPD,targetSPD,learningRateThisIter,calibration);
+        DeltaPrimaryTruncatedLearningRate = OLIterativeDeltaPrimaries(DeltaPrimaryTruncatedLearningRate,primariesThisIter,kScale*measuredSPD,targetSPD,learningRateThisIter,calibration);
     end
     
     % Compute and store the settings to use next time through
