@@ -1,4 +1,4 @@
-function OLCheckPrimaryCorrection(correctionDebuggingData, calibration, receptors)
+function OLCheckPrimaryCorrection(correctionDebuggingData, calibration)
 % Check how well correction of primary values worked
 %
 % Syntax:
@@ -61,17 +61,13 @@ zeroItWLRangeMinus = 100;
 zeroItWLRangePlus = 100;
 calibration = OLZeroCalPrimariesAwayFromPeak(calibration,zeroItWLRangeMinus,zeroItWLRangePlus);
 
-%% Calculate measured contrast
-allContrasts = SPDToReceptorContrast([correctionDebuggingData.measuredBackgroundSPD correctionDebuggingData.SPDMeasured],receptors);
-contrastWithBackground = squeeze(allContrasts(1,2:end,:))';
-
 %% Plot what we got
 % We multiply measurements by kScale to bring everything into a consistent space
 initialPrimaryValues = correctionDebuggingData.initialPrimaryValues;
 targetSPD = correctionDebuggingData.targetSPD;
 
-SPDMeasuredAll = [];
-primaryUsedAll = [];
+SPDMeasured = [];
+primaryUsed = [];
 
 for ii = 1:nIterationsMeasured
     % Pull out some data for convenience
@@ -111,6 +107,38 @@ for ii = 1:nIterationsMeasured
             primariesRecovered(:,kk) = lsqnonneg(calibration.computed.pr650M,SPDMeasuredAll(:,kk)-calibration.computed.pr650MeanDark);
         end
         spectraPredictedFromRecovered = calibration.computed.pr650M*primariesRecovered+calibration.computed.pr650MeanDark(:,ones(size(primaryUsedAll,2),1));
+        
+%         whichPrimaries = [25,35,48];
+%         theColors = ['r' 'g' 'b' 'k' 'c'];
+%         figure(primaryFig); clf; hold on
+%         for kk = 1:length(whichPrimaries)
+%             whichColor = rem(kk,length(theColors)) + 1;
+%             plot(primaryUsedAll(whichPrimaries(kk),:),primariesRecovered(whichPrimaries(kk),:),theColors(whichColor),'LineWidth',3);
+%         end
+%         plot([0 1],[0 1],'k:');
+%         xlabel('Primaries Used'); ylabel('Primaries Recovered');
+%         xlim([0 1]); ylim([-1 1]);
+%         
+%         figure; clf; 
+%         lastFigIndex = 0;
+%         for kk = 1:2
+%             subplot(1,2,kk); hold on;
+%             plot(SPDMeasuredAll(:,lastFigIndex+kk),'ro');
+%             plot(spectraPredicted(:,lastFigIndex+kk) ,'bx');
+%             plot(spectraPredictedFromRecovered(:,lastFigIndex+kk),'r');
+%         end 
+%         lastFigIndex = lastFigIndex + 2;
+%         
+%         whichPrimaries = [25,35,48];
+%         theColors = ['r' 'g' 'b' 'k' 'c'];
+%         figure(primaryFig); clf; hold on
+%         for kk = 1:length(whichPrimaries)
+%             whichColor = rem(kk,length(theColors)) + 1;
+%             plot(primaryUsedAll(whichPrimaries(kk),:),primariesRecovered(whichPrimaries(kk),:),theColors(whichColor),'LineWidth',3);
+%         end
+%         plot([0 1],[0 1],'k:');
+%         xlabel('Primaries Used'); ylabel('Primaries Recovered');
+%         xlim([0 1]); ylim([-1 1]);
     end
     
     % Report some things we might want to know
@@ -119,18 +147,14 @@ for ii = 1:nIterationsMeasured
     fprintf('<strong>Iteration %d:</strong>\n',ii);
     fprintf('\t<strong>Learning rate:</strong> %0.4f\n',learningRateThisIter);
     fprintf('\t<strong>number 0 primaries</strong>: %d<strong>, 1 primaries</strong>: %d\n',nZeroPrimaries(ii),nOnePrimaries(ii));
-    fprintf('\t<strong>RMSQE:</strong>%0.4f\n',correctionDebuggingData.RMSQE(ii));
-    fprintf('\t<strong>Contrast:</strong>\n');
-    for cc = 1:size(receptors,1)
-        fprintf('\t\t %0.4f\n',contrastWithBackground(cc,ii));
-    end
+    fprintf('\t<strong>RMSQE:</strong>%0.4f\n',correctionDebuggingData.RMSQE);
     
     % Tracking plot
     % Black is the spectrum our little heart desires.
     % Green is what we measured.
     % Red is what our procedure thinks we'll get on the next iteration.
     figure(Plot); clf;
-    subplot(3,2,1); hold on 
+    subplot(2,2,1); hold on 
     plot(wls,initialSPD,'r:','LineWidth',2);
     plot(wls,targetSPD,'g:','LineWidth',2);
     plot(wls,spectrumMeasuredScaled,'k','LineWidth',3);
@@ -141,7 +165,7 @@ for ii = 1:nIterationsMeasured
     % Black is the initial primaries we started with
     % Green is what we used to measure the spectra on this iteration.
     % Blue is the primaries we'll ask for next iteration.
-    subplot(3,2,2); hold on
+    subplot(2,2,2); hold on
     stem(1:nPrimaries,initialPrimaryValues,'r:','LineWidth',1);
     stem(1:nPrimaries,primaryUsed,'k','LineWidth',2);
     stem(1:nPrimaries,nextPrimaryTruncatedLearningRate,'b:','LineWidth',1);
@@ -152,7 +176,7 @@ for ii = 1:nIterationsMeasured
     % Green is the difference between what we want and what we measured.
     % Black is what we predicted it would be on this iteration.
     % Red is what we think it will be on the the next iteration.
-    subplot(3,2,3); hold on 
+    subplot(2,2,3); hold on 
     plot(wls,targetSPD-spectrumMeasuredScaled,'k','LineWidth',3);
     plot(wls,targetSPD-nextSpectrumPredictedTruncatedLearningRate,'b:','LineWidth',2);
     plot(wls,targetSPD-nextSpectrumPredictedTruncatedLearningRateAgain1,'b:','LineWidth',  2);
@@ -175,31 +199,61 @@ for ii = 1:nIterationsMeasured
     
     % Green is the difference between the primaries we will ask for on the
     % next iteration and those we just used.
-    subplot(3,2,4); hold on;
+    subplot(2,2,4); hold on
     stem(1:nPrimaries,nextPrimaryTruncatedLearningRate-primaryUsed,'b','LineWidth',2);
     ylim([-0.5 0.5]);
     xlabel('Primary Number'); ylabel('Primary Value');
     title('Delta primary for next iteration');
     xlim([1, nPrimaries]);
     
-    % Plot RMSE
-    subplot(3,2,5); hold on;
-    plot(1:ii,correctionDebuggingData.RMSQE(1:ii),'k-o');
-    xlabel('iteration');
-    ylabel('RMSE');
-    title('RMSE per iteration');
-    xlim([0, nIterationsMeasured]);
-    
-    % Plot contrast
-    subplot(3,2,6); hold on;
-    plot(1:ii,contrastWithBackground(:,1:ii),'-o');
-    xlabel('iteration');
-    ylabel('receptor contrast on background');
-    title('receptor contart on background per iteration');
-    xlim([0, nIterationsMeasured]);
+%     % Compute contrasts
+% 
+%     % NEED TO GET PHOTORECEPTORS FROM DIRECTION CACHE FILE AND/OR GENERATE THEM.  SEE
+%     % OLAnalyzeDirectionCorrectedPrimaries for the basic way this looks.  THEN SHOULD
+%     % BE ABLE TO PLOT CONTRASTS PRETTY EASILY.
+%     %
+%     % Grab cell array of photoreceptor classes.  Use what was in the direction file
+%     % if it is there, otherwise standard L, M, S and Mel.
+%     %
+%     % This might not be the most perfect check for what is stored with the nominal direction primaries,
+%     % but until it breaks we'll go with it.
+%     if false %isfield(directionCacheData.directionParams,'photoreceptorClasses')
+%         if (directionCacheData.data(protocolParams.observerAgeInYrs).describe.params.fieldSizeDegrees ~=  protocolParams.fieldSizeDegrees)
+%             error('Field size used for direction does not match that specified in protocolPrams.');
+%         end
+%         if (directionCacheData.data(protocolParams.observerAgeInYrs).describe.params.pupilDiameterMm ~=  protocolParams.pupilDiameterMm)
+%             error('Pupil diameter used for direction does not match that specified in protocolPrams.');
+%         end
+%         photoreceptorClasses = directionCacheData.data(protocolParams.observerAgeInYrs).describe.photoreceptors;
+%         T_receptors = directionCacheData.data(protocolParams.observerAgeInYrs).describe.T_receptors;
+%     else
+%         S = [380 2 201];
+%         photoreceptorClasses = {'LConeTabulatedAbsorbance'  'MConeTabulatedAbsorbance'  'SConeTabulatedAbsorbance'  'Melanopsin'};
+%         T_receptors = GetHumanPhotoreceptorSS(S,photoreceptorClasses,protocolParams.fieldSizeDegrees,protocolParams.observerAgeInYrs,protocolParams.pupilDiameterMm,[],[]);
+%     end
+% 
+%     Receptors = T_receptors*SpectrumMeasuredScaled;
+%     modulationReceptors = T_receptors*modulationSpectrumMeasuredScaled;
+%     contrasts(:,ii) = (modulationReceptors-Receptors) ./ Receptors;
+%     
+%     % Contrast figure
+%     figure(contrastPlot);
+%     subplot(1,2,1);
+%     hold off;
+%     plot(1:ii, 100*contrasts(1, 1:ii), '-sr', 'MarkerFaceColor', 'r'); hold on
+%     plot(1:ii, 100*contrasts(2, 1:ii), '-sg', 'MarkerFaceColor', 'g');
+%     plot(1:ii, 100*contrasts(3, 1:ii), '-sb', 'MarkerFaceColor', 'b');
+%     xlabel('Iteration #'); xlim([0 nIterations+1]);
+%     ylabel('LMS Contrast'); %ylim(]);
+%     subplot(1,2,2);
+%     hold off;
+%     plot(1:ii,contrasts(4, 1:ii), '-sc', 'MarkerFaceColor', 'c'); hold on
+%     xlabel('Iteration #'); xlim([0 nIterations+1]);
+%     ylabel('Mel Contrast');
     
     % Force draw
     commandwindow;
+    drawnow;
     pause;
-    drawnow; 
+    
 end

@@ -174,7 +174,6 @@ correctedPrimaryValues = PrimaryUsed(:, find(RMSQE == min(RMSQE),1));
 % Metadata, e.g., parameters. While I'm not a fan of including input
 % parameters in output, it is relevant here because we might have used
 % defaults.
-detailedData.calibration = calibration;
 detailedData.nIterations = nIterations;
 detailedData.learningRate = learningRate;
 detailedData.learningRateDecrease = learningRateDecrease;

@@ -79,7 +79,7 @@ else
     %% Correct a single direction
     assert(matchingCalibration(direction,background),'OneLightToolbox:ApproachSupport:OLCorrectDirection:MismatchedCalibration',...
         'Direction and background do not share a calibration');
-    time = datetime;
+    time = now;
 
     %% Copy nominal primary into separate object
     nominalDirection = direction.copy(); % store unlinked copy of nominalDirection
@@ -119,20 +119,12 @@ else
         correctionDescribe = correctedDirectionData.data(32).correction;
         
         % Add temperature data
-        if isfield(correctedDirectionData,'temperatureData')
-            correctionDescribe.temperatures = correctedDirectionData.temperatureData;
-        end
+        correctionDescribe.temperatures = correctedDirectionData.temperatureData;
         
         % Add state tracking data
-        if isfield(correctedDirectionData,'stateTrackingData')
-            correctionDescribe.stateTrackingData = correctedDirectionData.stateTrackingData;
-        end
+        correctionDescribe.stateTrackingData = correctedDirectionData.stateTrackingData;
     else
         %% Use refactored code, by calling OLCorrectPrimaryValues
-        
-        %% Measure background SPD
-        desiredBackgroundSPD = background.SPDdifferentialDesired + background.calibration.computed.pr650MeanDark;
-        measuredBackgroundSPD = OLMeasurePrimaryValues(background.differentialPrimaryValues,background.calibration,oneLight,radiometer);
         
         %% Correct differential primary values
         % Correcting a direction (on top of a background) means correcting the
@@ -140,7 +132,7 @@ else
         % desired combined SPD, then subtracting the background primary values,
         % to end up with the differential primary values to add to the
         % background, i.e., the direction.
-        desiredCombinedSPD = direction.SPDdifferentialDesired + desiredBackgroundSPD;
+        desiredCombinedSPD = direction.SPDdifferentialDesired + background.SPDdifferentialDesired;
 
         % To get the combined primary values, the direction and background have
         % to be added. However, when calling this routine, the background may
@@ -149,7 +141,7 @@ else
         % combined SPD. Instead, convert the desiredCombinedSPD to some initial
         % primary values predicted to produce it, and correct those.
         nominalCombinedPrimaryValues = OLSpdToPrimary(direction.calibration,desiredCombinedSPD,'lambda',parser.Results.smoothness, 'primaryHeadroom', 0);
-        [correctedCombinedPrimaryValues, correctionData] = OLCorrectPrimaryValues(nominalCombinedPrimaryValues,direction.calibration,oneLight,radiometer,varargin{:},'lambda',parser.Results.smoothness);
+        [correctedCombinedPrimaryValues, correctionData] = OLCorrectPrimaryValues(nominalCombinedPrimaryValues,direction.calibration,oneLight,radiometer,varargin{:});
 
         % Update business end
         direction.differentialPrimaryValues = correctedCombinedPrimaryValues-background.differentialPrimaryValues;
@@ -160,13 +152,11 @@ else
     
     % Update describe
     correctionDescribe.legacyMode = parser.Results.legacyMode;
-    correctionDescribe.time = [time datetime];
+    correctionDescribe.time = [time now];
     correctionDescribe.background = background; 
     correctionDescribe.nominalDirection = nominalDirection;
     correctionDescribe.nominalBackground = nominalBackground;
     correctionDescribe.correctedBackground = background;
-    correctionDescribe.desiredBackgroundSPD = desiredBackgroundSPD;
-    correctionDescribe.measuredBackgroundSPD = measuredBackgroundSPD;
     %correctionDescribe.nominalCombinedPrimaryValues = nominalCombinedPrimaryValues;
     %correctionDescribe.correctedCombinedPrimaryValues = correctedCombinedPrimaryValues;
     % Add to direction.describe; append if correction already present
