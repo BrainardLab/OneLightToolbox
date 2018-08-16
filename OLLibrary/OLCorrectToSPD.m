@@ -1,57 +1,62 @@
-function [correctedPrimaryValues, detailedData] = OLCorrectPrimaryValues(nominalPrimaryValues, calibration, oneLight, radiometer, varargin)
+function [correctedPrimaryValues, measuredSPD, detailedData] = OLCorrectToSPD(targetSPD, calibration, oneLight, radiometer, varargin)
 % Corrects primary values iteratively to attain predicted SPD
 %
 % Syntax:
-%   correctedPrimaryValues = OLCorrectPrimaryValues(nominalPrimaryValues, calibration, OneLight, radiometer)
-%   correctedPrimaryValues = OLCorrectPrimaryValues(nominalPrimaryValues, calibration, SimulatedOneLight)
-%  [correctedPrimaryValues, detailedData] = OLCorrectPrimaryValues(...)
+%   correctedPrimaryValues = OLCorrectToSPD(nominalPrimaryValues, calibration, OneLight, radiometer)
+%   correctedPrimaryValues = OLCorrectToSPD(nominalPrimaryValues, calibration, SimulatedOneLight, [])
+%   [correctedPrimaryValues, detailedData] = OLCorrectPrimaryValues(...)
+%   correctedPrimaryValues = OLCorrectPrimaryValues(..., 'smoothness',.01)
 %
 % Description:
 %    Detailed explanation goes here
 %
 % Inputs:
-%    nominalPrimaryValues   - PxN array of primary values, where P is the
-%                             number of primary values per spectrum, and N
-%                             is the number of spectra to validate (i.e., a
-%                             column vector per spectrum)
-%    calibration            - struct containing calibration for oneLight
-%    oneLight               - a OneLight device driver object to control a
-%                             OneLight device, can be real or simulated
-%    radiometer             - Radiometer object to control a
-%                             spectroradiometer. Can be passed empty when
-%                             simulating
+%    targetSPD               - nWlsx1 column vector, where nWls is the
+%                              number of wavelength bands measured,
+%                              defining target Spectral Power Distribution
+%                              to correct primary values to.
+%    calibration             - struct containing calibration for oneLight
+%    oneLight                - OneLight device driver object to control a
+%                              OneLight device. Can be real or simulated
+%    radiometer              - Radiometer object to control a
+%                              spectroradiometer. Can be passed empty when
+%                              simulating
 %
 % Outputs:
-%    correctedPrimaryValues - PxN array of primary values, where P is the
-%                             number of primary values per spectrum, and N
-%                             is the number of spectra to validate (i.e., a
-%                             column vector per spectrum)
-%    detailedData           - A ton of data, for debugging purposes.
+%    correctedPrimaryValues  - Px1 column vector of primary values, where P
+%                              is the number of values for effective device
+%                              primaries.
+%    measuredSPD             - nWlsx1 column vector, where nWls is the
+%                              number of wavelength bands measured, of the
+%                              SPD measured after correction
+%    detailedData            - A ton of data, for debugging purposes.
 %
 % Optional key/value pairs:
-%    nIterations            - Number of iterations. Default is 20.
-%    learningRate           - Learning rate. Default is .8.
-%    learningRateDecrease   - Decrease learning rate over iterations?
-%                             Default is true.
-%    asympLearningRateFactor- If learningRateDecrease is true, the 
-%                             asymptotic learning rate is
-%                             (1-asympLearningRateFactor)*learningRate. 
-%                             Default = .5.
-%    smoothness             - Smoothness parameter for OLSpdToPrimary.
-%                             Default .001.
-%    iterativeSearch        - Do iterative search with fmincon on each
-%                             measurement interation? Default is true.
-%    temperatureProbe       - LJTemperatureProbe object to drive a LabJack
-%                             temperature probe
+%    nIterations             - Number of iterations. Default is 20.
+%    learningRate            - Learning rate. Default is .8.
+%    learningRateDecrease    - Decrease learning rate over iterations?
+%                              Default is true.
+%    asympLearningRateFactor - If learningRateDecrease is true, the 
+%                              asymptotic learning rate is
+%                              (1-asympLearningRateFactor)*learningRate. 
+%                              Default = .5.
+%    smoothness              - Smoothness parameter for OLSpdToPrimary.
+%                              Default .001.
+%    iterativeSearch         - Do iterative search with fmincon on each
+%                              measurement interation? Default is true.
+%    temperatureProbe        - LJTemperatureProbe object to drive a LabJack
+%                              temperature probe
 %
 % See also:
 %    OLValidatePrimaryValues
 %
 
 % History:
-%    02/09/18  jv  extracted from OLCorrectCacheFileOOC.
-%    06/29/18  npc implemented temperature recording
-%    06/30/18  npc implemented state tracking SPD recording
+%    02/09/18  jv   extracted from OLCorrectCacheFileOOC as
+%                   OLCorrectPrimaryValues
+%    06/29/18  npc  implemented temperature recording
+%    06/30/18  npc  implemented state tracking SPD recording
+%    08/16/18  jv   OLCorrectToSPD
 
 
 % Examples:
@@ -73,7 +78,7 @@ function [correctedPrimaryValues, detailedData] = OLCorrectPrimaryValues(nominal
 
 %% Input validation
 parser = inputParser;
-parser.addRequired('primaryValues',@isnumeric);
+parser.addRequired('targetSPD',@isnumeric);
 parser.addRequired('calibration',@isstruct);
 parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
 parser.addRequired('radiometer',@(x) isempty(x) || isa(x,'Radiometer'));
@@ -86,7 +91,7 @@ parser.addParameter('iterativeSearch',true, @islogical);
 parser.addParameter('temperatureProbe',[],@(x) isempty(x) || isa(x,'LJTemperatureProbe'));
 parser.addParameter('measureStateTrackingSPDs', false, @islogical);
 parser.KeepUnmatched = true;
-parser.parse(nominalPrimaryValues,calibration,oneLight,radiometer,varargin{:});
+parser.parse(targetSPD,calibration,oneLight,radiometer,varargin{:});
 
 nIterations = parser.Results.nIterations;
 learningRate = parser.Results.learningRate;
@@ -94,11 +99,10 @@ learningRateDecrease = parser.Results.learningRateDecrease;
 asympLearningRateFactor = parser.Results.asympLearningRateFactor;
 smoothness = parser.Results.smoothness;
 iterativeSearch = parser.Results.iterativeSearch;
-measureStateTrackingSPDs = parser.Results.measureStateTrackingSPDs;
 
 %% Measure state-tracking SPDs
 stateTrackingData = struct();
-if (measureStateTrackingSPDs)
+if (parser.Results.measureStateTrackingSPDs)
     % Generate temporary calibration struct with stateTracking info
     tmpCal = calibration;
     tmpCal.describe.stateTracking = OLGenerateStateTrackingStruct(calibration);
@@ -119,13 +123,14 @@ if (measureStateTrackingSPDs)
     clear('tmpCal')
 end
 
-%% Target (predicted) SPD
-% also add in the Mean Dark light ('differentialMode' = true)
-targetSPD = OLPrimaryToSpd(calibration, nominalPrimaryValues, 'differentialMode', false);
+%% Find initial primary values
+initialPrimaryValues = OLSpdToPrimary(calibration, targetSPD, ...
+                        'primaryHeadroom',0,...
+                        'lambda',parser.Results.smoothness);
 
 %% Correct
 temperaturesForAllIterations = cell(1, nIterations);
-NextPrimaryTruncatedLearningRate = nominalPrimaryValues; % initialize
+NextPrimaryTruncatedLearningRate = initialPrimaryValues; % initialize
 for iter = 1:nIterations
     % Take the measurements
     primariesThisIter = NextPrimaryTruncatedLearningRate;
@@ -184,7 +189,7 @@ detailedData.iterativeSearch = iterativeSearch;
 
 % Store target spectra and initial primaries used.  This information is
 % useful for debugging the seeking procedure.
-detailedData.initialPrimaryValues = nominalPrimaryValues;
+detailedData.initialPrimaryValues = initialPrimaryValues;
 detailedData.targetSPD = targetSPD;
 detailedData.kScale = kScale;
 detailedData.primaryUsed = PrimaryUsed;

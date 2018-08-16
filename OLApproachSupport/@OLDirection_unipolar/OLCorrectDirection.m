@@ -148,8 +148,9 @@ else
         % background primary values no longer correspond to the desired
         % combined SPD. Instead, convert the desiredCombinedSPD to some initial
         % primary values predicted to produce it, and correct those.
-        nominalCombinedPrimaryValues = OLSpdToPrimary(direction.calibration,desiredCombinedSPD,'lambda',parser.Results.smoothness, 'primaryHeadroom', 0);
-        [correctedCombinedPrimaryValues, correctionData] = OLCorrectPrimaryValues(nominalCombinedPrimaryValues,direction.calibration,oneLight,radiometer,varargin{:},'lambda',parser.Results.smoothness);
+        [correctedCombinedPrimaryValues, correctedSPD, correctionData] = OLCorrectToSPD(desiredCombinedSPD,direction.calibration,...
+                                                                            oneLight,radiometer,...
+                                                                            varargin{:},'lambda',parser.Results.smoothness);
 
         % Update business end
         direction.differentialPrimaryValues = correctedCombinedPrimaryValues-background.differentialPrimaryValues;
