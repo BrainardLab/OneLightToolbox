@@ -119,7 +119,7 @@ for ii = 1:nIterationsMeasured
     fprintf('<strong>Iteration %d:</strong>\n',ii);
     fprintf('\t<strong>Learning rate:</strong> %0.4f\n',learningRateThisIter);
     fprintf('\t<strong>number 0 primaries</strong>: %d<strong>, 1 primaries</strong>: %d\n',nZeroPrimaries(ii),nOnePrimaries(ii));
-    fprintf('\t<strong>RMSQE:</strong>%0.4f\n',correctionDebuggingData.RMSQE(ii));
+    fprintf('\t<strong>RMSE:</strong>%0.4f\n',correctionDebuggingData.RMSE(ii));
     fprintf('\t<strong>Contrast:</strong>\n');
     for cc = 1:size(receptors,1)
         fprintf('\t\t %0.4f\n',contrastWithBackground(cc,ii));
@@ -184,7 +184,7 @@ for ii = 1:nIterationsMeasured
     
     % Plot RMSE
     subplot(3,2,5); hold on;
-    plot(1:ii,correctionDebuggingData.RMSQE(1:ii),'k-o');
+    plot(1:ii,correctionDebuggingData.RMSE(1:ii),'k-o');
     xlabel('iteration');
     ylabel('RMSE');
     title('RMSE per iteration');

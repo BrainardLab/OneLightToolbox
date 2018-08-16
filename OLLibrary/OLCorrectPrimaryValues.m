@@ -161,15 +161,15 @@ for iter = 1:nIterations
     
     % Save the information for this iteration in a convenient form for later.
     SPDMeasured(:,iter) = measuredSPD;
-    RMSQE(:,iter) = sqrt(mean((targetSPD-kScale*measuredSPD).^2));
+    RMSE(:,iter) = sqrt(mean((targetSPD-kScale*measuredSPD).^2));
     PrimaryUsed(:,iter) = primariesThisIter;
     DeltaPrimaryTruncatedLearningRateAll(:,iter) = DeltaPrimaryTruncatedLearningRate;
     NextPrimaryTruncatedLearningRateAll(:,iter) = NextPrimaryTruncatedLearningRate;
 end
 
 %% Store information about correction for return
-% Business end: pick primary values with lowest RMSQE
-correctedPrimaryValues = PrimaryUsed(:, find(RMSQE == min(RMSQE),1));
+% Business end: pick primary values with lowest RMSE
+correctedPrimaryValues = PrimaryUsed(:, find(RMSE == min(RMSE),1));
 
 % Metadata, e.g., parameters. While I'm not a fan of including input
 % parameters in output, it is relevant here because we might have used
@@ -190,7 +190,7 @@ detailedData.kScale = kScale;
 detailedData.primaryUsed = PrimaryUsed;
 detailedData.SPDMeasured = SPDMeasured;
 detailedData.deltaSPDMeasured = SPDMeasured - targetSPD;
-detailedData.RMSQE = RMSQE;
+detailedData.RMSE = RMSE;
 detailedData.NextPrimaryTruncatedLearningRate = NextPrimaryTruncatedLearningRateAll;
 detailedData.DeltaPrimaryTruncatedLearningRate = DeltaPrimaryTruncatedLearningRateAll;
 detailedData.correctedPrimaryValues = correctedPrimaryValues;
