@@ -15,7 +15,7 @@ function [validation, SPDs, excitations, contrasts] = OLValidateDirection(direct
 %    desired SPD. Since OLDirections store differential SPDs, a validation
 %    must occur around a background.
 %
-%    Optionally calculates the actual and predicted change in excitation on
+%    Optionally calculates the actual and desired change in excitation on
 %    a given set of receptors, and contrasts on receptors between multiple
 %    directions.
 %
@@ -40,19 +40,16 @@ function [validation, SPDs, excitations, contrasts] = OLValidateDirection(direct
 %    SPDs        - structarray, with one struct for background, one
 %                  struct for the combined backgounrd+direction, and one
 %                  struct for the differential direction, with the fields:
-%                  * predictedSPD: predicted from primary values
 %                  * measuredSPD: measured
-%                  * errorSPD: predictedSPD-measuredSPD
 %                  * desiredSPD: pulled from
 %                                direction.SPDdifferentialDesired
+%                  * errorSPD: desiredSPD-measuredSPD
 %    excitations - single struct with three fields (each is a RxN vector of
 %                  excitations on R receptors by each of N directions)
 %                  * desired: based on direction.SPDdesired
-%                  * predicted: based on predicted SPD
 %                  * actual: based on measured SPD
 %    contrasts   - single struct with three fields:
 %                  * desired: based on direction.SPDdesired
-%                  * predicted: based on predicted SPD
 %                  * actual: based on measured SPD
 %                  Each field is an NxNxR array of all pairwise contrasts
 %                  between the N directions, on R receptors. (Simplifies
@@ -176,24 +173,23 @@ else
 
     % Add desired SPDs to the SPDs structarray
     SPDs(1).desiredSPD = SPDbackgroundDesired;     % background
-    SPDs(2).desiredSPD = SPDcombinedDesired(:,1);  % positive direction
-    SPDs(3).desiredSPD = SPDcombinedDesired(:,2);  % negative direction
+    SPDs(2).desiredSPD = SPDcombinedDesired(:,[1 2]);  % positive direction
 
     %% Determine differential SPDs, add to SPDs struct array
     SPDdifferentialMeasured = [SPDs(2).measuredSPD - SPDs(1).measuredSPD, SPDs(3).measuredSPD - SPDs(1).measuredSPD];
-    SPDs(4).desiredSPD = SPDdifferentialDesired;
-    SPDs(4).predictedSPD = direction.ToPredictedSPD;
-    SPDs(4).measuredSPD = SPDdifferentialMeasured;
-    SPDs(4).error = SPDdifferentialDesired - SPDdifferentialMeasured;
+    SPDs(4).desiredSPD = SPDdifferentialDesired(:,1);
+    SPDs(4).measuredSPD = SPDdifferentialMeasured(:,1);
+    SPDs(4).error = SPDdifferentialDesired(:,1) - SPDdifferentialMeasured(:,1);
+    SPDs(5).desiredSPD = SPDdifferentialDesired(:,2);
+    SPDs(5).measuredSPD = SPDdifferentialMeasured(:,2);
+    SPDs(5).error = SPDdifferentialDesired(:,2) - SPDdifferentialMeasured(:,2);    
 
     %% Calculate nominal and actual excitation
     if ~isempty(receptors)        
         excitations.desired = SPDToReceptorExcitation([SPDs.desiredSPD],receptors);
-        %excitations.predicted = SPDToReceptorExcitation([SPDs.predictedSPD],receptors);
         excitations.actual = SPDToReceptorExcitation([SPDs.measuredSPD],receptors);
 
         contrasts.desired = [ReceptorExcitationToReceptorContrast(excitations.desired(:,[1,2])) ReceptorExcitationToReceptorContrast(excitations.desired(:,[1,3]))];
-        %contrasts.predicted = [ReceptorExcitationToReceptorContrast(excitations.predicted(:,1:2)) ReceptorExcitationToReceptorContrast(excitations.predicted(:,[1 3]))];
         contrasts.actual = [ReceptorExcitationToReceptorContrast(excitations.actual(:,[1,2])) ReceptorExcitationToReceptorContrast(excitations.actual(:,[1,3]))];
 
         %     predictedContrastPostreceptoral = [ComputePostreceptoralContrastsFromLMSContrasts(predictedContrastPos(1:3,1)),...
@@ -202,18 +198,14 @@ else
         % Write direction.describe.validation output
         validation.receptors = receptors;
         validation.excitationDesired = excitations.desired;
-        %validation.excitationPredicted = excitations.predicted;
         validation.excitationActual = excitations.actual;
         validation.contrastDesired = contrasts.desired;
-        %validation.contrastPredicted = contrasts.predicted;
         validation.contrastActual = contrasts.actual;
     else
         validation.receptors = [];
         validation.excitationDesired = [];
-       % validation.excitationPredicted = [];
         validation.excitationActual = [];
         validation.contrastDesired = [];
-        %validation.contrastPredicted = [];
         validation.contrastActual = [];
     end
 
@@ -224,7 +216,6 @@ else
 
     % Write direction.describe.validation output
     validation.luminanceDesired = T_xyz(2,:) * [SPDs.desiredSPD];
-    validation.luminancePredicted = T_xyz(2,:) * [SPDs.predictedSPD];
     validation.luminanceActual = T_xyz(2,:) * [SPDs.measuredSPD];
 
     %% Append to each directions .describe.validation
@@ -233,8 +224,8 @@ else
 
     % Extract information for just this direction(i)
     validation.SPDbackground = SPDs(1);
-    validation.SPDcombined = SPDs(2);
-    validation.SPDdifferential = SPDs(3);
+    validation.SPDcombined = SPDs([2 3]);
+    validation.SPDdifferential = SPDs([4 5]);
 
     % Add to direction(i).describe; append if validations already present
     if ~isfield(direction.describe,'validation') || isempty(direction.describe.validation)
