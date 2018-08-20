@@ -26,6 +26,9 @@ function correctedDirection = OLCorrectDirection(direction, background, oneLight
 %                         in the 'describe' property.
 %
 % Optional key/value pairs:
+%    'receptors'            - 
+%    smoothness             - Smoothness parameter for OLSpdToPrimary.
+%                             Default .001.
 %    nIterations            - Number of iterations. Default is 20.
 %    learningRate           - Learning rate. Default is .8.
 %    learningRateDecrease   - Decrease learning rate over iterations?
@@ -34,8 +37,6 @@ function correctedDirection = OLCorrectDirection(direction, background, oneLight
 %                             asymptotic learning rate is
 %                             (1-asympLearningRateFactor)*learningRate.
 %                             Default = .5.
-%    smoothness             - Smoothness parameter for OLSpdToPrimary.
-%                             Default .001.
 %    iterativeSearch        - Do iterative search with fmincon on each
 %                             measurement interation? Default is true.
 %
@@ -54,9 +55,12 @@ parser.addRequired('direction',@(x) isa(x,'OLDirection_bipolar'));
 parser.addRequired('background',@(x) isa(x,'OLDirection_unipolar'));
 parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
 parser.addRequired('radiometer',@(x) isempty(x) || isa(x,'Radiometer'));
+parser.addParameter('receptors',[],@(x) isnumeric(x) || isa(x,'SSTReceptor'));
 parser.addParameter('smoothness',.001,@isnumeric);
 parser.KeepUnmatched = true; % allows fastforwarding of kwargs to OLCorrectPrimaryValues
 parser.parse(direction,background,oneLight,radiometer,varargin{:});
+
+receptors = parser.Results.receptors;
 
 if ~isscalar(direction)
     %% Dispatch correction for each direction
@@ -73,7 +77,12 @@ else
     %% Copy nominal primary into separate object
     nominalDirection = direction.copy(); % store unlinked copy of nominalDirection
     nominalDirection.SPDdifferentialDesired = direction.SPDdifferentialDesired;
-   
+
+    %% Measure background SPD
+    desiredBackgroundSPD = background.SPDdifferentialDesired + background.calibration.computed.pr650MeanDark;
+    measuredBackgroundSPD = OLMeasurePrimaryValues(background.differentialPrimaryValues,background.calibration,oneLight,radiometer);
+    
+    
     %% Correct differential primary values
     % Correcting a direction (on top of a background) means correcting the
     % primary values that would combine direction and background into the
@@ -94,6 +103,36 @@ else
     [correctedCombinedPrimaryValuesNegative, correctedSPD, correctionDataNegative] = OLCorrectToSPD(desiredCombinedSPD(:,2),direction.calibration,...
                                                                             oneLight,radiometer,...
                                                                             varargin{:},'lambda',parser.Results.smoothness);
+    
+    %% Calculate contrasts
+    % For now, primaries are corrected to the desiredSPD. Since corrections
+    % don't lead to a perfect match, the iteration with the lowest RMSE
+    % between measured and desired SPD is chosen. However, that measured
+    % SPD might not produce the best contrast. In most usecases, contrast
+    % is more important the exact SPD. So, calculate contrasts per
+    % iteration, calculate desired contrasts, calculate RMSE between
+    % measured and desired contrasts, pick iteration with lowest contrast
+    % RMSE.
+    if ~isempty(receptors)
+        receptorContrast.receptors = receptors;
+        receptorContrast.desired = SPDToReceptorContrast([desiredBackgroundSPD, desiredCombinedSPD(:,1)],receptors);
+        receptorContrast.actual = SPDToReceptorContrast([measuredBackgroundSPD correctionDataPositive.SPDMeasured],receptors);
+        receptorContrast.actual = squeeze(receptorContrast.actual(1,2:end,:))';
+        receptorContrast.RMSE = sqrt(mean((receptorContrast.actual-receptorContrast.desired(:,1)).^2));
+        correctionDataPositive.receptorContrast = receptorContrast;
+        correctionDataPositive.pickedIter = find(receptorContrast.RMSE == min(receptorContrast.RMSE),1);
+        correctedCombinedPrimaryValuesPositive = correctionDataPositive.primaryUsed(:,correctionDataPositive.pickedIter);
+        
+        receptorContrast.receptors = receptors;
+        receptorContrast.desired = SPDToReceptorContrast([desiredBackgroundSPD, desiredCombinedSPD(:,2)],receptors);
+        receptorContrast.actual = SPDToReceptorContrast([measuredBackgroundSPD correctionDataNegative.SPDMeasured],receptors);
+        receptorContrast.actual = squeeze(receptorContrast.actual(1,2:end,:))';
+        receptorContrast.RMSE = sqrt(mean((receptorContrast.actual-receptorContrast.desired(:,1)).^2));
+        correctionDataNegative.receptorContrast = receptorContrast;
+        correctionDataNegative.pickedIter = find(receptorContrast.RMSE == min(receptorContrast.RMSE),1);
+        correctedCombinedPrimaryValuesNegative = correctionDataNegative.primaryUsed(:,correctionDataNegative.pickedIter);        
+    end
+                                                                        
     %% Update original OLDirection
     % Update business end
     direction.differentialPositive = correctedCombinedPrimaryValuesPositive-background.differentialPrimaryValues;
@@ -107,9 +146,7 @@ else
     correctionDescribe(1).background = background; 
     correctionDescribe(2).background = background; 
     correctionDescribe(1).nominalDirection = nominalDirection;
-    correctionDescribe(2).nominalDirection = nominalDirection;    
-    correctionDescribe(1).correctedCombinedPrimaryValues = correctedCombinedPrimaryValuesPositive;
-    correctionDescribe(2).correctedCombinedPrimaryValues = correctedCombinedPrimaryValuesNegative;
+    correctionDescribe(2).nominalDirection = nominalDirection;
     
     % Add to direction.describe; append if correction already present
     if ~isfield(direction.describe,'correction') || isempty(direction.describe.correction)
