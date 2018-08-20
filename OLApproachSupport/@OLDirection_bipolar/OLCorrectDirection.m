@@ -68,7 +68,7 @@ else
     %% Correct a single direction
     assert(matchingCalibration(direction,background),'OneLightToolbox:ApproachSupport:OLCorrectDirection:MismatchedCalibration',...
         'Direction and background do not share a calibration');
-    time = now;
+    time = datetime;
 
     %% Copy nominal primary into separate object
     nominalDirection = direction.copy(); % store unlinked copy of nominalDirection
@@ -80,7 +80,7 @@ else
     % desired combined SPD, then subtracting the background primary values,
     % to end up with the differential primary values to add to the
     % background, i.e., the direction.
-    desiredCombinedSPD = direction.SPDdifferentialDesired + background.SPDdifferentialDesired;
+    desiredCombinedSPD = direction.SPDdifferentialDesired + background.SPDdifferentialDesired + direction.calibration.computed.pr650MeanDark;
     
     % To get the combined primary values, the direction and background have
     % to be added. However, when calling this routine, the background may
@@ -88,12 +88,12 @@ else
     % background primary values no longer correspond to the desired
     % combined SPD. Instead, convert the desiredCombinedSPD to some initial
     % primary values predicted to produce it, and correct those.
-    nominalCombinedPrimaryValuesPositive = OLSpdToPrimary(direction.calibration,desiredCombinedSPD(:,1),'lambda',parser.Results.smoothness, 'primaryHeadroom', 0);
-    [correctedCombinedPrimaryValuesPositive, correctionDataPositive] = OLCorrectPrimaryValues(nominalCombinedPrimaryValuesPositive,direction.calibration,oneLight,radiometer,varargin{:},'lambda',parser.Results.smoothness);
-    
-    nominalCombinedPrimaryValuesNegative = OLSpdToPrimary(direction.calibration,desiredCombinedSPD(:,2),'lambda',parser.Results.smoothness, 'primaryHeadroom', 0);   
-    [correctedCombinedPrimaryValuesNegative, correctionDataNegative] = OLCorrectPrimaryValues(nominalCombinedPrimaryValuesNegative,direction.calibration,oneLight,radiometer,varargin{:},'lambda',parser.Results.smoothness);
-    
+    [correctedCombinedPrimaryValuesPositive, correctedSPD, correctionDataPositive] = OLCorrectToSPD(desiredCombinedSPD(:,1),direction.calibration,...
+                                                                            oneLight,radiometer,...
+                                                                            varargin{:},'lambda',parser.Results.smoothness);
+    [correctedCombinedPrimaryValuesNegative, correctedSPD, correctionDataNegative] = OLCorrectToSPD(desiredCombinedSPD(:,2),direction.calibration,...
+                                                                            oneLight,radiometer,...
+                                                                            varargin{:},'lambda',parser.Results.smoothness);
     %% Update original OLDirection
     % Update business end
     direction.differentialPositive = correctedCombinedPrimaryValuesPositive-background.differentialPrimaryValues;
@@ -102,15 +102,13 @@ else
 
     % Update describe
     correctionDescribe = [correctionDataPositive, correctionDataNegative];
-    correctionDescribe(1).time = [time now];
-    correctionDescribe(2).time = [time now];
+    correctionDescribe(1).time = [time datetime];
+    correctionDescribe(2).time = [time datetime];
     correctionDescribe(1).background = background; 
     correctionDescribe(2).background = background; 
     correctionDescribe(1).nominalDirection = nominalDirection;
     correctionDescribe(2).nominalDirection = nominalDirection;    
-    correctionDescribe(1).nominalCombinedPrimaryValues = nominalCombinedPrimaryValuesPositive;
     correctionDescribe(1).correctedCombinedPrimaryValues = correctedCombinedPrimaryValuesPositive;
-    correctionDescribe(2).nominalCombinedPrimaryValues = nominalCombinedPrimaryValuesNegative;
     correctionDescribe(2).correctedCombinedPrimaryValues = correctedCombinedPrimaryValuesNegative;
     
     % Add to direction.describe; append if correction already present
