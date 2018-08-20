@@ -24,8 +24,8 @@ fig = figure();
 subplot(2,1,1); hold on;
 plot(validation.SPDbackground.desiredSPD,'g:');
 plot(validation.SPDbackground.measuredSPD,'k:');
-plot(validation.SPDcombined.desiredSPD,'g-');
-plot(validation.SPDcombined.measuredSPD,'k-');
+plot([validation.SPDcombined.desiredSPD],'g-');
+plot([validation.SPDcombined.measuredSPD],'k-');
 legend({'Desired background','Measured background','Desired SPD','Measured SPD'});
 
 % Plot contrasts (desired, measured)
