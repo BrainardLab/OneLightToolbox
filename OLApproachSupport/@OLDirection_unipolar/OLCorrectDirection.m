@@ -26,6 +26,7 @@ function correctedDirection = OLCorrectDirection(direction, background, oneLight
 %                         in the 'describe' property.
 %
 % Optional key/value pairs:
+%    'receptors'            - 
 %    legacyMode             - Boolean. If true, use an older version of 
 %                             corrections algorithm, by calling
 %                             OLCorrectCacheFileOOC. If false, use the
@@ -60,14 +61,16 @@ parser.addRequired('direction',@(x) isa(x,'OLDirection_unipolar'));
 parser.addRequired('background',@(x) isa(x,'OLDirection_unipolar'));
 parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
 parser.addRequired('radiometer',@(x) isempty(x) || isa(x,'Radiometer'));
+parser.addParameter('receptors',[],@(x) isnumeric(x) || isa(x,'SSTReceptor')); 
 parser.addParameter('smoothness',.001,@isnumeric);
 parser.addParameter('legacyMode',true,@islogical);
 parser.addParameter('temperatureProbe',[],@(x) isempty(x) || isa(x,'LJTemperatureProbe'));
 parser.addParameter('measureStateTrackingSPDs',false, @islogical);
+parser.KeepUnmatched = true; % allows fastforwarding of kwargs to OLCorrectToSPD
 
-parser.KeepUnmatched = true; % allows fastforwarding of kwargs to OLCorrectPrimaryValues
 parser.parse(direction,background,oneLight,radiometer,varargin{:});
 radiometer = parser.Results.radiometer;
+receptors = parser.Results.receptors;
 
 if ~isscalar(direction)
     %% Dispatch correction for each direction
@@ -87,6 +90,18 @@ else
     nominalBackground = background.copy(); % store unlinked copy of nominalBackground
     nominalBackground.SPDdifferentialDesired = background.SPDdifferentialDesired;
    
+    %% Measure background SPD
+    desiredBackgroundSPD = background.SPDdifferentialDesired + background.calibration.computed.pr650MeanDark;
+    measuredBackgroundSPD = OLMeasurePrimaryValues(background.differentialPrimaryValues,background.calibration,oneLight,radiometer);
+    
+    %% Get desired combined SPD
+    % Correcting a direction (on top of a background) means correcting the
+    % primary values that would combine direction and background into the
+    % desired combined SPD, then subtracting the background primary values,
+    % to end up with the differential primary values to add to the
+    % background, i.e., the direction.
+    desiredCombinedSPD = direction.SPDdifferentialDesired + desiredBackgroundSPD;
+    
     if parser.Results.legacyMode 
         %% Use MatlabLibrary/OLCorrectCacheFileOOC. 
         % That routine was rolled-back from 01/06/17.
@@ -106,17 +121,20 @@ else
             'takeTemperatureMeasurements', isa(parser.Results.temperatureProbe,'LJTemperatureProbe'), ...
             'measureStateTrackingSPDs', parser.Results.measureStateTrackingSPDs);
 
+        % Update describe
+        correctionDescribe = correctedDirectionData.data(32).correction;
+        
+        receptorContrast.receptors = receptors; 
+        receptorContrast.desired = SPDToReceptorContrast([desiredBackgroundSPD, desiredCombinedSPD(:,1)],receptors); 
+        receptorContrast.actual = correctionDescribe.contrasts;
+        receptorContrast.RMSE = sqrt(mean((receptorContrast.actual-receptorContrast.desired(:,1)).^2)); 
+        correctionDescribe.pickedIter = find(receptorContrast.RMSE == min(receptorContrast.RMSE),1); 
+        correctedCombinedPrimaryValues = correctionDescribe.modulationPrimaryMeasuredAll(:,correctionDescribe.pickedIter);    
+        
         %% Update original OLDirection
-        % Update direction business end
-        direction.differentialPrimaryValues = correctedDirectionData.data(32).differencePrimary;
-        direction.SPDdifferentialDesired = nominalDirection.SPDdifferentialDesired;
-
         % Update background business end
         background.differentialPrimaryValues = correctedDirectionData.data(32).backgroundPrimary;
         background.SPDdifferentialDesired = nominalBackground.SPDdifferentialDesired;
-        
-        % Update describe
-        correctionDescribe = correctedDirectionData.data(32).correction;
         
         % Add temperature data
         if isfield(correctedDirectionData,'temperatureData')
@@ -128,38 +146,46 @@ else
             correctionDescribe.stateTrackingData = correctedDirectionData.stateTrackingData;
         end
     else
-        %% Use refactored code, by calling OLCorrectPrimaryValues
-        
-        %% Measure background SPD
-        desiredBackgroundSPD = background.SPDdifferentialDesired + background.calibration.computed.pr650MeanDark;
-        measuredBackgroundSPD = OLMeasurePrimaryValues(background.differentialPrimaryValues,background.calibration,oneLight,radiometer);
-        
+        %% Use refactored code
+               
         %% Correct differential primary values
-        % Correcting a direction (on top of a background) means correcting the
-        % primary values that would combine direction and background into the
-        % desired combined SPD, then subtracting the background primary values,
-        % to end up with the differential primary values to add to the
-        % background, i.e., the direction.
-        desiredCombinedSPD = direction.SPDdifferentialDesired + desiredBackgroundSPD;
-
         % To get the combined primary values, the direction and background have
         % to be added. However, when calling this routine, the background may
         % already have been corrected. In that case, the summed direction and
         % background primary values no longer correspond to the desired
         % combined SPD. Instead, convert the desiredCombinedSPD to some initial
         % primary values predicted to produce it, and correct those.
-        [correctedCombinedPrimaryValues, correctedSPD, correctionData] = OLCorrectToSPD(desiredCombinedSPD,direction.calibration,...
+        [correctedCombinedPrimaryValues, correctedSPD, correctionDescribe] = OLCorrectToSPD(desiredCombinedSPD,direction.calibration,...
                                                                             oneLight,radiometer,...
-                                                                            varargin{:},'lambda',parser.Results.smoothness);
-
-        % Update business end
-        direction.differentialPrimaryValues = correctedCombinedPrimaryValues-background.differentialPrimaryValues;
-        
-        % Update describe
-        correctionDescribe = correctionData;
+                                                                            varargin{:},'lambda',parser.Results.smoothness);    
+                                                                        
+        %% Calculate contrasts 
+        % For now, primaries are corrected to the desiredSPD. Since corrections 
+        % don't lead to a perfect match, the iteration with the lowest RMSE 
+        % between measured and desired SPD is chosen. However, that measured 
+        % SPD might not produce the best contrast. In most usecases, contrast 
+        % is more important the exact SPD. So, calculate contrasts per 
+        % iteration, calculate desired contrasts, calculate RMSE between 
+        % measured and desired contrasts, pick iteration with lowest contrast 
+        % RMSE. 
+        if ~isempty(receptors) 
+            receptorContrast.receptors = receptors; 
+            receptorContrast.desired = SPDToReceptorContrast([desiredBackgroundSPD, desiredCombinedSPD(:,1)],receptors); 
+            receptorContrast.actual = SPDToReceptorContrast([measuredBackgroundSPD correctionDescribe.SPDMeasured],receptors); 
+            receptorContrast.actual = squeeze(receptorContrast.actual(1,2:end,:))'; 
+            receptorContrast.RMSE = sqrt(mean((receptorContrast.actual-receptorContrast.desired(:,1)).^2)); 
+            correctionDescribe.receptorContrast = receptorContrast; 
+            correctionDescribe.pickedIter = find(receptorContrast.RMSE == min(receptorContrast.RMSE),1); 
+            correctedCombinedPrimaryValues = correctionDescribe.primaryUsed(:,correctionDescribe.pickedIter);       
+        end
+    
     end
     
-    % Update describe
+    %% Update business end
+    direction.differentialPrimaryValues = correctedCombinedPrimaryValues - background.differentialPrimaryValues;
+    direction.SPDdifferentialDesired = nominalDirection.SPDdifferentialDesired;   % should not be necessary, but good to enforce anyway
+    
+    %% Update describe
     correctionDescribe.legacyMode = parser.Results.legacyMode;
     correctionDescribe.time = [time datetime];
     correctionDescribe.background = background; 
@@ -168,8 +194,7 @@ else
     correctionDescribe.correctedBackground = background;
     correctionDescribe.desiredBackgroundSPD = desiredBackgroundSPD;
     correctionDescribe.measuredBackgroundSPD = measuredBackgroundSPD;
-    %correctionDescribe.nominalCombinedPrimaryValues = nominalCombinedPrimaryValues;
-    %correctionDescribe.correctedCombinedPrimaryValues = correctedCombinedPrimaryValues;
+
     % Add to direction.describe; append if correction already present
     if ~isfield(direction.describe,'correction') || isempty(direction.describe.correction)
         direction.describe.correction = correctionDescribe;
