@@ -18,7 +18,7 @@ else
     options = optimoptions('fmincon','Diagnostics','off','Display','off','Algorithm','active-set','OptimalityTolerance',1e-3,'MaxFunctionEvaluations',200);
 end
 
-% These bounds keep deltas in range 0-1.
+% These bounds on deltas keep primaries in range 0-1.
 vlb = -primariesUsed;
 vub = 1-primariesUsed;
 
