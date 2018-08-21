@@ -99,6 +99,7 @@ learningRateDecrease = parser.Results.learningRateDecrease;
 asympLearningRateFactor = parser.Results.asympLearningRateFactor;
 smoothness = parser.Results.smoothness;
 iterativeSearch = parser.Results.iterativeSearch;
+temperatureProbe = parser.Results.temperatureProbe;
 
 %% Measure state-tracking SPDs
 stateTrackingData = struct();
