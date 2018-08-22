@@ -8,14 +8,17 @@ function [correctedPrimaryValues, measuredSPD, detailedData] = OLCorrectToSPD(ta
 %   correctedPrimaryValues = OLCorrectPrimaryValues(..., 'smoothness',.01)
 %
 % Description:
-%    Detailed explanation goes here
+%   Use an iterative measure/adjust procedure to find primary values that
+%   produce the desired spectrum.  Based on a small signal approximation
+%   for the adjustment.
 %
 % Inputs:
 %    targetSPD               - nWlsx1 column vector, where nWls is the
 %                              number of wavelength bands measured,
-%                              defining target Spectral Power Distribution
-%                              to correct primary values to.
-%    calibration             - struct containing calibration for oneLight
+%                              defining target spectral power distribution
+%                              to correct primary values to. This is in the
+%                              scaling of the calibration structure.
+%    calibration             - Struct containing calibration for oneLight
 %    oneLight                - OneLight device driver object to control a
 %                              OneLight device. Can be real or simulated
 %    radiometer              - Radiometer object to control a
@@ -36,23 +39,25 @@ function [correctedPrimaryValues, measuredSPD, detailedData] = OLCorrectToSPD(ta
 %                              OLCheckPrimaryCorrection
 %
 % Optional key/value pairs:
-%    nIterations             - Number of iterations. Default is 20.
-%    learningRate            - Learning rate. Default is .8.
-%    learningRateDecrease    - Decrease learning rate over iterations?
-%                              Default is true.
-%    asympLearningRateFactor - If learningRateDecrease is true, the 
-%                              asymptotic learning rate is
-%                              (1-asympLearningRateFactor)*learningRate. 
-%                              Default = .5.
-%    smoothness              - Smoothness parameter for OLSpdToPrimary.
-%                              Default .001.
-%    iterativeSearch         - Do iterative search with fmincon on each
-%                              measurement interation? Default is true.
-%    temperatureProbe        - LJTemperatureProbe object to drive a LabJack
-%                              temperature probe
+%    'nIterations'             - Number of iterations. Default is 20.
+%    'learningRate'            - Learning rate. Default is .8.
+%    'learningRateDecrease'    - Decrease learning rate over iterations?
+%                                Default is true.
+%    'asympLearningRateFactor' - If learningRateDecrease is true, the 
+%                                asymptotic learning rate is
+%                                (1-asympLearningRateFactor)*learningRate. 
+%                                Default = .5.
+%    'smoothness'              - Smoothness parameter for OLSpdToPrimary.
+%                                Default .001.
+%    'iterativeSearch'         - Do iterative search with fmincon on each
+%                                measurement interation? Default is true.
+%    'temperatureProbe'        - LJTemperatureProbe object to drive a LabJack
+%                                temperature probe. Default empty.
+%    'measureStateTrackingSPDs' - Make state tracking measurements?
+%                                Default false.
 %
 % See also:
-%    OLValidatePrimaryValues
+%    OLValidatePrimaryValues, OLLinearDeltaPrimaries, OLIterativeDeltaPrimaries
 %
 
 % History:
