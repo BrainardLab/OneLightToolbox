@@ -20,12 +20,17 @@ function [deltaPrimaries,predictedSPD] = OLIterativeDeltaPrimariesContrast(delta
 %                              used to produce measuredSPD.
 %    measuredSPD             - nWlsx1 column vector with measured spectral
 %                              power distribution when primariesUsed was used.
+%                              This should be scaled to correct for any
+%                              overall change in the OneLight's output
+%                              relative to the calibration structure.
 %    targetContrasts         - nReceptorsx1 column vector, giving target
 %                              contrasts for each receptor class.
 %    backgroundSPD           - nWlsx1 column vector, with background
 %                              spectral power distribution with respect to
 %                              which to compute contrasts.  This should be
-%                              unscaled.
+%                              scaled to correct for any overall change in
+%                              the OneLight's output relative to the
+%                              calibration structure.
 %    T_receptors             - nReceptorsxnWls matrix specifying receptor
 %                              fundamentals.
 %    learningRate            - Number betweenn 0 and 1. Aim this fraction
@@ -37,7 +42,10 @@ function [deltaPrimaries,predictedSPD] = OLIterativeDeltaPrimariesContrast(delta
 %                              primary values,
 %    predictedSPD            - nWlsx1 column vector with the spectral power
 %                              distribution predicted when deltaPrimaries is
-%                              added to primariesUsed.
+%                              added to primariesUsed. This is obtained
+%                              through the calibration structure, and thus
+%                              is scaled like the passed measuredSPD and
+%                              backgroundSPD.
 
 % Options for fmincon
 if (verLessThan('matlab','2016a'))
@@ -75,7 +83,7 @@ deltaPrimaries = fmincon(@(deltaPrimaries)OLIterativeDeltaPrimariesContrastError
 % the search should prevent truncation, but just in case.
 deltaPrimaries = OLTruncatedDeltaPrimaries(deltaPrimaries,primariesUsed,cal);
 
-% Get predicted Spd
+% Get predicted ppd
 predictedSPD = OLPredictSpdFromDeltaPrimaries(deltaPrimaries,primariesUsed,spdMeasured,cal);
 
 end 

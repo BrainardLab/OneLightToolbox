@@ -17,11 +17,13 @@ function [correctedPrimaryValues, measuredSPD, detailedData] = OLCorrectToContra
 %    initialSPD              - nWlsx1 column vector, with an initial guess
 %                              as to an SPD that will produce the desired
 %                              contrasts.  Need not be exact, just to get
-%                              things started.
+%                              things started. This should be unscaled, and
+%                              is generally obtained using the calibration
+%                              structure.
 %    backgroundSPD           - nWlsx1 column vector, with background
 %                              spectral power distribution with respect to
 %                              which to compute contrasts.  This should be
-%                              unscaled.
+%                              unscaled - the actual measurement.
 %    T_receptors             - nReceptorsxnWls matrix specifying receptor
 %                              fundamentals.
 %    calibration             - struct containing calibration for oneLight
@@ -37,24 +39,32 @@ function [correctedPrimaryValues, measuredSPD, detailedData] = OLCorrectToContra
 %                              primaries.
 %    measuredSPD             - nWlsx1 column vector, where nWls is the
 %                              number of wavelength bands measured, of the
-%                              SPD measured after correction
+%                              SPD measured after correction. This is the
+%                              actual measurement, not scaled by kScale.
 %    detailedData            - A ton of data in a structure, for debugging purposes.
 %
 % Optional key/value pairs:
-%    nIterations             - Number of iterations. Default is 20.
-%    learningRate            - Learning rate. Default is .8.
-%    learningRateDecrease    - Decrease learning rate over iterations?
-%                              Default is true.
-%    asympLearningRateFactor - If learningRateDecrease is true, the 
-%                              asymptotic learning rate is
-%                              (1-asympLearningRateFactor)*learningRate. 
-%                              Default = .5.
-%    smoothness              - Smoothness parameter for OLSpdToPrimary.
-%                              Default .001.
-%    iterativeSearch         - Do iterative search with fmincon on each
-%                              measurement interation? Default is true.
-%    temperatureProbe        - LJTemperatureProbe object to drive a LabJack
-%                              temperature probe
+%    'nIterations'             - Number of iterations. Default is 20.
+%    'learningRate'            - Learning rate. Default is .8.
+%    'learningRateDecrease'    - Decrease learning rate over iterations?
+%                                Default is true.
+%    'asympLearningRateFactor' - If learningRateDecrease is true, the 
+%                                asymptotic learning rate is
+%                                (1-asympLearningRateFactor)*learningRate. 
+%                                Default = .5.
+%    'smoothness'              - Smoothness parameter for OLSpdToPrimary.
+%                                Default .001.
+%    'iterativeSearch'         - Do iterative search with fmincon on each
+%                                measurement interation? Default is true.
+%    'temperatureProbe'        - LJTemperatureProbe object to drive a LabJack
+%                                temperature probe. Default empty.
+%    'measureStateTrackingSPDs' - Make state tracking measurements?
+%                                Default false.
+%    'kScale'                  - Scale factor to bring a current measurement
+%                                into the same overall scale as the
+%                                calibration structure data.  Used to account
+%                                for overall drift of the device during the
+%                                corrections.  Default 1.
 %
 % See also:
 %    OLValidatePrimaryValues
@@ -73,9 +83,6 @@ function [correctedPrimaryValues, measuredSPD, detailedData] = OLCorrectToContra
     
 %}
 
-%% TODO
-% Pass kScale as key/value pair.  I think it is then used correctly.
-
 %% Input validation
 parser = inputParser;
 parser.addRequired('targetContrasts',@isnumeric);
@@ -93,6 +100,7 @@ parser.addParameter('smoothness', 0.001, @isscalar);
 parser.addParameter('iterativeSearch',true, @islogical);
 parser.addParameter('temperatureProbe',[],@(x) isempty(x) || isa(x,'LJTemperatureProbe'));
 parser.addParameter('measureStateTrackingSPDs', false, @islogical);
+parser.addParameter('kScale', 1, @isnumeric);
 parser.KeepUnmatched = true;
 parser.parse(targetContrasts, initialSPD, backgroundSPD, T_receptors, calibration, oneLight, radiometer, varargin{:});
 
@@ -102,6 +110,7 @@ learningRateDecrease = parser.Results.learningRateDecrease;
 asympLearningRateFactor = parser.Results.asympLearningRateFactor;
 smoothness = parser.Results.smoothness;
 iterativeSearch = parser.Results.iterativeSearch;
+kScale = parser.Results.kScale;
 
 %% Measure state-tracking SPDs
 stateTrackingData = struct();
@@ -134,9 +143,6 @@ initialPrimaryValues = OLSpdToPrimary(calibration, initialSPD, ...
 %% Get receptor responses for background
 backgroundSPDScaled = kScale*backgroundSPD;
 backgroundReceptorsScaled = T_receptors*backgroundSPDScaled;
-
-%% Initialize delta
-
 
 %% Correct
 temperaturesForAllIterations = cell(1, nIterations);
