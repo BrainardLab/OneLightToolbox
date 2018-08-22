@@ -1,19 +1,20 @@
-function [correctedPrimaryValues, measuredSPD, detailedData] = OLCorrectToContrast(targetContrasts, initialTargetSPD, backgroundSPD, T_receptors, calibration, oneLight, radiometer, varargin)
-% Corrects primary values iteratively to attain predicted SPD
+function [correctedPrimaryValues, measuredSPD, detailedData] = OLCorrectToContrast(targetContrasts, initialSPD, backgroundSPD, T_receptors, calibration, oneLight, radiometer, varargin)
+% Corrects primary values iteratively to attain target contrasts
 %
 % Syntax:
-%   correctedPrimaryValues = OLCorrectToSPD(nominalPrimaryValues, calibration, OneLight, radiometer)
-%   correctedPrimaryValues = OLCorrectToSPD(nominalPrimaryValues, calibration, SimulatedOneLight, [])
-%   [correctedPrimaryValues, detailedData] = OLCorrectPrimaryValues(...)
-%   correctedPrimaryValues = OLCorrectPrimaryValues(..., 'smoothness',.01)
+%   [correctedPrimaryValues, measuredSPD, detailedData] = OLCorrectToContrast(targetContrasts, initialSPD, backgroundSPD, T_receptors, calibration, oneLight, radiometer, varargin)
 %
 % Description:
-%    Detailed explanation goes here
+%   Seeks primary values that lead to spectrum with desired target
+%   contrasts, with respect to passed background spectral power
+%   distribution and receptor fundamentals. Works by making measurements
+%   and then using fmincon together with small signal approximation and
+%   calibration to try to find primaries that minimize contrast error.
 %
 % Inputs:
 %    targetContrasts         - nReceptorsx1 column vector, giving target
 %                              contrasts for each receptor class.
-%    initialTargetSPD        - nWlsx1 column vector, with an initial guess
+%    initialSPD              - nWlsx1 column vector, with an initial guess
 %                              as to an SPD that will produce the desired
 %                              contrasts.  Need not be exact, just to get
 %                              things started.
@@ -37,7 +38,7 @@ function [correctedPrimaryValues, measuredSPD, detailedData] = OLCorrectToContra
 %    measuredSPD             - nWlsx1 column vector, where nWls is the
 %                              number of wavelength bands measured, of the
 %                              SPD measured after correction
-%    detailedData            - A ton of data, for debugging purposes.
+%    detailedData            - A ton of data in a structure, for debugging purposes.
 %
 % Optional key/value pairs:
 %    nIterations             - Number of iterations. Default is 20.
@@ -67,16 +68,18 @@ function [correctedPrimaryValues, measuredSPD, detailedData] = OLCorrectToContra
 %    08/16/18  jv   OLCorrectToSPD
 %    08/22/18  dhb  Drafting contrast seeking algorithm.
 
-
 % Examples:
 %{
     
 %}
 
+%% TODO
+% Pass kScale as key/value pair.  I think it is then used correctly.
+
 %% Input validation
 parser = inputParser;
 parser.addRequired('targetContrasts',@isnumeric);
-parser.addRequired('initialTargetSPD',@isnumeric);
+parser.addRequired('initialSPD',@isnumeric);
 parser.addRequired('backgroundSPD',@isnumeric);
 parser.addRequired('T_receptors',@isnumeric);
 parser.addRequired('calibration',@isstruct);
@@ -91,7 +94,7 @@ parser.addParameter('iterativeSearch',true, @islogical);
 parser.addParameter('temperatureProbe',[],@(x) isempty(x) || isa(x,'LJTemperatureProbe'));
 parser.addParameter('measureStateTrackingSPDs', false, @islogical);
 parser.KeepUnmatched = true;
-parser.parse(targetSPD,calibration,oneLight,radiometer,varargin{:});
+parser.parse(targetContrasts, initialSPD, backgroundSPD, T_receptors, calibration, oneLight, radiometer, varargin{:});
 
 nIterations = parser.Results.nIterations;
 learningRate = parser.Results.learningRate;
@@ -124,16 +127,16 @@ if (parser.Results.measureStateTrackingSPDs)
 end
 
 %% Find initial primary values
-initialPrimaryValues = OLSpdToPrimary(calibration, initialTargetSPD, ...
+initialPrimaryValues = OLSpdToPrimary(calibration, initialSPD, ...
                         'primaryHeadroom',0,...
                         'lambda',parser.Results.smoothness);
                     
 %% Get receptor responses for background
 backgroundSPDScaled = kScale*backgroundSPD;
-backgroundReceptors = T_receptors*backgroundSPDScaled;
+backgroundReceptorsScaled = T_receptors*backgroundSPDScaled;
 
 %% Initialize delta
-deltaPrimaryTruncatedLearningRate = zeros(size(initialPrimaryValues));
+
 
 %% Correct
 temperaturesForAllIterations = cell(1, nIterations);
@@ -147,9 +150,10 @@ for iter = 1:nIterations
     % Scale measured SPD here
     measuredSPDScaled = kScale*measuredSPD;
     
-    % Get measured contrasts
-    measuredReceptors = T_receptors*measuredSpdScaled;
-    measuredContrasts = (measuredReceptors-backgroundReceptors) ./ backgroundReceptors;
+    % Get measured contrasts.  Note that kScale does not affect contrasts, since
+    % it is incorporated into both measurement and background.
+    measuredReceptorsScaled = T_receptors*measuredSpdScaled;
+    measuredContrasts = (measuredReceptorsScaled-backgroundReceptorsScaled) ./ backgroundReceptorsScaled;
     
     % Set learning rate to use this iteration
     if learningRateDecrease
@@ -159,7 +163,10 @@ for iter = 1:nIterations
     end
     
     % Use fmincon to estimate delta primaries that move us towards desired contrasts.
-    deltaPrimaryTruncatedLearningRate = OLIterativeDeltaPrimariesContrast(deltaPrimaryTruncatedLearningRate,primariesThisIter,targetContrasts,measuredSpdScaled,backgroundSPDScaled,T_receptors,learningRateThisIter,calibration);
+    %
+    % We initialize each call at zero delta, because the previous delta has
+    % been incorporated into the current measurement.
+    deltaPrimaryTruncatedLearningRate = OLIterativeDeltaPrimariesContrast([],primariesThisIter,targetContrasts,measuredSpdScaled,backgroundSPDScaled,T_receptors,learningRateThisIter,calibration);
     
     % Compute and store the settings to use next time through
     nextPrimaryTruncatedLearningRate = primariesThisIter + deltaPrimaryTruncatedLearningRate;
@@ -173,7 +180,9 @@ for iter = 1:nIterations
 end
 
 %% Store information about correction for return
-% Business end: pick primary values with lowest RMSE
+%
+% Business end: pick primary values with lowest RMSE.  RMSE is on
+% contrasts.
 correctedPrimaryValues = PrimaryUsed(:, find(RMSE == min(RMSE),1));
 
 % Metadata, e.g., parameters. While I'm not a fan of including input
