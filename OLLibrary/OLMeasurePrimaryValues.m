@@ -108,7 +108,7 @@ if ~isempty(radiometer)
             % Take temperature measurement
             if (~isempty(theLJDev))
                 [~, temperatureValue] = theLJDev.measure();
-                temperatures{p,i} = struct('value', temperatureValue, 'time', mglGetSecs());
+                temperatures{p,i} = struct('value', temperatureValue, 'time', datetime());
             end
         
             % Radiometeric measurement
