@@ -22,10 +22,11 @@ fig = figure();
 
 % Plot SPDs (background, combined; desired, measured)
 subplot(2,1,1); hold on;
-plot(validation.SPDbackground.desiredSPD,'k:');
-plot(validation.SPDbackground.measuredSPD,'r:');
-plot(validation.SPDcombined.desiredSPD,'k-');
-plot(validation.SPDcombined.measuredSPD,'r-');
+plot(validation.SPDbackground.desiredSPD,'g:');
+plot(validation.SPDbackground.measuredSPD,'k:');
+plot(validation.SPDcombined.desiredSPD,'g-');
+plot(validation.SPDcombined.measuredSPD,'k-');
+legend('Desired background','Measured background','Desired direction','Measured direction');
 
 % Plot contrasts (desired, measured)
 subplot(2,1,2); hold on;
