@@ -130,7 +130,7 @@ else
     radiometer = parser.Results.radiometer;
 
     validation.background = background;
-    validation.time = now; % take stock of how long taking
+    validation.time = datetime; % take stock of how long taking
 
     %% Determine desired SPDs
     % An OLDirection defines a differerntial direction: a set of primary
@@ -250,7 +250,7 @@ else
     validation.luminanceActual = T_xyz(2,:) * [SPDs.measuredSPD];
 
     %% Append to each directions .describe.validation
-    validation.time = [validation.time now];
+    validation.time = [validation.time datetime];
     validation.label = parser.Results.label;
 
     % Extract information for just this direction(i)
