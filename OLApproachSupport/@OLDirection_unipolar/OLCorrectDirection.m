@@ -26,12 +26,7 @@ function correctedDirection = OLCorrectDirection(direction, background, oneLight
 %                         in the 'describe' property.
 %
 % Optional key/value pairs:
-%    'receptors'            - 
-%    legacyMode             - Boolean. If true, use an older version of 
-%                             corrections algorithm, by calling
-%                             OLCorrectCacheFileOOC. If false, use the
-%                             refactored approach by calling
-%                             OLCorrectPrimaryValues. Defaults to true.
+%    'receptors'            -
 %    nIterations            - Number of iterations. Default is 20.
 %    learningRate           - Learning rate. Default is .8.
 %    learningRateDecrease   - Decrease learning rate over iterations?
@@ -61,9 +56,8 @@ parser.addRequired('direction',@(x) isa(x,'OLDirection_unipolar'));
 parser.addRequired('background',@(x) isa(x,'OLDirection_unipolar'));
 parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
 parser.addRequired('radiometer',@(x) isempty(x) || isa(x,'Radiometer'));
-parser.addParameter('receptors',[],@(x) isnumeric(x) || isa(x,'SSTReceptor')); 
+parser.addParameter('receptors',[],@(x) isnumeric(x) || isa(x,'SSTReceptor'));
 parser.addParameter('smoothness',.001,@isnumeric);
-parser.addParameter('legacyMode',true,@islogical);
 parser.addParameter('temperatureProbe',[],@(x) isempty(x) || isa(x,'LJTemperatureProbe'));
 parser.addParameter('measureStateTrackingSPDs',false, @islogical);
 parser.KeepUnmatched = true; % allows fastforwarding of kwargs to OLCorrectToSPD
@@ -74,7 +68,7 @@ receptors = parser.Results.receptors;
 
 if ~isscalar(direction)
     %% Dispatch correction for each direction
-	correctedDirection = [];
+    correctedDirection = [];
     for i = 1:numel(direction)
         correctedDirection = [correctedDirection, direction(i).OLCorrectDirection(background(i),oneLight,varargin{:})];
     end
@@ -83,13 +77,13 @@ else
     assert(matchingCalibration(direction,background),'OneLightToolbox:ApproachSupport:OLCorrectDirection:MismatchedCalibration',...
         'Direction and background do not share a calibration');
     time = datetime;
-
+    
     %% Copy nominal primary into separate object
     nominalDirection = direction.copy(); % store unlinked copy of nominalDirection
     nominalDirection.SPDdifferentialDesired = direction.SPDdifferentialDesired;
     nominalBackground = background.copy(); % store unlinked copy of nominalBackground
     nominalBackground.SPDdifferentialDesired = background.SPDdifferentialDesired;
-   
+    
     %% Measure background SPD
     desiredBackgroundSPD = background.SPDdifferentialDesired + background.calibration.computed.pr650MeanDark;
     measuredBackgroundSPD = OLMeasurePrimaryValues(background.differentialPrimaryValues,background.calibration,oneLight,radiometer);
@@ -102,83 +96,35 @@ else
     % background, i.e., the direction.
     desiredCombinedSPD = direction.SPDdifferentialDesired + desiredBackgroundSPD;
     
-    if parser.Results.legacyMode 
-        %% Use MatlabLibrary/OLCorrectCacheFileOOC. 
-        % That routine was rolled-back from 01/06/17.
-        %
-        % We think that algorithm is more robust, although we don't know
-        % whether that is true, or why.
-        
-        %% Turn into fake cache-structure
-        % Rolled-back code requires a cache-structure, this function creates
-        % one from the OLDirection_unipolar object
-        directionData = makeFakeCache(direction, background);
-
-        %% Correct
-        calibration = direction.calibration;
-        correctedDirectionData = OLCorrectCacheFileOOC(directionData, calibration, oneLight, radiometer, ...
-            'OBSERVER_AGE', 32, 'smoothness', parser.Results.smoothness, ...
-            'takeTemperatureMeasurements', isa(parser.Results.temperatureProbe,'LJTemperatureProbe'), ...
-            'measureStateTrackingSPDs', parser.Results.measureStateTrackingSPDs);
-
-        % Update describe
-        correctionDescribe = correctedDirectionData.data(32).correction;
-        
-        receptorContrast.receptors = receptors; 
-        receptorContrast.desired = SPDToReceptorContrast([desiredBackgroundSPD, desiredCombinedSPD(:,1)],receptors); 
-        receptorContrast.actual = correctionDescribe.contrasts;
-        receptorContrast.RMSE = sqrt(mean((receptorContrast.actual-receptorContrast.desired(:,1)).^2)); 
-        correctionDescribe.pickedIter = find(receptorContrast.RMSE == min(receptorContrast.RMSE),1); 
-        correctedCombinedPrimaryValues = correctionDescribe.modulationPrimaryMeasuredAll(:,correctionDescribe.pickedIter);    
-        
-        %% Update original OLDirection
-        % Update background business end
-        background.differentialPrimaryValues = correctedDirectionData.data(32).backgroundPrimary;
-        background.SPDdifferentialDesired = nominalBackground.SPDdifferentialDesired;
-        
-        % Add temperature data
-        if isfield(correctedDirectionData,'temperatureData')
-            correctionDescribe.temperatures = correctedDirectionData.temperatureData;
-        end
-        
-        % Add state tracking data
-        if isfield(correctedDirectionData,'stateTrackingData')
-            correctionDescribe.stateTrackingData = correctedDirectionData.stateTrackingData;
-        end
-    else
-        %% Use refactored code
-               
-        %% Correct differential primary values
-        % To get the combined primary values, the direction and background have
-        % to be added. However, when calling this routine, the background may
-        % already have been corrected. In that case, the summed direction and
-        % background primary values no longer correspond to the desired
-        % combined SPD. Instead, convert the desiredCombinedSPD to some initial
-        % primary values predicted to produce it, and correct those.
-        [correctedCombinedPrimaryValues, correctedSPD, correctionDescribe] = OLCorrectToSPD(desiredCombinedSPD,direction.calibration,...
-                                                                            oneLight,radiometer,...
-                                                                            varargin{:},'lambda',parser.Results.smoothness);    
-                                                                        
-        %% Calculate contrasts 
-        % For now, primaries are corrected to the desiredSPD. Since corrections 
-        % don't lead to a perfect match, the iteration with the lowest RMSE 
-        % between measured and desired SPD is chosen. However, that measured 
-        % SPD might not produce the best contrast. In most usecases, contrast 
-        % is more important the exact SPD. So, calculate contrasts per 
-        % iteration, calculate desired contrasts, calculate RMSE between 
-        % measured and desired contrasts, pick iteration with lowest contrast 
-        % RMSE. 
-        if ~isempty(receptors) 
-            receptorContrast.receptors = receptors; 
-            receptorContrast.desired = SPDToReceptorContrast([desiredBackgroundSPD, desiredCombinedSPD(:,1)],receptors); 
-            receptorContrast.actual = SPDToReceptorContrast([measuredBackgroundSPD correctionDescribe.SPDMeasured],receptors); 
-            receptorContrast.actual = squeeze(receptorContrast.actual(1,2:end,:))'; 
-            receptorContrast.RMSE = sqrt(mean((receptorContrast.actual-receptorContrast.desired(:,1)).^2)); 
-            correctionDescribe.receptorContrast = receptorContrast; 
-            correctionDescribe.pickedIter = find(receptorContrast.RMSE == min(receptorContrast.RMSE),1); 
-            correctedCombinedPrimaryValues = correctionDescribe.primaryUsed(:,correctionDescribe.pickedIter);       
-        end
+    %% Correct differential primary values
+    % To get the combined primary values, the direction and background have
+    % to be added. However, when calling this routine, the background may
+    % already have been corrected. In that case, the summed direction and
+    % background primary values no longer correspond to the desired
+    % combined SPD. Instead, convert the desiredCombinedSPD to some initial
+    % primary values predicted to produce it, and correct those.
+    [correctedCombinedPrimaryValues, correctedSPD, correctionDescribe] = OLCorrectToSPD(desiredCombinedSPD,direction.calibration,...
+        oneLight,radiometer,...
+        varargin{:},'lambda',parser.Results.smoothness);
     
+    %% Calculate contrasts
+    % For now, primaries are corrected to the desiredSPD. Since corrections
+    % don't lead to a perfect match, the iteration with the lowest RMSE
+    % between measured and desired SPD is chosen. However, that measured
+    % SPD might not produce the best contrast. In most usecases, contrast
+    % is more important the exact SPD. So, calculate contrasts per
+    % iteration, calculate desired contrasts, calculate RMSE between
+    % measured and desired contrasts, pick iteration with lowest contrast
+    % RMSE.
+    if ~isempty(receptors)
+        receptorContrast.receptors = receptors;
+        receptorContrast.desired = SPDToReceptorContrast([desiredBackgroundSPD, desiredCombinedSPD(:,1)],receptors);
+        receptorContrast.actual = SPDToReceptorContrast([measuredBackgroundSPD correctionDescribe.SPDMeasured],receptors);
+        receptorContrast.actual = squeeze(receptorContrast.actual(1,2:end,:))';
+        receptorContrast.RMSE = sqrt(mean((receptorContrast.actual-receptorContrast.desired(:,1)).^2));
+        correctionDescribe.receptorContrast = receptorContrast;
+        correctionDescribe.pickedIter = find(receptorContrast.RMSE == min(receptorContrast.RMSE),1);
+        correctedCombinedPrimaryValues = correctionDescribe.primaryUsed(:,correctionDescribe.pickedIter);
     end
     
     %% Update business end
@@ -186,22 +132,21 @@ else
     direction.SPDdifferentialDesired = nominalDirection.SPDdifferentialDesired;   % should not be necessary, but good to enforce anyway
     
     %% Update describe
-    correctionDescribe.legacyMode = parser.Results.legacyMode;
     correctionDescribe.time = [time datetime];
-    correctionDescribe.background = background; 
+    correctionDescribe.background = background;
     correctionDescribe.nominalDirection = nominalDirection;
     correctionDescribe.nominalBackground = nominalBackground;
     correctionDescribe.correctedBackground = background;
     correctionDescribe.desiredBackgroundSPD = desiredBackgroundSPD;
     correctionDescribe.measuredBackgroundSPD = measuredBackgroundSPD;
-
+    
     % Add to direction.describe; append if correction already present
     if ~isfield(direction.describe,'correction') || isempty(direction.describe.correction)
         direction.describe.correction = correctionDescribe;
     else
         direction.describe.correction = [direction.describe.correction correctionDescribe];
     end
-
+    
     % Return direction
     correctedDirection = direction;
 end
