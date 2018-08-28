@@ -8,9 +8,9 @@ function [correctedPrimaryValues, measuredSPD, detailedData] = OLCorrectToSPD(ta
 %   correctedPrimaryValues = OLCorrectPrimaryValues(..., 'smoothness',.01)
 %
 % Description:
-%   Use an iterative measure/adjust procedure to find primary values that
-%   produce the desired spectrum.  Based on a small signal approximation
-%   for the adjustment.
+%    Use an iterative measure/adjust procedure to find primary values that
+%    produce the desired spectrum. Based on a small signal approximation
+%    for the adjustment.
 %
 % Inputs:
 %    targetSPD                  - nWlsx1 column vector, where nWls is the
@@ -20,7 +20,7 @@ function [correctedPrimaryValues, measuredSPD, detailedData] = OLCorrectToSPD(ta
 %                                 to. This is in the scaling of the
 %                                 calibration structure.
 %    calibration                - Struct containing calibration for oneLight
-%    oneLight                   - OneLight device driver object to control
+%    oneLight                   - OneLight device driver object to control 
 %                                 a OneLight device. Can be real or
 %                                 simulated
 %    radiometer                 - Radiometer object to control a
@@ -36,22 +36,22 @@ function [correctedPrimaryValues, measuredSPD, detailedData] = OLCorrectToSPD(ta
 %                                 the SPD measured after correction. This
 %                                 is the actual measurement, not scaled by
 %                                 lightlevelScalar.
-%    detailedData               - A ton of data in a structure, mainly for
+%    detailedData               - A ton of data in a structure, mainly for 
 %                                 debugging purposes. See
 %                                 OLCheckPrimaryCorrection
 %
 % Optional key/value pairs:
 %    'lightlevelScalar'         - Scalar numeric, factor by which to
-%                                 multiply measured SPDs to bring into
+%                                 multiply measured SPDs to bring into 
 %                                 calibration range. See
 %                                 OLMeasureLightlevelScalar. Default is 1.
 %    'nIterations'              - Number of iterations. Default is 20.
 %    'learningRate'             - Learning rate. Default is .8.
 %    'learningRateDecrease'     - Decrease learning rate over iterations?
 %                                 Default is true.
-%    'asympLearningRateFactor'  - If learningRateDecrease is true, the
+%    'asympLearningRateFactor'  - If learningRateDecrease is true, the 
 %                                 asymptotic learning rate is
-%                                 (1-asympLearningRateFactor)*learningRate.
+%                                 (1-asympLearningRateFactor)*learningRate. 
 %                                 Default = .5.
 %    'smoothness'               - Smoothness parameter for OLSpdToPrimary.
 %                                 Default .001.
@@ -60,7 +60,7 @@ function [correctedPrimaryValues, measuredSPD, detailedData] = OLCorrectToSPD(ta
 %    'temperatureProbe'         - LJTemperatureProbe object to drive a
 %                                 LabJack temperature probe. Default empty.
 %    'measureStateTrackingSPDs' - Make state tracking measurements?
-%                                Default false.
+%                                 Default false.
 %
 % See also:
 %    OLValidatePrimaryValues, OLLinearDeltaPrimaries, OLIterativeDeltaPrimaries
@@ -72,7 +72,7 @@ function [correctedPrimaryValues, measuredSPD, detailedData] = OLCorrectToSPD(ta
 %    06/29/18  npc  implemented temperature recording
 %    06/30/18  npc  implemented state tracking SPD recording
 %    08/16/18  jv   OLCorrectToSPD
-
+%    08/28/18  jv   pass lightelevelScalar as optional keyword argument.
 
 % Examples:
 %{
@@ -91,15 +91,16 @@ function [correctedPrimaryValues, measuredSPD, detailedData] = OLCorrectToSPD(ta
 
 %% Input validation
 parser = inputParser;
-parser.addRequired('targetSPD',@isnumeric);
+parser.addRequired('targetSPD',@(x)validateattributes(x,{'numeric'},{'vector','real','finite','nonnegative'}));
 parser.addRequired('calibration',@isstruct);
 parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
 parser.addRequired('radiometer',@(x) isempty(x) || isa(x,'Radiometer'));
-parser.addParameter('nIterations',20,@isscalar);
-parser.addParameter('learningRate', 0.8, @isscalar);
+parser.addParameter('nIterations',20,@(x)validateattributes(x,{'numeric'},{'scalar','integer','finite','nonnegative'}));
+parser.addParameter('lightlevelScalar',1,@(x)validateattributes(x,{'numeric'},{'scalar','real','finite','positive'}));
+parser.addParameter('learningRate', 0.8, @(x)validateattributes(x,{'numeric'},{'scalar','real','finite','positive'}));
 parser.addParameter('learningRateDecrease',true,@islogical);
-parser.addParameter('asympLearningRateFactor',0.5,@isscalar);
-parser.addParameter('smoothness', 0.001, @isscalar);
+parser.addParameter('asympLearningRateFactor',0.5,@(x)validateattributes(x,{'numeric'},{'scalar','real','finite','positive'}));
+parser.addParameter('smoothness', 0.001, @(x)validateattributes(x,{'numeric'},{'scalar','real','finite','nonnegative'}));
 parser.addParameter('iterativeSearch',true, @islogical);
 parser.addParameter('temperatureProbe',[],@(x) isempty(x) || isa(x,'LJTemperatureProbe'));
 parser.addParameter('measureStateTrackingSPDs', false, @islogical);
@@ -113,6 +114,7 @@ asympLearningRateFactor = parser.Results.asympLearningRateFactor;
 smoothness = parser.Results.smoothness;
 iterativeSearch = parser.Results.iterativeSearch;
 temperatureProbe = parser.Results.temperatureProbe;
+lightlevelScalar = parser.Results.lightlevelScalar;
 
 %% Measure state-tracking SPDs
 stateTrackingData = struct();
@@ -157,14 +159,6 @@ for iter = 1:nIterations
     % Take the measurements
     [measuredSPD, temperaturesForAllIterations{iter}] = OLMeasurePrimaryValues(primariesThisIter,calibration,oneLight,radiometer, ...
         'temperatureProbe',parser.Results.temperatureProbe);
-    
-    % If first time through, figure out a scaling factor from the first
-    % measurement which puts the measured spectrum into the same range as
-    % the predicted spectrum. This deals with fluctuations with absolute
-    % light level.
-    if iter == 1
-        kScale = measuredSPD \ targetSPD;
-    end
     
     % Set learning rate to use this iteration
     if learningRateDecrease
