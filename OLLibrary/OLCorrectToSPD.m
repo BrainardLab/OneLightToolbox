@@ -174,12 +174,12 @@ for iter = 1:nIterations
     end
     
     % Find delta primaries using small signal linear methods.
-    DeltaPrimaryTruncatedLearningRate = OLLinearDeltaPrimaries(primariesThisIter,lightlevelScalar*measuredSPD,targetSPD,learningRateThisIter,smoothness,calibration);
+    deltaPrimary = OLLinearDeltaPrimaries(primariesThisIter,lightlevelScalar*measuredSPD,targetSPD,learningRateThisIter,smoothness,calibration);
     
     % Optionally use fmincon to improve the truncated learning
     % rate delta primaries by iterative search.
     if iterativeSearch
-        DeltaPrimaryTruncatedLearningRate = OLIterativeDeltaPrimaries(DeltaPrimaryTruncatedLearningRate,primariesThisIter,lightlevelScalar*measuredSPD,targetSPD,learningRateThisIter,calibration);
+        deltaPrimary = OLIterativeDeltaPrimaries(deltaPrimary,primariesThisIter,lightlevelScalar*measuredSPD,targetSPD,learningRateThisIter,calibration);
     end
     
     % Compute and store the settings to use next time through
@@ -188,9 +188,9 @@ for iter = 1:nIterations
     % Save the information for this iteration in a convenient form for later.
     SPDMeasured(:,iter) = measuredSPD;
     RMSE(:,iter) = sqrt(mean((targetSPD-lightlevelScalar*measuredSPD).^2));
-    PrimaryUsed(:,iter) = primariesThisIter;
-    DeltaPrimaryTruncatedLearningRateAll(:,iter) = DeltaPrimaryTruncatedLearningRate;
-    NextPrimaryTruncatedLearningRateAll(:,iter) = NextPrimaryTruncatedLearningRate;
+    primaryUsed(:,iter) = primariesThisIter;
+    deltaPrimary(:,iter) = deltaPrimary;
+    nextPrimary(:,iter) = nextPrimary;
 end
 
 %% Store information about correction for return
@@ -212,9 +212,8 @@ detailedData.iterativeSearch = iterativeSearch;
 % useful for debugging the seeking procedure.
 detailedData.targetSPD = targetSPD;
 detailedData.initialPrimaryValues = initialPrimaryValues;
-detailedData.targetSPD = targetSPD;
 detailedData.lightlevelScalar = lightlevelScalar;
-detailedData.primaryUsed = PrimaryUsed;
+detailedData.primaryUsed = primaryUsed;
 detailedData.SPDMeasured = SPDMeasured;
 detailedData.deltaSPDMeasuredScaled = (lightlevelScalar*SPDMeasured) - targetSPD;
 detailedData.RMSE = RMSE;
