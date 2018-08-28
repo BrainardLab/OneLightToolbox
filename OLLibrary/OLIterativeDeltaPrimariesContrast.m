@@ -1,8 +1,8 @@
-function [deltaPrimaries,predictedSPD] = OLIterativeDeltaPrimariesContrast(deltaPrimaries0,primariesUsed,targetContrasts,measuredSPD,backgroundSPD,T_receptors,learningRate,cal)
+function [deltaPrimaries,predictedSPD] = OLIterativeDeltaPrimariesContrast(deltaPrimaries0,primariesUsed,targetContrasts,measuredSPD,backgroundSPD,receptors,learningRate,cal)
 % Use small signal approximation to estimate primaries that attain target contrast
 %
 % Syntax:
-%     [deltaPrimaries,predictedSPD] = OLIterativeDeltaPrimariesContrast(deltaPrimaries0,primariesUsed,targetContrasts,measuredSPD,backgroundSPD,T_receptors,learningRate,cal)
+%     [deltaPrimaries,predictedSPD] = OLIterativeDeltaPrimariesContrast(deltaPrimaries0,primariesUsed,targetContrasts,measuredSPD,backgroundSPD,receptors,learningRate,cal)
 %
 % Desicription:
 %     Use numerical search to find the deltaPrimaries that should be added to
@@ -61,9 +61,8 @@ vlb = -primariesUsed;
 vub = 1-primariesUsed;
 
 % Compute contrasts obtained with current measurement
-backgroundReceptors = T_receptors*backgroundSPD;
-measuredReceptors = T_receptors*measuredSPD;
-measuredContrasts = (measuredReceptors - backgroundReceptors) ./ backgroundReceptors;
+measuredContrasts = SPDToReceptorContrast([backgroundSPD,measuredSPD],receptors);
+measuredContrasts = measuredContrasts(:,1);
 
 % Figure out desired contrasts given learning rate
 targetContrastsLearningRate =  measuredContrasts + learningRate*(targetContrasts - measuredContrasts);
@@ -74,7 +73,7 @@ if (isempty(deltaPrimaries0))
 end
 
 % Use fmincon to find the desired primaries
-deltaPrimaries = fmincon(@(deltaPrimaries)OLIterativeDeltaPrimariesContrastErrorFunction(deltaPrimaries,primariesUsed,targetContrastsLearningRate,measuredSPD,backgroundSPD,T_receptors,cal),...
+deltaPrimaries = fmincon(@(deltaPrimaries)OLIterativeDeltaPrimariesContrastErrorFunction(deltaPrimaries,primariesUsed,targetContrastsLearningRate,measuredSPD,backgroundSPD,receptors,cal),...
     deltaPrimaries0,[],[],[],[],vlb,vub,[],options);
 
 % When we search, we evaluate error based on the
@@ -88,7 +87,7 @@ predictedSPD = OLPredictSpdFromDeltaPrimaries(deltaPrimaries,primariesUsed,measu
 
 end 
 
-function f = OLIterativeDeltaPrimariesContrastErrorFunction(deltaPrimaries,primariesUsed,targetContrasts,measuredSPD,backgroundSPD,T_receptors,cal)
+function f = OLIterativeDeltaPrimariesContrastErrorFunction(deltaPrimaries,primariesUsed,targetContrasts,measuredSPD,backgroundSPD,receptors,cal)
 % OLIterativeDeltaPrimariesErrorFunction  Error function for delta primary iterated search
 %   f = OLIterativeDeltaPrimariesErrorFunction(deltaPrimaries,primariesUsed,targetContrasts,measuredSPD,backgroundSPD,T_receptors,contrastDesiredLearningRate,cal)
 %
@@ -101,9 +100,8 @@ function f = OLIterativeDeltaPrimariesContrastErrorFunction(deltaPrimaries,prima
 predictedSPD = OLPredictSpdFromDeltaPrimaries(deltaPrimaries,primariesUsed,measuredSPD,cal);
 
 % Get predicted contrasts
-backgroundReceptors = T_receptors*backgroundSPD;
-predictedReceptors = T_receptors*predictedSPD;
-predictedContrasts = (predictedReceptors - backgroundReceptors) ./ backgroundReceptors;
+predictedContrasts = SPDToReceptorContrast([backgroundSPD,predictedSPD],receptors);
+predictedContrasts = predictedContrasts(:,1);
 
 % Compute error
 diffContrasts = targetContrasts-predictedContrasts;

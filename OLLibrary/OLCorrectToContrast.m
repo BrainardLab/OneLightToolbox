@@ -90,7 +90,6 @@ function [correctedPrimaryValues, measuredContrasts, detailedData] = OLCorrectTo
 
     % Define inputs
     receptors = SSTReceptorHuman('S',calibration.describe.S,'verbosity','none');
-    receptors = receptors.T.T_energyNormalized;
     targetContrasts = [2 2 2 2 2]';
     backgroundSPD = .3 * OLPrimaryToSpd(calibration,ones(calibration.describe.numWavelengthBands,1));
     initialSPD = 2.9 * backgroundSPD;
@@ -111,7 +110,7 @@ parser = inputParser;
 parser.addRequired('targetContrasts',@(x)validateattributes(x,{'numeric'},{'vector','real','finite','nonnegative'}));
 parser.addRequired('initialSPD',@(x)validateattributes(x,{'numeric'},{'vector','real','finite','nonnegative'}));
 parser.addRequired('backgroundSPD',@(x)validateattributes(x,{'numeric'},{'vector','real','finite','nonnegative'}));
-parser.addRequired('receptors',@(x)validateattributes(x,{'numeric','SSTReceptor'},{'real','finite','nonnegative'}));
+parser.addRequired('receptors',@(x) isnumeric(x) || isa(x,'SSTReceptorHuman'));
 parser.addRequired('calibration',@isstruct);
 parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
 parser.addRequired('radiometer',@(x) isempty(x) || isa(x,'Radiometer'));
@@ -130,10 +129,10 @@ parser.parse(targetContrasts, initialSPD, backgroundSPD, receptors, calibration,
 % Assert SPDs and receptors match calibration wls specification
 validateattributes(initialSPD,{'numeric'},{'size',[calibration.describe.S(3) 1]},mfilename,'initialSPD',2);
 validateattributes(backgroundSPD,{'numeric'},{'size',[calibration.describe.S(3) 1]},mfilename,'backgroundSPD',3);
-validateattributes(receptors,{'numeric'},{'ncols',calibration.describe.S(3)},mfilename,'receptors',4);
+%validateattributes(receptors,{'numeric'},{'ncols',calibration.describe.S(3)},mfilename,'receptors',4);
 
 % Assert correct number of target contrasts have been passed
-validateattributes(targetContrasts,{'numeric'},{'size',[size(receptors,1),1]},mfilename,'targetContrasts',1);
+%validateattributes(targetContrasts,{'numeric'},{'size',[size(receptors,1),1]},mfilename,'targetContrasts',1);
 
 nIterations = parser.Results.nIterations;
 learningRate = parser.Results.learningRate;
