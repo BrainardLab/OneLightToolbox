@@ -122,12 +122,9 @@ else
     
     %% Update describe
     correctionDescribe.time = [time datetime];
-    correctionDescribe.background = background;
     correctionDescribe.nominalDirection = nominalDirection;
-    correctionDescribe.nominalBackground = nominalBackground;
-    correctionDescribe.correctedBackground = background;
+    correctionDescribe.background = background;
     correctionDescribe.desiredBackgroundSPD = desiredBackgroundSPD;
-    correctionDescribe.measuredBackgroundSPD = measuredBackgroundSPD;
     
     % Add to direction.describe; append if correction already present
     if ~isfield(direction.describe,'correction') || isempty(direction.describe.correction)

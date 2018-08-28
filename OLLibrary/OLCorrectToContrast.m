@@ -250,8 +250,8 @@ detailedData.primaryUsed = primaryUsed;
 detailedData.SPDMeasured = SPDMeasured;
 detailedData.ContrastMeasured = contrastMeasured;
 detailedData.RMSE = RMSE;
-detailedData.NextPrimaryTruncatedLearningRate = nextPrimary;
-detailedData.DeltaPrimaryTruncatedLearningRate = deltaPrimary;
+detailedData.nextPrimary = nextPrimary;
+detailedData.deltaPrimary = deltaPrimary;
 detailedData.correctedPrimaryValues = correctedPrimaryValues;
 
 % Store temperature data and stateTrackingData
