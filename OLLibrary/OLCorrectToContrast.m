@@ -241,8 +241,10 @@ detailedData.iterativeSearch = iterativeSearch;
 
 % Store target spectra and initial primaries used.  This information is
 % useful for debugging the seeking procedure.
-detailedData.initialPrimaryValues = initialPrimaryValues;
 detailedData.targetContrasts = targetContrasts;
+detailedData.receptors = receptors;
+detailedData.initialSPD = initialSPD;
+detailedData.backgroudSPD = backgroundSPD;
 detailedData.lightlevelScalar = lightlevelScalar;
 detailedData.primaryUsed = primaryUsed;
 detailedData.SPDMeasured = SPDMeasured;
