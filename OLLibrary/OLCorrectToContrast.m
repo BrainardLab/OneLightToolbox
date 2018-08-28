@@ -176,10 +176,16 @@ backgroundSPDScaled = lightlevelScalar*backgroundSPD;
 
 %% Correct
 temperaturesForAllIterations = cell(1, nIterations);
-nextPrimaryTruncatedLearningRate = initialPrimaryValues;
 for iter = 1:nIterations
+    % Get primaries for this iteration (either initial, or the determined
+    % next primaries)
+    if iter > 1
+        primariesThisIter = nextPrimary(:,iter-1);
+    else
+        primariesThisIter = initialPrimaryValues;
+    end    
+    
     % Take the measurements
-    primariesThisIter = nextPrimaryTruncatedLearningRate;
     [measuredSPD, temperaturesForAllIterations{iter}] = OLMeasurePrimaryValues(primariesThisIter,calibration,oneLight,radiometer, ...
         'temperatureProbe',parser.Results.temperatureProbe);
     
@@ -202,25 +208,26 @@ for iter = 1:nIterations
     %
     % We initialize each call at zero delta, because the previous delta has
     % been incorporated into the current measurement.
-    deltaPrimaryTruncatedLearningRate = OLIterativeDeltaPrimariesContrast([],primariesThisIter,targetContrasts,measuredSPDScaled,backgroundSPDScaled,receptors,learningRateThisIter,calibration);
+    deltaPrimary = OLIterativeDeltaPrimariesContrast([],primariesThisIter,targetContrasts,measuredSPDScaled,backgroundSPDScaled,receptors,learningRateThisIter,calibration);
     
     % Compute and store the settings to use next time through
-    nextPrimaryTruncatedLearningRate = primariesThisIter + deltaPrimaryTruncatedLearningRate;
+    nextPrimary = primariesThisIter + deltaPrimary;
     
     % Save the information for this iteration in a convenient form for later.
     SPDMeasured(:,iter) = measuredSPD;
-    ContrastMeasured(:,iter) = measuredContrasts;
+    contrastMeasured(:,iter) = measuredContrasts;
     RMSE(:,iter) = sqrt(mean((targetContrasts-measuredContrasts).^2));
-    PrimaryUsed(:,iter) = primariesThisIter;
-    DeltaPrimaryTruncatedLearningRateAll(:,iter) = deltaPrimaryTruncatedLearningRate;
-    NextPrimaryTruncatedLearningRateAll(:,iter) = nextPrimaryTruncatedLearningRate;
+    primaryUsed(:,iter) = primariesThisIter;
+    deltaPrimary(:,iter) = deltaPrimary;
+    nextPrimary(:,iter) = nextPrimary;
 end
 
 %% Store information about correction for return
 %
 % Business end: pick primary values with lowest RMSE.  RMSE is on
 % contrasts.
-correctedPrimaryValues = PrimaryUsed(:, find(RMSE == min(RMSE),1));
+detailedData.pickedIter = find(RMSE == min(RMSE),1);
+correctedPrimaryValues = primaryUsed(:, detailedData.pickedIter);
 
 % Metadata, e.g., parameters. While I'm not a fan of including input
 % parameters in output, it is relevant here because we might have used
@@ -238,12 +245,12 @@ detailedData.iterativeSearch = iterativeSearch;
 detailedData.initialPrimaryValues = initialPrimaryValues;
 detailedData.targetContrasts = targetContrasts;
 detailedData.lightlevelScalar = lightlevelScalar;
-detailedData.primaryUsed = PrimaryUsed;
+detailedData.primaryUsed = primaryUsed;
 detailedData.SPDMeasured = SPDMeasured;
-detailedData.ContrastMeasured = ContrastMeasured;
+detailedData.ContrastMeasured = contrastMeasured;
 detailedData.RMSE = RMSE;
-detailedData.NextPrimaryTruncatedLearningRate = NextPrimaryTruncatedLearningRateAll;
-detailedData.DeltaPrimaryTruncatedLearningRate = DeltaPrimaryTruncatedLearningRateAll;
+detailedData.NextPrimaryTruncatedLearningRate = nextPrimary;
+detailedData.DeltaPrimaryTruncatedLearningRate = deltaPrimary;
 detailedData.correctedPrimaryValues = correctedPrimaryValues;
 
 % Store temperature data and stateTrackingData
