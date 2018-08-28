@@ -1,8 +1,10 @@
-function [correctedPrimaryValues, measuredSPD, detailedData] = OLCorrectToContrast(targetContrasts, initialSPD, backgroundSPD, T_receptors, calibration, oneLight, radiometer, varargin)
+function [correctedPrimaryValues, measuredContrasts, detailedData] = OLCorrectToContrast(targetContrasts, initialSPD, backgroundSPD, receptors, calibration, oneLight, radiometer, varargin)
 % Corrects primary values iteratively to attain target contrasts
 %
 % Syntax:
-%   [correctedPrimaryValues, measuredSPD, detailedData] = OLCorrectToContrast(targetContrasts, initialSPD, backgroundSPD, T_receptors, calibration, oneLight, radiometer, varargin)
+%   correctedPrimaryValues = OLCorrectToContrast(targetContrasts, initialSPD, backgroundSPD, receptors, calibration, oneLight, radiometer)
+%   [correctedPrimaryValues measuredSPD] = OLCorrectToContrast(...)
+%   [correctedPrimaryValues measuredSPD detailedData] = OLCorrectToContrast(...)
 %
 % Description:
 %   Seeks primary values that lead to spectrum with desired target
@@ -12,8 +14,8 @@ function [correctedPrimaryValues, measuredSPD, detailedData] = OLCorrectToContra
 %   calibration to try to find primaries that minimize contrast error.
 %
 % Inputs:
-%    targetContrasts         - nReceptorsx1 column vector, giving target
-%                              contrasts for each receptor class.
+%    targetContrasts         - Rx1 column vector, giving target contrasts 
+%                              for R receptor classes
 %    initialSPD              - nWlsx1 column vector, with an initial guess
 %                              as to an SPD that will produce the desired
 %                              contrasts.  Need not be exact, just to get
@@ -24,8 +26,8 @@ function [correctedPrimaryValues, measuredSPD, detailedData] = OLCorrectToContra
 %                              spectral power distribution with respect to
 %                              which to compute contrasts.  This should be
 %                              unscaled - the actual measurement.
-%    T_receptors             - nReceptorsxnWls matrix specifying receptor
-%                              fundamentals.
+%    receptors               - RxnWls matrix specifying receptor
+%                              fundamentals for R receptor classes
 %    calibration             - struct containing calibration for oneLight
 %    oneLight                - OneLight device driver object to control a
 %                              OneLight device. Can be real or simulated
@@ -34,37 +36,38 @@ function [correctedPrimaryValues, measuredSPD, detailedData] = OLCorrectToContra
 %                              simulating
 %
 % Outputs:
-%    correctedPrimaryValues  - Px1 column vector of primary values, where P
-%                              is the number of values for effective device
-%                              primaries.
-%    measuredSPD             - nWlsx1 column vector, where nWls is the
-%                              number of wavelength bands measured, of the
-%                              SPD measured after correction. This is the
-%                              actual measurement, not scaled by kScale.
-%    detailedData            - A ton of data in a structure, for debugging purposes.
+%    correctedPrimaryValues     - Px1 column vector of primary values,
+%                                 where P is the number of values for
+%                                 effective device primaries.
+%    measuredContrasts          - Rx1 column vector of contrasts on R
+%                                 receptors, between the SPD after
+%                                 correction and the measured background
+%                                 SPD.
+%    detailedData               - A ton of data in a structure, mainly for
+%                                 debugging purposes. See
+%                                 OLCheckPrimaryCorrection
 %
 % Optional key/value pairs:
-%    'nIterations'             - Number of iterations. Default is 20.
-%    'learningRate'            - Learning rate. Default is .8.
-%    'learningRateDecrease'    - Decrease learning rate over iterations?
-%                                Default is true.
-%    'asympLearningRateFactor' - If learningRateDecrease is true, the 
-%                                asymptotic learning rate is
-%                                (1-asympLearningRateFactor)*learningRate. 
-%                                Default = .5.
-%    'smoothness'              - Smoothness parameter for OLSpdToPrimary.
-%                                Default .001.
-%    'iterativeSearch'         - Do iterative search with fmincon on each
-%                                measurement interation? Default is true.
-%    'temperatureProbe'        - LJTemperatureProbe object to drive a LabJack
-%                                temperature probe. Default empty.
+%    'nIterations'              - Number of iterations. Default is 20.
+%    'learningRate'             - Learning rate. Default is .8.
+%    'learningRateDecrease'     - Decrease learning rate over iterations?
+%                                 Default is true.
+%    'asympLearningRateFactor'  - If learningRateDecrease is true, the 
+%                                 asymptotic learning rate is
+%                                 (1-asympLearningRateFactor)*learningRate. 
+%                                 Default = .5.
+%    'smoothness'               - Smoothness parameter for OLSpdToPrimary.
+%                                 Default .001.
+%    'iterativeSearch'          - Do iterative search with fmincon on each
+%                                 measurement interation? Default is true.
+%    'temperatureProbe'         - LJTemperatureProbe object to drive a
+%                                 LabJack temperature probe. Default empty.
 %    'measureStateTrackingSPDs' - Make state tracking measurements?
 %                                Default false.
-%    'kScale'                  - Scale factor to bring a current measurement
-%                                into the same overall scale as the
-%                                calibration structure data.  Used to account
-%                                for overall drift of the device during the
-%                                corrections.  Default 1.
+%    'lightlevelScalar'         - Scalar numeric, factor by which to
+%                                 multiply measured SPDs to bring into
+%                                 calibration range. See
+%                                 OLMeasureLightlevelScalar. Default is 1.
 %
 % See also:
 %    OLValidatePrimaryValues
@@ -80,29 +83,57 @@ function [correctedPrimaryValues, measuredSPD, detailedData] = OLCorrectToContra
 
 % Examples:
 %{
+    %% Test under simulation
+    % Get calibration
+    demoCalFolder = fullfile(tbLocateToolbox('OneLightToolbox'),'OLDemoCal');
+    calibration = OLGetCalibrationStructure('CalibrationFolder',demoCalFolder,'CalibrationType','DemoCal');
+
+    % Define inputs
+    receptors = SSTReceptorHuman('S',calibration.describe.S,'verbosity','none');
+    receptors = receptors.T.T_energyNormalized;
+    targetContrasts = [2 2 2 2 2]';
+    backgroundSPD = .3 * OLPrimaryToSpd(calibration,ones(calibration.describe.numWavelengthBands,1));
+    initialSPD = 2.9 * backgroundSPD;
+    initialContrasts = SPDToReceptorContrast([backgroundSPD, initialSPD],receptors);
+    initialContrasts = initialContrasts(:,1);
+
+    oneLight = OneLight('simulate',true,'plotWhenSimulating',false);
+
+    % Correct
+    [correctedPrimaryValues, measuredContrasts, data] = OLCorrectToContrast(targetContrasts, initialSPD, backgroundSPD, receptors,calibration,oneLight,[]);
     
+    % Compare
+    [initialContrasts, measuredContrasts, targetContrasts]
 %}
 
 %% Input validation
 parser = inputParser;
-parser.addRequired('targetContrasts',@isnumeric);
-parser.addRequired('initialSPD',@isnumeric);
-parser.addRequired('backgroundSPD',@isnumeric);
-parser.addRequired('T_receptors',@isnumeric);
+parser.addRequired('targetContrasts',@(x)validateattributes(x,{'numeric'},{'vector','real','finite','nonnegative'}));
+parser.addRequired('initialSPD',@(x)validateattributes(x,{'numeric'},{'vector','real','finite','nonnegative'}));
+parser.addRequired('backgroundSPD',@(x)validateattributes(x,{'numeric'},{'vector','real','finite','nonnegative'}));
+parser.addRequired('receptors',@(x)validateattributes(x,{'numeric','SSTReceptor'},{'real','finite','nonnegative'}));
 parser.addRequired('calibration',@isstruct);
 parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
 parser.addRequired('radiometer',@(x) isempty(x) || isa(x,'Radiometer'));
-parser.addParameter('nIterations',20,@isscalar);
-parser.addParameter('learningRate', 0.8, @isscalar);
+parser.addParameter('nIterations',20,@(x)validateattributes(x,{'numeric'},{'scalar','integer','finite','nonnegative'}));
+parser.addParameter('learningRate', 0.8, @(x)validateattributes(x,{'numeric'},{'scalar','real','finite','positive'}));
 parser.addParameter('learningRateDecrease',true,@islogical);
-parser.addParameter('asympLearningRateFactor',0.5,@isscalar);
-parser.addParameter('smoothness', 0.001, @isscalar);
+parser.addParameter('asympLearningRateFactor',0.5,@(x)validateattributes(x,{'numeric'},{'scalar','real','finite','positive'}));
+parser.addParameter('smoothness', 0.001, @(x)validateattributes(x,{'numeric'},{'scalar','real','finite','positive'}));
 parser.addParameter('iterativeSearch',true, @islogical);
 parser.addParameter('temperatureProbe',[],@(x) isempty(x) || isa(x,'LJTemperatureProbe'));
 parser.addParameter('measureStateTrackingSPDs', false, @islogical);
-parser.addParameter('kScale', 1, @isnumeric);
+parser.addParameter('lightlevelScalar', 1, @(x)validateattributes(x,{'numeric'},{'scalar','real','finite','positive'}));
 parser.KeepUnmatched = true;
-parser.parse(targetContrasts, initialSPD, backgroundSPD, T_receptors, calibration, oneLight, radiometer, varargin{:});
+parser.parse(targetContrasts, initialSPD, backgroundSPD, receptors, calibration, oneLight, radiometer, varargin{:});
+
+% Assert SPDs and receptors match calibration wls specification
+validateattributes(initialSPD,{'numeric'},{'size',[calibration.describe.S(3) 1]},mfilename,'initialSPD',2);
+validateattributes(backgroundSPD,{'numeric'},{'size',[calibration.describe.S(3) 1]},mfilename,'backgroundSPD',3);
+validateattributes(receptors,{'numeric'},{'ncols',calibration.describe.S(3)},mfilename,'receptors',4);
+
+% Assert correct number of target contrasts have been passed
+validateattributes(targetContrasts,{'numeric'},{'size',[size(receptors,1),1]},mfilename,'targetContrasts',1);
 
 nIterations = parser.Results.nIterations;
 learningRate = parser.Results.learningRate;
@@ -110,7 +141,7 @@ learningRateDecrease = parser.Results.learningRateDecrease;
 asympLearningRateFactor = parser.Results.asympLearningRateFactor;
 smoothness = parser.Results.smoothness;
 iterativeSearch = parser.Results.iterativeSearch;
-kScale = parser.Results.kScale;
+lightlevelScalar = parser.Results.lightlevelScalar;
 
 %% Measure state-tracking SPDs
 stateTrackingData = struct();
@@ -140,9 +171,8 @@ initialPrimaryValues = OLSpdToPrimary(calibration, initialSPD, ...
                         'primaryHeadroom',0,...
                         'lambda',parser.Results.smoothness);
                     
-%% Get receptor responses for background
-backgroundSPDScaled = kScale*backgroundSPD;
-backgroundReceptorsScaled = T_receptors*backgroundSPDScaled;
+%% Scale background SPD
+backgroundSPDScaled = lightlevelScalar*backgroundSPD;
 
 %% Correct
 temperaturesForAllIterations = cell(1, nIterations);
@@ -154,12 +184,12 @@ for iter = 1:nIterations
         'temperatureProbe',parser.Results.temperatureProbe);
     
     % Scale measured SPD here
-    measuredSPDScaled = kScale*measuredSPD;
+    measuredSPDScaled = lightlevelScalar*measuredSPD;
     
     % Get measured contrasts.  Note that kScale does not affect contrasts, since
     % it is incorporated into both measurement and background.
-    measuredReceptorsScaled = T_receptors*measuredSpdScaled;
-    measuredContrasts = (measuredReceptorsScaled-backgroundReceptorsScaled) ./ backgroundReceptorsScaled;
+    measuredContrasts = SPDToReceptorContrast([backgroundSPDScaled, measuredSPDScaled],receptors);
+    measuredContrasts = measuredContrasts(:,1);
     
     % Set learning rate to use this iteration
     if learningRateDecrease
@@ -172,13 +202,14 @@ for iter = 1:nIterations
     %
     % We initialize each call at zero delta, because the previous delta has
     % been incorporated into the current measurement.
-    deltaPrimaryTruncatedLearningRate = OLIterativeDeltaPrimariesContrast([],primariesThisIter,targetContrasts,measuredSpdScaled,backgroundSPDScaled,T_receptors,learningRateThisIter,calibration);
+    deltaPrimaryTruncatedLearningRate = OLIterativeDeltaPrimariesContrast([],primariesThisIter,targetContrasts,measuredSPDScaled,backgroundSPDScaled,receptors,learningRateThisIter,calibration);
     
     % Compute and store the settings to use next time through
     nextPrimaryTruncatedLearningRate = primariesThisIter + deltaPrimaryTruncatedLearningRate;
     
     % Save the information for this iteration in a convenient form for later.
     SPDMeasured(:,iter) = measuredSPD;
+    ContrastMeasured(:,iter) = measuredContrasts;
     RMSE(:,iter) = sqrt(mean((targetContrasts-measuredContrasts).^2));
     PrimaryUsed(:,iter) = primariesThisIter;
     DeltaPrimaryTruncatedLearningRateAll(:,iter) = deltaPrimaryTruncatedLearningRate;
@@ -205,11 +236,11 @@ detailedData.iterativeSearch = iterativeSearch;
 % Store target spectra and initial primaries used.  This information is
 % useful for debugging the seeking procedure.
 detailedData.initialPrimaryValues = initialPrimaryValues;
-detailedData.targetSPD = targetSPD;
-detailedData.kScale = kScale;
+detailedData.targetContrasts = targetContrasts;
+detailedData.lightlevelScalar = lightlevelScalar;
 detailedData.primaryUsed = PrimaryUsed;
 detailedData.SPDMeasured = SPDMeasured;
-detailedData.deltaSPDMeasured = SPDMeasured - targetSPD;
+detailedData.ContrastMeasured = ContrastMeasured;
 detailedData.RMSE = RMSE;
 detailedData.NextPrimaryTruncatedLearningRate = NextPrimaryTruncatedLearningRateAll;
 detailedData.DeltaPrimaryTruncatedLearningRate = DeltaPrimaryTruncatedLearningRateAll;

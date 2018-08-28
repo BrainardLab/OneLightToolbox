@@ -62,7 +62,7 @@ vub = 1-primariesUsed;
 
 % Compute contrasts obtained with current measurement
 backgroundReceptors = T_receptors*backgroundSPD;
-measuredReceptors = T_receptors*mesuredSPD;
+measuredReceptors = T_receptors*measuredSPD;
 measuredContrasts = (measuredReceptors - backgroundReceptors) ./ backgroundReceptors;
 
 % Figure out desired contrasts given learning rate
@@ -84,7 +84,7 @@ deltaPrimaries = fmincon(@(deltaPrimaries)OLIterativeDeltaPrimariesContrastError
 deltaPrimaries = OLTruncatedDeltaPrimaries(deltaPrimaries,primariesUsed,cal);
 
 % Get predicted ppd
-predictedSPD = OLPredictSpdFromDeltaPrimaries(deltaPrimaries,primariesUsed,spdMeasured,cal);
+predictedSPD = OLPredictSpdFromDeltaPrimaries(deltaPrimaries,primariesUsed,measuredSPD,cal);
 
 end 
 
