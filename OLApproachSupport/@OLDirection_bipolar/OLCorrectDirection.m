@@ -1,12 +1,14 @@
 function correctedDirection = OLCorrectDirection(direction, background, oneLight, radiometer, varargin)
-% Corrects OLDirection_bipolar iteratively to attain predicted SPD
+% Corrects OLDirection_bipolar iteratively to attain desired SPD
 %
 % Syntax:
 %   correctedDirection = OLCorrectDirection(OLDirection_bipolar, background, OneLight, radiometer)
 %   correctedDirection = OLCorrectDirection(OLDirection_bipolar, background, SimulatedOneLight)
 %
 % Description:
-%    Detailed explanation goes here
+%    Use an iterative measure/adjust procedure to correct the direction to
+%    produce the desired SPDs. Based on a small signal approximation for
+%    the adjustment.
 %
 % Inputs:
 %    direction          - OLDirection_bipolar object specifying the
@@ -16,8 +18,8 @@ function correctedDirection = OLCorrectDirection(direction, background, oneLight
 %    oneLight           - a OneLight device driver object to control a
 %                         OneLight device, can be real or simulated
 %    radiometer         - Radiometer object to control a
-%                         spectroradiometer. Can be passed empty when
-%                         simulating
+%                         spectroradiometer. Can be passed the empty matrix
+%                         [] when simulating
 %
 % Outputs:
 %    correctedDirection - the corrected OLDirection, with the corrected
@@ -25,29 +27,21 @@ function correctedDirection = OLCorrectDirection(direction, background, oneLight
 %                         debugging-information got added to the structure
 %                         in the 'describe' property.
 %
-% Optional key/value pairs:
-%    'receptors'            - 
-%    smoothness             - Smoothness parameter for OLSpdToPrimary.
-%                             Default .001.
-%    nIterations            - Number of iterations. Default is 20.
-%    learningRate           - Learning rate. Default is .8.
-%    learningRateDecrease   - Decrease learning rate over iterations?
-%                             Default is true.
-%    asympLearningRateFactor- If learningRateDecrease is true, the
-%                             asymptotic learning rate is
-%                             (1-asympLearningRateFactor)*learningRate.
-%                             Default = .5.
-%    iterativeSearch        - Do iterative search with fmincon on each
-%                             measurement interation? Default is true.
+% Optional keyword arguments:
+%    'receptors'            -
+%    'smoothness'           - Smoothness parameter for OLSpdToPrimary.
+%                             Default .001
+%    any keyword argument for OLCorrectToSPD can be passed here as well
 %
 % See also:
-%    OLCorrectPrimaryValues, OLValidateDirection, OLValidatePrimaryValues
+%    OLCorrectToSPD, OLValidateDirection, OLValidatePrimaryValues
 %
 
 % History:
-%    02/09/18  jv  created around OLCorrectPrimaryValues, based on
-%                  OLCorrectCacheFileOOC.
-%    03/15/18  jv  adapted for OLDirection_unipolar objects.
+%    02/09/18  jv   created around OLCorrectPrimaryValues, based on
+%                   OLCorrectCacheFileOOC.
+%    03/15/18  jv   adapted for OLDirection_unipolar objects.
+%    08/27/18  jv   removed legacy mode
 
 %% Input validation
 parser = inputParser;
@@ -64,7 +58,7 @@ receptors = parser.Results.receptors;
 
 if ~isscalar(direction)
     %% Dispatch correction for each direction
-	correctedDirection = [];
+    correctedDirection = [];
     for i = 1:numel(direction)
         correctedDirection = [correctedDirection, direction(i).OLCorrectDirection(background(i),oneLight,varargin{:})];
     end
@@ -73,11 +67,11 @@ else
     assert(matchingCalibration(direction,background),'OneLightToolbox:ApproachSupport:OLCorrectDirection:MismatchedCalibration',...
         'Direction and background do not share a calibration');
     time = datetime;
-
+    
     %% Copy nominal primary into separate object
     nominalDirection = direction.copy(); % store unlinked copy of nominalDirection
     nominalDirection.SPDdifferentialDesired = direction.SPDdifferentialDesired;
-
+    
     %% Measure background SPD
     desiredBackgroundSPD = background.SPDdifferentialDesired + background.calibration.computed.pr650MeanDark;
     measuredBackgroundSPD = OLMeasurePrimaryValues(background.differentialPrimaryValues,background.calibration,oneLight,radiometer);
@@ -98,11 +92,11 @@ else
     % combined SPD. Instead, convert the desiredCombinedSPD to some initial
     % primary values predicted to produce it, and correct those.
     [correctedCombinedPrimaryValuesPositive, correctedSPD, correctionDataPositive] = OLCorrectToSPD(desiredCombinedSPD(:,1),direction.calibration,...
-                                                                            oneLight,radiometer,...
-                                                                            varargin{:},'lambda',parser.Results.smoothness);
+        oneLight,radiometer,...
+        varargin{:},'lambda',parser.Results.smoothness);
     [correctedCombinedPrimaryValuesNegative, correctedSPD, correctionDataNegative] = OLCorrectToSPD(desiredCombinedSPD(:,2),direction.calibration,...
-                                                                            oneLight,radiometer,...
-                                                                            varargin{:},'lambda',parser.Results.smoothness);
+        oneLight,radiometer,...
+        varargin{:},'lambda',parser.Results.smoothness);
     
     %% Calculate contrasts
     % For now, primaries are corrected to the desiredSPD. Since corrections
@@ -130,21 +124,21 @@ else
         receptorContrast.RMSE = sqrt(mean((receptorContrast.actual-receptorContrast.desired(:,1)).^2));
         correctionDataNegative.receptorContrast = receptorContrast;
         correctionDataNegative.pickedIter = find(receptorContrast.RMSE == min(receptorContrast.RMSE),1);
-        correctedCombinedPrimaryValuesNegative = correctionDataNegative.primaryUsed(:,correctionDataNegative.pickedIter);        
+        correctedCombinedPrimaryValuesNegative = correctionDataNegative.primaryUsed(:,correctionDataNegative.pickedIter);
     end
-                                                                        
+    
     %% Update original OLDirection
     % Update business end
     direction.differentialPositive = correctedCombinedPrimaryValuesPositive-background.differentialPrimaryValues;
     direction.differentialNegative = correctedCombinedPrimaryValuesNegative-background.differentialPrimaryValues;
     direction.SPDdifferentialDesired = nominalDirection.SPDdifferentialDesired;
-
+    
     % Update describe
     correctionDescribe = [correctionDataPositive, correctionDataNegative];
     correctionDescribe(1).time = [time datetime];
     correctionDescribe(2).time = [time datetime];
-    correctionDescribe(1).background = background; 
-    correctionDescribe(2).background = background; 
+    correctionDescribe(1).background = background;
+    correctionDescribe(2).background = background;
     correctionDescribe(1).nominalDirection = nominalDirection;
     correctionDescribe(2).nominalDirection = nominalDirection;
     

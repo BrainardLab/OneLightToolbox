@@ -1,12 +1,14 @@
 function correctedDirection = OLCorrectDirection(direction, background, oneLight, radiometer, varargin)
-% Corrects OLDirection iteratively to attain predicted SPD
+% Corrects OLDirection iteratively to attain desired SPD
 %
 % Syntax:
 %   correctedDirection = OLCorrectDirection(OLDirection, OneLight, radiometer)
 %   correctedDirection = OLCorrectDirection(OLDirection, SimulatedOneLight)
 %
 % Description:
-%    Detailed explanation goes here
+%    Use an iterative measure/adjust procedure to correct the direction to
+%    produce the desired SPD. Based on a small signal approximation for the
+%    adjustment.
 %
 % Inputs:
 %    direction          - OLDirection object specifying the direction to
@@ -25,30 +27,21 @@ function correctedDirection = OLCorrectDirection(direction, background, oneLight
 %                         debugging-information got added to the structure
 %                         in the 'describe' property.
 %
-% Optional key/value pairs:
+% Optional keyword arguments:
 %    'receptors'            -
-%    nIterations            - Number of iterations. Default is 20.
-%    learningRate           - Learning rate. Default is .8.
-%    learningRateDecrease   - Decrease learning rate over iterations?
-%                             Default is true.
-%    asympLearningRateFactor- If learningRateDecrease is true, the
-%                             asymptotic learning rate is
-%                             (1-asympLearningRateFactor)*learningRate.
-%                             Default = .5.
-%    smoothness             - Smoothness parameter for OLSpdToPrimary.
-%                             Default .001.
-%    iterativeSearch        - Do iterative search with fmincon on each
-%                             measurement interation? Default is true.
+%    'smoothness'           - Smoothness parameter for OLSpdToPrimary.
+%                             Default .001
+%    any keyword argument for OLCorrectToSPD can be passed here as well
 %
 % See also:
-%    OLCorrectPrimaryValues, OLValidateDirection, OLValidatePrimaryValues
+%    OLCorrectToSPD, OLValidateDirection, OLValidatePrimaryValues
 %
 
 % History:
-%    02/09/18  jv  created around OLCorrectPrimaryValues, based on
-%                  OLCorrectCacheFileOOC.
-%    03/15/18  jv  adapted for OLDirection_unipolar objects.
-%    06/29/18  npc implemented temperature recording
+%    02/09/18  jv   created around OLCorrectPrimaryValues, based on
+%                   OLCorrectCacheFileOOC.
+%    03/15/18  jv   adapted for OLDirection_unipolar objects.
+%    06/29/18  npc  implemented temperature recording
 
 %% Input validation
 parser = inputParser;
