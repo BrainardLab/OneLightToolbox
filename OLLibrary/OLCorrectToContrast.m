@@ -107,7 +107,7 @@ function [correctedPrimaryValues, measuredContrasts, detailedData] = OLCorrectTo
 
 %% Input validation
 parser = inputParser;
-parser.addRequired('targetContrasts',@(x)validateattributes(x,{'numeric'},{'vector','real','finite','nonnegative'}));
+parser.addRequired('targetContrasts',@(x)validateattributes(x,{'numeric'},{'vector','real','finite'}));
 parser.addRequired('initialSPD',@(x)validateattributes(x,{'numeric'},{'vector','real','finite','nonnegative'}));
 parser.addRequired('backgroundSPD',@(x)validateattributes(x,{'numeric'},{'vector','real','finite','nonnegative'}));
 parser.addRequired('receptors',@(x) isnumeric(x) || isa(x,'SSTReceptorHuman'));

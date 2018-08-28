@@ -104,7 +104,7 @@ else
         % background, i.e., the direction.
         desiredCombinedSPD = direction.SPDdifferentialDesired + desiredBackgroundSPD;
 
-        %% Correct differential primary values
+        %% Correct differential primary values to SPD
         % To get the combined primary values, the direction and background have
         % to be added. However, when calling this routine, the background may
         % already have been corrected. In that case, the summed direction and

@@ -76,55 +76,47 @@ else
     desiredBackgroundSPD = background.SPDdifferentialDesired + background.calibration.computed.pr650MeanDark;
     measuredBackgroundSPD = OLMeasurePrimaryValues(background.differentialPrimaryValues,background.calibration,oneLight,radiometer);
     
-    
-    %% Correct differential primary values
-    % Correcting a direction (on top of a background) means correcting the
-    % primary values that would combine direction and background into the
-    % desired combined SPD, then subtracting the background primary values,
-    % to end up with the differential primary values to add to the
-    % background, i.e., the direction.
-    desiredCombinedSPD = direction.SPDdifferentialDesired + background.SPDdifferentialDesired + direction.calibration.computed.pr650MeanDark;
-    
-    % To get the combined primary values, the direction and background have
-    % to be added. However, when calling this routine, the background may
-    % already have been corrected. In that case, the summed direction and
-    % background primary values no longer correspond to the desired
-    % combined SPD. Instead, convert the desiredCombinedSPD to some initial
-    % primary values predicted to produce it, and correct those.
-    [correctedCombinedPrimaryValuesPositive, correctedSPD, correctionDataPositive] = OLCorrectToSPD(desiredCombinedSPD(:,1),direction.calibration,...
-        oneLight,radiometer,...
-        varargin{:},'lambda',parser.Results.smoothness);
-    [correctedCombinedPrimaryValuesNegative, correctedSPD, correctionDataNegative] = OLCorrectToSPD(desiredCombinedSPD(:,2),direction.calibration,...
-        oneLight,radiometer,...
-        varargin{:},'lambda',parser.Results.smoothness);
-    
-    %% Calculate contrasts
-    % For now, primaries are corrected to the desiredSPD. Since corrections
-    % don't lead to a perfect match, the iteration with the lowest RMSE
-    % between measured and desired SPD is chosen. However, that measured
-    % SPD might not produce the best contrast. In most usecases, contrast
-    % is more important the exact SPD. So, calculate contrasts per
-    % iteration, calculate desired contrasts, calculate RMSE between
-    % measured and desired contrasts, pick iteration with lowest contrast
-    % RMSE.
+    %% Correct to contrast?
     if ~isempty(receptors)
-        receptorContrast.receptors = receptors;
-        receptorContrast.desired = SPDToReceptorContrast([desiredBackgroundSPD, desiredCombinedSPD(:,1)],receptors);
-        receptorContrast.actual = SPDToReceptorContrast([measuredBackgroundSPD correctionDataPositive.SPDMeasured],receptors);
-        receptorContrast.actual = squeeze(receptorContrast.actual(1,2:end,:))';
-        receptorContrast.RMSE = sqrt(mean((receptorContrast.actual-receptorContrast.desired(:,1)).^2));
-        correctionDataPositive.receptorContrast = receptorContrast;
-        correctionDataPositive.pickedIter = find(receptorContrast.RMSE == min(receptorContrast.RMSE),1);
-        correctedCombinedPrimaryValuesPositive = correctionDataPositive.primaryUsed(:,correctionDataPositive.pickedIter);
+        %% Calculate target contrasts
+        targetContrasts = direction.ToDesiredReceptorContrast(background, receptors);
         
-        receptorContrast.receptors = receptors;
-        receptorContrast.desired = SPDToReceptorContrast([desiredBackgroundSPD, desiredCombinedSPD(:,2)],receptors);
-        receptorContrast.actual = SPDToReceptorContrast([measuredBackgroundSPD correctionDataNegative.SPDMeasured],receptors);
-        receptorContrast.actual = squeeze(receptorContrast.actual(1,2:end,:))';
-        receptorContrast.RMSE = sqrt(mean((receptorContrast.actual-receptorContrast.desired(:,1)).^2));
-        correctionDataNegative.receptorContrast = receptorContrast;
-        correctionDataNegative.pickedIter = find(receptorContrast.RMSE == min(receptorContrast.RMSE),1);
-        correctedCombinedPrimaryValuesNegative = correctionDataNegative.primaryUsed(:,correctionDataNegative.pickedIter);
+        %% Measure initial SPDs
+        combinedDirectionPos = background + direction;
+        combinedDirectionNeg = background - direction;        
+        initialSPD = OLMeasurePrimaryValues([combinedDirectionPos.differentialPrimaryValues combinedDirectionNeg.differentialPrimaryValues],combinedDirectionPos.calibration,oneLight, radiometer);
+        
+        %% Correct
+        [correctedCombinedPrimaryValuesPositive, measuredContrast, correctionDataPositive] = OLCorrectToContrast(targetContrasts,initialSPD(:,1), measuredBackgroundSPD,receptors, direction.calibration,...
+            oneLight,radiometer,...
+            varargin{:},'lambda',parser.Results.smoothness);   
+        
+        [correctedCombinedPrimaryValuesNegative, measuredContrast, correctionDataNegative] = OLCorrectToContrast(-targetContrasts,initialSPD(:,2), measuredBackgroundSPD,receptors, direction.calibration,...
+            oneLight,radiometer,...
+            varargin{:},'lambda',parser.Results.smoothness);        
+        
+    else
+        %% Get combined desired SPD
+        % Correcting a direction (on top of a background) means correcting the
+        % primary values that would combine direction and background into the
+        % desired combined SPD, then subtracting the background primary values,
+        % to end up with the differential primary values to add to the
+        % background, i.e., the direction.
+        desiredCombinedSPD = direction.SPDdifferentialDesired + background.SPDdifferentialDesired + direction.calibration.computed.pr650MeanDark;
+
+        %% Correct differential primary values to SPD
+        % To get the combined primary values, the direction and background have
+        % to be added. However, when calling this routine, the background may
+        % already have been corrected. In that case, the summed direction and
+        % background primary values no longer correspond to the desired
+        % combined SPD. Instead, convert the desiredCombinedSPD to some initial
+        % primary values predicted to produce it, and correct those.
+        [correctedCombinedPrimaryValuesPositive, correctedSPD, correctionDataPositive] = OLCorrectToSPD(desiredCombinedSPD(:,1),direction.calibration,...
+            oneLight,radiometer,...
+            varargin{:},'lambda',parser.Results.smoothness);
+        [correctedCombinedPrimaryValuesNegative, correctedSPD, correctionDataNegative] = OLCorrectToSPD(desiredCombinedSPD(:,2),direction.calibration,...
+            oneLight,radiometer,...
+            varargin{:},'lambda',parser.Results.smoothness);
     end
     
     %% Update original OLDirection
