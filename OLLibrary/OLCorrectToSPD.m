@@ -28,8 +28,12 @@ function [correctedPrimaryValues, measuredSPD, detailedData] = OLCorrectToSPD(ta
 %                              primaries.
 %    measuredSPD             - nWlsx1 column vector, where nWls is the
 %                              number of wavelength bands measured, of the
-%                              SPD measured after correction
-%    detailedData            - A ton of data, for debugging purposes.
+%                              SPD measured after correction. This is the
+%                              actual measurement, not scaled by
+%                              lightlevelScalar.
+%    detailedData            - A ton of data in a structure, mainly for
+%                              debugging purposes. See
+%                              OLCheckPrimaryCorrection
 %
 % Optional key/value pairs:
 %    nIterations             - Number of iterations. Default is 20.
@@ -64,16 +68,14 @@ function [correctedPrimaryValues, measuredSPD, detailedData] = OLCorrectToSPD(ta
     %% Test under simulation
     % Get calibration
     demoCalFolder = fullfile(tbLocateToolbox('OneLightToolbox'),'OLDemoCal');
-    calibration = OLGetCalibrationStructure('CalibrationFolder',demoCalFolder,'CalibrationType','OLDemoCal');
+    calibration = OLGetCalibrationStructure('CalibrationFolder',demoCalFolder,'CalibrationType','DemoCal');
 
     % Define inputs
-    primaryValues = .5 * ones([calibration.describe.numWavelengthBands,1]);
-    oneLight = OneLight('simulate',true);
+    targetSPD = OLPrimaryToSpd(calibration,.5*ones(calibration.describe.numWavelengthBands,1));
+    oneLight = OneLight('simulate',true,'plotWhenSimulating',false);
 
     % Correct
-    [correctedPrimaryValues, data] = OLCorrectPrimaryValues(primaryValues,calibration,oneLight,[]);
-    assert(all(correctedPrimaryValues == primaryValues));
-    assert(all(data.correction.SpdMeasuredAll(:,end) == OLPrimaryToSpd(calibration, primaryValues)));
+    [correctedPrimaryValues, measuredSPD, data] = OLCorrectToSPD(targetSPD,calibration,oneLight,[]);
 %}
 
 %% Input validation
