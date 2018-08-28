@@ -13,46 +13,52 @@ function [correctedPrimaryValues, measuredSPD, detailedData] = OLCorrectToSPD(ta
 %   for the adjustment.
 %
 % Inputs:
-%    targetSPD               - nWlsx1 column vector, where nWls is the
-%                              number of wavelength bands measured,
-%                              defining target spectral power distribution
-%                              to correct primary values to. This is in the
-%                              scaling of the calibration structure.
-%    calibration             - Struct containing calibration for oneLight
-%    oneLight                - OneLight device driver object to control a
-%                              OneLight device. Can be real or simulated
-%    radiometer              - Radiometer object to control a
-%                              spectroradiometer. Can be passed empty when
-%                              simulating
+%    targetSPD                  - nWlsx1 column vector, where nWls is the
+%                                 number of wavelength bands measured,
+%                                 defining target spectral power
+%                                 distribution to correct primary values
+%                                 to. This is in the scaling of the
+%                                 calibration structure.
+%    calibration                - Struct containing calibration for oneLight
+%    oneLight                   - OneLight device driver object to control
+%                                 a OneLight device. Can be real or
+%                                 simulated
+%    radiometer                 - Radiometer object to control a
+%                                 spectroradiometer. Can be passed empty
+%                                 when simulating
 %
 % Outputs:
-%    correctedPrimaryValues  - Px1 column vector of primary values, where P
-%                              is the number of values for effective device
-%                              primaries.
-%    measuredSPD             - nWlsx1 column vector, where nWls is the
-%                              number of wavelength bands measured, of the
-%                              SPD measured after correction. This is the
-%                              actual measurement, not scaled by
-%                              lightlevelScalar.
-%    detailedData            - A ton of data in a structure, mainly for
-%                              debugging purposes. See
-%                              OLCheckPrimaryCorrection
+%    correctedPrimaryValues     - Px1 column vector of primary values, where P
+%                                 is the number of values for effective
+%                                 device primaries.
+%    measuredSPD                - nWlsx1 column vector, where nWls is the
+%                                 number of wavelength bands measured, of
+%                                 the SPD measured after correction. This
+%                                 is the actual measurement, not scaled by
+%                                 lightlevelScalar.
+%    detailedData               - A ton of data in a structure, mainly for
+%                                 debugging purposes. See
+%                                 OLCheckPrimaryCorrection
 %
 % Optional key/value pairs:
-%    'nIterations'             - Number of iterations. Default is 20.
-%    'learningRate'            - Learning rate. Default is .8.
-%    'learningRateDecrease'    - Decrease learning rate over iterations?
-%                                Default is true.
-%    'asympLearningRateFactor' - If learningRateDecrease is true, the 
-%                                asymptotic learning rate is
-%                                (1-asympLearningRateFactor)*learningRate. 
-%                                Default = .5.
-%    'smoothness'              - Smoothness parameter for OLSpdToPrimary.
-%                                Default .001.
-%    'iterativeSearch'         - Do iterative search with fmincon on each
-%                                measurement interation? Default is true.
-%    'temperatureProbe'        - LJTemperatureProbe object to drive a LabJack
-%                                temperature probe. Default empty.
+%    'lightlevelScalar'         - Scalar numeric, factor by which to
+%                                 multiply measured SPDs to bring into
+%                                 calibration range. See
+%                                 OLMeasureLightlevelScalar. Default is 1.
+%    'nIterations'              - Number of iterations. Default is 20.
+%    'learningRate'             - Learning rate. Default is .8.
+%    'learningRateDecrease'     - Decrease learning rate over iterations?
+%                                 Default is true.
+%    'asympLearningRateFactor'  - If learningRateDecrease is true, the
+%                                 asymptotic learning rate is
+%                                 (1-asympLearningRateFactor)*learningRate.
+%                                 Default = .5.
+%    'smoothness'               - Smoothness parameter for OLSpdToPrimary.
+%                                 Default .001.
+%    'iterativeSearch'          - Do iterative search with fmincon on each
+%                                 measurement interation? Default is true.
+%    'temperatureProbe'         - LJTemperatureProbe object to drive a
+%                                 LabJack temperature probe. Default empty.
 %    'measureStateTrackingSPDs' - Make state tracking measurements?
 %                                Default false.
 %
@@ -133,15 +139,22 @@ end
 
 %% Find initial primary values
 initialPrimaryValues = OLSpdToPrimary(calibration, targetSPD, ...
-                        'primaryHeadroom',0,...
-                        'lambda',parser.Results.smoothness);
+    'primaryHeadroom',0,...
+    'lambda',parser.Results.smoothness);
 
 %% Correct
 temperaturesForAllIterations = cell(1, nIterations);
-NextPrimaryTruncatedLearningRate = initialPrimaryValues; % initialize
+nextPrimary = initialPrimaryValues; % initialize
 for iter = 1:nIterations
+    % Get primaries for this iteration (either initial, or the determined
+    % next primaries)
+    if iter > 1
+        primariesThisIter = nextPrimary(:,iter-1);
+    else
+        primariesThisIter = initialPrimaryValues;
+    end
+    
     % Take the measurements
-    primariesThisIter = NextPrimaryTruncatedLearningRate;
     [measuredSPD, temperaturesForAllIterations{iter}] = OLMeasurePrimaryValues(primariesThisIter,calibration,oneLight,radiometer, ...
         'temperatureProbe',parser.Results.temperatureProbe);
     
@@ -161,20 +174,20 @@ for iter = 1:nIterations
     end
     
     % Find delta primaries using small signal linear methods.
-    DeltaPrimaryTruncatedLearningRate = OLLinearDeltaPrimaries(primariesThisIter,kScale*measuredSPD,targetSPD,learningRateThisIter,smoothness,calibration);
+    DeltaPrimaryTruncatedLearningRate = OLLinearDeltaPrimaries(primariesThisIter,lightlevelScalar*measuredSPD,targetSPD,learningRateThisIter,smoothness,calibration);
     
     % Optionally use fmincon to improve the truncated learning
     % rate delta primaries by iterative search.
     if iterativeSearch
-        DeltaPrimaryTruncatedLearningRate = OLIterativeDeltaPrimaries(DeltaPrimaryTruncatedLearningRate,primariesThisIter,kScale*measuredSPD,targetSPD,learningRateThisIter,calibration);
+        DeltaPrimaryTruncatedLearningRate = OLIterativeDeltaPrimaries(DeltaPrimaryTruncatedLearningRate,primariesThisIter,lightlevelScalar*measuredSPD,targetSPD,learningRateThisIter,calibration);
     end
     
     % Compute and store the settings to use next time through
-    NextPrimaryTruncatedLearningRate = primariesThisIter + DeltaPrimaryTruncatedLearningRate;
+    nextPrimary = primariesThisIter + deltaPrimary;
     
     % Save the information for this iteration in a convenient form for later.
     SPDMeasured(:,iter) = measuredSPD;
-    RMSE(:,iter) = sqrt(mean((targetSPD-kScale*measuredSPD).^2));
+    RMSE(:,iter) = sqrt(mean((targetSPD-lightlevelScalar*measuredSPD).^2));
     PrimaryUsed(:,iter) = primariesThisIter;
     DeltaPrimaryTruncatedLearningRateAll(:,iter) = DeltaPrimaryTruncatedLearningRate;
     NextPrimaryTruncatedLearningRateAll(:,iter) = NextPrimaryTruncatedLearningRate;
@@ -182,7 +195,7 @@ end
 
 %% Store information about correction for return
 % Business end: pick primary values with lowest RMSE
-correctedPrimaryValues = PrimaryUsed(:, find(RMSE == min(RMSE),1));
+correctedPrimaryValues = primaryUsed(:, find(RMSE == min(RMSE),1));
 
 % Metadata, e.g., parameters. While I'm not a fan of including input
 % parameters in output, it is relevant here because we might have used
@@ -197,15 +210,16 @@ detailedData.iterativeSearch = iterativeSearch;
 
 % Store target spectra and initial primaries used.  This information is
 % useful for debugging the seeking procedure.
+detailedData.targetSPD = targetSPD;
 detailedData.initialPrimaryValues = initialPrimaryValues;
 detailedData.targetSPD = targetSPD;
-detailedData.kScale = kScale;
+detailedData.lightlevelScalar = lightlevelScalar;
 detailedData.primaryUsed = PrimaryUsed;
 detailedData.SPDMeasured = SPDMeasured;
-detailedData.deltaSPDMeasured = SPDMeasured - targetSPD;
+detailedData.deltaSPDMeasuredScaled = (lightlevelScalar*SPDMeasured) - targetSPD;
 detailedData.RMSE = RMSE;
-detailedData.NextPrimaryTruncatedLearningRate = NextPrimaryTruncatedLearningRateAll;
-detailedData.DeltaPrimaryTruncatedLearningRate = DeltaPrimaryTruncatedLearningRateAll;
+detailedData.nextPrimary = nextPrimary;
+detailedData.deltaPrimary = deltaPrimary;
 detailedData.correctedPrimaryValues = correctedPrimaryValues;
 
 % Store temperature data and stateTrackingData

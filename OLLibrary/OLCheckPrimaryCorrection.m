@@ -37,8 +37,8 @@ wls = SToWls([380 2 201]);
 ylimMax = 1.1*max(max([correctionDebuggingData.SPDMeasured]));
 
 %% Print some diagnostic information
-kScale = correctionDebuggingData.kScale;
-fprintf('<strong>kScale                    :</strong> %0.2f\n', kScale);
+lightlevelScalar = correctionDebuggingData.lightlevelScalar;
+fprintf('<strong>lightlevelScalar          :</strong> %0.2f\n', lightlevelScalar);
 
 nIterationsSpecified = correctionDebuggingData.nIterations;
 fprintf('<strong>nIterations specified     :</strong> %0.2f\n', nIterationsSpecified);
@@ -75,14 +75,14 @@ primaryUsedAll = [];
 
 for ii = 1:nIterationsMeasured
     % Pull out some data for convenience
-    spectrumMeasuredScaled = kScale*correctionDebuggingData.SPDMeasured(:,ii);
+    spectrumMeasuredScaled = lightlevelScalar*correctionDebuggingData.SPDMeasured(:,ii);
     primaryUsed = correctionDebuggingData.primaryUsed(:,ii);
-    nextPrimaryTruncatedLearningRate = correctionDebuggingData.NextPrimaryTruncatedLearningRate(:,ii);
-    deltaPrimaryTruncatedLearningRate  = correctionDebuggingData.DeltaPrimaryTruncatedLearningRate(:,ii);
-    if (any(nextPrimaryTruncatedLearningRate ~= primaryUsed + deltaPrimaryTruncatedLearningRate))
+    nextPrimary = correctionDebuggingData.nextPrimary(:,ii);
+    deltaPrimary  = correctionDebuggingData.deltaPrimary(:,ii);
+    if (any(nextPrimary ~= primaryUsed + deltaPrimary))
         error('Background Hmmm.');
     end
-    nextSpectrumPredictedTruncatedLearningRate = OLPredictSpdFromDeltaPrimaries(deltaPrimaryTruncatedLearningRate,primaryUsed,spectrumMeasuredScaled,calibration);
+    nextSpectrumPredictedTruncatedLearningRate = OLPredictSpdFromDeltaPrimaries(deltaPrimary,primaryUsed,spectrumMeasuredScaled,calibration);
       
     % Find delta primaries for next iter from scratch here.  This is to
     % verify that we know how we did it, so that we can then explore other
@@ -92,12 +92,12 @@ for ii = 1:nIterationsMeasured
     else
         learningRateThisIter = correctionDebuggingData.learningRate;
     end
-    deltaPrimaryTruncatedLearningRateAgain = OLLinearDeltaPrimaries(primaryUsed,spectrumMeasuredScaled,targetSPD,learningRateThisIter,correctionDebuggingData.smoothness,calibration);
+    deltaPrimaryAgain = OLLinearDeltaPrimaries(primaryUsed,spectrumMeasuredScaled,targetSPD,learningRateThisIter,correctionDebuggingData.smoothness,calibration);
     if (correctionDebuggingData.iterativeSearch)
-        [deltaPrimaryTruncatedLearningRateAgain,nextSpectrumPredictedTruncatedLearningRateAgain] = ...
-            OLIterativeDeltaPrimaries(deltaPrimaryTruncatedLearningRateAgain,primaryUsed,spectrumMeasuredScaled,targetSPD,learningRateThisIter,calibration);
+        [deltaPrimaryAgain,nextSpectrumPredictedTruncatedLearningRateAgain] = ...
+            OLIterativeDeltaPrimaries(deltaPrimaryAgain,primaryUsed,spectrumMeasuredScaled,targetSPD,learningRateThisIter,calibration);
     end
-    nextSpectrumPredictedTruncatedLearningRateAgain1 = OLPredictSpdFromDeltaPrimaries(deltaPrimaryTruncatedLearningRateAgain,primaryUsed,spectrumMeasuredScaled,calibration);
+    nextSpectrumPredicted = OLPredictSpdFromDeltaPrimaries(deltaPrimaryAgain,primaryUsed,spectrumMeasuredScaled,calibration);
 
     % We can build up a correction matrix for predcition of delta spds from
     % delta primaries, based on what we've measured so far.
@@ -144,7 +144,7 @@ for ii = 1:nIterationsMeasured
     subplot(3,2,2); hold on
     stem(1:nPrimaries,initialPrimaryValues,'r:','LineWidth',1);
     stem(1:nPrimaries,primaryUsed,'k','LineWidth',2);
-    stem(1:nPrimaries,nextPrimaryTruncatedLearningRate,'b:','LineWidth',1);
+    stem(1:nPrimaries,nextPrimary,'b:','LineWidth',1);
     xlabel('Primary Number'); ylabel('Primary Value'); title(sprintf('Primary values, iter %d',ii));
     legend({'Initial','Used','Next'},'Location','NorthEast');
     xlim([1, nPrimaries]);
@@ -155,7 +155,7 @@ for ii = 1:nIterationsMeasured
     subplot(3,2,3); hold on 
     plot(wls,targetSPD-spectrumMeasuredScaled,'k','LineWidth',3);
     plot(wls,targetSPD-nextSpectrumPredictedTruncatedLearningRate,'b:','LineWidth',2);
-    plot(wls,targetSPD-nextSpectrumPredictedTruncatedLearningRateAgain1,'b:','LineWidth',  2);
+    plot(wls,targetSPD-nextSpectrumPredicted,'b:','LineWidth',  2);
     labels = {'Measured Current Delta','Predicted Next Delta','Predicted Other Start'};
     if (correctionDebuggingData.iterativeSearch)
         plot(wls,targetSPD-nextSpectrumPredictedTruncatedLearningRateAgain,'k:','LineWidth',2);
@@ -176,7 +176,7 @@ for ii = 1:nIterationsMeasured
     % Green is the difference between the primaries we will ask for on the
     % next iteration and those we just used.
     subplot(3,2,4); hold on;
-    stem(1:nPrimaries,nextPrimaryTruncatedLearningRate-primaryUsed,'b','LineWidth',2);
+    stem(1:nPrimaries,nextPrimary-primaryUsed,'b','LineWidth',2);
     ylim([-0.5 0.5]);
     xlabel('Primary Number'); ylabel('Primary Value');
     title('Delta primary for next iteration');
