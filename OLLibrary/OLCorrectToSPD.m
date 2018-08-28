@@ -146,7 +146,6 @@ initialPrimaryValues = OLSpdToPrimary(calibration, targetSPD, ...
 
 %% Correct
 temperaturesForAllIterations = cell(1, nIterations);
-nextPrimary = initialPrimaryValues; % initialize
 for iter = 1:nIterations
     % Get primaries for this iteration (either initial, or the determined
     % next primaries)
@@ -189,7 +188,8 @@ end
 
 %% Store information about correction for return
 % Business end: pick primary values with lowest RMSE
-correctedPrimaryValues = primaryUsed(:, find(RMSE == min(RMSE),1));
+detailedData.pickedIter = find(RMSE == min(RMSE),1);
+correctedPrimaryValues = primaryUsed(:, detailedData.pickedIter);
 
 % Metadata, e.g., parameters. While I'm not a fan of including input
 % parameters in output, it is relevant here because we might have used
