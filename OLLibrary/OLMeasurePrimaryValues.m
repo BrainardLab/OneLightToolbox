@@ -64,7 +64,6 @@ measureStateTrackingSPDs = parser.Results.measureStateTrackingSPDs;
 temperatureProbe = parser.Results.temperatureProbe;
 
 %% Measure state tracking SPDs
-stateTrackingData = struct();
 if (~isempty(radiometer)) && (measureStateTrackingSPDs)
     % Generate temporary calibration struct with stateTracking info
     tmpCal = calibration;
@@ -77,6 +76,7 @@ if (~isempty(radiometer)) && (measureStateTrackingSPDs)
         'standAlone', true);
 
     % Save the data
+    stateTrackingData = struct();
     stateTrackingData.spectralShift.spd    = calMeasOnly.raw.spectralShiftsMeas.measSpd;
     stateTrackingData.spectralShift.t      = calMeasOnly.raw.spectralShiftsMeas.t;
     stateTrackingData.powerFluctuation.spd = calMeasOnly.raw.powerFluctuationMeas.measSpd;
@@ -84,6 +84,8 @@ if (~isempty(radiometer)) && (measureStateTrackingSPDs)
 
     % Remove tmpCal
     clear('tmpCal')
+else
+    stateTrackingData = struct([]);
 end
     
 %% Convert primary values to starts and stops
