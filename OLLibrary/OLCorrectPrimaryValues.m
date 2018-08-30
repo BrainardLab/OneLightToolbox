@@ -97,7 +97,7 @@ iterativeSearch = parser.Results.iterativeSearch;
 measureStateTrackingSPDs = parser.Results.measureStateTrackingSPDs;
 
 %% Measure state-tracking SPDs
-stateTrackingData = struct();
+stateTrackingData = struct([]);
 if (measureStateTrackingSPDs)
     % Generate temporary calibration struct with stateTracking info
     tmpCal = calibration;
