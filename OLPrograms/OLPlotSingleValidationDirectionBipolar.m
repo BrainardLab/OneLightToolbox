@@ -1,18 +1,26 @@
 function fig = OLPlotValidationDirectionBipolar(validation)
-% Plots a single validation of an OLDirection_Bipolar object
+% Plots a single validation of an OLDirection_bipolar object
 %
 % Syntax:
+%   OLPlotValidationDirectionBipolar(validation)
+%   fig = OLPlotValidationDirectionBipolar(validation)
 % 
 % Description:
+%    Plots a single validation of an OLDirection_bipolar object.
 %
 % Inputs:
+%    validation - scalar struct, validation struct, as returned by
+%                 OLValidateDirection (and attached to
+%                 direction.describe.validation)
 %
 % Outputs:
+%    fig        - figure containing the validation plots
 %
 % Optional keyword arguments:
+%    None.
 %
 % See also:
-%
+%    OLDirection_bipolar/OLValidateDirection
 
 % History:
 %    08/20/18  jv   wrote OLPlotValidationDirectionBipolar

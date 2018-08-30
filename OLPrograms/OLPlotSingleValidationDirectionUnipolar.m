@@ -1,18 +1,26 @@
 function fig = OLPlotValidationDirectionUnipolar(validation)
-% Plots a single validation of an OLDirection_Unipolar object
+% Plots a single validation of an OLDirection_unipolar object
 %
 % Syntax:
+%   OLPlotValidationDirectionUnipolar(validation)
+%   fig = OLPlotValidationDirectionUnipolar(validation)
 % 
 % Description:
+%    Plots a single validation of an OLDirection_unipolar object.
 %
 % Inputs:
+%    validation - scalar struct, validation struct, as returned by
+%                 OLValidateDirection (and attached to
+%                 direction.describe.validation)
 %
 % Outputs:
+%    fig        - figure containing the validation plots
 %
 % Optional keyword arguments:
+%    None.
 %
 % See also:
-%
+%    OLDirection_unipolar/OLValidateDirection
 
 % History:
 %    08/20/18  jv   wrote OLPlotValidationDirectionUnipolar
