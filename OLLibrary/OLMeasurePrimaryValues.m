@@ -64,7 +64,7 @@ measureStateTrackingSPDs = parser.Results.measureStateTrackingSPDs;
 temperatureProbe = parser.Results.temperatureProbe;
 
 %% Measure state tracking SPDs
-stateTrackingData = struct();
+stateTrackingData = struct([]);
 if (~isempty(radiometer)) && (measureStateTrackingSPDs)
     % Generate temporary calibration struct with stateTracking info
     tmpCal = calibration;
