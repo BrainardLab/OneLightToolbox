@@ -1,10 +1,11 @@
-function [SPD, temperatures, stateTrackingData] = OLValidatePrimaryValues(primaryValues, calibration, oneLight, varargin)
+function [SPD, temperatures, stateTrackingData] = OLValidatePrimaryValues(primaryValues, calibration, oneLight, radiometer, varargin)
 % Validates SPD that OneLight puts out for given primary values vector(s)
 %
 % Syntax:
-%   [SPD, temperatures, stateTrackingData] = OLValidatePrimaryValues(primaryValues, calibration, oneLight, radiometer)
-%   [SPD, temperatures, stateTrackingData] = OLValidatePrimaryValuesOLValidatePrimary(primaryValues, calibration, OneLight, radiometer, nAverage)
-%   [SPD, temperatures, stateTrackingData] = OLValidatePrimaryValuesOLValidatePrimary(primaryValues, calibration, SimulatedOneLight)
+%   SPD = OLValidatePrimaryValues(primaryValues, calibration, oneLight, radiometer)
+%   SPD = OLValidatePrimaryValues(primaryValues, calibration, SimulatedOneLight,[])
+%   [SPD, temperatures] = OLValidatePrimaryValues(...,'temperatureProbe',LJTemperatureProbe)
+%   [SPD, temperatures, stateTrackingData] = OLValidatePrimaryValues(..., 'measureStateTracking',true)
 %
 % Description:
 %    Sends a vector of primary values to a OneLight, measures the SPD and
@@ -45,17 +46,18 @@ function [SPD, temperatures, stateTrackingData] = OLValidatePrimaryValues(primar
 %    11/29/17  jv  created. based on OLValidateCacheFileOOC
 %    06/29/18  npc implemented temperature recording
 %    06/30/18  npc implemented state tracking SPD recording
+%    08/30/18  jv  radiometer as required argument (but can be empty)
 
 %% Input validation
 parser = inputParser;
 parser.addRequired('primaryValues',@isnumeric);
 parser.addRequired('calibration',@isstruct);
 parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
-parser.addOptional('radiometer',[],@(x) isempty(x) || isa(x,'Radiometer'));
+parser.addRequired('radiometer',@(x) isempty(x) || isa(x,'Radiometer'));
 parser.addParameter('nAverage',1,@isnumeric);
 parser.addParameter('temperatureProbe',[],@(x) isempty(x) || isa(x,'LJTemperatureProbe'));
 parser.addParameter('measureStateTrackingSPDs', false, @islogical);
-parser.parse(primaryValues,calibration,oneLight,varargin{:});
+parser.parse(primaryValues,calibration,oneLight,radiometer,varargin{:});
 
 radiometer = parser.Results.radiometer;
 
