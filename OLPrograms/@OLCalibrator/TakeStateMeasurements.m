@@ -67,8 +67,8 @@ function [cal, calMeasOnly] = TakeStateMeasurements(cal0, ol, od, spectroRadiome
             cal.raw.temperature.value(cal.describe.stateTracking.stateMeasurementIndex,:) = temperatureValue;
             cal.raw.temperature.t(cal.describe.stateTracking.stateMeasurementIndex,:) = measTemp.pr650.time(1);
         end
+        fprintf('Done\n');
     end
-    fprintf('Done\n');
 
     if (~isempty(calProgressionTemporaryFileName))
         % make spdData struct
