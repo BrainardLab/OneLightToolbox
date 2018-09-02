@@ -87,8 +87,8 @@ else
         targetContrasts = direction.ToDesiredReceptorContrast(background, receptors);
         
         %% Measure initial SPD
-        combinedDirection = direction + background;
-        initialSPD = OLMeasurePrimaryValues(combinedDirection.differentialPrimaryValues,combinedDirection.calibration,oneLight, radiometer);
+        desiredCombinedSPD = desiredBackgroundSPD + direction.SPDdifferentialDesired;
+        initialSPD = desiredCombinedSPD;
         
         %% Correct
         [correctedCombinedPrimaryValues, measuredContrast, correctionDescribe] = OLCorrectToContrast(targetContrasts,initialSPD, measuredBackgroundSPD,receptors, direction.calibration,...
