@@ -82,16 +82,15 @@ else
         targetContrasts = direction.ToDesiredReceptorContrast(background, receptors);
         
         %% Measure initial SPDs
-        combinedDirectionPos = background + direction;
-        combinedDirectionNeg = background - direction;        
-        initialSPD = OLMeasurePrimaryValues([combinedDirectionPos.differentialPrimaryValues combinedDirectionNeg.differentialPrimaryValues],combinedDirectionPos.calibration,oneLight, radiometer);
+        combinedDesiredSPDs = desiredBackgroundSPD + direction.SPDdifferentialDesired; 
+        initialSPD = combinedDesiredSPDs;
         
         %% Correct
-        [correctedCombinedPrimaryValuesPositive, measuredContrast, correctionDataPositive] = OLCorrectToContrast(targetContrasts,initialSPD(:,1), measuredBackgroundSPD,receptors, direction.calibration,...
+        [correctedCombinedPrimaryValuesPositive, measuredContrast, correctionDataPositive] = OLCorrectToContrast(targetContrasts(:,1),initialSPD(:,1), measuredBackgroundSPD,receptors, direction.calibration,...
             oneLight,radiometer,...
             varargin{:},'lambda',parser.Results.smoothness);   
         
-        [correctedCombinedPrimaryValuesNegative, measuredContrast, correctionDataNegative] = OLCorrectToContrast(-targetContrasts,initialSPD(:,2), measuredBackgroundSPD,receptors, direction.calibration,...
+        [correctedCombinedPrimaryValuesNegative, measuredContrast, correctionDataNegative] = OLCorrectToContrast(targetContrasts(:,2),initialSPD(:,2), measuredBackgroundSPD,receptors, direction.calibration,...
             oneLight,radiometer,...
             varargin{:},'lambda',parser.Results.smoothness);        
         
