@@ -91,10 +91,8 @@ function [validation, SPDs, excitations, contrasts] = OLValidateDirection(direct
 parser = inputParser;
 parser.addOptional('radiometer',[],@(x) isempty(x) || isa(x,'Radiometer'));
 parser.addParameter('receptors',[],@(x) isa(x,'SSTReceptor') || isnumeric(x));
-parser.addParameter('nAverage',1,@isnumeric);
-parser.addParameter('temperatureProbe',[],@(x) isempty(x) || isa(x,'LJTemperatureProbe'));
-parser.addParameter('measureStateTrackingSPDs',false, @islogical);
 parser.addParameter('label',"");
+parser.KeepUnmatched = true;
 parser.parse(varargin{:});
 
 % Check if calculating contrasts
@@ -182,9 +180,7 @@ else
     validation.measuredPrimaryValues = [background.differentialPrimaryValues, direction.differentialPrimaryValues+background.differentialPrimaryValues];
     [SPDs, temperatures, stateTrackingData] = OLValidatePrimaryValues([background.differentialPrimaryValues, direction.differentialPrimaryValues+background.differentialPrimaryValues],...
         direction.calibration,oneLight,radiometer, ...
-        'nAverage', parser.Results.nAverage, ...
-        'temperatureProbe', parser.Results.temperatureProbe, ...
-        'measureStateTrackingSPDs', parser.Results.measureStateTrackingSPDs);
+        parser.Unmatched);
 
     % Add temperatures to validation
     validation.temperatures = temperatures;

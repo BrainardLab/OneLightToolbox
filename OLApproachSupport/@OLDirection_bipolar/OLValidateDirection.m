@@ -83,9 +83,8 @@ parser.addRequired('background');
 parser.addRequired('oneLight');
 parser.addRequired('radiometer',@(x) isempty(x) || isa(x,'Radiometer'));
 parser.addParameter('receptors',[],@(x) isa(x,'SSTReceptor') || isnumeric(x));
-parser.addParameter('nAverage',1,@isnumeric);
-parser.addParameter('temperatureProbe',[],@(x) isempty(x) || isa(x,'LJTemperatureProbe'));
 parser.addParameter('label',"");
+parser.KeepUnmatched = true;
 parser.parse(direction,background,oneLight, radiometer, varargin{:});
 
 % Check if calculating contrasts
@@ -171,8 +170,12 @@ else
     % Call OLValidatePrimaryValues on all the differentialPrimaryValues of
     % all directions
     validation.differentialPrimaryValues = [direction.differentialPositive direction.differentialNegative];
-    validation.measuredPrimaryValues = [background.differentialPrimaryValues, direction.differentialPositive+background.differentialPrimaryValues direction.differentialNegative+background.differentialPrimaryValues];    
-    SPDs = OLValidatePrimaryValues([background.differentialPrimaryValues, direction.differentialPositive+background.differentialPrimaryValues, direction.differentialNegative+background.differentialPrimaryValues],direction.calibration,oneLight,radiometer, 'nAverage', parser.Results.nAverage, 'temperatureProbe', parser.Results.temperatureProbe);
+    validation.measuredPrimaryValues = [background.differentialPrimaryValues,...
+                                        direction.differentialPositive+background.differentialPrimaryValues,...
+                                        direction.differentialNegative+background.differentialPrimaryValues];    
+    SPDs = OLValidatePrimaryValues(validation.measuredPrimaryValues,...
+                                   direction.calibration,oneLight,radiometer,...
+                                   parser.Unmatched);
 
     % Add desired SPDs to the SPDs structarray
     SPDs(1).desiredSPD = SPDbackgroundDesired;     % background

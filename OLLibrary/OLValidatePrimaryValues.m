@@ -54,21 +54,18 @@ parser.addRequired('primaryValues',@isnumeric);
 parser.addRequired('calibration',@isstruct);
 parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
 parser.addRequired('radiometer',@(x) isempty(x) || isa(x,'Radiometer'));
-parser.addParameter('nAverage',1,@isnumeric);
-parser.addParameter('temperatureProbe',[],@(x) isempty(x) || isa(x,'LJTemperatureProbe'));
-parser.addParameter('measureStateTrackingSPDs', false, @islogical);
+parser.addParameter('primaryTolerance',1e-5,@isnumeric);
+parser.KeepUnmatched = true;
 parser.parse(primaryValues,calibration,oneLight,radiometer,varargin{:});
 
 radiometer = parser.Results.radiometer;
 
 %% Predict SPD(s)
-predictedSPDs = OLPrimaryToSpd(calibration,primaryValues);
+predictedSPDs = OLPrimaryToSpd(calibration,primaryValues,'primaryTolerance',parser.Results.primaryTolerance);
 
 %% Measure SPD(s)
 [measurement, temperatures, stateTrackingData] = OLMeasurePrimaryValues(primaryValues,calibration,oneLight,radiometer,...
-    'nAverage',parser.Results.nAverage, ...
-    'temperatureProbe',parser.Results.temperatureProbe, ...
-    'measureStateTrackingSPDs', parser.Results.measureStateTrackingSPDs);
+                                                                        'primaryTolerance',parser.Results.primaryTolerance,parser.Unmatched);
 
 %% Analyze and output
 SPD = [];
