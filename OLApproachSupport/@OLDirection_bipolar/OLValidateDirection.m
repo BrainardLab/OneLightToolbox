@@ -1,11 +1,11 @@
-function [validation, SPDs, excitations, contrasts] = OLValidateDirection(direction, background, oneLight, varargin)
+function [validation, SPDs, excitations, contrasts] = OLValidateDirection(direction, background, oneLight, radiometer, varargin)
 % Validate SPDs of OLDirection_bipolar
 %
 % Syntax:
 %   validation = OLDirection_bipolar.OLValidateDirection(background, oneLight, radiometer)
 %   validation = OLValidateDirection(OLDirection_bipolar, background, oneLight, radiometer)
 %   [validation, SPDs] = OLValidateDirection(OLDirection_bipolar, background, oneLight, radiometer)
-%   [...] = OLValidateDirection(OLDirection, background, SimulatedOneLight)
+%   [...] = OLValidateDirection(OLDirection, background, SimulatedOneLight, [])
 %   [...] = OLValidateDirection(...,'nAverage', nAverage)
 %   [..., excitation, contrasts] = OLValidateDirection(..., 'receptors', SSTReceptor)
 %   [..., excitation, contrasts] = OLValidateDirection(..., 'receptors', T_receptors)
@@ -78,12 +78,15 @@ function [validation, SPDs, excitations, contrasts] = OLValidateDirection(direct
 
 %% Input validation
 parser = inputParser;
-parser.addOptional('radiometer',[],@(x) isempty(x) || isa(x,'Radiometer'));
+parser.addRequired('direction');
+parser.addRequired('background');
+parser.addRequired('oneLight');
+parser.addRequired('radiometer',@(x) isempty(x) || isa(x,'Radiometer'));
 parser.addParameter('receptors',[],@(x) isa(x,'SSTReceptor') || isnumeric(x));
 parser.addParameter('nAverage',1,@isnumeric);
 parser.addParameter('temperatureProbe',[],@(x) isempty(x) || isa(x,'LJTemperatureProbe'));
 parser.addParameter('label',"");
-parser.parse(varargin{:});
+parser.parse(direction,background,oneLight, radiometer, varargin{:});
 
 % Check if calculating contrasts
 receptors = parser.Results.receptors;
