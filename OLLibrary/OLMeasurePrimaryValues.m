@@ -123,7 +123,7 @@ if ~isempty(radiometer)
     oneLight.setAll(false);
 else
     % Simulate
-    SPD = OLPrimaryToSpd(calibration,primaryValues);
+    SPD = OLPrimaryToSpd(calibration,primaryValues,'primaryTolerance',parser.Results.primaryTolerance);
 end
 
 
