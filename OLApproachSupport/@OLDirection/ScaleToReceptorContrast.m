@@ -41,7 +41,7 @@ function [scaledDirection, scalingFactor, scaledContrast] = ScaleToReceptorContr
 currentReceptorContrast = ToDesiredReceptorContrast(direction, background, receptors);
 
 %% Figure out scaling factor
-scalingFactor = currentReceptorContrast \ desiredContrast;
+scalingFactor = currentReceptorContrast(:) \ desiredContrast(:);
 
 %% Scale direction
 scaledDirection = scalingFactor .* direction;
