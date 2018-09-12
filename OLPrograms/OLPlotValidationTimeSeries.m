@@ -42,6 +42,7 @@ parser.addParameter('limits', [], @isnumeric);
 parser.addParameter('calibrations',{},@iscell);
 parser.addParameter('saveDir','.', @ischar);
 parser.addParameter('firstDateToPlot', [], @ischar);
+parser.addParameter('excludedSessions', [], @isstruct);
 
 
 
@@ -50,6 +51,7 @@ approachName = parser.Results.approachName;
 protocolParams.protocol = parser.Results.protocolName;
 objectType = parser.Results.objectType;
 excludedSubjectNames = parser.Results.excludedSubjectNames;
+excludedSessions = parser.Results.excludedSessions;
 objectName = parser.Results.objectName;
 visualizedProperty = parser.Results.visualizedProperty;
 visualizedStatistics = parser.Results.visualizedStatistics;
@@ -61,7 +63,7 @@ firstDateToPlot = parser.Results.firstDateToPlot;
 objectsDataPath = ...
     RetrieveObjectsDataPath(approachName, protocolParams, objectType);
 [serializedData, subjectNames] = ...
-    SerializeObjectsInDataPathBasedOnDates(objectsDataPath, excludedSubjectNames);
+    SerializeObjectsInDataPathBasedOnDates(objectsDataPath, excludedSubjectNames, excludedSessions);
 
 % Extract relevant data for visualization
 [sessionData, timeLabels] = ...
@@ -222,7 +224,7 @@ for validationPrefixIndex = 1:numel(validationPrefices)
     
     
     % if not plotting all sessions, figure out where to start plotting from
-
+    
     dates = [];
     for ii = 1:length(timeLabels)
         date = strsplit(timeLabels{ii}, '}');
@@ -235,10 +237,10 @@ for validationPrefixIndex = 1:numel(validationPrefices)
         startingIndex = 1;
     else
         for dd = 1:length(dates)
-        if datenum(dates(dd), 'yyyy-mm-dd') >= datenum(firstDateToPlot, 'yyyy-mm-dd')
-            startingIndex = dd;
-            break
-        end
+            if datenum(dates(dd), 'yyyy-mm-dd') >= datenum(firstDateToPlot, 'yyyy-mm-dd')
+                startingIndex = dd;
+                break
+            end
         end
         
         
@@ -246,17 +248,26 @@ for validationPrefixIndex = 1:numel(validationPrefices)
     xlim([startingIndex, axes.XLim(2)]);
     
     if ~isempty(parser.Results.calibrations)
-        for dd = 1:length(dates)
+        for cc = 1:length(parser.Results.calibrations)
             
-            for cc = 1:length(parser.Results.calibrations)
+            
                 indices = find(strcmp(dates, parser.Results.calibrations{cc}));
                 index = max(indices);
-                line([index index], axes.YLim, 'Color', 'k');
-            end
-            
-            
+                if ~isempty(indices)
+                    line([index index], axes.YLim, 'Color', 'k');
+                else
+                    for dd = 1:length(dates)
+                        if datenum(dates(dd), 'yyyy-mm-dd') >= datenum(parser.Results.calibrations{cc}, 'yyyy-mm-dd')
+                            index = dd-0.5;
+                            break
+                        end
+                    end
+                    line([index index], axes.YLim, 'Color', 'k');
+                end
         end
     end
+                    
+        
     
 end
 
@@ -370,7 +381,7 @@ close(hWaitBar);
 end
 
 % Method to serialize objects based on the date/session in their filenames
-function [serializedData, subjectNames] = SerializeObjectsInDataPathBasedOnDates(objectsDataPath, excludedSubjectNames)
+function [serializedData, subjectNames] = SerializeObjectsInDataPathBasedOnDates(objectsDataPath, excludedSubjectNames, excludedSessions)
 % Get all the files under objectsDataPath
 files = dir(objectsDataPath);
 
@@ -408,9 +419,25 @@ for k = 1 : length(subFolders)
                     % Compute full sessionPath
                     sessionPath = fullfile(subjectNamePath,theSessionName);
                     sessionNames{validSessionIndex} = theSessionName;
-                    sessionPathsForAllSubjects{numel(sessionPathsForAllSubjects)+1} = sessionPath;
-                    subjectNamesForAllSessions{numel(subjectNamesForAllSessions)+1} = theSubjectName;
-                end % if
+                    if isempty(excludedSessions)
+                        sessionPathsForAllSubjects{numel(sessionPathsForAllSubjects)+1} = sessionPath;
+                        subjectNamesForAllSessions{numel(subjectNamesForAllSessions)+1} = theSubjectName;
+                    else
+                        skipSubjectLogical = false;
+                        for ii = 1:length(excludedSessions.names)
+                            if strcmp(theSessionName, excludedSessions.dates{ii}) && strcmp(theSessionName, excludedSessions.dates{ii})
+                                skipSubjectLogical = true;
+                                break
+                            end
+                            
+                            
+                        end % if
+                        if ~skipSubjectLogical
+                            sessionPathsForAllSubjects{numel(sessionPathsForAllSubjects)+1} = sessionPath;
+                            subjectNamesForAllSessions{numel(subjectNamesForAllSessions)+1} = theSubjectName;
+                        end
+                    end
+                end
             end
         end % for kk
         sessionNamesForSubject{validSubjectIndex} = sessionNames;
@@ -445,6 +472,7 @@ for k = 1:numel(sessionPathsForAllSubjects)
         );
 end
 end
+
 
 function [dateNumber, sessionDate, sessionIndex] = extractDateNumberFromSessionPathName(sessionPathName, subjectName)
 k1 = strfind(sessionPathName, 'session');
