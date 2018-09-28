@@ -83,7 +83,7 @@ parser.parse(direction, oneLight, adaptationDuration, varargin{:});
 if parser.Results.countdownInterval > 0
     countdownTimes = parser.Results.countdownInterval:parser.Results.countdownInterval:adaptationDuration;
     countdownTimes = fliplr(countdownTimes);
-    if countdownTimes(1) == adaptationDuration
+    if ~isempty(countdownTimes) && countdownTimes(1) == adaptationDuration
         countdownTimes = countdownTimes(2:end);
     end
 else
