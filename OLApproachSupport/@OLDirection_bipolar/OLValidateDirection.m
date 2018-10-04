@@ -197,7 +197,9 @@ else
 
         contrasts.desired = [ReceptorExcitationToReceptorContrast(excitations.desired(:,[1,2])) ReceptorExcitationToReceptorContrast(excitations.desired(:,[1,3]))];
         contrasts.actual = [ReceptorExcitationToReceptorContrast(excitations.actual(:,[1,2])) ReceptorExcitationToReceptorContrast(excitations.actual(:,[1,3]))];
-
+        contrasts.desired = contrasts.desired(:,[1,3]);
+        contrasts.actual = contrasts.actual(:,[1,3]);
+        
         %     predictedContrastPostreceptoral = [ComputePostreceptoralContrastsFromLMSContrasts(predictedContrastPos(1:3,1)),...
         %         ComputePostreceptoralContrastsFromLMSContrasts(predictedContrastNeg(1:3,1))];
 
