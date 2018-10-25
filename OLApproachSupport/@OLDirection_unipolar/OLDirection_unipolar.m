@@ -89,6 +89,7 @@ classdef OLDirection_unipolar < OLDirection
                 % Create new direction
                 newDescribe = struct('createdFrom',struct('a',direction,'b',s,'operator','.*'),'correction',[],'validation',[]);
                 newDirection = OLDirection_unipolar(s*direction.differentialPrimaryValues,direction.calibration,newDescribe);
+                newDirection.SPDdifferentialDesired = s*direction.SPDdifferentialDesired;
                 out = [out newDirection];
             end
         end

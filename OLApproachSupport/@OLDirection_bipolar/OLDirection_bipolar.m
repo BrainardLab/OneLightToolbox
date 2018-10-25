@@ -91,6 +91,7 @@ classdef OLDirection_bipolar < OLDirection
                 % Create new direction
                 newDescribe = struct('createdFrom',struct('a',direction,'b',s,'operator','.*'),'correction',[],'validation',[]);
                 newDirection = OLDirection_bipolar(s*direction.differentialPositive,s*direction.differentialNegative,direction.calibration,newDescribe);
+                newDirection.SPDdifferentialDesired = s*direction.SPDdifferentialDesired;
                 out = [out newDirection];
             end
         end
