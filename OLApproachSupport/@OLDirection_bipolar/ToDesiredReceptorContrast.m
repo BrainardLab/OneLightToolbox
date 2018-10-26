@@ -78,6 +78,6 @@ desiredNegative = SPDdifferentialDesired(:,2) + desiredBackgroundSPD;
 [contrastsNeg, excitationNeg, excitationDiffNeg] = SPDToReceptorContrast([desiredBackgroundSPD desiredNegative],receptors);
 
 %% Combine outputs
-contrasts = mean(abs([contrastsPos(:,1) contrastsNeg(:,1)]),2);
+contrasts = [contrastsPos(:,1) contrastsNeg(:,1)];
 excitation = [excitationPos(:,1:2) excitationNeg(:,2)];
 excitationDiff = [excitationDiffPos(:,1) excitationDiffNeg(:,1)];

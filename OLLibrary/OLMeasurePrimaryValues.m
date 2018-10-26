@@ -51,7 +51,7 @@ parser = inputParser;
 parser.addRequired('primaryValues',@isnumeric);
 parser.addRequired('calibration',@isstruct);
 parser.addRequired('oneLight',@(x) isa(x,'OneLight'));
-parser.addOptional('radiometer',[]);
+parser.addRequired('radiometer',@(x) isempty(x) || isa(x,'Radiometer'));
 parser.addParameter('nAverage',1,@isnumeric);
 parser.addParameter('temperatureProbe',[],@(x) isempty(x) || isa(x,'LJTemperatureProbe'));
 parser.addParameter('primaryTolerance',1e-5,@isnumeric);
@@ -110,7 +110,7 @@ if ~isempty(radiometer)
             % Take temperature measurement
             if (~isempty(theLJDev))
                 [~, temperatureValue] = theLJDev.measure();
-                temperatures{p,i} = struct('value', temperatureValue, 'time', mglGetSecs());
+                temperatures{p,i} = struct('value', temperatureValue, 'time', datetime());
             end
         
             % Radiometeric measurement
@@ -123,7 +123,7 @@ if ~isempty(radiometer)
     oneLight.setAll(false);
 else
     % Simulate
-    SPD = OLPrimaryToSpd(calibration,primaryValues);
+    SPD = OLPrimaryToSpd(calibration,primaryValues,'primaryTolerance',parser.Results.primaryTolerance);
 end
 
 

@@ -91,10 +91,8 @@ function [validation, SPDs, excitations, contrasts] = OLValidateDirection(direct
 parser = inputParser;
 parser.addOptional('radiometer',[],@(x) isempty(x) || isa(x,'Radiometer'));
 parser.addParameter('receptors',[],@(x) isa(x,'SSTReceptor') || isnumeric(x));
-parser.addParameter('nAverage',1,@isnumeric);
-parser.addParameter('temperatureProbe',[],@(x) isempty(x) || isa(x,'LJTemperatureProbe'));
-parser.addParameter('measureStateTrackingSPDs',false, @islogical);
 parser.addParameter('label',"");
+parser.KeepUnmatched = true;
 parser.parse(varargin{:});
 
 % Check if calculating contrasts
@@ -130,7 +128,7 @@ else
     radiometer = parser.Results.radiometer;
 
     validation.background = background;
-    validation.time = now; % take stock of how long taking
+    validation.time = datetime; % take stock of how long taking
 
     %% Determine desired SPDs
     % An OLDirection defines a differerntial direction: a set of primary
@@ -182,9 +180,7 @@ else
     validation.measuredPrimaryValues = [background.differentialPrimaryValues, direction.differentialPrimaryValues+background.differentialPrimaryValues];
     [SPDs, temperatures, stateTrackingData] = OLValidatePrimaryValues([background.differentialPrimaryValues, direction.differentialPrimaryValues+background.differentialPrimaryValues],...
         direction.calibration,oneLight,radiometer, ...
-        'nAverage', parser.Results.nAverage, ...
-        'temperatureProbe', parser.Results.temperatureProbe, ...
-        'measureStateTrackingSPDs', parser.Results.measureStateTrackingSPDs);
+        parser.Unmatched);
 
     % Add temperatures to validation
     validation.temperatures = temperatures;
@@ -250,7 +246,7 @@ else
     validation.luminanceActual = T_xyz(2,:) * [SPDs.measuredSPD];
 
     %% Append to each directions .describe.validation
-    validation.time = [validation.time now];
+    validation.time = [validation.time datetime];
     validation.label = parser.Results.label;
 
     % Extract information for just this direction(i)
