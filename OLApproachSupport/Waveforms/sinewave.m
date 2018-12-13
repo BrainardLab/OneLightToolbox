@@ -23,7 +23,7 @@ function waveform = sinewave(duration, samplingFq, varargin)
 
 %% Input parser
 parser = inputParser;
-parser.addRequired('duration',@isnumeric);
+parser.addRequired('duration',@(x) isnumeric(x) || isduration(x));
 parser.addRequired('samplingFq',@isnumeric);
 parser.addOptional('frequency',1,@isnumeric);
 parser.addOptional('phase',0,@isnumeric);
@@ -33,6 +33,9 @@ phase = parser.Results.phase;
 timestep = 1/samplingFq;
 
 %% Generate timebase
+if isduration(duration)
+    duration = seconds(duration);
+end
 timebase = 0:timestep:duration-timestep;
 
 %% Generate waveform
