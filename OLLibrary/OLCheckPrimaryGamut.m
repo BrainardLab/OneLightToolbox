@@ -90,7 +90,8 @@ function [primary, inGamut, gamutMargin] = OLCheckPrimaryGamut(primary,varargin)
 
 % History:
 %   04/12/18  dhb  Wrote it.
-%   12/19/18  jv   Extracted OLGamutMargins
+%   12/19/18  jv   Extracted OLGamutMargins, OLCheckPrimaryValues,
+%                  OLTruncateGamutTolerance
 
 % Examples:
 
@@ -210,11 +211,8 @@ end
 % Headroom is effectively just shrinking the gamut
 gamutMinMax = gamutMinMax + p.Results.primaryHeadroom * [1 -1];
 
-%% Check that primaries are within gamut to tolerance.
-% Truncate and call it good if so, throw error conditionally on checking if
-% not.
-primary(primary < gamutMinMax(1) & primary > gamutMinMax(1) - p.Results.primaryTolerance) = gamutMinMax(1);
-primary(primary > gamutMinMax(2) & primary < gamutMinMax(2) + p.Results.primaryTolerance) = gamutMinMax(2);
+%% Truncate primaries by gamut tolerance
+primary = OLTruncateGamutTolerance(primary,gamutMinMax,p.Results.primaryTolerance);
 
 %% Get gamut margins
 gamutMargins = OLGamutMargins(primary(:), gamutMinMax);
