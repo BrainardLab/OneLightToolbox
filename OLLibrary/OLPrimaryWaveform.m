@@ -77,7 +77,7 @@ parser = inputParser();
 parser.addRequired('primaryValues',@isnumeric);
 parser.addRequired('waveform',@isnumeric);
 parser.addParameter('differential',false,@islogical);
-parser.addParameter('primaryTolerance',1e-6,@isnumeric);
+parser.addParameter('primaryTolerance',1e-5,@isnumeric);
 parser.parse(primaryValues,waveform,varargin{:});
 
 gamutMinMax = [0 1] + parser.Results.differential * [-1 0];
