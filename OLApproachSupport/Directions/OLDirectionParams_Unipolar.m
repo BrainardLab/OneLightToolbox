@@ -14,7 +14,7 @@ classdef OLDirectionParams_Unipolar < OLDirectionParams
         whichReceptorsToIsolate = [];
         whichReceptorsToIgnore = [];
         whichReceptorsToMinimize = [];
-        whichPrimariesToPin = []; 
+        whichPrimariesToPin = [];
         directionsYoked = 0;
         directionsYokedAbs = 0;
         receptorIsolateMode = 'Standard';
@@ -25,7 +25,7 @@ classdef OLDirectionParams_Unipolar < OLDirectionParams
         % don't use those fields in this object.
         T_receptors = [];
         targetContrast = [];
-        search(1,1) struct = struct([]); 
+        search(1,1) struct = struct([]);
     end
     
     methods
@@ -108,7 +108,7 @@ classdef OLDirectionParams_Unipolar < OLDirectionParams
             parser.addOptional('background',[],@(x) isempty(x) || isa(x,'OLDirection_unipolar'));
             parser.addParameter('verbose',false,@islogical);
             parser.addParameter('observerAge',32,@isnumeric);
-            parser.addParameter('alternateBackgroundDictionaryFunc','',@ischar);               
+            parser.addParameter('alternateBackgroundDictionaryFunc','',@ischar);
             parser.parse(directionParams,calibration,varargin{:});
             
             %% Set some params
@@ -128,6 +128,10 @@ classdef OLDirectionParams_Unipolar < OLDirectionParams
             
             % Peg desired contrasts
             desiredContrasts = directionParams.modulationContrast;
+            
+            % Gamut plus headroom
+            gamut = [0 1] + directionParams.primaryHeadRoom * [1 -1];
+            differentialGamut = [-1 1] + directionParams.primaryHeadRoom * [1 -1];
             
             %% Get / make background
             if isempty(parser.Results.background) % No primary specified in call
@@ -191,22 +195,35 @@ classdef OLDirectionParams_Unipolar < OLDirectionParams
                     % happy.
                     [modulationPrimaryPositive,~,~,~] = OLPrimaryInvSolveChrom(calibration, background.describe.params.desiredxy, ...
                         'desiredLum', background.describe.params.desiredLum, 'whichXYZ', background.describe.params.whichXYZ, ...
-                        'optimizationTarget',directionParams.search.optimizationTarget,'T_receptors',directionParams.T_receptors,'targetContrast',directionParams.targetContrast, ... 
-                        'backgroundPrimary',background.differentialPrimaryValues, ...     
+                        'optimizationTarget',directionParams.search.optimizationTarget,'T_receptors',directionParams.T_receptors,'targetContrast',directionParams.targetContrast, ...
+                        'backgroundPrimary',background.differentialPrimaryValues, ...
                         directionParams.search);
+                    
+                    % Correct modulation primary tolerance
+                    modulationPrimaryPositive = OLTruncateGamutTolerance(modulationPrimaryPositive, gamut, 1e-5);
+                    
+                    % Assert that modulation primary is in gamut (after
+                    % tolerances have been applied)
+                    assert(OLCheckPrimaryValues(modulationPrimaryPositive, gamut),'Modulation primary out of gamut, after tolerance has been applied');
                     
                     % Convert to unipolar direction
                     % Background is already OK here and doesn't need to be tweaked.
                     differentialPrimaryValues = modulationPrimaryPositive - background.differentialPrimaryValues;
-                
-                % Determine primary values for modulation positive endpoint
-                % using bipolar method
-                else 
+                else
+                    % Determine primary values for modulation positive endpoint
+                    % using bipolar method
                     initialPrimary = background.differentialPrimaryValues;
                     modulationPrimaryPositive = ReceptorIsolate(directionParams.T_receptors, directionParams.whichReceptorsToIsolate, ...
                         directionParams.whichReceptorsToIgnore,directionParams.whichReceptorsToMinimize,B_primary,background.differentialPrimaryValues,...
                         initialPrimary,directionParams.whichPrimariesToPin,directionParams.primaryHeadRoom,directionParams.maxPowerDiff,...
                         desiredContrasts,ambientSpd);
+                    
+                    % Correct modulation primary tolerance
+                    modulationPrimaryPositive = OLTruncateGamutTolerance(modulationPrimaryPositive, gamut, 1e-5);
+                    
+                    % Assert that modulation primary is in gamut (after
+                    % tolerances have been applied)
+                    assert(OLCheckPrimaryValues(modulationPrimaryPositive, gamut),'Modulation primary out of gamut, after tolerance has been applied');
                     
                     % Convert to unipolar direction
                     differentialPrimaryValues = modulationPrimaryPositive - background.differentialPrimaryValues;
@@ -215,14 +232,17 @@ classdef OLDirectionParams_Unipolar < OLDirectionParams
                     background = OLDirection_unipolar(background.differentialPrimaryValues-differentialPrimaryValues,calibration,background.describe);
                     differentialPrimaryValues = modulationPrimaryPositive - background.differentialPrimaryValues;
                 end
-                    
+                
+                % Truncate differential to gamut
+                differentialPrimaryValues = OLTruncateGamutTolerance(differentialPrimaryValues, differentialGamut, 1e-5);
+                
                 % Create direction object
                 describe.observerAge = observerAgeInYears;
                 describe.directionParams = directionParams;
                 describe.backgroundNominal = background.copy();
                 describe.background = background;
                 direction(observerAgeInYears) = OLDirection_unipolar(differentialPrimaryValues, calibration, describe);
-
+                
                 %% Check gamut
                 modulation = background + direction(observerAgeInYears);
                 if any(modulation.differentialPrimaryValues > 1)  || any(modulation.differentialPrimaryValues < 0)
