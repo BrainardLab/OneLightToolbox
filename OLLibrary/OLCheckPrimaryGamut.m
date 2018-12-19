@@ -226,8 +226,7 @@ if (p.Results.checkPrimaryOutOfRange && ~inGamut)
     error('At least one primary values is out of gamut');
 else
     % In this case, force primaries to be within gamut
-    primary(primary > gamutMinMax(2)) = gamutMinMax(2);
-    primary(primary < gamutMinMax(1)) = gamutMinMax(1);
+    primary = OLTruncatePrimaryValues(primary,gamutMinMax);
 end
 
 end
