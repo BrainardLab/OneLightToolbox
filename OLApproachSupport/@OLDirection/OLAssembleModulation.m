@@ -55,7 +55,7 @@ assert(size(waveforms,1) == numel(directions),'OneLightToolbox:OLApproachSupport
 
 %% Create primary waveform matrix, predict SPDs
 % OLPrimaryWaveform will do the matrix multiplication for us.
-primaryWaveform = OLPrimaryWaveform(directions,waveforms,'truncateGamut',false);
+primaryWaveform = OLPrimaryWaveform(directions,waveforms);
 predictedSPDs = OLPrimaryToSpd(directions(1).calibration,primaryWaveform);
 
 %% Convert to starts/stops
