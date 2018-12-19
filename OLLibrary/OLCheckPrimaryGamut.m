@@ -90,6 +90,7 @@ function [primary, inGamut, gamutMargin] = OLCheckPrimaryGamut(primary,varargin)
 
 % History:
 %   04/12/18  dhb  Wrote it.
+%   12/19/18  jv   Extracted OLGamutMargins
 
 % Examples:
 
@@ -200,9 +201,8 @@ p.parse(varargin{:});
 
 %% Initialize
 inGamut = true;
-gamutMargin = 0;
 
-%% Handle differential mode
+%% Set up gamut / Handle differential mode
 if (p.Results.differentialMode)
     lowerGamut = -1;
 else
@@ -217,11 +217,11 @@ upperGamut = 1;
 primary(primary < lowerGamut + p.Results.primaryHeadroom & primary > lowerGamut + p.Results.primaryHeadroom - p.Results.primaryTolerance) = lowerGamut + p.Results.primaryHeadroom;
 primary(primary > upperGamut - p.Results.primaryHeadroom & primary < upperGamut - p.Results.primaryHeadroom + p.Results.primaryTolerance) = upperGamut - p.Results.primaryHeadroom;
 
-% Compute gamut deviation as a positive number meaning deviation
-upperGamutMargin = max(primary(:) - (upperGamut-p.Results.primaryHeadroom));
-lowerGamutMargin = -(min(primary(:)) - (lowerGamut+p.Results.primaryHeadroom));
-gamutMargin = max([upperGamutMargin lowerGamutMargin]);
+%% Get gamut margins
+gamutMargins = OLGamutMargins(primary(:),[lowerGamut+p.Results.primaryHeadroom,upperGamut-p.Results.primaryHeadroom]);
+gamutMargin = max(-gamutMargins);
 
+%%
 if ( (any(primary(:) > upperGamut - p.Results.primaryHeadroom) || any(primary(:) < lowerGamut + p.Results.primaryHeadroom) ))
     if (p.Results.checkPrimaryOutOfRange)  
         error('At one least primary value is out of gamut');
