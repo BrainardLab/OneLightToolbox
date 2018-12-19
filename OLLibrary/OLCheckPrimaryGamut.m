@@ -201,33 +201,35 @@ p.parse(varargin{:});
 
 %% Set up gamut / Handle differential mode
 if (p.Results.differentialMode)
-    lowerGamut = -1;
+    gamutMinMax = [-1 1];
 else
-    lowerGamut = 0;
+    gamutMinMax = [0 1];
 end
-upperGamut = 1;
+
+%% Apply primaryHeadroom by adjusting gamut
+% Headroom is effectively just shrinking the gamut
+gamutMinMax = gamutMinMax + p.Results.primaryHeadroom * [1 -1];
 
 %% Check that primaries are within gamut to tolerance.
-%
 % Truncate and call it good if so, throw error conditionally on checking if
 % not.
-primary(primary < lowerGamut + p.Results.primaryHeadroom & primary > lowerGamut + p.Results.primaryHeadroom - p.Results.primaryTolerance) = lowerGamut + p.Results.primaryHeadroom;
-primary(primary > upperGamut - p.Results.primaryHeadroom & primary < upperGamut - p.Results.primaryHeadroom + p.Results.primaryTolerance) = upperGamut - p.Results.primaryHeadroom;
+primary(primary < gamutMinMax(1) & primary > gamutMinMax(1) - p.Results.primaryTolerance) = gamutMinMax(1);
+primary(primary > gamutMinMax(2) & primary < gamutMinMax(2) + p.Results.primaryTolerance) = gamutMinMax(2);
 
 %% Get gamut margins
-gamutMargins = OLGamutMargins(primary(:),[lowerGamut+p.Results.primaryHeadroom,upperGamut-p.Results.primaryHeadroom]);
+gamutMargins = OLGamutMargins(primary(:), gamutMinMax);
 gamutMargin = max(-gamutMargins);
 
 %% Check if in gamut, get margin
-inGamut = OLCheckPrimaryValues(primary, [lowerGamut+p.Results.primaryHeadroom,upperGamut-p.Results.primaryHeadroom]);
+inGamut = OLCheckPrimaryValues(primary(:), gamutMinMax);
 
 %% Error if necessary
 if (p.Results.checkPrimaryOutOfRange && ~inGamut)
     error('At least one primary values is out of gamut');
 else
     % In this case, force primaries to be within gamut
-    primary(primary > upperGamut - p.Results.primaryHeadroom) = upperGamut - p.Results.primaryHeadroom;
-    primary(primary < lowerGamut + p.Results.primaryHeadroom) = lowerGamut + p.Results.primaryHeadroom;
+    primary(primary > gamutMinMax(2)) = gamutMinMax(2);
+    primary(primary < gamutMinMax(1)) = gamutMinMax(1);
 end
 
 end
