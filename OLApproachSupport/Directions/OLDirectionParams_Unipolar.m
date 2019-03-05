@@ -165,97 +165,91 @@ classdef OLDirectionParams_Unipolar < OLDirectionParams
             
             backgroundSPD = background.ToPredictedSPD;
             
-            %% Set up receptors
-            % Get fraction bleached for background we're actually using
-            if (directionParams.doSelfScreening)
-                fractionBleached = OLEstimateConePhotopigmentFractionBleached(S,backgroundSPD,directionParams.pupilDiameterMm,directionParams.fieldSizeDegrees,observerAgeInYears,directionParams.photoreceptorClasses);
-            else
-                fractionBleached = zeros(1,length(directionParams.photoreceptorClasses));
-            end
-            
-            % Get lambda max shift. Currently not passed but could be.
-            lambdaMaxShift = [];
-            
-            for observerAgeInYears = parser.Results.observerAge
-                % Construct the receptor matrix based on the bleaching fraction to this background.
-                directionParams.T_receptors = GetHumanPhotoreceptorSS(S,directionParams.photoreceptorClasses,directionParams.fieldSizeDegrees,observerAgeInYears,directionParams.pupilDiameterMm,lambdaMaxShift,fractionBleached);
+            %% Get, or construct, receptors matrix
+            if isempty(directionParams.T_receptors)
+                observerAge = parser.Results.observerAge;
                 
-                % Determine primary values using unipolar method
-                if (~isempty(directionParams.targetContrast))
-                    % Check
-                    if (~strcmp(directionParams.search.optimizationTarget,'receptorContrast'))
-                        error('If we are here we need param.search and for the optimization target to be ''receptorContrast''');
-                    end
-                    
-                    % We are passing the background, but
-                    % OLPRimaryInvSolveChrom isn't quite smart enough to
-                    % skip all background related calcs in this case, so we
-                    % pass the desiredxy, desiredLum, and whichXYZ fields
-                    % from the background as well, just to keep everything
-                    % happy.
-                    [modulationPrimaryPositive,~,~,~] = OLPrimaryInvSolveChrom(calibration, background.describe.params.desiredxy, ...
-                        'desiredLum', background.describe.params.desiredLum, 'whichXYZ', background.describe.params.whichXYZ, ...
-                        'optimizationTarget',directionParams.search.optimizationTarget,'T_receptors',directionParams.T_receptors,'targetContrast',directionParams.targetContrast, ...
-                        'backgroundPrimary',background.differentialPrimaryValues, ...
-                        directionParams.search);
-                    
-                    % Correct modulation primary tolerance
-                    modulationPrimaryPositive = OLTruncateGamutTolerance(modulationPrimaryPositive, gamut, 1e-5);
-                    
-                    % Assert that modulation primary is in gamut (after
-                    % tolerances have been applied)
-                    assert(OLCheckPrimaryValues(modulationPrimaryPositive, gamut),'Modulation primary out of gamut, after tolerance has been applied');
-                    
-                    % Convert to unipolar direction
-                    % Background is already OK here and doesn't need to be tweaked.
-                    differentialPrimaryValues = modulationPrimaryPositive - background.differentialPrimaryValues;
+                % Get fraction bleached for background we're actually using
+                if (directionParams.doSelfScreening)
+                    fractionBleached = OLEstimateConePhotopigmentFractionBleached(S,backgroundSPD,directionParams.pupilDiameterMm,directionParams.fieldSizeDegrees,observerAge,directionParams.photoreceptorClasses);
                 else
-                    % Determine primary values for modulation positive endpoint
-                    % using bipolar method
-                    initialPrimary = background.differentialPrimaryValues;
-                    modulationPrimaryPositive = ReceptorIsolate(directionParams.T_receptors, directionParams.whichReceptorsToIsolate, ...
-                        directionParams.whichReceptorsToIgnore,directionParams.whichReceptorsToMinimize,B_primary,background.differentialPrimaryValues,...
-                        initialPrimary,directionParams.whichPrimariesToPin,directionParams.primaryHeadRoom,directionParams.maxPowerDiff,...
-                        desiredContrasts,ambientSpd);
-                    
-                    % Correct modulation primary tolerance
-                    modulationPrimaryPositive = OLTruncateGamutTolerance(modulationPrimaryPositive, gamut, 1e-5);
-                    
-                    % Assert that modulation primary is in gamut (after
-                    % tolerances have been applied)
-                    assert(OLCheckPrimaryValues(modulationPrimaryPositive, gamut),'Modulation primary out of gamut, after tolerance has been applied');
-                    
-                    % Convert to unipolar direction
-                    differentialPrimaryValues = modulationPrimaryPositive - background.differentialPrimaryValues;
-                    
-                    % Negative arm of bipolar modulation becomes background primary
-                    background = OLDirection_unipolar(background.differentialPrimaryValues-differentialPrimaryValues,calibration,background.describe);
-                    differentialPrimaryValues = modulationPrimaryPositive - background.differentialPrimaryValues;
+                    fractionBleached = zeros(1,length(directionParams.photoreceptorClasses));
                 end
+
+                % Get lambda max shift. Currently not passed but could be.
+                lambdaMaxShift = [];
                 
-                % Truncate differential to gamut
-                differentialPrimaryValues = OLTruncateGamutTolerance(differentialPrimaryValues, differentialGamut, 1e-5);
-                
-                % Create direction object
-                describe.observerAge = observerAgeInYears;
-                describe.directionParams = directionParams;
-                describe.backgroundNominal = background.copy();
-                describe.background = background;
-                direction(observerAgeInYears) = OLDirection_unipolar(differentialPrimaryValues, calibration, describe);
-                
-                %% Check gamut
-                modulation = background + direction(observerAgeInYears);
-                if any(modulation.differentialPrimaryValues > 1)  || any(modulation.differentialPrimaryValues < 0)
-                    error('Out of bounds.')
-                    
-                end
+                % Construct the receptor matrix based on the bleaching fraction to this background.
+                directionParams.T_receptors = GetHumanPhotoreceptorSS(S,directionParams.photoreceptorClasses,directionParams.fieldSizeDegrees,observerAge,directionParams.pupilDiameterMm,lambdaMaxShift,fractionBleached);
             end
+                           
+            %% Determine modulation primary values
+            if (~isempty(directionParams.targetContrast))
+                % Check
+                if (~strcmp(directionParams.search.optimizationTarget,'receptorContrast'))
+                    error('If we are here we need param.search and for the optimization target to be ''receptorContrast''');
+                end
+
+                % We are passing the background, but
+                % OLPRimaryInvSolveChrom isn't quite smart enough to
+                % skip all background related calcs in this case, so we
+                % pass the desiredxy, desiredLum, and whichXYZ fields
+                % from the background as well, just to keep everything
+                % happy.
+                [modulationPrimaryPositive,~,~,~] = OLPrimaryInvSolveChrom(calibration, background.describe.params.desiredxy, ...
+                    'desiredLum', background.describe.params.desiredLum, 'whichXYZ', background.describe.params.whichXYZ, ...
+                    'optimizationTarget',directionParams.search.optimizationTarget,'T_receptors',directionParams.T_receptors,'targetContrast',directionParams.targetContrast, ...
+                    'backgroundPrimary',background.differentialPrimaryValues, ...
+                    directionParams.search);
+
+                % Correct modulation primary tolerance
+                modulationPrimaryPositive = OLTruncateGamutTolerance(modulationPrimaryPositive, gamut, 1e-5);
+
+                % Assert that modulation primary is in gamut (after
+                % tolerances have been applied)
+                assert(OLCheckPrimaryValues(modulationPrimaryPositive, gamut),'Modulation primary out of gamut, after tolerance has been applied');
+
+                % Convert to unipolar direction
+                % Background is already OK here and doesn't need to be tweaked.
+                differentialPrimaryValues = modulationPrimaryPositive - background.differentialPrimaryValues;
+            else
+                % Determine primary values for modulation positive endpoint
+                % using bipolar method
+                initialPrimary = background.differentialPrimaryValues;
+                modulationPrimaryPositive = ReceptorIsolate(directionParams.T_receptors, directionParams.whichReceptorsToIsolate, ...
+                    directionParams.whichReceptorsToIgnore,directionParams.whichReceptorsToMinimize,B_primary,background.differentialPrimaryValues,...
+                    initialPrimary,directionParams.whichPrimariesToPin,directionParams.primaryHeadRoom,directionParams.maxPowerDiff,...
+                    desiredContrasts,ambientSpd);
+
+                % Correct modulation primary tolerance
+                modulationPrimaryPositive = OLTruncateGamutTolerance(modulationPrimaryPositive, gamut, 1e-5);
+
+                % Assert that modulation primary is in gamut (after
+                % tolerances have been applied)
+                assert(OLCheckPrimaryValues(modulationPrimaryPositive, gamut),'Modulation primary out of gamut, after tolerance has been applied');
+
+                % Convert to unipolar direction
+                differentialPrimaryValues = modulationPrimaryPositive - background.differentialPrimaryValues;
+
+                % Negative arm of bipolar modulation becomes background primary
+                background = OLDirection_unipolar(background.differentialPrimaryValues-differentialPrimaryValues,calibration,background.describe);
+                differentialPrimaryValues = modulationPrimaryPositive - background.differentialPrimaryValues;
+            end
+
+            %% Truncate differential to gamut
+            differentialPrimaryValues = OLTruncateGamutTolerance(differentialPrimaryValues, differentialGamut, 1e-5);
+
+            %% Create direction object
+            describe.directionParams = directionParams;
+            describe.backgroundNominal = background.copy();
+            describe.background = background;
+            direction = OLDirection_unipolar(differentialPrimaryValues, calibration, describe);
             
-            % Return just the single OLDirection
-            % rather than an array,if there is only one direction
-            if numel(parser.Results.observerAge) == 1
-                direction = direction(parser.Results.observerAge);
-            end
+            %% Check gamut
+            modulation = background + direction;
+            if any(modulation.differentialPrimaryValues > 1)  || any(modulation.differentialPrimaryValues < 0)
+                error('Out of bounds.')
+            end            
         end
         
         function valid = OLDirectionParamsValidate(directionParams)
