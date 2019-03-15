@@ -124,10 +124,9 @@ classdef OLBackgroundParams_Optimized < OLBackgroundParams
                 lambdaMaxShift = zeros(1, length(params.photoreceptorClasses));
                 fractionBleached = zeros(1,length(params.photoreceptorClasses));
                 params.T_receptors = GetHumanPhotoreceptorSS(calibration.describe.S, params.photoreceptorClasses, params.fieldSizeDegrees, params.backgroundObserverAge, params.pupilDiameterMm, lambdaMaxShift, fractionBleached);
-            else
-                % Receptors are specified, use those
-                T_receptors = params.T_receptors;
             end
+            % Extract receptors
+            T_receptors = params.T_receptors;
             
             %% Find the background. We have more than one way of doing this.
             %
