@@ -108,6 +108,7 @@ classdef OLDirectionParams_Unipolar < OLDirectionParams
             parser.addOptional('background',[],@(x) isempty(x) || isa(x,'OLDirection_unipolar'));
             parser.addParameter('verbose',false,@islogical);
             parser.addParameter('observerAge',32,@isnumeric);
+            parser.addParameter('lambdaMaxShift',[],@isnumeric);
             parser.addParameter('alternateBackgroundDictionaryFunc','',@ischar);
             parser.parse(directionParams,calibration,varargin{:});
             
@@ -177,7 +178,7 @@ classdef OLDirectionParams_Unipolar < OLDirectionParams
                 end
 
                 % Get lambda max shift. Currently not passed but could be.
-                lambdaMaxShift = [];
+                lambdaMaxShift = parser.Results.lambdaMaxShift;
                 
                 % Construct the receptor matrix based on the bleaching fraction to this background.
                 directionParams.T_receptors = GetHumanPhotoreceptorSS(S,directionParams.photoreceptorClasses,directionParams.fieldSizeDegrees,observerAge,directionParams.pupilDiameterMm,lambdaMaxShift,fractionBleached);
