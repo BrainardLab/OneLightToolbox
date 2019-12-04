@@ -170,8 +170,10 @@ classdef OLDirectionParams_Bipolar < OLDirectionParams
             
             for observerAgeInYears = parser.Results.observerAge
                 % Construct the receptor matrix based on the bleaching fraction to this background.
-                directionParams.T_receptors = GetHumanPhotoreceptorSS(S,directionParams.photoreceptorClasses,directionParams.fieldSizeDegrees,observerAgeInYears,directionParams.pupilDiameterMm,lambdaMaxShift,fractionBleached);
-                
+                if isempty(directionParams.T_receptors)
+                    
+                    directionParams.T_receptors = GetHumanPhotoreceptorSS(S,directionParams.photoreceptorClasses,directionParams.fieldSizeDegrees,observerAgeInYears,directionParams.pupilDiameterMm,lambdaMaxShift,fractionBleached);
+                end
                 %% Determine primary values for modulation positive endpoint
                 initialPrimary = background.differentialPrimaryValues;
                 modulationPrimaryPositive = ReceptorIsolate(directionParams.T_receptors, directionParams.whichReceptorsToIsolate, ...
