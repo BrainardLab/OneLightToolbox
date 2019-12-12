@@ -31,6 +31,7 @@ defaultExcludedSubjectNames = {...
 parser = inputParser;
 parser.addParameter('approachName','OLApproach_Squint',@ischar);
 parser.addParameter('protocolName','SquintToPulse',@ischar);
+parser.addParameter('experimentName',[],@ischar);
 parser.addParameter('objectType', 'DirectionObjects');
 parser.addParameter('objectName', 'MaxMelDirection');
 parser.addParameter('visualizedProperty' , 'SConeContrast');
@@ -63,7 +64,7 @@ firstDateToPlot = parser.Results.firstDateToPlot;
 objectsDataPath = ...
     RetrieveObjectsDataPath(approachName, protocolParams, objectType);
 [serializedData, subjectNames] = ...
-    SerializeObjectsInDataPathBasedOnDates(objectsDataPath, excludedSubjectNames, excludedSessions);
+    SerializeObjectsInDataPathBasedOnDates(objectsDataPath, excludedSubjectNames, excludedSessions, parser.Results.experimentName);
 
 % Extract relevant data for visualization
 [sessionData, timeLabels] = ...
@@ -96,7 +97,7 @@ parser.addParameter('firstDateToPlot', [], @ischar);
 
 parser.parse(varargin{:});
 visualizedStatistics = parser.Results.visualizedStatistics;
-firstDateToPlot = parser.Results.firstDateToPlot
+firstDateToPlot = parser.Results.firstDateToPlot;
 
 % dark theme
 darkTheme = struct(...
@@ -381,7 +382,7 @@ close(hWaitBar);
 end
 
 % Method to serialize objects based on the date/session in their filenames
-function [serializedData, subjectNames] = SerializeObjectsInDataPathBasedOnDates(objectsDataPath, excludedSubjectNames, excludedSessions)
+function [serializedData, subjectNames] = SerializeObjectsInDataPathBasedOnDates(objectsDataPath, excludedSubjectNames, excludedSessions, experimentName)
 % Get all the files under objectsDataPath
 files = dir(objectsDataPath);
 
@@ -402,7 +403,7 @@ for k = 1 : length(subFolders)
     if (~ismember(theSubjectName, invalidFolderNames)) && (~ismember(theSubjectName, excludedSubjectNames))
         validSubjectIndex = validSubjectIndex + 1;
         % Compute full subjectNamePath
-        subjectNamePath = fullfile(objectsDataPath,theSubjectName);
+        subjectNamePath = fullfile(objectsDataPath,theSubjectName, experimentName);
         subjectNames{numel(subjectNames)+1} = theSubjectName;
         % Get all the files under subjectName
         files2 = dir(subjectNamePath);
@@ -452,7 +453,7 @@ sessionIndices = zeros(1, numel(sessionPathsForAllSubjects));
 for k = 1:numel(sessionPathsForAllSubjects)
     sessionPathName = sessionPathsForAllSubjects{k};
     subjectName = subjectNamesForAllSessions{k};
-    [dateNumbers(k), sessionDates{k}, sessionIndices(k)] = extractDateNumberFromSessionPathName(sessionPathName, subjectName);
+    [dateNumbers(k), sessionDates{k}, sessionIndices(k)] = extractDateNumberFromSessionPathName(sessionPathName, subjectName, experimentName);
 end
 
 % Sort directories according the session dates
@@ -474,10 +475,10 @@ end
 end
 
 
-function [dateNumber, sessionDate, sessionIndex] = extractDateNumberFromSessionPathName(sessionPathName, subjectName)
+function [dateNumber, sessionDate, sessionIndex] = extractDateNumberFromSessionPathName(sessionPathName, subjectName, experimentName)
 k1 = strfind(sessionPathName, 'session');
 k2 = strfind(sessionPathName, subjectName);
-sessionDate = sessionPathName(k2+length(subjectName)+1:k1-2);
+sessionDate = sessionPathName(k2+length(subjectName)+1+length(experimentName)+1:k1-2);
 sessionIndex = str2double(sessionPathName(k1+length('session')+1:end));
 % Update the date by adding x minutes, where x is the sessionIndex
 updatedSessionDate = datetime(sessionDate) + minutes(sessionIndex);

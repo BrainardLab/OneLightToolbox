@@ -4,7 +4,6 @@ function primaryWaveform = OLPrimaryWaveform(primaryValues, waveform, varargin)
 % Syntax:
 %   primaryWaveform = OLPrimaryWaveform(primaryValues, waveform)
 %   primaryWaveform = OLPrimaryWaveform(...,'differential',true)
-%   primaryWaveform = OLPrimaryWaveform(...,'truncateGamut',true)
 %
 % Description:
 %
@@ -29,13 +28,6 @@ function primaryWaveform = OLPrimaryWaveform(primaryValues, waveform, varargin)
 %    differential    - Boolean flag for treating primary values as
 %                      differentials, i.e. in range [-1, +1]. Default
 %                      false.
-%    truncateGamut   - Boolean flag for truncating the output to be within
-%                      gamut (i.e outside range [0,1] if 'differential' =
-%                      false, [-1,1] if 'differential' = true). If false,
-%                      and output is out of gamut, will throw an error. If
-%                      true, and output is out of gamut, will throw a
-%                      warning, and proceed to truncate output to be in
-%                      gamut. Default false.
 %
 % Examples are provided in the source code.
 %
@@ -85,22 +77,21 @@ parser = inputParser();
 parser.addRequired('primaryValues',@isnumeric);
 parser.addRequired('waveform',@isnumeric);
 parser.addParameter('differential',false,@islogical);
-parser.addParameter('truncateGamut',false,@islogical);
+parser.addParameter('primaryTolerance',1e-5,@isnumeric);
 parser.parse(primaryValues,waveform,varargin{:});
+
+gamutMinMax = [0 1] + parser.Results.differential * [-1 0];
+primaryTolerance = parser.Results.primaryTolerance;
 
 %% Matrix multiplication
 primaryWaveform = primaryValues * waveform;
 
-%% Check gamut
-gamut = [0 1] - [parser.Results.differential 0]; % set gamut limits
-if any(primaryWaveform(:) < gamut(1)-1e-10 | primaryWaveform(:) > gamut(2)+1e-10)
-    if parser.Results.truncateGamut
-        warning('OneLightToolbox:OLPrimaryWaveform:OutOfGamut','Primary waveform is out of gamut somewhere. This will be truncated');
-        primaryWaveform(primaryWaveform < gamut(1)) = gamut(1);
-        primaryWaveform(primaryWaveform > gamut(2)) = gamut(2);
-    else
-        error('OneLightToolbox:OLPrimaryWaveform:OutOfGamut','Primary waveform is out of gamut somewhere.');
-    end
-end
+%% Truncate primary tolerance
+primaryWaveform = OLTruncateGamutTolerance(primaryWaveform,gamutMinMax,primaryTolerance);
+
+%% Check in gamut
+assert(OLCheckPrimaryValues(primaryWaveform,gamutMinMax),...
+        'OneLightToolbox:PrimaryWaveform:OutOfGamut',...
+        'Primary waveform is out of gamut');
 
 end

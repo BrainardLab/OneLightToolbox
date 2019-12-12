@@ -121,6 +121,10 @@ classdef OLDirectionParams_Bipolar < OLDirectionParams
             % Peg desired contrasts
             desiredContrasts = directionParams.modulationContrast;
             
+            % Gamut plus headroom
+            gamut = [0 1] + directionParams.primaryHeadRoom * [1 -1];
+            differentialGamut = [-1 1] + directionParams.primaryHeadRoom * [1 -1];
+            
             %% Get / make background
             if isempty(parser.Results.background) % No primary specified in call
                 if isempty(directionParams.background) % No primary specified in params
@@ -166,8 +170,10 @@ classdef OLDirectionParams_Bipolar < OLDirectionParams
             
             for observerAgeInYears = parser.Results.observerAge
                 % Construct the receptor matrix based on the bleaching fraction to this background.
-                directionParams.T_receptors = GetHumanPhotoreceptorSS(S,directionParams.photoreceptorClasses,directionParams.fieldSizeDegrees,observerAgeInYears,directionParams.pupilDiameterMm,lambdaMaxShift,fractionBleached);
-                
+                if isempty(directionParams.T_receptors)
+                    
+                    directionParams.T_receptors = GetHumanPhotoreceptorSS(S,directionParams.photoreceptorClasses,directionParams.fieldSizeDegrees,observerAgeInYears,directionParams.pupilDiameterMm,lambdaMaxShift,fractionBleached);
+                end
                 %% Determine primary values for modulation positive endpoint
                 initialPrimary = background.differentialPrimaryValues;
                 modulationPrimaryPositive = ReceptorIsolate(directionParams.T_receptors, directionParams.whichReceptorsToIsolate, ...
@@ -175,10 +181,20 @@ classdef OLDirectionParams_Bipolar < OLDirectionParams
                     initialPrimary,directionParams.whichPrimariesToPin,directionParams.primaryHeadRoom,directionParams.maxPowerDiff,...
                     desiredContrasts,ambientSpd);
                 
-                %% Convert to unipolar direction
-                % Negative arm becomes background primary
+                % Correct modulation primary tolerance
+                modulationPrimaryPositive = OLTruncateGamutTolerance(modulationPrimaryPositive, gamut, 1e-5);
+                
+                % Assert that modulation primary is in gamut (after
+                % tolerances have been applied)
+                assert(OLCheckPrimaryValues(modulationPrimaryPositive, gamut),'Modulation primary out of gamut, after tolerance has been applied');
+                
+                %% Convert to differential values
                 differentialPositive = modulationPrimaryPositive - background.differentialPrimaryValues;
                 differentialNegative = -differentialPositive;
+                
+                %% Truncate differentials to gamut
+                differentialPositive = OLTruncateGamutTolerance(differentialPositive, differentialGamut, 1e-5);
+                differentialNegative = OLTruncateGamutTolerance(differentialNegative, differentialGamut, 1e-5);
                 
                 %% Create direction object
                 describe.observerAge = observerAgeInYears;

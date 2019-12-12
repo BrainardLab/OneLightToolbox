@@ -44,7 +44,7 @@ function [primary, inGamut, gamutMargin] = OLCheckPrimaryGamut(primary,varargin)
 %                               be checked
 %
 % Outputs:
-%    primary                  - Numeric matrix (NxM) of primary values, 
+%    primary                  - Numeric matrix (NxM) of primary values,
 %                               after truncation and check
 %    inGamut                  - Boolean scalar. True if passed primaries
 %                               were within primaryTolerance of being in
@@ -58,7 +58,7 @@ function [primary, inGamut, gamutMargin] = OLCheckPrimaryGamut(primary,varargin)
 %                               in gamut, amount negative tells you
 %                               magnitude of margin. Otherwise this is the
 %                               magnitude of the largest deviation
-% 
+%
 % Optional keyword arguments:
 %    'differentialMode'       - Boolean scalar. If true, allowable gamut
 %                               starts at [-1,1] not at [0,1], and then is
@@ -90,6 +90,8 @@ function [primary, inGamut, gamutMargin] = OLCheckPrimaryGamut(primary,varargin)
 
 % History:
 %   04/12/18  dhb  Wrote it.
+%   12/19/18  jv   Extracted OLGamutMargins, OLCheckPrimaryValues,
+%                  OLTruncateGamutTolerance
 
 % Examples:
 
@@ -198,39 +200,33 @@ p.addParameter('primaryTolerance', 1e-6, @isscalar);
 p.addParameter('checkPrimaryOutOfRange', true, @islogical);
 p.parse(varargin{:});
 
-%% Initialize
-inGamut = true;
-gamutMargin = 0;
-
-%% Handle differential mode
+%% Set up gamut / Handle differential mode
 if (p.Results.differentialMode)
-    lowerGamut = -1;
+    gamutMinMax = [-1 1];
 else
-    lowerGamut = 0;
+    gamutMinMax = [0 1];
 end
-upperGamut = 1;
 
-%% Check that primaries are within gamut to tolerance.
-%
-% Truncate and call it good if so, throw error conditionally on checking if
-% not.
-primary(primary < lowerGamut + p.Results.primaryHeadroom & primary > lowerGamut + p.Results.primaryHeadroom - p.Results.primaryTolerance) = lowerGamut + p.Results.primaryHeadroom;
-primary(primary > upperGamut - p.Results.primaryHeadroom & primary < upperGamut - p.Results.primaryHeadroom + p.Results.primaryTolerance) = upperGamut - p.Results.primaryHeadroom;
+%% Apply primaryHeadroom by adjusting gamut
+% Headroom is effectively just shrinking the gamut
+gamutMinMax = gamutMinMax + p.Results.primaryHeadroom * [1 -1];
 
-% Compute gamut deviation as a positive number meaning deviation
-upperGamutMargin = max(primary(:) - (upperGamut-p.Results.primaryHeadroom));
-lowerGamutMargin = -(min(primary(:)) - (lowerGamut+p.Results.primaryHeadroom));
-gamutMargin = max([upperGamutMargin lowerGamutMargin]);
+%% Truncate primaries by gamut tolerance
+primary = OLTruncateGamutTolerance(primary,gamutMinMax,p.Results.primaryTolerance);
 
-if ( (any(primary(:) > upperGamut - p.Results.primaryHeadroom) || any(primary(:) < lowerGamut + p.Results.primaryHeadroom) ))
-    if (p.Results.checkPrimaryOutOfRange)  
-        error('At one least primary value is out of gamut');
-    else
-        % In this case, force primaries to be within gamut
-        inGamut = false;
-        primary(primary > upperGamut - p.Results.primaryHeadroom) = upperGamut - p.Results.primaryHeadroom;
-        primary(primary < lowerGamut + p.Results.primaryHeadroom) = lowerGamut + p.Results.primaryHeadroom;
-    end
+%% Get gamut margins
+gamutMargins = OLGamutMargins(primary(:), gamutMinMax);
+gamutMargin = max(-gamutMargins);
+
+%% Check if in gamut, get margin
+inGamut = OLCheckPrimaryValues(primary(:), gamutMinMax);
+
+%% Error if necessary
+if (p.Results.checkPrimaryOutOfRange && ~inGamut)
+    error('At least one primary values is out of gamut');
+else
+    % In this case, force primaries to be within gamut
+    primary = OLTruncatePrimaryValues(primary,gamutMinMax);
 end
 
 end

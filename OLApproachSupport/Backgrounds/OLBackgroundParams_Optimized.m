@@ -118,10 +118,15 @@ classdef OLBackgroundParams_Optimized < OLBackgroundParams
             % Start at mid point of primaries.
             initialPrimary = 0.5*ones(size(B_primary,2),1);
             
-            %% Construct the receptor matrix
-            lambdaMaxShift = zeros(1, length(params.photoreceptorClasses));
-            fractionBleached = zeros(1,length(params.photoreceptorClasses));
-            T_receptors = GetHumanPhotoreceptorSS(calibration.describe.S, params.photoreceptorClasses, params.fieldSizeDegrees, params.backgroundObserverAge, params.pupilDiameterMm, lambdaMaxShift, fractionBleached);
+            %% Get, or construct the receptor matrix
+            if isempty(params.T_receptors)
+                % No receptors specified, construct from parameters
+                lambdaMaxShift = zeros(1, length(params.photoreceptorClasses));
+                fractionBleached = zeros(1,length(params.photoreceptorClasses));
+                params.T_receptors = GetHumanPhotoreceptorSS(calibration.describe.S, params.photoreceptorClasses, params.fieldSizeDegrees, params.backgroundObserverAge, params.pupilDiameterMm, lambdaMaxShift, fractionBleached);
+            end
+            % Extract receptors
+            T_receptors = params.T_receptors;
             
             %% Find the background. We have more than one way of doing this.
             %

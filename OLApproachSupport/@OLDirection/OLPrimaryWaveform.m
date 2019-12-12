@@ -25,12 +25,6 @@ function primaryWaveform = OLPrimaryWaveform(directions, waveforms, varargin)
 %    differential    - Boolean flag for treating primary values as
 %                      differentials, i.e. in range [-1, +1]. Default
 %                      true.
-%    truncateGamut   - Boolean flag for truncating the output to be within
-%                      gamut (i.e outside range [0,1]. If false, and output
-%                      is out of gamut, will throw an error. If true, and
-%                      output is out of gamut, will throw a warning, and
-%                      proceed to truncate output to be in gamut. Default
-%                      false.
 %
 % Notes:
 %    None.
@@ -47,7 +41,6 @@ parser = inputParser();
 parser.addRequired('direction',@(x) isa(x,'OLDirection'));
 parser.addRequired('waveform',@isnumeric);
 parser.addParameter('differential',true,@islogical);
-parser.addParameter('truncateGamut',false,@islogical);
 parser.parse(directions,waveforms,varargin{:});
 assert(size(waveforms,1) == numel(directions),'OneLightToolbox:OLApproachSupport:OLPrimaryWaveform:MismatchedSizes',...
     'Number of directions does not match number of waveforms');
@@ -56,7 +49,7 @@ if ~isscalar(directions)
     'Directions do not share a calibration');
 end
 
-%% Parse waveforms into positive and negative components
+%% Split waveforms into positive and negative components
 waveformsPos = (waveforms >= 0) .* waveforms;
 waveformsNeg = (waveforms < 0) .* -waveforms;
 waveforms = [waveformsPos; waveformsNeg];
@@ -74,10 +67,7 @@ for i = 1:numel(directions)
     end
 end
 
-%% Matrix multiplication
-primaryWaveform = primaryValues * waveforms;
-
-%% Check gamut
-primaryWaveform = OLCheckPrimaryGamut(primaryWaveform);
+%% Construct primary waveform
+primaryWaveform = OLPrimaryWaveform(primaryValues, waveforms);
 
 end
