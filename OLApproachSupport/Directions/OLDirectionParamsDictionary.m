@@ -54,6 +54,8 @@ function dictionary = OLDirectionParamsDictionary(varargin)
 %    03/31/18  dhb  Add alternateDictionaryFunc key/value pair.
 %              dhb  Delete obsolete notes and see alsos.
 %    04/09/18  dhb  Removing light flux parameters. Use a local dictionary!
+%    05/18/20  dhb  Remove () from call to dictionaryFunction, which fixes
+%                   an error. This might be a Matlab version thing.
 
 % Parse input
 p = inputParser;
@@ -66,7 +68,7 @@ p.parse(varargin{:});
 % The alternate function must be on the path.
 if (~isempty(p.Results.alternateDictionaryFunc))
     dictionaryFunction = str2func(sprintf('@%s',p.Results.alternateDictionaryFunc));
-    dictionary = dictionaryFunction();
+    dictionary = dictionaryFunction;
     return;
 end
 
