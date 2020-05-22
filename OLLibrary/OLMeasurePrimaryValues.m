@@ -85,7 +85,7 @@ if (~isempty(radiometer)) && (measureStateTrackingSPDs)
     % Remove tmpCal
     clear('tmpCal')
 else
-    stateTrackingData = struct([]);
+    stateTrackingData = struct();
 end
     
 %% Convert primary values to starts and stops

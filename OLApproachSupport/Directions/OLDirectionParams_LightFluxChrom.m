@@ -8,7 +8,7 @@ classdef OLDirectionParams_LightFluxChrom < OLDirectionParams
         desiredMaxContrast(1,1) = 1;                                       % Size of max contrast
         desiredLum(1,1) = 200;                                             % Desired background luminance in cd/m2.
         polarType(1,:) char = 'unipolar';                                  % Unipolar or bipolar light flux direction
-        search(1,1) struct = struct([]);                                   % Primary search parameter struct  
+        search(1,1) struct = struct();                                   % Primary search parameter struct  
     end
     
     methods

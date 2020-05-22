@@ -25,7 +25,7 @@ classdef OLDirectionParams_Unipolar < OLDirectionParams
         % don't use those fields in this object.
         T_receptors = [];
         targetContrast = [];
-        search(1,1) struct = struct([]);
+        search(1,1) struct = struct();
     end
     
     methods

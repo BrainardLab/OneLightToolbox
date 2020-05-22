@@ -43,7 +43,7 @@ classdef OLBackgroundParams_Optimized < OLBackgroundParams
         whichXYZ = '';
         desiredxy = [];
         desiredLum = [];
-        search(1,1) struct = struct([]); 
+        search(1,1) struct = struct(); 
     end
     
     methods
