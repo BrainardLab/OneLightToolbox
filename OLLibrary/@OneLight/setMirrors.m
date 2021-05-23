@@ -31,6 +31,7 @@ function setMirrors(obj, starts, stops)
 % 01/17/14  dhb, ms  Comment tuning.
 % 09/25/17  dhb      Add option not to plot when simulating, based on object property
 %                    PlotWhenSimulating.
+% 
 
 assert(nargin == 3, 'OneLight:setMirrors:NumInputs', 'Invalid number of inputs.');
 
@@ -51,6 +52,7 @@ else
         figure(obj.SimFig); clf;
         hold on;
         plot(stops-starts,'ko','MarkerSize',2);
+        ylim([-1000 1000]);
         drawnow;
         hold off;
     end
