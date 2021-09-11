@@ -1,4 +1,4 @@
-function inGamut = OLCheckPrimaryValues(primaryValues,gamutMinMax)
+function [inGamut,gamutMargins] = OLCheckPrimaryValues(primaryValues,gamutMinMax)
 % Check whether primary values are within gamut
 %
 % Syntax:
@@ -33,6 +33,7 @@ function inGamut = OLCheckPrimaryValues(primaryValues,gamutMinMax)
 %    12/19/18  jv   extracted OLGamutMargins from OLCheckPrimaryGamut and
 %                   wrote OLCheckPrimaryValues as wrapper (checks if all
 %                   margins are >= 0)
+%    09/11/21  dhb  Add back gamutMargins return.
 
 % Examples:
 %{
