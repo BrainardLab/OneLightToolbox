@@ -63,7 +63,7 @@ if ~isscalar(direction)
     %% Dispatch correction for each direction
     correctedDirection = [];
     for i = 1:numel(direction)
-        correctedDirection = [correctedDirection, direction(i).OLCorrectDirection(background(i),oneLight,varargin{:})];
+        correctedDirection = [correctedDirection, direction(i).OLCorrectDirection(background(i),oneLight,radiometer,varargin{:})];
     end
 else
     %% Correct a single direction
