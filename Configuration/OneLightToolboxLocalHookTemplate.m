@@ -26,8 +26,6 @@ setpref('OneLightToolbox','OneLightCalData',fullfile(tbLocateToolbox('OneLightTo
 [~, userID] = system('whoami');
 userID = strtrim(userID);
 switch (userID)
-    case 'dhb'
-        dir_dropbox = fullfile('/','Users1','Dropbox (Aguirre-Brainard Lab)'); 
     otherwise
         dir_dropbox = fullfile('/','Users',userID,'Dropbox (Aguirre-Brainard Lab)');
 end
